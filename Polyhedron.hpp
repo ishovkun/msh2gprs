@@ -9,20 +9,23 @@ namespace angem
 {
 
 template <typename Scalar>
-class Cell
+class Polyhedron
 {
  public:
-  Cell(const std::vector<Point<3,Scalar>> & vertices);
+  Polyhedron(const std::vector<Point<3,Scalar>> & vertices);
   bool intersects(const Polygon<Scalar> poly);
+  const Point<3,Scalar> & center() {return mass_center};
 
 
-  std::vector<Point<3,Scalar>> vertices;
-  Point<3, Scalar> center;
+ private:
+  std::vector<Point<3,Scalar> * > vertices;
+  std::vector<std::vector<std::size_t> > faces;
+  Point<3, Scalar> mass_center;
 };
 
 
 template <typename Scalar>
-Cell<Scalar>::Cell(const std::vector<Point<3,Scalar>> & vertices)
+Polyhedron<Scalar>::Polyhedron(const std::vector<Point<3,Scalar>> & vertices)
     :
     vertices(vertices)
 {
@@ -33,7 +36,7 @@ Cell<Scalar>::Cell(const std::vector<Point<3,Scalar>> & vertices)
 
 
 template <typename Scalar>
-bool Cell<Scalar>::intersects(const Polygon<Scalar> poly)
+bool Polyhedron<Scalar>::intersects(const Polygon<Scalar> poly)
 {
   /* Algorithm:
    * check if distance between cell center and
