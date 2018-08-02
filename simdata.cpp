@@ -794,6 +794,7 @@ void SimData::convertGmsh2Sim()
     }
   }
 
+
   for ( int iface = 0; iface < nFaces; iface++ )
   {
     if(vsetPolygonPolyhedron[iface].size() == 0)
@@ -884,6 +885,12 @@ void SimData::convertGmsh2Sim()
 
       if(cosa > 0) swap(vsFaceCustom[iface].vNeighbors[0], vsFaceCustom[iface].vNeighbors[1]);
     }
+
+    // save cell faces
+    std::cout << "face " << iface << "\t";
+    for (const auto & icell : vsFaceCustom[iface].vNeighbors)
+      std::cout << icell << " ";
+    std::cout << std::endl;
   }
 
 }
