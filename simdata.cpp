@@ -3,7 +3,7 @@
 
 #include "Point.hpp"
 #include "Polygon.hpp"
-#include "utils.hpp"
+#include "Cell.hpp"
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -144,7 +144,7 @@ void SimData::defineEmbeddedFractureProperties()
   frac_points.push_back(p2);
   frac_points.push_back(p3);
   frac_points.push_back(p4);
-  angem::Polygon frac(frac_points);
+  angem::Polygon<double> frac(frac_points);
   // const std::size_t ef_ind = 0;
 
   for (std::size_t icell = 0; icell < nCells; icell++)
@@ -156,8 +156,12 @@ void SimData::defineEmbeddedFractureProperties()
       std::size_t ivertex = cell.vVertices[v];
       cell_verts.push_back(angem::Point<3>(vvVrtxCoords[ivertex]));
     }
-    const Point center_mass = angem::compute_center_mass(cell_verts);
-    std::cout << "center_mass = "<< center_mass << std::endl;
+    // const Point center_mass = angem::compute_center_mass(cell_verts);
+    // std::cout << "center_mass = "<< center_mass << std::endl;
+    angem::Cell<double> ag_cell(cell_verts);
+    std::cout << "icell " << icell
+              << " result = " << ag_cell.intersects(frac)
+              << std::endl;
 
   }
   abort();
@@ -468,6 +472,7 @@ void SimData::readGmshFile()
       Element3D.vVertices.clear();
       Element3D.vVerticesNewnum.clear();
       Element3D.vVerticesSorted.clear();
+      Element3D.vFaces.clear();
 
       Element2D.nNeighbors = 0;
       Element2D.nVertices = 0;

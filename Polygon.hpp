@@ -1,4 +1,4 @@
-#pragma one
+#pragma once
 
 #include "Point.hpp"
 #include "Plane.hpp"
@@ -13,8 +13,8 @@ class Polygon
   Polygon(std::vector< Point<3,Scalar> > & bounding_points);
 
  protected:
-  std::vector< Point<3> > bounding_points;
-  Plane plane;
+  std::vector< Point<3,Scalar> > bounding_points;
+  Plane<Scalar> plane;
 };
 
 
@@ -26,9 +26,10 @@ Polygon<Scalar>::Polygon(std::vector< Point<3,Scalar> > & bounding_points)
 {
   assert(bounding_points.size() > 2);
 
-  plane = Plane(bounding_points[0],
-                bounding_points[1],
-                bounding_points[2]);
+  plane = Plane<Scalar>(bounding_points[0],
+                        bounding_points[1],
+                        bounding_points[2]);
 
 }
-}
+
+}  // end namespace

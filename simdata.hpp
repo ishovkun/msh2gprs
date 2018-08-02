@@ -77,6 +77,7 @@ struct Gelement
   vector<int> vVerticesNewnum;
 
   vector<int> vNeighbors;
+  std::vector<std::size_t> vFaces;
 
   double thickness, center_distance;
   vector<double> vCenter;
