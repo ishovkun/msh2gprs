@@ -5,8 +5,8 @@
 namespace angem
 {
 
-Plane::Plane(Point<3> & point,
-             Point<3> & normal)
+Plane::Plane(const Point<3> & point,
+             const Point<3> & normal)
     :
     point(point),
     normal(normal)
@@ -15,11 +15,11 @@ Plane::Plane(Point<3> & point,
 }
 
 
-Plane::Plane(Point<3>   & point,
-             const double dip_angle,
-             const double strike_angle)
+Plane::Plane(const Point<3> & point,
+             const double     dip_angle,
+             const double     strike_angle)
     :
-    normal(normal)
+    point(point)
 {
   assert(dip_angle >= - 90 and dip_angle <= 90);
 
@@ -30,6 +30,21 @@ Plane::Plane(Point<3>   & point,
   normal[0] = sin(rdip) * cos(rstrike + M_PI/2.);
   normal[1] = sin(rdip) * sin(rstrike + M_PI/2.);
   normal[2] = cos(rdip);
+}
+
+
+Plane::Plane(const Point<3>   & p1,
+             const Point<3>   & p2,
+             const Point<3>   & p3)
+    :
+    point(p1)
+{
+  assert(p1 != p2 and p2 != p3 and p1 != p3);
+  // define two tangent vectors
+  const Point<3> t1 = p1 - p2;
+  const Point<3> t2 = p1 - p3;
+  normal = cross_product(t1, t2);
+  normal.normalize();
 }
 
 

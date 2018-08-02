@@ -1,8 +1,6 @@
 #include "simdata.hpp"
 #include "femout.hpp"
 #include "transes.hpp"
-#include "Point.hpp"
-#include "Plane.hpp"
 
 class SimData;
 class CalcTranses;

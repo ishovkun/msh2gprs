@@ -1,9 +1,16 @@
 ﻿#include "simdata.hpp"
 
+
+#include "Point.hpp"
+#include "Polygon.hpp"
+#include "utils.hpp"
+
 #define SPECIAL_CELL = 999
 #include <algorithm>
 
 const std::size_t EMBEDDED_FRACTURE_CELL = 9999992;
+
+using Point = angem::Point<3, double>;
 
 SimData::SimData(string inputstream)
 {
@@ -128,34 +135,53 @@ void SimData::defineEmbeddedFractureProperties()
   const std::size_t n_embedded_fractures = 1;
   vsEmbeddedFractures.resize(n_embedded_fractures);
 
-  const std::size_t ef_ind = 0;
+  angem::Point<3> p1 = {0.5, 1, 0};
+  angem::Point<3> p2 = {0.5, 1, 1};
+  angem::Point<3> p3 = {2, 2.5, 0};
+  angem::Point<3> p4 = {2, 2.5, 1};
+  std::vector<angem::Point<3>> frac_points;
+  frac_points.push_back(p1);
+  frac_points.push_back(p2);
+  frac_points.push_back(p3);
+  frac_points.push_back(p4);
+  angem::Polygon frac(frac_points);
+  // const std::size_t ef_ind = 0;
 
-  // count sda cells
-  std::size_t n_sda = 0;
-  for ( int icell = 0; icell < nCells; icell++ )
-    if ( vsCellCustom[icell].nMarker == EMBEDDED_FRACTURE_CELL ) // SDA cells
-      n_sda++;
-
-  vsEmbeddedFractures[ef_ind].cells.resize(n_sda);
-  vsEmbeddedFractures[ef_ind].points.resize(n_sda);
-  vsEmbeddedFractures[ef_ind].dip.resize(n_sda);
-  vsEmbeddedFractures[ef_ind].strike.resize(n_sda);
-
-  std::size_t i = 0;
-  for ( int icell = 0; icell < nCells; icell++ )
-    if ( vsCellCustom[icell].nMarker == EMBEDDED_FRACTURE_CELL ) // SDA cells
+  for (std::size_t icell = 0; icell < nCells; icell++)
+  {
+    const auto & cell = vsCellCustom[icell];
+    std::vector<angem::Point<3>> cell_verts;
+    for (std::size_t v=0; v<cell.vVertices.size(); ++v)
     {
-      // std::cout << "icell = "<< icell << std::endl;
-
-      vsEmbeddedFractures[ef_ind].cells[i] = icell + 1;
-      vsEmbeddedFractures[ef_ind].points[i] = {0, 0, 0};
-      vsEmbeddedFractures[ef_ind].dip[i] = 90;
-      vsEmbeddedFractures[ef_ind].strike[i] = 45;
-      i++;
+      std::size_t ivertex = cell.vVertices[v];
+      cell_verts.push_back(angem::Point<3>(vvVrtxCoords[ivertex]));
     }
-  vsEmbeddedFractures[ef_ind].cohesion = 0;
-  vsEmbeddedFractures[ef_ind].friction_angle = 30;
-  vsEmbeddedFractures[ef_ind].dilation_angle = 0;
+    const Point center_mass = angem::compute_center_mass(cell_verts);
+    std::cout << "center_mass = "<< center_mass << std::endl;
+
+  }
+  abort();
+
+  // vsEmbeddedFractures[ef_ind].cells.resize(n_sda);
+  // vsEmbeddedFractures[ef_ind].points.resize(n_sda);
+  // vsEmbeddedFractures[ef_ind].dip.resize(n_sda);
+  // vsEmbeddedFractures[ef_ind].strike.resize(n_sda);
+
+  // std::size_t i = 0;
+  // for ( int icell = 0; icell < nCells; icell++ )
+  //   if ( vsCellCustom[icell].nMarker == EMBEDDED_FRACTURE_CELL ) // SDA cells
+  //   {
+  //     // std::cout << "icell = "<< icell << std::endl;
+
+  //     vsEmbeddedFractures[ef_ind].cells[i] = icell + 1;
+  //     vsEmbeddedFractures[ef_ind].points[i] = {0, 0, 0};
+  //     vsEmbeddedFractures[ef_ind].dip[i] = 90;
+  //     vsEmbeddedFractures[ef_ind].strike[i] = 45;
+  //     i++;
+  //   }
+  // vsEmbeddedFractures[ef_ind].cohesion = 0;
+  // vsEmbeddedFractures[ef_ind].friction_angle = 30;
+  // vsEmbeddedFractures[ef_ind].dilation_angle = 0;
 
 }
 

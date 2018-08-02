@@ -10,7 +10,7 @@
 namespace angem
 {
 
-template<int dim, typename Scalar=double>
+template<int dim=3, typename Scalar=double>
 class Point
 {
  public:
@@ -39,8 +39,9 @@ class Point
   Scalar operator() (int i) const;
 
   // operations
-  // dot product
-  Scalar dot(const Point<dim, Scalar> & p) const;
+  // comparison
+  bool operator==(const Point<dim, Scalar> & p) const;
+  bool operator!=(const Point<dim, Scalar> & p) const;
   // point-wise sum
   void operator+=(const Point<dim, Scalar> & p);
   // point-wise difference
@@ -49,8 +50,16 @@ class Point
   void operator+=(const Scalar x);
   // subtract from each component
   void operator-=(const Scalar x);
-  // multiply each component
+  // component-wise multiplication
   void operator*=(const Scalar x);
+  // component-wise division
+  void operator/=(const Scalar x);
+  // dot product
+  Scalar dot(const Point<dim, Scalar> & p) const;
+  // cross product -- only 3D
+  void cross(const Point<3, Scalar> & p,
+             Point<3, Scalar>       & result) const;
+  Point<3, Scalar> cross(const Point<3, Scalar> & p) const;
 
   // Euclidian distance
   Scalar distance(const Point<dim, Scalar> & p) const;
@@ -215,6 +224,34 @@ Scalar & Point<dim,Scalar>::operator[] (int i)
 
 // OPERATORS
 template<int dim, typename Scalar>
+bool Point<dim,Scalar>::operator==(const Point<dim, Scalar> & p) const
+{
+  for (int i=0; i<dim; ++i)
+  {
+    if (coords[i] == p(i))
+      continue;
+    else
+      return false;
+  }
+  return true;
+}
+
+
+template<int dim, typename Scalar>
+bool Point<dim,Scalar>::operator!=(const Point<dim, Scalar> & p) const
+{
+  for (int i=0; i<dim; ++i)
+  {
+    if (coords[i] == p(i))
+      continue;
+    else
+      return true;
+  }
+  return false;
+}
+
+
+template<int dim, typename Scalar>
 void Point<dim,Scalar>::operator+=(const Point<dim, Scalar> & p)
 {
   for (int i=0; i<dim; ++i)
@@ -255,11 +292,38 @@ void Point<dim,Scalar>::operator*=(const Scalar x)
 
 
 template<int dim, typename Scalar>
+void Point<dim,Scalar>::operator/=(const Scalar x)
+{
+  for (int i=0; i<dim; ++i)
+    coords[i] /= x;
+}
+
+
+template<int dim, typename Scalar>
 Scalar Point<dim,Scalar>::dot(const Point<dim, Scalar> & p) const
 {
   Scalar result = static_cast<Scalar>(0);
   for (int i=0; i<dim; ++i)
     result += coords[i] * p(i);
+  return result;
+}
+
+
+template<int dim, typename Scalar>
+void Point<dim,Scalar>::cross(const Point<3, Scalar> & p,
+                              Point<3, Scalar>       & result) const
+{
+  result[0] = coords[1]*p(2) - coords[2]*p(1);
+  result[1] = coords[2]*p(0) - coords[0]*p(2);
+  result[2] = coords[0]*p(1) - coords[1]*p(0);
+}
+
+
+template<int dim, typename Scalar>
+Point<3,Scalar> Point<dim,Scalar>::cross(const Point<3, Scalar> & p) const
+{
+  Point<3,Scalar> result;
+  cross(p, result);
   return result;
 }
 
@@ -294,7 +358,7 @@ template<int dim, typename Scalar>
 void Point<dim,Scalar>::normalize()
 {
   Scalar nor = norm();
-  assert(nor != static_case<Scalar>(0));
+  assert(nor != static_cast<Scalar>(0));
   for (int i=0; i<dim; ++i)
     coords[i] /= nor;
 }
@@ -342,6 +406,25 @@ template<int dim, typename Scalar>
 Scalar norm(const Point<dim, Scalar> & p1)
 {
   return p1.norm();
+}
+
+
+template<typename Scalar>
+void cross_product(const Point<3, Scalar> & p1,
+                   const Point<3, Scalar> & p2,
+                   Point<3, Scalar>       & result)
+{
+  p1.cross(p2, result);
+}
+
+
+template<typename Scalar>
+Point<3,Scalar> cross_product(const Point<3, Scalar> & p1,
+                              const Point<3, Scalar> & p2)
+{
+  Point<3,Scalar> result;
+  p1.cross(p2, result);
+  return result;
 }
 
 // PRINTING
