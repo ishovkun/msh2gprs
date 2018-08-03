@@ -87,9 +87,10 @@ bool collision(const Polygon<3,Scalar> & poly1,
   section2d.direction = Point<2,Scalar>(ldirection(0), ldirection(1));
 
   // find local coordinates of bounding points
-  Polygon<2,Scalar> poly2d = poly1.to_2D();
+  Polygon<2,Scalar> poly2d1 = poly1.to_2D();
+  Polygon<2,Scalar> poly2d2 = poly2.to_2D();
 
-  return collision(poly2d, section2d);
+  return collision(poly2d1, section2d) and collision(poly2d2, section2d);
 }
 
 }  // end namespace
