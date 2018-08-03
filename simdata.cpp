@@ -161,8 +161,7 @@ void SimData::defineEmbeddedFractureProperties()
     }
 
     angem::Polygon<3,double> geom_face(face_verts);
-    angem::Polygon<3,double> intersection;
-    collision(geom_face, frac, intersection);
+    collision(geom_face, frac);
     // std::cout << "face " << iface
     //           << " intersects " << collision(geom_face, frac,
     //                                          intersection)

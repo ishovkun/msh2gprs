@@ -52,9 +52,16 @@ bool collision(const Plane<Scalar> & pl1,
 
 
 template <typename Scalar>
+bool collision(const Polygon<2,Scalar> & poly,
+               const Line<2,Scalar>    & line)
+{
+
+}
+
+
+template <typename Scalar>
 bool collision(const Polygon<3,Scalar> & poly1,
-               const Polygon<3,Scalar> & poly2,
-               Polygon<3,Scalar>       & intersection)
+               const Polygon<3,Scalar> & poly2)
 {
   /*
    * Algorithm:
@@ -72,11 +79,15 @@ bool collision(const Polygon<3,Scalar> & poly1,
 
   // 2.
   // find local coordinates of intersection line
-  Point<3,Scalar> lp = poly1.plane.local_coordinates(line_section.point);
-  Point<3,Scalar> ldirection = poly1.plane.local_coordinates(line_section.point);
-  Line<2,Scalar> section2d = Line<2,Scalar> ();
+  const Point<3,Scalar> lp = poly1.plane.local_coordinates(line_section.point);
+  const Point<3,Scalar> ldirection = poly1.plane.local_coordinates(line_section.point);
+  // cast to 2d
+  Line<2,Scalar> section2d;
+  section2d.point = Point<2,Scalar>(lp(0), lp(1));
+  section2d.direction = Point<2,Scalar>(ldirection(0), ldirection(1));
+
   // find local coordinates of bounding points
-  Polygon<2, Scalar> poly2d = poly1.to_2D();
+  Polygon<2,Scalar> poly2d = poly1.to_2D();
 
   return collision(poly2d, section2d);
 }
