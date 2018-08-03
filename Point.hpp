@@ -395,6 +395,36 @@ Scalar operator*(const Point<dim, Scalar> & p1,
 
 
 template<int dim, typename Scalar>
+Point<dim, Scalar> operator*(const Point<dim, Scalar> & p,
+                             const Scalar             & x)
+{
+  Point<dim, Scalar> result;
+  for (int i=0; i<dim; ++i)
+    result[i] = p(i) * x;
+  return result;
+}
+
+
+template<int dim, typename Scalar>
+Point<dim, Scalar> operator*(const Scalar             & x,
+                             const Point<dim, Scalar> & p)
+{
+  return p*x;
+}
+
+
+template<int dim, typename Scalar>
+Point<dim, Scalar> operator/(const Point<dim, Scalar> & p,
+                             const Scalar             & x)
+{
+  Point<dim, Scalar> result;
+  for (int i=0; i<dim; ++i)
+    result[i] = p(i) / x;
+  return result;
+}
+
+
+template<int dim, typename Scalar>
 Scalar distance(const Point<dim, Scalar> & p1,
                 const Point<dim, Scalar> & p2)
 {

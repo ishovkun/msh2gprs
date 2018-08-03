@@ -3,7 +3,7 @@
 
 #include "Point.hpp"
 #include "Polygon.hpp"
-#include "Cell.hpp"
+#include "Collisions.hpp"
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -144,26 +144,31 @@ void SimData::defineEmbeddedFractureProperties()
   frac_points.push_back(p2);
   frac_points.push_back(p3);
   frac_points.push_back(p4);
-  angem::Polygon<double> frac(frac_points);
+  angem::Polygon<3,double> frac(frac_points);
   // const std::size_t ef_ind = 0;
 
-  for (std::size_t icell = 0; icell < nCells; icell++)
+  // figure out which faces the fracture intersects
+  for ( std::size_t iface = 0; iface < nFaces; iface++ )
   {
-    const auto & cell = vsCellCustom[icell];
-    std::vector<angem::Point<3>> cell_verts;
-    for (std::size_t v=0; v<cell.vVertices.size(); ++v)
-    {
-      std::size_t ivertex = cell.vVertices[v];
-      cell_verts.push_back(angem::Point<3>(vvVrtxCoords[ivertex]));
-    }
-    // const Point center_mass = angem::compute_center_mass(cell_verts);
-    // std::cout << "center_mass = "<< center_mass << std::endl;
-    angem::Cell<double> ag_cell(cell_verts);
-    std::cout << "icell " << icell
-              << " result = " << ag_cell.intersects(frac)
-              << std::endl;
+    const auto & face = vsFaceCustom[iface];
+    std::vector<angem::Point<3>> face_verts;
 
+    for (std::size_t v=0; v<face.vVertices.size(); ++v)
+    {
+      const std::size_t ivertex = face.vVertices[v];
+      face_verts.emplace_back();
+      face_verts.back() = vvVrtxCoords[ivertex];
+    }
+
+    angem::Polygon<3,double> geom_face(face_verts);
+    angem::Polygon<3,double> intersection;
+    collision(geom_face, frac, intersection);
+    // std::cout << "face " << iface
+    //           << " intersects " << collision(geom_face, frac,
+    //                                          intersection)
+    //           << std::endl;
   }
+
   abort();
 
   // vsEmbeddedFractures[ef_ind].cells.resize(n_sda);
@@ -472,7 +477,6 @@ void SimData::readGmshFile()
       Element3D.vVertices.clear();
       Element3D.vVerticesNewnum.clear();
       Element3D.vVerticesSorted.clear();
-      Element3D.vFaces.clear();
 
       Element2D.nNeighbors = 0;
       Element2D.nVertices = 0;
@@ -794,7 +798,6 @@ void SimData::convertGmsh2Sim()
     }
   }
 
-
   for ( int iface = 0; iface < nFaces; iface++ )
   {
     if(vsetPolygonPolyhedron[iface].size() == 0)
@@ -886,11 +889,6 @@ void SimData::convertGmsh2Sim()
       if(cosa > 0) swap(vsFaceCustom[iface].vNeighbors[0], vsFaceCustom[iface].vNeighbors[1]);
     }
 
-    // save cell faces
-    std::cout << "face " << iface << "\t";
-    for (const auto & icell : vsFaceCustom[iface].vNeighbors)
-      std::cout << icell << " ";
-    std::cout << std::endl;
   }
 
 }
