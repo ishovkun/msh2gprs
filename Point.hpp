@@ -387,6 +387,16 @@ Point<dim, Scalar> operator-(const Point<dim, Scalar> & p1,
 
 
 template<int dim, typename Scalar>
+Point<dim, Scalar> operator-(const Point<dim, Scalar> & p)
+{
+  Point<dim, Scalar> result;
+  for (int i=0; i<dim; ++i)
+    result[i] = -p(i);
+  return result;
+}
+
+
+template<int dim, typename Scalar>
 Scalar operator*(const Point<dim, Scalar> & p1,
                  const Point<dim, Scalar> & p2)
 {

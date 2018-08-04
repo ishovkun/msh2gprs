@@ -1,16 +1,17 @@
 ﻿#include "simdata.hpp"
 
 
-#include "Point.hpp"
-#include "Polygon.hpp"
-#include "Collisions.hpp"
+// #include "Point.hpp"
+// #include "GJK_Algorithm.hpp"
+#include "Polyhedra.h"
+#include "Collision.h"
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
 
 const std::size_t EMBEDDED_FRACTURE_CELL = 9999992;
 
-using Point = angem::Point<3, double>;
+// using Point = angem::Point<3, double>;
 
 SimData::SimData(string inputstream)
 {
@@ -135,37 +136,61 @@ void SimData::defineEmbeddedFractureProperties()
   const std::size_t n_embedded_fractures = 1;
   vsEmbeddedFractures.resize(n_embedded_fractures);
 
-  angem::Point<3> p1 = {0.5, 1, 0};
-  angem::Point<3> p2 = {0.5, 1, 1};
-  angem::Point<3> p3 = {2, 2.5, 0};
-  angem::Point<3> p4 = {2, 2.5, 1};
-  std::vector<angem::Point<3>> frac_points;
-  frac_points.push_back(p1);
-  frac_points.push_back(p2);
-  frac_points.push_back(p3);
-  frac_points.push_back(p4);
-  angem::Polygon<3,double> frac(frac_points);
-  // const std::size_t ef_ind = 0;
+  std::vector<Vector> frac_list =
+      {
+        Vector(0.5, 1.1, 0),
+        Vector(0.5, 1.1, 1),
+        Vector(2, 2.5, 1),
+        Vector(2, 2.5, 0)
+      };
+
+  Polyhedra frac(frac_list);
 
   // figure out which faces the fracture intersects
-  for ( std::size_t iface = 0; iface < nFaces; iface++ )
+  // angem::GJK_Algorithm<double> gjk;
+  // std::vector<angem::Point<3,double>> face ={
+  //   angem::Point<3,double>(1, 1, 0),
+  //   angem::Point<3,double>(1, 1, 1),
+  //   angem::Point<3,double>(1, 2, 0),
+  //   angem::Point<3,double>(1, 2, 1)
+  // };
+
+  // find cells intersected by the fracture
+  std::vector<std::size_t> sda_cells;
+  for(std::size_t icell = 0; icell < nCells; icell++)
   {
-    const auto & face = vsFaceCustom[iface];
-    std::vector<angem::Point<3>> face_verts;
+    const auto & cell = vsCellCustom[icell];
 
-    for (std::size_t v=0; v<face.vVertices.size(); ++v)
+    // std::vector<angem::Point<3,double>> verts;
+    std::vector<Vector> verts;
+    for (const auto & ivertex : cell.vVertices)
     {
-      const std::size_t ivertex = face.vVertices[v];
-      face_verts.emplace_back();
-      face_verts.back() = vvVrtxCoords[ivertex];
+      const auto & coord = vvVrtxCoords[ivertex];
+      verts.push_back(Vector(coord[0], coord[1], coord[2]));
+      // verts.emplace_back();
+      // verts.back() = vvVrtxCoords[ivertex];
     }
+    Polyhedra pcell(verts);
 
-    angem::Polygon<3,double> geom_face(face_verts);
-    collision(geom_face, frac);
-    // std::cout << "face " << iface
-    //           << " intersects " << collision(geom_face, frac,
-    //                                          intersection)
-    //           << std::endl;
+    Collision c1(&frac, &pcell);  //Avoid Object Slicing. Pass pointers to effect polymorphism
+    if (c1.checkCollision())
+        sda_cells.push_back(icell);
+
+    // if (gjk.collision(verts, frac))
+    // {
+    //   sda_cells.push_back(icell);
+    // }
+
+  }
+
+
+  std::cout << "final set:" << std::endl;
+  for (const auto & cell : sda_cells)
+  {
+    std::cout << "sda cell " << cell << ": ";
+    for (const auto & c : vsCellCustom[cell].vCenter)
+      std::cout << c << "\t";
+    std::cout << std::endl;
   }
 
   abort();
