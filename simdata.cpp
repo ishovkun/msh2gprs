@@ -148,12 +148,6 @@ void SimData::defineEmbeddedFractureProperties()
 
   // figure out which faces the fracture intersects
   // angem::GJK_Algorithm<double> gjk;
-  // std::vector<angem::Point<3,double>> face ={
-  //   angem::Point<3,double>(1, 1, 0),
-  //   angem::Point<3,double>(1, 1, 1),
-  //   angem::Point<3,double>(1, 2, 0),
-  //   angem::Point<3,double>(1, 2, 1)
-  // };
 
   // find cells intersected by the fracture
   std::vector<std::size_t> sda_cells;
@@ -172,17 +166,10 @@ void SimData::defineEmbeddedFractureProperties()
     }
     Polyhedra pcell(verts);
 
-    Collision c1(&frac, &pcell);  //Avoid Object Slicing. Pass pointers to effect polymorphism
+    Collision c1(&frac, &pcell);
     if (c1.checkCollision())
         sda_cells.push_back(icell);
-
-    // if (gjk.collision(verts, frac))
-    // {
-    //   sda_cells.push_back(icell);
-    // }
-
   }
-
 
   std::cout << "final set:" << std::endl;
   for (const auto & cell : sda_cells)
