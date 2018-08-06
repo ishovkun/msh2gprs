@@ -103,11 +103,11 @@ bool Collision::checkCollision()
 	while(true)
 	{
 		s = Collision::support(d);
-		// cout<<" Dir="<<d.i<<" "<<d.j<<" "<<d.k<<endl;
-		// cout <<" Support="<<s.i<<" "<<s.j<<" "<<s.k<<endl;
+		cout<<" Dir="<<d.i<<" "<<d.j<<" "<<d.k<<endl;
+		cout <<" Support="<<s.i<<" "<<s.j<<" "<<s.k<<endl;
 		if(Vector::dot(d,s) < 0)
 		{
-			// cout<<"No Intersection"<<endl;
+			cout<<"No Intersection"<<endl;
 			return false;
 			break;
 		}
@@ -116,7 +116,7 @@ bool Collision::checkCollision()
 		d = Collision::updateDir();
 		if(d.i==0 and d.j==0 and d.k==0)
 		{
-			// cout<<"Intersection"<<endl;
+			cout<<"Intersection"<<endl;
 			return true;
 			break;
 		}
