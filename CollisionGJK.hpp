@@ -37,8 +37,6 @@ public:
 template<typename Scalar>
 CollisionGJK<Scalar>::CollisionGJK()
 {
-	// a = one;
-	// b = two;
 	simplex.reserve(4);
 }
 
@@ -171,8 +169,9 @@ CollisionGJK<Scalar>::check(const Shape<Scalar> & shape1,
 		s = support(d);
 		cout<<" Dir=" << d << std::endl;
 		cout <<" Support="<< s << std::endl;
+    std::cout << "dot = " << d.dot(s) << std::endl;
 		// if(Vector::dot(d,s) < 0)
-		if(d.dot(s) < 0)
+		if(d.dot(s) < static_cast<Scalar>(0))
 		{
       std::cout<< "No Intersection" << std::endl;
 			return false;
