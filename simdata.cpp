@@ -195,7 +195,10 @@ void SimData::defineEmbeddedFractureProperties()
     angem::Shape<double> pcell(verts);
 
     if (collision.check(frac, pcell));
-        sda_cells.push_back(icell);
+    {
+      sda_cells.push_back(icell);
+    }
+    std::cout << "==================================" << std::endl;
   }
 
   std::cout << "final set:" << std::endl;

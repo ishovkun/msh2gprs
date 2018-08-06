@@ -47,12 +47,12 @@ template<typename Scalar>
 Point<3,Scalar>
 CollisionGJK<Scalar>::support(Point<3,Scalar> & dir)
 {
-	Point<3,Scalar> support;
+	Point<3,Scalar> support_point;
 	Point<3,Scalar> negDir = origin-dir;
 	Point<3,Scalar> aDot = a->support(dir);
 	Point<3,Scalar> bDot = b->support(negDir);
-	support = aDot - bDot;
-	return support;
+	support_point = aDot - bDot;
+	return support_point;
 }
 
 
@@ -174,6 +174,7 @@ CollisionGJK<Scalar>::check(const Shape<Scalar> & shape1,
 		// if(Vector::dot(d,s) < 0)
 		if(d.dot(s) < 0)
 		{
+      std::cout<< "No Intersection" << std::endl;
 			return false;
 			break;
 		}
@@ -182,7 +183,8 @@ CollisionGJK<Scalar>::check(const Shape<Scalar> & shape1,
 		d = update_direction();
 		if(d.x() == 0 and d.y() == 0 and d.z() == 0)
 		{
-      std::cout << "d = "<< d << std::endl;
+      cout<<"Intersection"<<endl;
+
 
 			return true;
 		}
