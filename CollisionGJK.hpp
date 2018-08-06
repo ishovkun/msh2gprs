@@ -156,6 +156,7 @@ CollisionGJK<Scalar>::check(const Shape<Scalar> & shape1,
 {
   a = & shape1;
   b = & shape2;
+  simplex.clear();
 
 	Point<3,Scalar> d(1, -1, -1);
 	Point<3,Scalar> s = support(d);
@@ -167,13 +168,8 @@ CollisionGJK<Scalar>::check(const Shape<Scalar> & shape1,
 	{
     iter++;
 		s = support(d);
-		cout<<" Dir=" << d << std::endl;
-		cout <<" Support="<< s << std::endl;
-    std::cout << "dot = " << d.dot(s) << std::endl;
-		// if(Vector::dot(d,s) < 0)
 		if(d.dot(s) < static_cast<Scalar>(0))
 		{
-      std::cout<< "No Intersection" << std::endl;
 			return false;
 			break;
 		}
@@ -181,19 +177,9 @@ CollisionGJK<Scalar>::check(const Shape<Scalar> & shape1,
 		simplex.push_back(s);
 		d = update_direction();
 		if(d.x() == 0 and d.y() == 0 and d.z() == 0)
-		{
-      cout<<"Intersection"<<endl;
-
-
 			return true;
-		}
-		/*else if(d.k==-1)
-      {
-			cout<<"No Intersection"<<endl;
-			return false;
-			break;
-      }*/
 	}
+
   return false;
 }
 

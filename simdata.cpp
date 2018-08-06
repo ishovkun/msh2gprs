@@ -136,46 +136,25 @@ void SimData::defineEmbeddedFractureProperties()
   const std::size_t n_embedded_fractures = 1;
   vsEmbeddedFractures.resize(n_embedded_fractures);
 
-  // angem::Rectangle<double> frac
-  //     (
-  //         angem::Point<3,double> (1.5, 0.5, 0.5),
-  //         /* length */ 2,
-  //         /* height */ 1,
-  //         /* dip */    90,
-  //         /* strike */ 0
-  //      );
-  std::vector<angem::Point<3,double>> frac_list =
-      {
-        angem::Point<3,double>(0.5, 1, 0),
-        angem::Point<3,double>(0.5, 1, 1),
-        angem::Point<3,double>(2, 2.5, 1),
-        angem::Point<3,double>(2, 2.5, 0)
-      };
-  angem::Shape<double> frac(frac_list);
-
-  // angem::Point<3,double> p1(3, 0, 0);
-  // angem::Point<3,double> p2(4, 0, 0);
-  // angem::Point<3,double> p3(4, 1, 0);
-  // angem::Point<3,double> p4(3, 1, 0);
-  // angem::Point<3,double> p5(3, 0, 1);
-  // angem::Point<3,double> p6(4, 0, 1);
-  // angem::Point<3,double> p7(4, 1, 1);
-  // angem::Point<3,double> p8(3, 1, 1);
-  // std::vector<angem::Point<3,double>> cell_list;
-  // cell_list.push_back(p1);
-  // cell_list.push_back(p2);
-  // cell_list.push_back(p3);
-  // cell_list.push_back(p4);
-  // cell_list.push_back(p5);
-  // cell_list.push_back(p6);
-  // cell_list.push_back(p7);
-  // cell_list.push_back(p8);
-  // angem::Shape<double> cell(cell_list);
+  angem::Rectangle<double> frac
+      (
+          angem::Point<3,double> (1.5, 0.5, 0.5),
+          /* length */ 2,
+          /* height */ 1,
+          /* dip */    90,
+          /* strike */ 0
+       );
+  // std::vector<angem::Point<3,double>> frac_list =
+  //     {
+  //       angem::Point<3,double>(0.5, 1, 0),
+  //       angem::Point<3,double>(0.5, 1, 1),
+  //       angem::Point<3,double>(2, 2.5, 1),
+  //       angem::Point<3,double>(2, 2.5, 0)
+  //     };
+  // angem::Shape<double> frac(frac_list);
 
   // figure out which faces the fracture intersects
   angem::CollisionGJK<double> collision;
-  // std::cout << "result = " << collision.check(frac, cell) << std::endl;
-
 
   // find cells intersected by the fracture
   std::vector<std::size_t> sda_cells;
@@ -188,17 +167,13 @@ void SimData::defineEmbeddedFractureProperties()
     for (const auto & ivertex : cell.vVertices)
     {
       const auto & coord = vvVrtxCoords[ivertex];
-      // verts.push_back(Vector(coord[0], coord[1], coord[2]));
       verts.emplace_back();
       verts.back() = vvVrtxCoords[ivertex];
     }
     angem::Shape<double> pcell(verts);
 
-    if (collision.check(frac, pcell));
-    {
+    if (collision.check(frac, pcell))
       sda_cells.push_back(icell);
-    }
-    std::cout << "==================================" << std::endl;
   }
 
   std::cout << "final set:" << std::endl;

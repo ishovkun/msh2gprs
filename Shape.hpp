@@ -78,7 +78,6 @@ Shape<Scalar>::support(Point<3,Scalar> & direction) const
       ind = i;
     }
   }
-  std::cout << "mdist = " << max_dist << std::endl;
 
   assert( ind < points.size() );
   return *points[ind];
