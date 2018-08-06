@@ -19,12 +19,12 @@ class CollisionGJK
 {
 public:
 	CollisionGJK();
-	bool collide(const Shape<Scalar> & shape1,
-               const Shape<Scalar> & shape2);
+	bool check(const Shape<Scalar> & shape1,
+             const Shape<Scalar> & shape2);
 
  private:
 	Point<3,Scalar> support(Point<3,Scalar> & direction);
-	Point<3,Scalar> updateDirection();
+	Point<3,Scalar> update_direction();
 
   // attributes
 	const Shape<Scalar> * a;
@@ -58,7 +58,7 @@ CollisionGJK<Scalar>::support(Point<3,Scalar> & dir)
 
 template<typename Scalar>
 Point<3,Scalar>
-CollisionGJK<Scalar>::updateDirection()
+CollisionGJK<Scalar>::update_direction()
 {
 	Point<3,Scalar> dir,AB,AC,AD,AO,tPlane;
   std::vector<Point<3,Scalar>> temp;
@@ -68,8 +68,8 @@ CollisionGJK<Scalar>::updateDirection()
 	switch(n)
 	{
 	case 2:
-		AB = (simplex.at(0)-simplex.at(1));
-		AO = origin-simplex.at(1);
+		AB = simplex.at(0) - simplex.at(1);
+		AO = origin - simplex.at(1);
 		// dir = Vector::cross(Vector::cross(AB, AO), AB);
 		dir = (AB.cross(AO)).cross(AB);
 		break;
@@ -81,15 +81,17 @@ CollisionGJK<Scalar>::updateDirection()
 		// tPlane = Vector::cross(AC,AB);
 		tPlane = AC.cross(AB);
 		// if(Vector::dot(Vector::cross(AC,tPlane), AO) > 0)
-		if( (AC.cross(tPlane)).dot(AO) > 0 )
+		if( dot(cross(AC, tPlane), AO) > 0 )
 		{
 			// dir = Vector::cross(AC,Vector::cross(AO,AC));
 			dir = AC.cross(AO.cross(AC));
-			simplex.erase(simplex.begin()+1);
+			simplex.erase(simplex.begin() + 1);
 		}
 		// else if(Vector::dot(Vector::cross(tPlane,AB),AO)<=0 && Vector::dot(Vector::cross(tPlane,AB),AO)<=0)
-		else if(dot( cross(tPlane, AB), AB ) <= 0 and
-            dot( cross(tPlane, AB), AO ) <= 0)
+		// else if( dot( cross(tPlane, AB), AO ) <= 0 &&
+    //          dot( cross(tPlane, AB), AO ) <= 0)
+		else if( dot( cross(tPlane, AB), AO ) <= 0 )
+
     {
       // if(Vector::dot(tPlane,AO)>0)
       if(tPlane.dot(AO) > 0)
@@ -113,9 +115,9 @@ CollisionGJK<Scalar>::updateDirection()
 		Point<3,Scalar> B = simplex.at(2);
 		Point<3,Scalar> C = simplex.at(1);
 		Point<3,Scalar> D = simplex.at(0);
-		Point<3,Scalar> AD = D-A;
-		Point<3,Scalar> AC = C-A;
-		Point<3,Scalar> AB = B-A;
+		Point<3,Scalar> AD = D - A;
+		Point<3,Scalar> AC = C - A;
+		Point<3,Scalar> AB = B - A;
 		// Point<3,Scalar> normADC = Vector::cross(AD,AC);
 		Point<3,Scalar> normADC = AD.cross(AC);
 		// Point<3,Scalar> normACB = Vector::cross(AC,AB);
@@ -151,13 +153,13 @@ CollisionGJK<Scalar>::updateDirection()
 
 template<typename Scalar>
 bool
-CollisionGJK<Scalar>::collide(const Shape<Scalar> & shape1,
-                              const Shape<Scalar> & shape2)
+CollisionGJK<Scalar>::check(const Shape<Scalar> & shape1,
+                            const Shape<Scalar> & shape2)
 {
   a = & shape1;
   b = & shape2;
 
-	Point<3,Scalar> d(1,-1,-1);
+	Point<3,Scalar> d(1, -1, -1);
 	Point<3,Scalar> s = support(d);
 	simplex.push_back(s);
 	d = origin - d;
@@ -167,6 +169,8 @@ CollisionGJK<Scalar>::collide(const Shape<Scalar> & shape1,
 	{
     iter++;
 		s = support(d);
+		cout<<" Dir=" << d << std::endl;
+		cout <<" Support="<< s << std::endl;
 		// if(Vector::dot(d,s) < 0)
 		if(d.dot(s) < 0)
 		{
@@ -175,11 +179,12 @@ CollisionGJK<Scalar>::collide(const Shape<Scalar> & shape1,
 		}
 
 		simplex.push_back(s);
-		d = updateDirection();
+		d = update_direction();
 		if(d.x() == 0 and d.y() == 0 and d.z() == 0)
 		{
+      std::cout << "d = "<< d << std::endl;
+
 			return true;
-			break;
 		}
 		/*else if(d.k==-1)
       {
