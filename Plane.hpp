@@ -33,6 +33,7 @@ class Plane
                 const Point<3,Scalar> & p3);
 
   const Point<3,Scalar> & normal() const {return basis(2);}
+  Basis<3,Scalar> & get_basis() {return basis;}
 
 
   // get point projection on the plane (in global coordinates)

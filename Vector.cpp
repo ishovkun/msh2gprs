@@ -9,7 +9,7 @@ Vector& Vector::operator=(const Vector& rhs)
 	j=const_cast<Vector&>(rhs).Getj();
 	k=const_cast<Vector&>(rhs).Getk();
   return *this;
-} 
+}
 Vector::Vector()
 {
 	i=0.0;
@@ -65,8 +65,8 @@ Vector Vector::maxDot(vector<Vector> list,Vector direction)
         dotValue=dot(list[i],direction);
         if(dotValue>max)
         {
-			 max=dotValue;
-            maxVec=list[i];
+          max=dotValue;
+          maxVec=list[i];
         }
 
     }

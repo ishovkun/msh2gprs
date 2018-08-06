@@ -34,7 +34,7 @@ fathest_point_in_direction(const std::vector<Point<dim,Scalar>> & pts,
     }
   }
 
-  assert(  ind != pts.size());
+  assert( ind != pts.size() );
   return pts[ind];
 }
 

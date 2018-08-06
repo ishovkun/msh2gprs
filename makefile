@@ -5,8 +5,8 @@ PREDCXXFLAGS = -O2
 
 SWITCHES = -DSELF_CHECK
 
-customtetgen:	main.cpp simdata.cpp transes.cpp femout.cpp element.cpp renum.cpp Polyhedra.cpp Collision.cpp Vector.cpp
-	$(CXX) $(CXXFLAGS) $(SWITCHES) -o ./bin/customgmsh main.cpp simdata.cpp transes.cpp femout.cpp element.cpp renum.cpp Polyhedra.cpp Collision.cpp Vector.cpp
+customtetgen:	main.cpp simdata.cpp transes.cpp femout.cpp element.cpp renum.cpp
+	$(CXX) $(CXXFLAGS) $(SWITCHES) -o ./bin/customgmsh main.cpp simdata.cpp transes.cpp femout.cpp element.cpp renum.cpp
 
 clean:
 	rm -r *.o customgmsh *~

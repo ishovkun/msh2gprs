@@ -1,10 +1,10 @@
 ﻿#include "simdata.hpp"
 
 
-// #include "Point.hpp"
+#include "Point.hpp"
 // #include "GJK_Algorithm.hpp"
-#include "Polyhedra.h"
-#include "Collision.h"
+#include "Rectangle.hpp"
+#include "CollisionGJK.hpp"
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -136,18 +136,25 @@ void SimData::defineEmbeddedFractureProperties()
   const std::size_t n_embedded_fractures = 1;
   vsEmbeddedFractures.resize(n_embedded_fractures);
 
-  std::vector<Vector> frac_list =
+  // angem::Rectangle<double> frac
+  //     (
+  //         angem::Point<3,double> (1.5, 0.5, 0.5),
+  //         /* length */ 2,
+  //         /* height */ 1,
+  //         /* dip */    90,
+  //         /* strike */ 0
+  //      );
+  std::vector<angem::Point<3,double>> frac_list =
       {
-        Vector(0.5, 1.1, 0),
-        Vector(0.5, 1.1, 1),
-        Vector(2, 2.5, 1),
-        Vector(2, 2.5, 0)
+        angem::Point<3,double>(0.5, 1.1, 0),
+        angem::Point<3,double>(0.5, 1.1, 1),
+        angem::Point<3,double>(2, 2.5, 1),
+        angem::Point<3,double>(2, 2.5, 0)
       };
-
-  Polyhedra frac(frac_list);
+  angem::Shape<double> frac(frac_list);
 
   // figure out which faces the fracture intersects
-  // angem::GJK_Algorithm<double> gjk;
+  angem::CollisionGJK<double> collision;
 
   // find cells intersected by the fracture
   std::vector<std::size_t> sda_cells;
@@ -155,19 +162,18 @@ void SimData::defineEmbeddedFractureProperties()
   {
     const auto & cell = vsCellCustom[icell];
 
-    // std::vector<angem::Point<3,double>> verts;
-    std::vector<Vector> verts;
+    std::vector<angem::Point<3,double>> verts;
+    // std::vector<Vector> verts;
     for (const auto & ivertex : cell.vVertices)
     {
       const auto & coord = vvVrtxCoords[ivertex];
-      verts.push_back(Vector(coord[0], coord[1], coord[2]));
-      // verts.emplace_back();
-      // verts.back() = vvVrtxCoords[ivertex];
+      // verts.push_back(Vector(coord[0], coord[1], coord[2]));
+      verts.emplace_back();
+      verts.back() = vvVrtxCoords[ivertex];
     }
-    Polyhedra pcell(verts);
+    angem::Shape<double> pcell(verts);
 
-    Collision c1(&frac, &pcell);
-    if (c1.checkCollision())
+    if (collision.collide(frac, pcell));
         sda_cells.push_back(icell);
   }
 

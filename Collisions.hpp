@@ -51,46 +51,5 @@ bool collision(const Plane<Scalar> & pl1,
 }
 
 
-template <typename Scalar>
-bool collision(const Polygon<2,Scalar> & poly,
-               const Line<2,Scalar>    & line)
-{
-
-}
-
-
-template <typename Scalar>
-bool collision(const Polygon<3,Scalar> & poly1,
-               const Polygon<3,Scalar> & poly2)
-{
-  /*
-   * Algorithm:
-   * 1. find intersection of planes and exit if parallel
-   * 2. find out if intersects line lies within each polygon
-   *    a. Make Polygon1 and intersection plane 2D objects
-   *    b. Determine if they collide in 2D
-   */
-
-  // 1.
-  Line<3,Scalar> line_section;
-  const bool non_parallel = collision(poly1.plane, poly2.plane, line_section);
-  if (!non_parallel)
-    return false;
-
-  // 2.
-  // find local coordinates of intersection line
-  const Point<3,Scalar> lp = poly1.plane.local_coordinates(line_section.point);
-  const Point<3,Scalar> ldirection = poly1.plane.local_coordinates(line_section.point);
-  // cast to 2d
-  Line<2,Scalar> section2d;
-  section2d.point = Point<2,Scalar>(lp(0), lp(1));
-  section2d.direction = Point<2,Scalar>(ldirection(0), ldirection(1));
-
-  // find local coordinates of bounding points
-  Polygon<2,Scalar> poly2d1 = poly1.to_2D();
-  Polygon<2,Scalar> poly2d2 = poly2.to_2D();
-
-  return collision(poly2d1, section2d) and collision(poly2d2, section2d);
-}
 
 }  // end namespace

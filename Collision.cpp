@@ -15,7 +15,7 @@ Collision::Collision(Polyhedra* one,Polyhedra* two)
 Vector Collision::support(Vector dir)
 {
 	Vector support;
-	Vector negDir = origin-dir;
+	Vector negDir = origin - dir;
 	Vector aDot = a->getSupport(dir);
 	Vector bDot = b->getSupport(negDir);
 	support = aDot - bDot;

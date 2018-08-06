@@ -459,8 +459,16 @@ void cross_product(const Point<3, Scalar> & p1,
 
 
 template<typename Scalar>
-Point<3,Scalar> cross_product(const Point<3, Scalar> & p1,
-                              const Point<3, Scalar> & p2)
+Scalar dot(const Point<3, Scalar> & p1,
+           const Point<3, Scalar> & p2)
+{
+  return p1.dot(p2);
+}
+
+
+template<typename Scalar>
+Point<3,Scalar> cross(const Point<3, Scalar> & p1,
+                      const Point<3, Scalar> & p2)
 {
   Point<3,Scalar> result;
   p1.cross(p2, result);
