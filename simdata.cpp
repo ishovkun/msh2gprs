@@ -136,14 +136,18 @@ void SimData::defineEmbeddedFractureProperties()
   const std::size_t n_embedded_fractures = 1;
   vsEmbeddedFractures.resize(n_embedded_fractures);
 
+  // index
+  std::size_t ef_ind = 0;
+
+  angem::Point<3,double> frac_center(0, 0, 0);
+  const double f_len = 6;
+  const double f_height = 1;
+  const double dip_angle = 90;
+  const double strike_angle = 30;
   angem::Rectangle<double> frac
-      (
-          angem::Point<3,double> (1.5, 0.5, 0.5),
-          /* length */ 2,
-          /* height */ 1,
-          /* dip */    90,
-          /* strike */ 0
-       );
+      (angem::Point<3,double> (1.5, 0.5, 0.5),  // center
+       f_len, f_height, dip_angle, strike_angle);
+
   // std::vector<angem::Point<3,double>> frac_list =
   //     {
   //       angem::Point<3,double>(0.5, 1, 0),
@@ -185,29 +189,27 @@ void SimData::defineEmbeddedFractureProperties()
     std::cout << std::endl;
   }
 
-  abort();
+  // abort();
 
-  // vsEmbeddedFractures[ef_ind].cells.resize(n_sda);
-  // vsEmbeddedFractures[ef_ind].points.resize(n_sda);
-  // vsEmbeddedFractures[ef_ind].dip.resize(n_sda);
-  // vsEmbeddedFractures[ef_ind].strike.resize(n_sda);
+  const std::size_t n_sda = sda_cells.size();
+  vsEmbeddedFractures[ef_ind].cells.resize(n_sda);
+  vsEmbeddedFractures[ef_ind].points.resize(n_sda);
+  vsEmbeddedFractures[ef_ind].dip.resize(n_sda);
+  vsEmbeddedFractures[ef_ind].strike.resize(n_sda);
 
-  // std::size_t i = 0;
-  // for ( int icell = 0; icell < nCells; icell++ )
-  //   if ( vsCellCustom[icell].nMarker == EMBEDDED_FRACTURE_CELL ) // SDA cells
-  //   {
-  //     // std::cout << "icell = "<< icell << std::endl;
+  std::size_t i = 0;
+  for (const auto & sda_cell : sda_cells)
+  {
+    vsEmbeddedFractures[ef_ind].cells[i] = sda_cell + 1;
+    vsEmbeddedFractures[ef_ind].points[i] = frac_center;
+    vsEmbeddedFractures[ef_ind].dip[i] = dip_angle;
+    vsEmbeddedFractures[ef_ind].strike[i] = strike_angle;
+    i++;
+  }
 
-  //     vsEmbeddedFractures[ef_ind].cells[i] = icell + 1;
-  //     vsEmbeddedFractures[ef_ind].points[i] = {0, 0, 0};
-  //     vsEmbeddedFractures[ef_ind].dip[i] = 90;
-  //     vsEmbeddedFractures[ef_ind].strike[i] = 45;
-  //     i++;
-  //   }
-  // vsEmbeddedFractures[ef_ind].cohesion = 0;
-  // vsEmbeddedFractures[ef_ind].friction_angle = 30;
-  // vsEmbeddedFractures[ef_ind].dilation_angle = 0;
-
+  vsEmbeddedFractures[ef_ind].cohesion = 0;
+  vsEmbeddedFractures[ef_ind].friction_angle = 30;
+  vsEmbeddedFractures[ef_ind].dilation_angle = 0;
 }
 
 

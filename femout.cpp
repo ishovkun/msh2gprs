@@ -301,10 +301,9 @@ void OutputData::writeGeomechDataNewKeywords()
 
       for (std::size_t i=0; i<n_sda; ++i)
       {
-        std::cout << "cell " << efrac.cells[i] << std::endl;
         geomechfile << efrac.cells[i] << "\t";
-        if (i%10 == 0)
-          std::cout << std::endl;
+        if ((i+1)%10 == 0)
+          geomechfile << std::endl;
       }
       geomechfile << "/" << std::endl << std::endl;
     }
@@ -314,7 +313,7 @@ void OutputData::writeGeomechDataNewKeywords()
       for (std::size_t i=0; i<n_sda; ++i)
       {
         for (std::size_t j=0; j<dim; ++j)
-          geomechfile << efrac.points[i][j] << "\t";
+          geomechfile << efrac.points[i](j) << "\t";
         geomechfile << std::endl;
       }
       geomechfile << "/" << std::endl << std::endl;

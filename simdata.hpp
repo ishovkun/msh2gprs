@@ -18,6 +18,8 @@ using namespace std;
 #include "element.hpp"
 #include "renum.hpp"
 
+#include "Point.hpp"
+
 struct GmConstraint
 {
   double dPenalty;
@@ -109,13 +111,13 @@ struct SimpleWell
 
 struct EmbeddedFracture
 {
-  std::vector<std::size_t>          cells;
-  std::vector<std::vector<double>>  points;
-  std::vector<double>               dip;
-  std::vector<double>               strike;
-  double                            cohesion;
-  double                            friction_angle;
-  double                            dilation_angle;
+  std::vector<std::size_t>            cells;
+  std::vector<angem::Point<3,double>> points;
+  std::vector<double>                 dip;
+  std::vector<double>                 strike;
+  double                              cohesion;
+  double                              friction_angle;
+  double                              dilation_angle;
 };
 
 

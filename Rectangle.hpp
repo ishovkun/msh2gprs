@@ -16,6 +16,7 @@ public:
 
  protected:
   std::vector<Point<3,Scalar>> v_points;
+  // Plane<Scalar> plane;
 };
 
 
@@ -57,6 +58,7 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
       center + 0.5*length*t1 + 0.5*height*t2;
 
   this->set_data(v_points);
+  // plane.set_data(v_points[0], v_points[1], v_points[2]);
 }
 
 } // end angem
