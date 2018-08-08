@@ -139,14 +139,13 @@ void SimData::defineEmbeddedFractureProperties()
   // index
   std::size_t ef_ind = 0;
 
-  angem::Point<3,double> frac_center(0, 0, 0);
+  angem::Point<3,double> frac_center(0, 0, 0.5);
   const double f_len = 6;
   const double f_height = 1;
   const double dip_angle = 90;
   const double strike_angle = 30;
-  angem::Rectangle<double> frac
-      (angem::Point<3,double> (1.5, 0.5, 0.5),  // center
-       f_len, f_height, dip_angle, strike_angle);
+  angem::Rectangle<double> frac (frac_center, f_len, f_height,
+                                 dip_angle, strike_angle);
 
   // std::vector<angem::Point<3,double>> frac_list =
   //     {
@@ -200,7 +199,7 @@ void SimData::defineEmbeddedFractureProperties()
   std::size_t i = 0;
   for (const auto & sda_cell : sda_cells)
   {
-    vsEmbeddedFractures[ef_ind].cells[i] = sda_cell + 1;
+    vsEmbeddedFractures[ef_ind].cells[i] = sda_cell;
     vsEmbeddedFractures[ef_ind].points[i] = frac_center;
     vsEmbeddedFractures[ef_ind].dip[i] = dip_angle;
     vsEmbeddedFractures[ef_ind].strike[i] = strike_angle;

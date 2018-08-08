@@ -301,7 +301,7 @@ void OutputData::writeGeomechDataNewKeywords()
 
       for (std::size_t i=0; i<n_sda; ++i)
       {
-        geomechfile << efrac.cells[i] << "\t";
+        geomechfile << efrac.cells[i] + 1 << "\t";
         if ((i+1)%10 == 0)
           geomechfile << std::endl;
       }

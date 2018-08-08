@@ -35,29 +35,29 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
 
   // define two unit vectors within the square plane
   // heading strike
-  Point<3,Scalar> t1 = {cos(rdip), sin(rdip), 0};
+  Point<3,Scalar> t1 = {cos(rstrike), sin(rstrike), 0};
   // heading up the fracture
-  Point<3,Scalar> t2 = {sin(rstrike), -cos(rdip)*cos(rstrike), sin(rdip)};
+  Point<3,Scalar> t2 = {cos(rdip)*sin(rstrike), -cos(rdip)*cos(rstrike), sin(rdip)};
 
   // define rectangle vertices
   // top left
   v_points.emplace_back();
-  v_points.back() =
-      center - 0.5*length*t1 + 0.5*height*t2;
+  v_points.back() = center - 0.5*length*t1 + 0.5*height*t2;
   // bottom left
   v_points.emplace_back();
-  v_points.back() =
-      center - 0.5*length*t1 - 0.5*height*t2;
+  v_points.back() = center - 0.5*length*t1 - 0.5*height*t2;
   // bottom right
   v_points.emplace_back();
-  v_points.back() =
-      center + 0.5*length*t1 - 0.5*height*t2;
+  v_points.back() = center + 0.5*length*t1 - 0.5*height*t2;
   // top right
   v_points.emplace_back();
-  v_points.back() =
-      center + 0.5*length*t1 + 0.5*height*t2;
+  v_points.back() = center + 0.5*length*t1 + 0.5*height*t2;
 
   this->set_data(v_points);
+
+  // for (const auto & c: v_points)
+  //   std::cout << c << std::endl;
+
   // plane.set_data(v_points[0], v_points[1], v_points[2]);
 }
 
