@@ -41,7 +41,7 @@ void OutputData::writeGeomechDataNewKeywords()
 
   for (int i = 0; i < pSim->nCells; i++)
   {
-	  geomechfile << pSim->vsCellCustom[i].vCenter [2] << "\n";
+	  geomechfile << pSim->vsCellCustom[i].center [2] << "\n";
   }
   geomechfile << "/" << endl << endl;
   geomechfile.close();

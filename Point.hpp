@@ -25,6 +25,7 @@ class Point
 
   // assign
   void operator=(std::vector<Scalar> & v);
+  void clear();
 
   // getters (non-const)
   Scalar & x();
@@ -136,6 +137,15 @@ void Point<dim,Scalar>::operator=(std::vector<Scalar> & v)
   for (int i=0; i<dim; ++i)
     coords[i] = v[i];
 }
+
+
+template<int dim, typename Scalar>
+void Point<dim,Scalar>::clear()
+{
+  for (int i=0; i<dim; ++i)
+    coords[i] = 0;
+}
+
 
 
 // Partial specialization -- 2D

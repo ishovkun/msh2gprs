@@ -1,5 +1,6 @@
 #pragma once
 #include "Shape.hpp"
+#include "Plane.hpp"
 
 namespace angem
 {
@@ -14,9 +15,14 @@ public:
             Scalar          dip_angle,
             Scalar          strike_angle);
 
+  // shift all points in direction p
+  void move(const Point<3,Scalar> & p);
+
+  // Attributes
+  Plane<Scalar> plane;
+
  protected:
   std::vector<Point<3,Scalar>> v_points;
-  // Plane<Scalar> plane;
 };
 
 
@@ -58,7 +64,20 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
   // for (const auto & c: v_points)
   //   std::cout << c << std::endl;
 
-  // plane.set_data(v_points[0], v_points[1], v_points[2]);
+  plane.set_data(v_points[0], v_points[1], v_points[2]);
+}
+
+
+template<typename Scalar>
+void
+Rectangle<Scalar>::move(const Point<3,Scalar> & p)
+{
+  // std::cout << "moving fracture: ";
+  // std::cout << v_points[0] << " -> ";
+  Shape<Scalar>::move(p);
+  // std::cout << v_points[0];
+  // std::cout << std::endl;
+  plane.move(p);
 }
 
 } // end angem

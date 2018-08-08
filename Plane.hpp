@@ -28,9 +28,13 @@ class Plane
         const Point<3,Scalar> & p2,
         const Point<3,Scalar> & p3);
 
+  // setter
   void set_data(const Point<3,Scalar> & p1,
                 const Point<3,Scalar> & p2,
                 const Point<3,Scalar> & p3);
+
+  // shift support in direction p
+  void move(const Point<3,Scalar> & p);
 
   const Point<3,Scalar> & normal() const {return basis(2);}
   Basis<3,Scalar> & get_basis() {return basis;}
@@ -122,7 +126,7 @@ void Plane<Scalar>::set_data(const Point<3,Scalar> & p1,
   // define two tangent vectors
   const Point<3> t1 = p1 - p2;
   const Point<3> t2 = p1 - p3;
-  Point<3,Scalar> normal = cross_product(t1, t2);
+  Point<3,Scalar> normal = cross(t1, t2);
   normal.normalize();
 
   compute_basis(normal);
@@ -151,10 +155,7 @@ Scalar Plane<Scalar>::distance(const Point<3,Scalar> & p) const
    * d = (p - x0) · n
    * if d<0, point below the plane
    */
-  double result = 0;
-  for (std::size_t i=0; i<3; ++i)
-    result += (p(i) - point(i)) * basis(2)(i);
-  return result;
+  return (p - point).dot(normal());
 }
 
 
@@ -207,7 +208,7 @@ void Plane<Scalar>::compute_basis(const Point<3,Scalar> & normal)
   e2.normalize();
 
   basis[0] = e1;
-  basis[1] = e1;
+  basis[1] = e2;
   basis[2] = normal;
 }
 
@@ -247,6 +248,15 @@ Plane<Scalar>::local_coordinates(const Point<3,Scalar> & p) const
   Point<3,Scalar> p_prime = p - point;
   // project on basis vectors
   return basis.transform(p_prime);
+}
+
+
+template <typename Scalar>
+void
+Plane<Scalar>::move(const Point<3,Scalar> & p)
+{
+  point += p;
+  compute_algebraic_coeff();
 }
 
 }  // end namespace

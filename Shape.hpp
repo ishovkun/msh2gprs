@@ -12,6 +12,7 @@ class Shape
     // constructors
     Shape();
     Shape(std::vector<Point<3,Scalar>> & point_list);
+    Shape(std::vector<Point<3,Scalar> *> & points_list);
     // setter
     void set_data(std::vector<Point<3,Scalar>> & point_list);
     // getter
@@ -20,6 +21,8 @@ class Shape
     bool empty() const;
     // support function for gjk collision algorithm
     virtual Point<3,Scalar> support(Point<3, Scalar> & direction) const;
+    // shift all points in direction p
+    void move(const Point<3,Scalar> & p);
 
    protected:
     std::vector<Point<3,Scalar> *> points;
@@ -29,6 +32,22 @@ class Shape
 template<typename Scalar>
 Shape<Scalar>::Shape()
 {}
+
+
+template<typename Scalar>
+Shape<Scalar>::Shape(std::vector<Point<3,Scalar> *> & point_list)
+    :
+    points(point_list)
+{
+  // std::cout << "s1 = " << points.size() << std::endl;
+  // std::cout << "s2 = " << point_list.size() << std::endl;
+  // for (int i=0; i<point_list.size(); ++i)
+  // {
+  //   std::cout << *point_list[i] << "\t";
+  //   std::cout << *points[i] << "\t";
+  //   std::cout << std::endl;
+  // }
+}
 
 
 template<typename Scalar>
@@ -89,6 +108,15 @@ std::vector<Point<3,Scalar> *> &
 Shape<Scalar>::get_points()
 {
   return points;
+}
+
+
+template<typename Scalar>
+void
+Shape<Scalar>::move(const Point<3,Scalar> & p)
+{
+  for (std::size_t i=0; i<points.size(); ++i)
+    *points[i] += p;
 }
 
 }

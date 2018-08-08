@@ -81,8 +81,10 @@ struct Gelement
   vector<int> vNeighbors;
 
   double thickness, center_distance;
-  vector<double> vCenter;
-  vector<double> vNormal;
+  // vector<double> vCenter;
+  // vector<double> vNormal;
+  angem::Point<3,double> center;
+  angem::Point<3,double> normal;
   double aperture, conductivity;
 };
 
@@ -162,6 +164,7 @@ protected:
      return(1);
    }
    renum * pRenum;
+
 public:
   int corner_cell;
   bool dual_media;
@@ -190,7 +193,8 @@ public:
   double minVrtxCoordsX;
   double minVrtxCoordsY;
   double minVrtxCoordsZ;
-  vector<vector<double> > vvVrtxCoords;
+  // vector<vector<double> > vvVrtxCoords;
+  vector< angem::Point<3,double> > vvVrtxCoords;
   vector<vector<double> > vvVrtxDisp;
   vector<int> vConstraintVertex;
 

@@ -139,22 +139,13 @@ void SimData::defineEmbeddedFractureProperties()
   // index
   std::size_t ef_ind = 0;
 
-  angem::Point<3,double> frac_center(0, 0, 0.5);
+  const angem::Point<3,double> frac_center(0, 0, 0.5);
   const double f_len = 6;
   const double f_height = 1;
   const double dip_angle = 90;
   const double strike_angle = 30;
-  angem::Rectangle<double> frac (frac_center, f_len, f_height,
-                                 dip_angle, strike_angle);
-
-  // std::vector<angem::Point<3,double>> frac_list =
-  //     {
-  //       angem::Point<3,double>(0.5, 1, 0),
-  //       angem::Point<3,double>(0.5, 1, 1),
-  //       angem::Point<3,double>(2, 2.5, 1),
-  //       angem::Point<3,double>(2, 2.5, 0)
-  //     };
-  // angem::Shape<double> frac(frac_list);
+  angem::Rectangle<double> frac(frac_center, f_len, f_height,
+                                dip_angle, strike_angle);
 
   // figure out which faces the fracture intersects
   angem::CollisionGJK<double> collision;
@@ -165,27 +156,41 @@ void SimData::defineEmbeddedFractureProperties()
   {
     const auto & cell = vsCellCustom[icell];
 
-    std::vector<angem::Point<3,double>> verts;
-    // std::vector<Vector> verts;
+    std::vector<angem::Point<3,double> *> verts;
     for (const auto & ivertex : cell.vVertices)
-    {
-      const auto & coord = vvVrtxCoords[ivertex];
-      verts.emplace_back();
-      verts.back() = vvVrtxCoords[ivertex];
-    }
+      verts.push_back(&vvVrtxCoords[ivertex]);
+
     angem::Shape<double> pcell(verts);
 
     if (collision.check(frac, pcell))
+    {
       sda_cells.push_back(icell);
-  }
+
+      // check if some vertices are too close to the fracture
+      // and move a fracture a little bit
+      for (const auto & ivertex : cell.vVertices)
+      {
+        const auto & vert = vvVrtxCoords[ivertex];
+        const auto vc = vsCellCustom[icell].center - vert;
+        std::cout << " dist = " << frac.plane.distance(vert)/vc.norm() << std::endl;
+        if ( fabs(frac.plane.distance(vert)/vc.norm()) < 1e-6 )
+        {
+          const auto shift = 1e-5 * vc;
+          std::cout << "shift happens: " << shift
+                    << std::endl;
+          // std::cout << frac.plane.point << "\t";
+          frac.move(shift);
+          // std::cout << frac.plane.point << std::endl;
+        }
+      }
+    }  // end collision processing
+  }    // end cell loop
 
   std::cout << "final set:" << std::endl;
   for (const auto & cell : sda_cells)
   {
     std::cout << "sda cell " << cell << ": ";
-    for (const auto & c : vsCellCustom[cell].vCenter)
-      std::cout << c << "\t";
-    std::cout << std::endl;
+    std::cout << vsCellCustom[cell].center << std::endl;
   }
 
   // abort();
@@ -200,7 +205,7 @@ void SimData::defineEmbeddedFractureProperties()
   for (const auto & sda_cell : sda_cells)
   {
     vsEmbeddedFractures[ef_ind].cells[i] = sda_cell;
-    vsEmbeddedFractures[ef_ind].points[i] = frac_center;
+    vsEmbeddedFractures[ef_ind].points[i] = frac.plane.point;
     vsEmbeddedFractures[ef_ind].dip[i] = dip_angle;
     vsEmbeddedFractures[ef_ind].strike[i] = strike_angle;
     i++;
@@ -258,9 +263,9 @@ void SimData::defineRockProperties()
     vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
     vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
 
-    // vsCellRockProps[icell].stress[0] = - 0.16 * fabs(vsCellCustom[icell].vCenter[2]);
-    // vsCellRockProps[icell].stress[1] = - 0.171 * fabs(vsCellCustom[icell].vCenter[2]);
-    // vsCellRockProps[icell].stress[2] = - 0.214 * fabs(vsCellCustom[icell].vCenter[2]);
+    // vsCellRockProps[icell].stress[0] = - 0.16 * fabs(vsCellCustom[icell].center[2]);
+    // vsCellRockProps[icell].stress[1] = - 0.171 * fabs(vsCellCustom[icell].center[2]);
+    // vsCellRockProps[icell].stress[2] = - 0.214 * fabs(vsCellCustom[icell].center[2]);
     vsCellRockProps[icell].stress[0] = Sxx;
     vsCellRockProps[icell].stress[1] = Syy;
     vsCellRockProps[icell].stress[2] = Szz;
@@ -295,7 +300,7 @@ void SimData::defineRockProperties()
       vsCellRockProps[icell].pore_thermal_expansion = 3.0 * vsCellRockProps[icell].thermal_expansion * ( vsCellRockProps[icell].biot - vsCellRockProps[icell].poro );
       vsCellRockProps[icell].heat_capacity = 790. * 1e-3 *vsCellRockProps[icell].density;
 
-      vsCellRockProps[icell].temp = 473.15 + 40.* (fabs(vsCellCustom[icell].vCenter[2]) - 3000.) / 1000;
+      vsCellRockProps[icell].temp = 473.15 + 40.* (fabs(vsCellCustom[icell].center[2]) - 3000.) / 1000;
       vsCellRockProps[icell].pressure = 340.0;
       vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
       vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
@@ -314,7 +319,7 @@ void SimData::defineRockProperties()
       vsCellRockProps[icell].poisson = 0.25;
 
       vsCellRockProps[icell].temp = 343.15;
-      vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].vCenter[2]) * 0.1166; // [default: 1.0 + fabs(vsCellCustom[icell].vCenter[2]) * 0.1;]
+      vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1166; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
       vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
       vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
     }
@@ -331,7 +336,7 @@ void SimData::defineRockProperties()
   //     vsCellRockProps[icell].poisson = 0.25;
 
   //     vsCellRockProps[icell].temp = 343.15;
-  //     vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].vCenter[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].vCenter[2]) * 0.1;]
+  //     vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
   //     vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
   //     vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
 	// }
@@ -348,7 +353,7 @@ void SimData::defineRockProperties()
   //     vsCellRockProps[icell].poisson = 0.25;
 
   //     vsCellRockProps[icell].temp = 343.15;
-  //     vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].vCenter[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].vCenter[2]) * 0.1;]
+  //     vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
   //     vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
   //     vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
   //   }
@@ -357,7 +362,7 @@ void SimData::defineRockProperties()
     double x = 0;
     double dx = 1;
     double sv = 0;
-    while(x < fabs(vsCellCustom[icell].vCenter[2]))
+    while(x < fabs(vsCellCustom[icell].center[2]))
     {
       if(x <= 2780)
       {
@@ -432,8 +437,10 @@ void SimData::readGmshFile()
       streamline.imbue(std::locale(std::locale(), new tokens()));
       copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
 
-      for (int j = 1; j < 4; j++)
-        vvVrtxCoords[i].push_back( atof(vstrings[j].c_str()) );
+      // for (int j = 1; j < 4; j++)
+      //   vvVrtxCoords[i].push_back( atof(vstrings[j].c_str()) );
+      for (int j = 0; j < 3; j++)
+        vvVrtxCoords[i][j] = atof(vstrings[j+1].c_str());
     }
     nNodes = vvVrtxCoords.size();
 
@@ -488,18 +495,18 @@ void SimData::readGmshFile()
 
       Element3D.nNeighbors = 0;
       Element3D.nVertices = 0;
-      Element3D.vCenter.clear();
+      Element3D.center.clear();
       Element3D.vNeighbors.clear();
-      Element3D.vNormal.clear();
+      Element3D.normal.clear();
       Element3D.vVertices.clear();
       Element3D.vVerticesNewnum.clear();
       Element3D.vVerticesSorted.clear();
 
       Element2D.nNeighbors = 0;
       Element2D.nVertices = 0;
-      Element2D.vCenter.clear();
+      Element2D.center.clear();
       Element2D.vNeighbors.clear();
-      Element2D.vNormal.clear();
+      Element2D.normal.clear();
       Element2D.vVertices.clear();
       Element2D.vVerticesNewnum.clear();
       Element2D.vVerticesSorted.clear();
@@ -774,10 +781,10 @@ void SimData::convertGmsh2Sim()
   for(int icell = 0; icell < nCells; icell++)
   {
     methodElementCenter(icell, vsCellCustom);
-    if( vsCellCustom[icell].vCenter[0] < minx_ &&  vsCellCustom[icell].vCenter[1] < miny_)
+    if( vsCellCustom[icell].center[0] < minx_ &&  vsCellCustom[icell].center[1] < miny_)
     {
-       minx_ = vsCellCustom[icell].vCenter[0];
-       miny_ = vsCellCustom[icell].vCenter[1];
+       minx_ = vsCellCustom[icell].center[0];
+       miny_ = vsCellCustom[icell].center[1];
        corner_cell = icell;
     }
   }
@@ -901,7 +908,7 @@ void SimData::convertGmsh2Sim()
     {
       double cosa = 0;
       for ( int idx = 0; idx < 3; idx++ )
-        cosa += (vsCellCustom[ vsFaceCustom[iface].vNeighbors[0] ].vCenter[idx] - vsFaceCustom[iface].vCenter[idx]) * vsFaceCustom[iface].vNormal[idx];
+        cosa += (vsCellCustom[ vsFaceCustom[iface].vNeighbors[0] ].center[idx] - vsFaceCustom[iface].center[idx]) * vsFaceCustom[iface].normal[idx];
 
       if(cosa > 0) swap(vsFaceCustom[iface].vNeighbors[0], vsFaceCustom[iface].vNeighbors[1]);
     }
@@ -914,21 +921,21 @@ void SimData::methodElementCenter(int nelem, vector<Gelement> &vsElement)
 {
   int nodes_in_elem = vsElement[nelem].nVertices;
 
-  vsElement[nelem].vCenter.resize(3, 0.0);
+  vsElement[nelem].center.clear();
 
   for (int inodes = 0; inodes < nodes_in_elem; inodes++)
   {
     int gl_node_num = vsElement[nelem].vVertices[inodes];
     for (int idx = 0; idx < 3; idx++)
     {
-      vsElement[nelem].vCenter[idx] += vvVrtxCoords[gl_node_num][idx] / nodes_in_elem;
+      vsElement[nelem].center[idx] += vvVrtxCoords[gl_node_num][idx] / nodes_in_elem;
     }
   }
 
   vsElement[nelem].center_distance = 0.0;
   for (int idx = 0; idx < 3; idx++)
   {
-    vsElement[nelem].center_distance += vsElement[nelem].vCenter[idx] * vsElement[nelem].vCenter[idx];
+    vsElement[nelem].center_distance += vsElement[nelem].center[idx] * vsElement[nelem].center[idx];
   }
   vsElement[nelem].center_distance = sqrt(vsElement[nelem].center_distance);
 
@@ -1037,9 +1044,9 @@ void SimData::methodFaceNormalVector(int nelem, vector<Gelement> &vsElement)
   length = sqrt(length);
 
   // calculate normal basis
-  vsElement[nelem].vNormal.resize(3, 0.0);
+  vsElement[nelem].normal.clear();
 
-  for (int i = 0; i < 3; i++) vsElement[nelem].vNormal[i] = vPointCoord[i] / length;
+  for (int i = 0; i < 3; i++) vsElement[nelem].normal[i] = vPointCoord[i] / length;
 
 
 }
@@ -1047,8 +1054,7 @@ void SimData::methodFaceNormalVector(int nelem, vector<Gelement> &vsElement)
 void SimData::methodChangeFacesNormalVector()
 {
   pair<set<int>::iterator, bool> pairIterBool;
-  vector<double> vDatumNormal;
-  vDatumNormal.resize(3, 0.0);
+  angem::Point<3,double> vDatumNormal = {0,0,0};
 
   vector<int> vFacevVertices;
 
@@ -1082,7 +1088,7 @@ void SimData::methodChangeFacesNormalVector()
     {
       if( vsFaceCustom[iface].nMarker == *itintset)
       {
-        vDatumNormal = vsFaceCustom[iface].vNormal;
+        vDatumNormal = vsFaceCustom[iface].normal;
         break;
       }
     }
@@ -1092,7 +1098,7 @@ void SimData::methodChangeFacesNormalVector()
       if( vsFaceCustom[iface].nMarker == *itintset)
       {
         double cosa = 0;
-        for(int idx = 0; idx < 3; idx++) cosa += vDatumNormal[idx] * vsFaceCustom[iface].vNormal[idx];
+        for(int idx = 0; idx < 3; idx++) cosa += vDatumNormal[idx] * vsFaceCustom[iface].normal[idx];
 
         // non collinear vector. change verticies order
         if(cosa < 0.0)
@@ -1104,7 +1110,7 @@ void SimData::methodChangeFacesNormalVector()
           }
           vsFaceCustom[iface].vVertices.swap(vFacevVertices);
 
-          for(int idx = 0; idx < 3; idx++) vsFaceCustom[iface].vNormal[idx] *= -1.0;
+          for(int idx = 0; idx < 3; idx++) vsFaceCustom[iface].normal[idx] *= -1.0;
 
         }
 
@@ -1118,8 +1124,8 @@ void SimData::methodRandomRockProperties()
 {
  for (int i = 0; i < nCells; i++)
  {
-   double x = vsCellCustom[i].vCenter[0];
-   double y = vsCellCustom[i].vCenter[1];
+   double x = vsCellCustom[i].center[0];
+   double y = vsCellCustom[i].center[1];
 
    double lognormal_value = createLognormalDistribution(0.01, 0.001);
    double value = lognormal_value *
@@ -1156,317 +1162,317 @@ double SimData::createLognormalDistribution(double E, double S)
 
 void SimData::splitInternalFaces()
 {
-  int counter_;
-  cout << endl << "Create set of stick vertices (slow)" << endl;
-  vector<set<int> > vsetGlueVerticies;
-  counter_ = 0;
-  for ( int icell = 0; icell < nCells; icell++ )
-  {
-    counter_ += vsCellCustom[icell].nVertices;
-  }
-  vsetGlueVerticies.resize(counter_);
-  for(int i = 0; i < counter_; i++) vsetGlueVerticies[i].insert(i);
+  // int counter_;
+  // cout << endl << "Create set of stick vertices (slow)" << endl;
+  // vector<set<int> > vsetGlueVerticies;
+  // counter_ = 0;
+  // for ( int icell = 0; icell < nCells; icell++ )
+  // {
+  //   counter_ += vsCellCustom[icell].nVertices;
+  // }
+  // vsetGlueVerticies.resize(counter_);
+  // for(int i = 0; i < counter_; i++) vsetGlueVerticies[i].insert(i);
 
-  // TODO
-  vector<bool> exlude_some_verticies(nNodes,false);
-  for ( int iface = 0; iface < nFaces; iface++ )
-  {
-      vector<int>::iterator it_face_vrtx;
-      for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
-      {
-        if(vsFaceCustom[ iface ].nMarker == -3333332 || vsFaceCustom[ iface ].nMarker == -3333331)
-          exlude_some_verticies[*it_face_vrtx] = true;
-      }
-  }
+  // // TODO
+  // vector<bool> exlude_some_verticies(nNodes,false);
+  // for ( int iface = 0; iface < nFaces; iface++ )
+  // {
+  //     vector<int>::iterator it_face_vrtx;
+  //     for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
+  //     {
+  //       if(vsFaceCustom[ iface ].nMarker == -3333332 || vsFaceCustom[ iface ].nMarker == -3333331)
+  //         exlude_some_verticies[*it_face_vrtx] = true;
+  //     }
+  // }
 
-  vector<double> vVerticesPair; vVerticesPair.resize(2, 0);
-  for ( int iface = 0; iface < nFaces; iface++ )
-  {
-    int job_percent = int ( ( 100. * iface ) / ( nFaces ) );
-    cout << "\r    " << job_percent << "%";
-    /// non phisical face
-    if ( vsFaceCustom[ iface ].nMarker == 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
-    {
-      vector<int>::iterator it_face_vrtx;
+  // vector<double> vVerticesPair; vVerticesPair.resize(2, 0);
+  // for ( int iface = 0; iface < nFaces; iface++ )
+  // {
+  //   int job_percent = int ( ( 100. * iface ) / ( nFaces ) );
+  //   cout << "\r    " << job_percent << "%";
+  //   /// non phisical face
+  //   if ( vsFaceCustom[ iface ].nMarker == 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
+  //   {
+  //     vector<int>::iterator it_face_vrtx;
 
-      /// loop by all face vertices
-      for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
-      {
-        /// loop by neighbor cells
-        int n_polyhedron = 0;
-        set<int>::iterator it_polyhedron;
-        for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++)
-        {
-          /// loop by all cell vertices
-          int ncell = *it_polyhedron;
-          int ivrtx = 0;
+  //     /// loop by all face vertices
+  //     for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
+  //     {
+  //       /// loop by neighbor cells
+  //       int n_polyhedron = 0;
+  //       set<int>::iterator it_polyhedron;
+  //       for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++)
+  //       {
+  //         /// loop by all cell vertices
+  //         int ncell = *it_polyhedron;
+  //         int ivrtx = 0;
 
-          vector<int>::iterator it_cell_vrtx;
-          for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
-          {
-            if ( *it_cell_vrtx == *it_face_vrtx )
-              break;
-          }
-          vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
-        }
-       vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
-       vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
-     }
-    }
-    /*
-    if ( vsFaceCustom[ iface ].nMarker > 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
-    {
-      vector<int>::iterator it_face_vrtx;
+  //         vector<int>::iterator it_cell_vrtx;
+  //         for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
+  //         {
+  //           if ( *it_cell_vrtx == *it_face_vrtx )
+  //             break;
+  //         }
+  //         vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
+  //       }
+  //      vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
+  //      vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
+  //    }
+  //   }
+  //   /*
+  //   if ( vsFaceCustom[ iface ].nMarker > 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
+  //   {
+  //     vector<int>::iterator it_face_vrtx;
 
-      /// loop by all face vertices
-      for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx )
-      {
-        if ( exlude_some_verticies[*it_face_vrtx] == true)
-        {
-          /// loop by neighbor cells
-          int n_polyhedron = 0;
-          set<int>::iterator it_polyhedron;
-          for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++ )
-          {
-            /// loop by all cell vertices
-            int ncell = *it_polyhedron;
-            int ivrtx = 0;
+  //     /// loop by all face vertices
+  //     for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx )
+  //     {
+  //       if ( exlude_some_verticies[*it_face_vrtx] == true)
+  //       {
+  //         /// loop by neighbor cells
+  //         int n_polyhedron = 0;
+  //         set<int>::iterator it_polyhedron;
+  //         for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++ )
+  //         {
+  //           /// loop by all cell vertices
+  //           int ncell = *it_polyhedron;
+  //           int ivrtx = 0;
 
-            vector<int>::iterator it_cell_vrtx;
-            for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
-            {
-              if ( *it_cell_vrtx == *it_face_vrtx )
-                break;
-            }
-            vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
-          }
-          vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
-          vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
-        }
-     }
-    } */
-  }
+  //           vector<int>::iterator it_cell_vrtx;
+  //           for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
+  //           {
+  //             if ( *it_cell_vrtx == *it_face_vrtx )
+  //               break;
+  //           }
+  //           vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
+  //         }
+  //         vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
+  //         vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
+  //       }
+  //    }
+  //   } */
+  // }
 
-  cout << endl << "Distinguish authenic vertices (might be very slow)" << endl;
-  int n_possible_verticies = vsetGlueVerticies.size();
-  vector<int> v_buf_storage;
-  int total_size_old = 0;
-  int total_size_new = 1;
-  int cycle = 0;
-  while ( total_size_old != total_size_new )
-  {
-    total_size_old = total_size_new;
-    total_size_new = 0;
-    cout << endl << "cycle   :" << cycle << "\t \t Hopefully < 10"; cycle++;
+  // cout << endl << "Distinguish authenic vertices (might be very slow)" << endl;
+  // int n_possible_verticies = vsetGlueVerticies.size();
+  // vector<int> v_buf_storage;
+  // int total_size_old = 0;
+  // int total_size_new = 1;
+  // int cycle = 0;
+  // while ( total_size_old != total_size_new )
+  // {
+  //   total_size_old = total_size_new;
+  //   total_size_new = 0;
+  //   cout << endl << "cycle   :" << cycle << "\t \t Hopefully < 10"; cycle++;
 
-    for ( int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++ )
-    {
-      int job_percent = int ( ( 100. * ivrtx ) / ( n_possible_verticies ) );
-      cout << "\r    " << job_percent << "%";
-      v_buf_storage.clear();
-      set<int>::iterator it_set;
+  //   for ( int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++ )
+  //   {
+  //     int job_percent = int ( ( 100. * ivrtx ) / ( n_possible_verticies ) );
+  //     cout << "\r    " << job_percent << "%";
+  //     v_buf_storage.clear();
+  //     set<int>::iterator it_set;
 
-      for ( it_set = vsetGlueVerticies[ivrtx].begin(); it_set != vsetGlueVerticies[ivrtx].end(); ++it_set )
-      {
-        set<int>::iterator it_set_down;
+  //     for ( it_set = vsetGlueVerticies[ivrtx].begin(); it_set != vsetGlueVerticies[ivrtx].end(); ++it_set )
+  //     {
+  //       set<int>::iterator it_set_down;
 
-        for ( it_set_down = vsetGlueVerticies[ *it_set ].begin(); it_set_down != vsetGlueVerticies[ *it_set ].end(); ++it_set_down )
-        {
-          v_buf_storage.push_back ( *it_set_down );
-        }
-      }
+  //       for ( it_set_down = vsetGlueVerticies[ *it_set ].begin(); it_set_down != vsetGlueVerticies[ *it_set ].end(); ++it_set_down )
+  //       {
+  //         v_buf_storage.push_back ( *it_set_down );
+  //       }
+  //     }
 
-      vector<int>::iterator it_vec;
+  //     vector<int>::iterator it_vec;
 
-      for ( it_vec = v_buf_storage.begin(); it_vec != v_buf_storage.end(); it_vec++ )
-      {
-        vsetGlueVerticies[ivrtx].insert ( *it_vec );
-      }
-      total_size_new += vsetGlueVerticies[ivrtx].size();
-    }
-  }
+  //     for ( it_vec = v_buf_storage.begin(); it_vec != v_buf_storage.end(); it_vec++ )
+  //     {
+  //       vsetGlueVerticies[ivrtx].insert ( *it_vec );
+  //     }
+  //     total_size_new += vsetGlueVerticies[ivrtx].size();
+  //   }
+  // }
 
-  cout << endl << "Renumber vector of stick vertices" << endl;
-  vector<int> vRenumVerticies;
-  vRenumVerticies.resize(n_possible_verticies);
+  // cout << endl << "Renumber vector of stick vertices" << endl;
+  // vector<int> vRenumVerticies;
+  // vRenumVerticies.resize(n_possible_verticies);
 
-  /// take first cell
-  for(int ivrtx = 0; ivrtx < vsCellCustom[0].nVertices; ivrtx++)
-  {
-    vRenumVerticies[ivrtx] = ivrtx;
-  }
+  // /// take first cell
+  // for(int ivrtx = 0; ivrtx < vsCellCustom[0].nVertices; ivrtx++)
+  // {
+  //   vRenumVerticies[ivrtx] = ivrtx;
+  // }
 
-  counter_ = vsCellCustom[0].nVertices;
-  for(int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++)
-  {
-    if( *vsetGlueVerticies[ivrtx].begin() == ivrtx )
-    {
-      // this vertex is not stick
-      vRenumVerticies[ivrtx] = counter_;
-      counter_++;
-    }
-    else
-    {
-      // this vertex is stick
-      // set is sorted by c++ defaults, and we take minimum value
-      vRenumVerticies[ivrtx] = vRenumVerticies[ *vsetGlueVerticies[ivrtx].begin() ];
-    }
-  }
+  // counter_ = vsCellCustom[0].nVertices;
+  // for(int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++)
+  // {
+  //   if( *vsetGlueVerticies[ivrtx].begin() == ivrtx )
+  //   {
+  //     // this vertex is not stick
+  //     vRenumVerticies[ivrtx] = counter_;
+  //     counter_++;
+  //   }
+  //   else
+  //   {
+  //     // this vertex is stick
+  //     // set is sorted by c++ defaults, and we take minimum value
+  //     vRenumVerticies[ivrtx] = vRenumVerticies[ *vsetGlueVerticies[ivrtx].begin() ];
+  //   }
+  // }
 
-  for(int icell = 0; icell < nCells; icell++)
-  {
-    for(int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++)
-    {
-      vsCellCustom[icell].vVerticesNewnum[ ivrtx ] = vRenumVerticies[ vsCellCustom[icell].vVerticesNewnum[ ivrtx ] ];
-    }
-  }
-  int nTotalNodes = counter_;
+  // for(int icell = 0; icell < nCells; icell++)
+  // {
+  //   for(int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++)
+  //   {
+  //     vsCellCustom[icell].vVerticesNewnum[ ivrtx ] = vRenumVerticies[ vsCellCustom[icell].vVerticesNewnum[ ivrtx ] ];
+  //   }
+  // }
+  // int nTotalNodes = counter_;
 
-  cout << "\t check renumbering consistency " << endl;
-  vector<double> vStatus;
-  vStatus.resize(counter_, false);
-  for ( int icell = 0; icell < nCells; icell++ )
-  {
-    for ( int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++ )
-      vStatus[ vsCellCustom[icell].vVerticesNewnum[ivrtx] ] = true;
-  }
+  // cout << "\t check renumbering consistency " << endl;
+  // vector<double> vStatus;
+  // vStatus.resize(counter_, false);
+  // for ( int icell = 0; icell < nCells; icell++ )
+  // {
+  //   for ( int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++ )
+  //     vStatus[ vsCellCustom[icell].vVerticesNewnum[ivrtx] ] = true;
+  // }
 
-  cout << "\t change face numbering" << endl;
-  for(int iface = 0; iface < nFaces; iface++)
-  {
-    vsFaceCustom[iface].vVerticesNewnum.resize( vsFaceCustom[iface].nVertices, -1);
-    // we take always [0] - support cell
-    int icell = vsFaceCustom[iface].vNeighbors[0];
-    for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
-    {
-      for(int inode = 0; inode < vsCellCustom[icell].nVertices; inode++)
-      {
-        if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[icell].vVertices[inode] )
-        {
-          vsFaceCustom[iface].vVerticesNewnum[ivrtx] = vsCellCustom[icell].vVerticesNewnum[inode];
-          break;
-        }
-      }
-    }
-  }
+  // cout << "\t change face numbering" << endl;
+  // for(int iface = 0; iface < nFaces; iface++)
+  // {
+  //   vsFaceCustom[iface].vVerticesNewnum.resize( vsFaceCustom[iface].nVertices, -1);
+  //   // we take always [0] - support cell
+  //   int icell = vsFaceCustom[iface].vNeighbors[0];
+  //   for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
+  //   {
+  //     for(int inode = 0; inode < vsCellCustom[icell].nVertices; inode++)
+  //     {
+  //       if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[icell].vVertices[inode] )
+  //       {
+  //         vsFaceCustom[iface].vVerticesNewnum[ivrtx] = vsCellCustom[icell].vVerticesNewnum[inode];
+  //         break;
+  //       }
+  //     }
+  //   }
+  // }
 
-  cout << "\t create atoms list" << endl;
-  set<int>::iterator itintset;
-  vector<int> vTempAtoms;
-  vTempAtoms.resize( nTotalNodes, -999 );
-  for (itintset = setIdenticalInternalMarker.begin(); itintset != setIdenticalInternalMarker.end(); ++itintset)
-  {
-    for(int iface = 0; iface < nFaces; iface++)
-    {
-      int ncell = vsFaceCustom[iface].vNeighbors[1];
-      if( vsFaceCustom[iface].nMarker == *itintset)
-      {
-        for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
-        {
-          for(int inode = 0; inode < vsCellCustom[ncell].nVertices; inode++)
-          {
-            if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[ncell].vVertices[inode] )
-            {
-              vTempAtoms[ vsCellCustom[ncell].vVerticesNewnum[inode] ] = vsFaceCustom[iface].vVerticesNewnum[ivrtx];
-            }
-          }
-        }
-      }
-    }
-  }
+  // cout << "\t create atoms list" << endl;
+  // set<int>::iterator itintset;
+  // vector<int> vTempAtoms;
+  // vTempAtoms.resize( nTotalNodes, -999 );
+  // for (itintset = setIdenticalInternalMarker.begin(); itintset != setIdenticalInternalMarker.end(); ++itintset)
+  // {
+  //   for(int iface = 0; iface < nFaces; iface++)
+  //   {
+  //     int ncell = vsFaceCustom[iface].vNeighbors[1];
+  //     if( vsFaceCustom[iface].nMarker == *itintset)
+  //     {
+  //       for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
+  //       {
+  //         for(int inode = 0; inode < vsCellCustom[ncell].nVertices; inode++)
+  //         {
+  //           if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[ncell].vVertices[inode] )
+  //           {
+  //             vTempAtoms[ vsCellCustom[ncell].vVerticesNewnum[inode] ] = vsFaceCustom[iface].vVerticesNewnum[ivrtx];
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
-  cout << endl << "Change coordanates vector" << endl;
-  vector<vector<double> > vvNewCoordinates;
-  vvNewCoordinates.resize( nTotalNodes, vector<double>(3,0) );
-  for(int icell = 0; icell < nCells; icell++)
-  {
-    vector<int>::iterator it_old, it_new;
-    it_new = vsCellCustom[icell].vVerticesNewnum.begin();
-    for(it_old = vsCellCustom[icell].vVertices.begin(); it_old != vsCellCustom[icell].vVertices.end(); ++it_old, ++it_new)
-    {
-      vvNewCoordinates[ *it_new ] = vvVrtxCoords[ *it_old ];
-    }
-  }
+  // cout << endl << "Change coordanates vector" << endl;
+  // vector<vector<double> > vvNewCoordinates;
+  // vvNewCoordinates.resize( nTotalNodes, vector<double>(3,0) );
+  // for(int icell = 0; icell < nCells; icell++)
+  // {
+  //   vector<int>::iterator it_old, it_new;
+  //   it_new = vsCellCustom[icell].vVerticesNewnum.begin();
+  //   for(it_old = vsCellCustom[icell].vVertices.begin(); it_old != vsCellCustom[icell].vVertices.end(); ++it_old, ++it_new)
+  //   {
+  //     vvNewCoordinates[ *it_new ] = vvVrtxCoords[ *it_old ];
+  //   }
+  // }
 
-  vvVrtxCoords.resize(nTotalNodes, vector<double>(3,0));
-  for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-  {
-    vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
-  }
+  // vvVrtxCoords.resize(nTotalNodes, vector<double>(3,0));
+  // for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
+  // {
+  //   vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
+  // }
 
-  cout << endl << "Unify previous and splitted data" << endl;
-  cout << "Verticies : " << nNodes << "\t \t After splitting : " << nTotalNodes << endl;
-  nNodes = nTotalNodes;
-  for(int icell = 0; icell < nCells; icell++)
-  {
-    vsCellCustom[icell].vVertices = vsCellCustom[icell].vVerticesNewnum;
-  }
+  // cout << endl << "Unify previous and splitted data" << endl;
+  // cout << "Verticies : " << nNodes << "\t \t After splitting : " << nTotalNodes << endl;
+  // nNodes = nTotalNodes;
+  // for(int icell = 0; icell < nCells; icell++)
+  // {
+  //   vsCellCustom[icell].vVertices = vsCellCustom[icell].vVerticesNewnum;
+  // }
 
-  for(int iface = 0; iface < nFaces; iface++)
-  {
-    vsFaceCustom[iface].vVertices = vsFaceCustom[iface].vVerticesNewnum;
-  }
+  // for(int iface = 0; iface < nFaces; iface++)
+  // {
+  //   vsFaceCustom[iface].vVertices = vsFaceCustom[iface].vVerticesNewnum;
+  // }
 
-  vvAtoms.resize(nNodes, vector<int>(2,0) );
-  nAtoms = 0;
-  for(int iatom = 0; iatom < nNodes; iatom++)
-  {
-    if(vTempAtoms[iatom] >= 0)
-    {
-      vvAtoms[nAtoms][0] = iatom;
-      vvAtoms[nAtoms][1] = vTempAtoms[iatom];
-      nAtoms++;
-    }
-  }
+  // vvAtoms.resize(nNodes, vector<int>(2,0) );
+  // nAtoms = 0;
+  // for(int iatom = 0; iatom < nNodes; iatom++)
+  // {
+  //   if(vTempAtoms[iatom] >= 0)
+  //   {
+  //     vvAtoms[nAtoms][0] = iatom;
+  //     vvAtoms[nAtoms][1] = vTempAtoms[iatom];
+  //     nAtoms++;
+  //   }
+  // }
 
-  return;
-  cout << endl << "Smart verticies renumbering" << endl;
-  vector<int> vNodesID;
-  vector<int> vIA;
-  vector<int> vJA;
-  vector<int> vRCM;
+  // return;
+  // cout << endl << "Smart verticies renumbering" << endl;
+  // vector<int> vNodesID;
+  // vector<int> vIA;
+  // vector<int> vJA;
+  // vector<int> vRCM;
 
-  vIA.push_back(0);
-  for(int ic = 0; ic < nCells; ++ic)
-  {
-    int n = vsCellCustom[ic].vVertices.size();
-    for(int iv = 0; iv < n; ++iv)
-    {
-      vJA.push_back( vsCellCustom[ic].vVertices[iv] );
-    }
-    n += vIA[ic];
-    vIA.push_back(n);
-  }
+  // vIA.push_back(0);
+  // for(int ic = 0; ic < nCells; ++ic)
+  // {
+  //   int n = vsCellCustom[ic].vVertices.size();
+  //   for(int iv = 0; iv < n; ++iv)
+  //   {
+  //     vJA.push_back( vsCellCustom[ic].vVertices[iv] );
+  //   }
+  //   n += vIA[ic];
+  //   vIA.push_back(n);
+  // }
 
-  vRCM.assign(nNodes,-1);
-  pRenum->convert(nCells, nNodes, vIA, vJA, vRCM);
+  // vRCM.assign(nNodes,-1);
+  // pRenum->convert(nCells, nNodes, vIA, vJA, vRCM);
 
-  for(int icell = 0; icell < nCells; icell++)
-  {
-    for(int iv = 0; iv < vsCellCustom[icell].vVertices.size(); iv++)
-      vsCellCustom[icell].vVertices[iv] = vRCM[vsCellCustom[icell].vVertices[iv]];
-  }
+  // for(int icell = 0; icell < nCells; icell++)
+  // {
+  //   for(int iv = 0; iv < vsCellCustom[icell].vVertices.size(); iv++)
+  //     vsCellCustom[icell].vVertices[iv] = vRCM[vsCellCustom[icell].vVertices[iv]];
+  // }
 
-  for(int iface = 0; iface < nFaces; iface++)
-  {
-    for(int iv = 0; iv < vsFaceCustom[iface].vVertices.size(); iv++)
-      vsFaceCustom[iface].vVertices[iv] = vRCM[vsFaceCustom[iface].vVertices[iv]];
-  }
+  // for(int iface = 0; iface < nFaces; iface++)
+  // {
+  //   for(int iv = 0; iv < vsFaceCustom[iface].vVertices.size(); iv++)
+  //     vsFaceCustom[iface].vVertices[iv] = vRCM[vsFaceCustom[iface].vVertices[iv]];
+  // }
 
-  for(int iatom = 0; iatom < nNodes; iatom++)
-  {
-    if(vTempAtoms[iatom] >= 0)
-    {
-      vvAtoms[nAtoms][0] = vRCM[vvAtoms[nAtoms][0]];
-      vvAtoms[nAtoms][1] = vRCM[vvAtoms[nAtoms][1]];
-    }
-  }
+  // for(int iatom = 0; iatom < nNodes; iatom++)
+  // {
+  //   if(vTempAtoms[iatom] >= 0)
+  //   {
+  //     vvAtoms[nAtoms][0] = vRCM[vvAtoms[nAtoms][0]];
+  //     vvAtoms[nAtoms][1] = vRCM[vvAtoms[nAtoms][1]];
+  //   }
+  // }
 
-  for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-    vvNewCoordinates[vRCM[ivrtx]] = vvVrtxCoords[ivrtx];
+  // for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
+  //   vvNewCoordinates[vRCM[ivrtx]] = vvVrtxCoords[ivrtx];
 
-  for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-    vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
+  // for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
+  //   vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
 }
 
 
@@ -1599,7 +1605,7 @@ void SimData::defineStressAndDispOnBoundary()
 
 void SimData::createSimpleWells()
 {
-  vector<double> vCenter(3,0);
+  vector<double> center(3,0);
   /// choise support cell for internal facets
   // FAULT/FRACTURE PART
   for ( int iwell = 0; iwell < nWells; iwell++ )
@@ -1607,17 +1613,17 @@ void SimData::createSimpleWells()
     int icell = 0;
     for ( int iface = 0; iface < nFaces; iface++ )
     {
-      vCenter[0] = vsFaceCustom[iface].vCenter[0];
-      vCenter[1] = vsFaceCustom[iface].vCenter[1];
-      vCenter[2] = vsFaceCustom[iface].vCenter[2];
+      center[0] = vsFaceCustom[iface].center[0];
+      center[1] = vsFaceCustom[iface].center[1];
+      center[2] = vsFaceCustom[iface].center[2];
 
       if ( vsFaceCustom[iface].nMarker > 0 )
       {
-	if ( abs ( vCenter[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk && abs ( vCenter[1] - vsWell[iwell].vWellCoordinate[1] ) < vsWell[iwell].radius_poisk )
+	if ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk && abs ( center[1] - vsWell[iwell].vWellCoordinate[1] ) < vsWell[iwell].radius_poisk )
         {
-          if(vCenter[0] < -250 || vCenter[0] > 250)
+          if(center[0] < -250 || center[0] > 250)
 	  {
-	    vsWell[iwell].vRadiusPoisk.push_back ( abs ( vCenter[0] - vsWell[iwell].vWellCoordinate[0] ) );
+	    vsWell[iwell].vRadiusPoisk.push_back ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) );
 	    vsWell[iwell].vID.push_back ( icell );
 	    vsWell[iwell].vWi.push_back ( 100.0 );
 	  }
@@ -1638,13 +1644,13 @@ void SimData::createSimpleWells()
     int icell = 0;
     for ( int ic = 0; ic < nCells; ic++ )
     {
-      vCenter[0] = vsCellCustom[ic].vCenter[0];
-      vCenter[1] = vsCellCustom[ic].vCenter[1];
-      vCenter[2] = vsCellCustom[ic].vCenter[2];
-      if ( abs ( vCenter[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk
-	 && (vCenter[2] > vsWell[iwell].vWellCoordinate[2]) && (vCenter[2] < vsWell[iwell].vWellCoordinate[3]) )
+      center[0] = vsCellCustom[ic].center[0];
+      center[1] = vsCellCustom[ic].center[1];
+      center[2] = vsCellCustom[ic].center[2];
+      if ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk
+	 && (center[2] > vsWell[iwell].vWellCoordinate[2]) && (center[2] < vsWell[iwell].vWellCoordinate[3]) )
       {
-        vsWell[iwell].vRadiusPoisk.push_back ( abs ( vCenter[0] - vsWell[iwell].vWellCoordinate[0] ) )  ; //&& (vCenter[2] > vsWell[iwell].vWellCoordinate[2]) && (vCenter[2] < vsWell[iwell].vWellCoordinate[3])
+        vsWell[iwell].vRadiusPoisk.push_back ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) )  ; //&& (center[2] > vsWell[iwell].vWellCoordinate[2]) && (center[2] < vsWell[iwell].vWellCoordinate[3])
         vsWell[iwell].vID.push_back ( ic + n);
         vsWell[iwell].vWi.push_back ( 10.0 ); //well index [default: 10.0]
       }
@@ -1661,8 +1667,8 @@ void SimData::createSimpleWells()
     for(int i = 0; i < vsWell[iwell].vID.size(); ++i)
     {
       int icell = vsWell[iwell].vID.size();
-      if( fabs(vsCellCustom[icell].vCenter[2]) < vsWell[iwell].datum )
-	      vsWell[iwell].datum = abs(vsCellCustom[icell].vCenter[2]);
+      if( fabs(vsCellCustom[icell].center[2]) < vsWell[iwell].datum )
+	      vsWell[iwell].datum = abs(vsCellCustom[icell].center[2]);
     }
   }
 
