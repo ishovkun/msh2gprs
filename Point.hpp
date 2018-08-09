@@ -38,6 +38,7 @@ class Point
   Scalar y() const;
   Scalar z() const;
   Scalar operator() (int i) const;
+  const Scalar & operator[] (int i) const;
 
   // operations
   // comparison
@@ -104,7 +105,8 @@ class Point
 template<int dim, typename Scalar>
 Point<dim,Scalar>::Point()
 {
-  assert(dim > 0 and dim <= 3);
+  static_assert(dim > 0 and dim <= 3,
+                "Only 1,2, and 3 dimensions are supported");
   for (int i=0; i<dim; ++i)
     coords[i] = 0;
 }
@@ -113,7 +115,8 @@ Point<dim,Scalar>::Point()
 template<int dim, typename Scalar>
 Point<dim,Scalar>::Point(const Point<dim, Scalar> & p)
 {
-  assert(dim > 0 and dim <= 3);
+  static_assert(dim > 0 and dim <= 3,
+                "Only 1,2, and 3 dimensions are supported");
   for (int i=0; i<dim; ++i)
     coords[i] = p.coords[i];
 }
@@ -122,7 +125,8 @@ Point<dim,Scalar>::Point(const Point<dim, Scalar> & p)
 template<int dim, typename Scalar>
 Point<dim,Scalar>::Point(const std::vector<Scalar> & v)
 {
-  assert(dim > 0 and dim <= 3);
+  static_assert(dim > 0 and dim <= 3,
+                "Only 1,2, and 3 dimensions are supported");
   assert(v.size() == dim);
   for (int i=0; i<dim; ++i)
     coords[i] = v[i];
@@ -147,12 +151,12 @@ void Point<dim,Scalar>::clear()
 }
 
 
-
 // Partial specialization -- 2D
 template<int dim, typename Scalar>
 Point<dim,Scalar>::Point(const Scalar x, const Scalar y)
 {
-  assert(dim == 2);
+  static_assert(dim == 2,
+                "Only 2d objects can be initialized this way");
   this->coords[0] = x;
   this->coords[1] = y;
 }
@@ -161,7 +165,8 @@ Point<dim,Scalar>::Point(const Scalar x, const Scalar y)
 template<int dim, typename Scalar>
 Point<dim,Scalar>::Point(const Scalar x, const Scalar y, const Scalar z)
 {
-  assert(dim == 3);
+  static_assert(dim == 3,
+                "Only 3d objects can be initialized this way");
   coords[0] = x;
   coords[1] = y;
   coords[2] = z;
@@ -179,7 +184,8 @@ Scalar Point<dim,Scalar>::x() const
 template<int dim, typename Scalar>
 Scalar Point<dim,Scalar>::y() const
 {
-  assert(dim > 1);
+  static_assert(dim > 1,
+                "1d objects have only one coordinate");
   return coords[1];
 }
 
@@ -187,13 +193,22 @@ Scalar Point<dim,Scalar>::y() const
 template<int dim, typename Scalar>
 Scalar Point<dim,Scalar>::z() const
 {
-  assert(dim == 3);
+  static_assert(dim == 3,
+                "Only 3D objects have z coordinate");
   return coords[2];
 }
 
 
 template<int dim, typename Scalar>
 Scalar Point<dim,Scalar>::operator() (int i) const
+{
+  assert(i < dim);
+  return coords[i];
+}
+
+
+template<int dim, typename Scalar>
+const Scalar & Point<dim,Scalar>::operator[] (int i) const
 {
   assert(i < dim);
   return coords[i];
@@ -219,7 +234,8 @@ Scalar & Point<dim,Scalar>::y()
 template<int dim, typename Scalar>
 Scalar & Point<dim,Scalar>::z()
 {
-  assert(dim == 3);
+  static_assert(dim == 3,
+                "Only 3D objects have z coordinate");
   return coords[2];
 }
 
@@ -368,7 +384,7 @@ template<int dim, typename Scalar>
 void Point<dim,Scalar>::normalize()
 {
   Scalar nor = norm();
-  assert(nor != static_cast<Scalar>(0));
+  assert (std::isfinite(static_cast<Scalar>(1) / nor));
   for (int i=0; i<dim; ++i)
     coords[i] /= nor;
 }
