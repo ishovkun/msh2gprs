@@ -1,0 +1,100 @@
+{
+    "Embedded Fractures" :
+    {
+		    "0":
+        {
+            "type": "Rectangle",
+            "center" : [0,  0,  0.5],
+            "length":  6,
+            "dip":     90,
+            "strike":  45
+        },
+        "1":
+        {
+            "_comment_": "Not implemented",
+            "type": "Circle",
+            "center" : [10,  1,  1],
+            "radius":  6,
+            "dip":     90,
+            "strike":  45
+        },
+        "2":
+        {
+            "_comment_": "Not implemented",
+            "type": "Discretized",
+            "points" : [[10,  1,  1], [11, 12, 13]]
+        }
+    },
+
+    "Rock Properties" :
+    {
+        "9999991":
+        {
+            "_comment_": "Linear Elastic",
+            "model":                 1,
+            "biot":                  1,
+            "porosity":              0.01,
+            "permeability":          1e-5,
+            "density":               2500,
+            "young modulus":         1,
+            "poisson ratio":         0.25,
+            "thermal expansion" :    8e-6,
+            "heat capacity":         790,
+            "temperature":           473.15,
+            "pressure":              340,
+            "reference pressure":    340,
+            "reference temperature": 473.15
+        },
+        "9999992"  :
+        {
+            "_comment_": "Strong Discontinuity",
+            "model":                 3,
+            "biot":                  1,
+            "porosity":              0.01,
+            "permeability":          1e-5,
+            "density":               2500,
+            "young  modulus":        1,
+            "poisson ratio ":        0.25,
+            "thermal expansion ":    8e-6,
+            "heat capacity ":        790,
+            "temperature ":          473.15,
+            "pressure":              340,
+            "reference pressure ":   340,
+            "reference temperature": 473.15
+        }
+    },
+
+    "Boundary conditions" :
+    {
+        "-1111111" :
+        {
+            "_comment_": "Left",
+            "type" : "dirichlet",
+            "value" : [0, "nan", "nan"]
+        },
+        "-2222221" :
+        {
+            "__comment__": "back",
+            "type" : "neumann",
+            "value": ["nan", 0, "nan"]
+        },
+        "-2222222" :
+        {
+            "__comment__": "front",
+            "type" : "dirichelt",
+            "value": ["nan", 0, "nan"]
+        },
+        "-3333331" :
+        {
+            "__comment__": "top",
+            "type" : "dirichlet",
+            "value": ["nan", "nan", 0]
+        },
+        "-3333332" :
+        {
+            "__comment__": "bottom",
+            "type" : "dirichelt",
+            "value": ["nan", "nan", 0]
+        }
+    }
+}

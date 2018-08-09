@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Point.hpp"
+#include <Point.hpp>
+#include <limits>
 
 namespace angem
 {

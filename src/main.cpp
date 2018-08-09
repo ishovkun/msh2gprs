@@ -1,6 +1,7 @@
 #include "simdata.hpp"
 #include "femout.hpp"
 #include "transes.hpp"
+#include <Parser.hpp>
 
 class SimData;
 class CalcTranses;
@@ -11,56 +12,62 @@ class tetrahedralize;
 int main(int argc, char *argv[])
 {
   string instream = argv[1];
-  string outstream;
-  SimData * pSimData;
-  pSimData = new SimData(instream);
+  std::cout << "parsing " << instream << std::endl;
 
-  cout << "Read setup data" << endl;
-  pSimData->readSetupValues();
+  Parsers::Parser parser;
+  parser.parse_file(instream);
 
-  cout << "Reserve boundary conditions" << endl;
-  pSimData->initilizeBoundaryConditions();
 
-  cout << "Read gmsh data" << endl;
-  pSimData->readGmshFile();
+  // string outstream;
+  // SimData * pSimData;
+  // pSimData = new SimData(instream);
 
-  cout << "Extract all polygons (slow)" << endl;
-  pSimData->extractInternalFaces();
+  // cout << "Read setup data" << endl;
+  // pSimData->readSetupValues();
 
-  cout << "Convert GMSH FEM mesh into SIM data" << endl;
-  pSimData->convertGmsh2Sim();
+  // cout << "Reserve boundary conditions" << endl;
+  // pSimData->initilizeBoundaryConditions();
 
-  cout << "Fill 3D rock properties" << endl;
-  pSimData->defineRockProperties();
+  // cout << "Read gmsh data" << endl;
+  // pSimData->readGmshFile();
 
-  cout << "Make SDA properties" << endl;
-  pSimData->defineEmbeddedFractureProperties();
+  // cout << "Extract all polygons (slow)" << endl;
+  // pSimData->extractInternalFaces();
 
-  cout << "Create physical facets" << endl;
-  cout << " ( bnd & frac faces )" << endl;
-  pSimData->definePhysicalFacets();
+  // cout << "Convert GMSH FEM mesh into SIM data" << endl;
+  // pSimData->convertGmsh2Sim();
 
-  cout << "Create bc stress & disp" << endl;
-  pSimData->defineStressAndDispOnBoundary();
+  // cout << "Fill 3D rock properties" << endl;
+  // pSimData->defineRockProperties();
 
-  cout << endl << "Convert FEM mesh into FVM mesh" << endl;
-  pSimData->handleConnections();
-  CalcTranses * pTranses;
-  pTranses = new CalcTranses(pSimData);
-  pTranses->createKarimiData();
-  cout << "Extract  transes from FVM mesh" << endl;
-  pTranses->createKarimiApproximation();
+  // cout << "Make SDA properties" << endl;
+  // pSimData->defineEmbeddedFractureProperties();
 
-  cout << "Create simple wells" << endl;
-  pSimData->createSimpleWells();
+  // cout << "Create physical facets" << endl;
+  // cout << " ( bnd & frac faces )" << endl;
+  // pSimData->definePhysicalFacets();
 
-  // cout << "Split FEM mesh on internal surfaces" << endl;
-  // pSimData->splitInternalFaces();
+  // cout << "Create bc stress & disp" << endl;
+  // pSimData->defineStressAndDispOnBoundary();
 
-  cout << "Write FEM mesh data\n";
-  OutputData * pOut;
-  pOut = new OutputData(pSimData);
+  // cout << endl << "Convert FEM mesh into FVM mesh" << endl;
+  // pSimData->handleConnections();
+  // CalcTranses * pTranses;
+  // pTranses = new CalcTranses(pSimData);
+  // pTranses->createKarimiData();
+  // cout << "Extract  transes from FVM mesh" << endl;
+  // pTranses->createKarimiApproximation();
 
-  pOut->writeGeomechDataNewKeywords();
-  pTranses->outputKarimi();
+  // cout << "Create simple wells" << endl;
+  // pSimData->createSimpleWells();
+
+  // // cout << "Split FEM mesh on internal surfaces" << endl;
+  // // pSimData->splitInternalFaces();
+
+  // cout << "Write FEM mesh data\n";
+  // OutputData * pOut;
+  // pOut = new OutputData(pSimData);
+
+  // pOut->writeGeomechDataNewKeywords();
+  // pTranses->outputKarimi();
 }
