@@ -64,7 +64,7 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
   // for (const auto & c: v_points)
   //   std::cout << c << std::endl;
 
-  plane.set_data(v_points[0], v_points[1], v_points[2]);
+  plane.set_data(center, v_points[1], v_points[2]);
 }
 
 

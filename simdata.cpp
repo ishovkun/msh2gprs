@@ -139,19 +139,25 @@ void SimData::defineEmbeddedFractureProperties()
   // index
   std::size_t ef_ind = 0;
 
-  const angem::Point<3,double> frac_center(0, 0, 0.5);
+  const angem::Point<3,double> frac_center = {0, 0, 0.5};
   const double f_len = 6;
   const double f_height = 1;
   const double dip_angle = 90;
-  const double strike_angle = 30;
+  const double strike_angle = 45;
   angem::Rectangle<double> frac(frac_center, f_len, f_height,
                                 dip_angle, strike_angle);
 
   // figure out which faces the fracture intersects
   angem::CollisionGJK<double> collision;
 
+redo_collision:
+  // std::cout << "frac points " << std::endl;
+  // for (auto & p : frac.get_points())
+  //   std::cout << *p << std::endl;
+
   // find cells intersected by the fracture
   std::vector<std::size_t> sda_cells;
+  sda_cells.clear();
   for(std::size_t icell = 0; icell < nCells; icell++)
   {
     const auto & cell = vsCellCustom[icell];
@@ -172,19 +178,22 @@ void SimData::defineEmbeddedFractureProperties()
       {
         const auto & vert = vvVrtxCoords[ivertex];
         const auto vc = vsCellCustom[icell].center - vert;
-        std::cout << " dist = " << frac.plane.distance(vert)/vc.norm() << std::endl;
         if ( fabs(frac.plane.distance(vert)/vc.norm()) < 1e-6 )
         {
           const auto shift = 1e-5 * vc;
-          std::cout << "shift happens: " << shift
-                    << std::endl;
+          std::cout << "shifting fracture: " << shift ;
+          std::cout << " due to collision with vertex: " << ivertex;
+          std::cout << std::endl;
           // std::cout << frac.plane.point << "\t";
           frac.move(shift);
+          goto redo_collision;
           // std::cout << frac.plane.point << std::endl;
         }
       }
     }  // end collision processing
   }    // end cell loop
+
+  std::cout << "Total shift = " << frac.plane.point - frac_center << std::endl;
 
   std::cout << "final set:" << std::endl;
   for (const auto & cell : sda_cells)
@@ -323,40 +332,40 @@ void SimData::defineRockProperties()
       vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
       vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
     }
-  //   else if ( vsCellCustom[icell].nMarker == 9999993 ) // Caprocks
-  //   {
-  //     vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
-  //     vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
-  //     vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm / 10.0;
-  //     vsCellRockProps[icell].density = 2450.0;
+    else if ( vsCellCustom[icell].nMarker == 9999993 ) // Caprocks
+    {
+      vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
+      vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
+      vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm / 10.0;
+      vsCellRockProps[icell].density = 2450.0;
 
-  //     vsCellRockProps[icell].biot = 1; // [default:0.8]
-  //     vsCellRockProps[icell].biot_flow = 1; //[default:0.8]
-  //     vsCellRockProps[icell].young = 1.0;
-  //     vsCellRockProps[icell].poisson = 0.25;
+      vsCellRockProps[icell].biot = 1; // [default:0.8]
+      vsCellRockProps[icell].biot_flow = 1; //[default:0.8]
+      vsCellRockProps[icell].young = 1.0;
+      vsCellRockProps[icell].poisson = 0.25;
 
-  //     vsCellRockProps[icell].temp = 343.15;
-  //     vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
-  //     vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
-  //     vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
-	// }
-  //   else // Overburden Blocks
-  //   {
-  //     vsCellRockProps[icell].density = 2172.0;  // rock density kg/m3 [default: 2250.0]
-  //     vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
-  //     vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
-  //     vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm / 10.0;
+      vsCellRockProps[icell].temp = 343.15;
+      vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
+      vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
+      vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
+	}
+    else // Overburden Blocks
+    {
+      vsCellRockProps[icell].density = 2172.0;  // rock density kg/m3 [default: 2250.0]
+      vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
+      vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
+      vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm / 10.0;
 
-  //     vsCellRockProps[icell].biot = 1; //[default:0.8]
-  //     vsCellRockProps[icell].biot_flow = 1; //[default:0.8]
-  //     vsCellRockProps[icell].young = 1.0;
-  //     vsCellRockProps[icell].poisson = 0.25;
+      vsCellRockProps[icell].biot = 1; //[default:0.8]
+      vsCellRockProps[icell].biot_flow = 1; //[default:0.8]
+      vsCellRockProps[icell].young = 1.0;
+      vsCellRockProps[icell].poisson = 0.25;
 
-  //     vsCellRockProps[icell].temp = 343.15;
-  //     vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
-  //     vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
-  //     vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
-  //   }
+      vsCellRockProps[icell].temp = 343.15;
+      vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
+      vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
+      vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
+    }
 
     //@TODO Groningen fix
     double x = 0;
@@ -366,24 +375,24 @@ void SimData::defineRockProperties()
     {
       if(x <= 2780)
       {
-	sv += dx * 2172 * 9.8 / 1e5;
+        sv += dx * 2172 * 9.8 / 1e5;
       }
 
       if(x > 2780 && x <= 3045)
       {
-	sv += dx * 2450 * 9.8 / 1e5;
+        sv += dx * 2450 * 9.8 / 1e5;
       }
 
       if(x > 3045)
       {
-	sv += dx * 2700 * 9.8 / 1e5;
+        sv += dx * 2700 * 9.8 / 1e5;
       }
 
       x = x + dx;
     }
     // vsCellRockProps[icell].stress[2] = -sv;
-    vsCellRockProps[icell].stress[0] = vsCellRockProps[icell].stress[2] * 0.748;
-    vsCellRockProps[icell].stress[1] = 0.0;//vsCellRockProps[icell].stress[2] * 0.748;
+    // vsCellRockProps[icell].stress[0] = vsCellRockProps[icell].stress[2] * 0.748;
+    // vsCellRockProps[icell].stress[1] = 0.0;//vsCellRockProps[icell].stress[2] * 0.748;
   }
 }
 
