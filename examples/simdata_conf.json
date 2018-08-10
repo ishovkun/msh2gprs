@@ -6,6 +6,7 @@
             "type": "Rectangle",
             "center" : [0,  0,  0.5],
             "length":  6,
+            "height":  6,
             "dip":     90,
             "strike":  45
         },
@@ -38,7 +39,7 @@
             "density":               2500,
             "young modulus":         1,
             "poisson ratio":         0.25,
-            "thermal expansion" :    8e-6,
+            "thermal expansion" :    0,
             "heat capacity":         790,
             "temperature":           473.15,
             "pressure":              340,
@@ -53,13 +54,13 @@
             "porosity":              0.01,
             "permeability":          1e-5,
             "density":               2500,
-            "young  modulus":        1,
-            "poisson ratio ":        0.25,
-            "thermal expansion ":    8e-6,
-            "heat capacity ":        790,
-            "temperature ":          473.15,
+            "young modulus":         1,
+            "poisson ratio":         0.25,
+            "thermal expansion":     0,
+            "heat capacity":         790,
+            "temperature":           473.15,
             "pressure":              340,
-            "reference pressure ":   340,
+            "reference pressure":    340,
             "reference temperature": 473.15
         }
     },
@@ -70,31 +71,31 @@
         {
             "_comment_": "Left",
             "type" : "dirichlet",
-            "value" : [0, "nan", "nan"]
+            "value" : ["0", "nan", "nan"]
         },
         "-2222221" :
         {
-            "__comment__": "back",
+            "_comment_": "back",
             "type" : "neumann",
-            "value": ["nan", 0, "nan"]
+            "value": ["nan", "0", "nan"]
         },
         "-2222222" :
         {
-            "__comment__": "front",
+            "_comment_": "front",
             "type" : "dirichelt",
-            "value": ["nan", 0, "nan"]
+            "value": ["nan", "0", "nan"]
         },
         "-3333331" :
         {
-            "__comment__": "top",
+            "_comment_": "top",
             "type" : "dirichlet",
-            "value": ["nan", "nan", 0]
+            "value": ["nan", "nan", "0"]
         },
         "-3333332" :
         {
-            "__comment__": "bottom",
+            "_comment_": "bottom",
             "type" : "dirichelt",
-            "value": ["nan", "nan", 0]
+            "value": ["nan", "nan", "0"]
         }
     }
 }
