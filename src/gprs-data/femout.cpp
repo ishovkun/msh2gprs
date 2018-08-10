@@ -12,22 +12,23 @@ OutputData::~OutputData()
 
 
 #include <sys/stat.h>
-void OutputData::writeGeomechDataNewKeywords()
+void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
 {
   stringstream out;
   out << "model";
   out << "/";
-  string outputPath_ = ""; // out.str();
+  // string outputPath_ = ""; // out.str();
 
-#if 0 //defined(_WIN32)
-  _mkdir(outputPath_.c_str()); // create directory
-//#else
-  mkdir(outputPath_.c_str(), 0777);
-#endif
-  string outstring = pSim->outstream;
+// #if 0 //defined(_WIN32)
+//   _mkdir(output_path.c_str()); // create directory
+// //#else
+//   mkdir(outputPath_.c_str(), 0777);
+// #endif
+  // string outstring = pSim->outstream;
+  string outstring;
 
   ofstream geomechfile;
-  outstring =   outputPath_ + "fl_dimens.txt";
+  outstring =   output_path + "fl_dimens.txt";
   geomechfile.open(outstring.c_str());
 
   geomechfile << "DIMENS" << endl;
@@ -35,7 +36,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile.close();
 
 
-  outstring = outputPath_ + "gm_depth.txt";
+  outstring = output_path + "gm_depth.txt";
   geomechfile.open(outstring.c_str());
   geomechfile << "GDEPTH" << endl;
 
@@ -47,7 +48,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile.close();
 
   // GEOMETRY
-  outstring =   outputPath_ + "gm_geometry.txt";
+  outstring =   output_path + "gm_geometry.txt";
   geomechfile.open(outstring.c_str());
   geomechfile << "GMDIMS" << endl;
   geomechfile <<  pSim->nNodes << "\t" << pSim->nCells << "\t" << pSim->nFaces;
@@ -161,8 +162,8 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "/" << endl << endl;
   geomechfile.close();
 
- outstring =   outputPath_ + "gm_model.txt";
- geomechfile.open(outstring.c_str());
+  outstring =   output_path + "gm_model.txt";
+  geomechfile.open(outstring.c_str());
   geomechfile << "GMCELL_MODEL" << endl;
   for(int ib = 0; ib < pSim->nCells; ++ib)
   {
@@ -171,7 +172,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "/" << endl << endl;
  geomechfile.close();
 
- outstring =   outputPath_ + "gm_capacity.txt";
+ outstring =   output_path + "gm_capacity.txt";
  geomechfile.open(outstring.c_str());
   geomechfile << "GMCELL_HEAT_CAPACITY" << endl;
   for(int ib = 0; ib < pSim->nCells; ++ib)
@@ -181,7 +182,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "/" << endl << endl;
  geomechfile.close();
 
- outstring =   outputPath_ + "gm_density.txt";
+ outstring =   output_path + "gm_density.txt";
  geomechfile.open(outstring.c_str());
 
   geomechfile << "GMCELL_DENSITY\n";
@@ -198,8 +199,8 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "\n/\n\n";
   geomechfile.close();
 
- outstring =   outputPath_ + "gm_biot.txt";
- geomechfile.open(outstring.c_str());
+  outstring =   output_path + "gm_biot.txt";
+  geomechfile.open(outstring.c_str());
   geomechfile << "GMCELL_BIOT\n";
   j = 0;
   for ( int i = 0; i < pSim->nCells; i++, j++ )
@@ -227,7 +228,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "\n/\n\n";
   geomechfile.close();
 
-  outstring =   outputPath_ + "gm_elastic.txt";
+  outstring =   output_path + "gm_elastic.txt";
   geomechfile.open(outstring.c_str());
   geomechfile << "GMCELL_YOUNG\n";
   j = 0;
@@ -256,8 +257,8 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "\n/\n\n";
   geomechfile.close();
 
- outstring =   outputPath_ + "gm_thermal.txt";
- geomechfile.open(outstring.c_str());
+  outstring =   output_path + "gm_thermal.txt";
+  geomechfile.open(outstring.c_str());
 
  geomechfile << "GMCELL_THERMAL_EXPANSION\n";
   j = 0;
@@ -288,7 +289,7 @@ void OutputData::writeGeomechDataNewKeywords()
 
   {  // Strong discontinuity
     std::cout  << "Writing SDA props" << std::endl;
-    outstring =   outputPath_ + "gm_SDA.txt";
+    outstring =   output_path + "gm_SDA.txt";
     geomechfile.open(outstring.c_str());
 
     std::size_t ef_ind = 0;
@@ -357,7 +358,7 @@ void OutputData::writeGeomechDataNewKeywords()
     geomechfile.close();
   }
 
-  outstring =   outputPath_ + "gm_reference.txt";
+  outstring =   output_path + "gm_reference.txt";
   geomechfile.open(outstring.c_str());
 
   geomechfile << "GMREF_TEMPERATURE" << endl;
@@ -377,7 +378,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "/" << endl << endl;
   geomechfile.close();
 
-  outstring =   outputPath_ + "gm_bcond.txt";
+  outstring =   output_path + "gm_bcond.txt";
   geomechfile.open(outstring.c_str());
 
   if ( pSim->nNeumannFaces > 0 )
@@ -392,15 +393,15 @@ void OutputData::writeGeomechDataNewKeywords()
     }
     if ( is_ )
     {
-      geomechfile << "GMFACE_TRACTION_N" << endl;
-      for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
-      {
-        if ( pSim->vsPhysicalFacet[i].ntype == 2 )
-        {
-          geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-          geomechfile << pSim->vsPhysicalFacet[i].vCondition[0] << endl;
-        }
-      }
+      // geomechfile << "GMFACE_TRACTION_N" << endl;
+      // for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
+      // {
+      //   if ( pSim->vsPhysicalFacet[i].ntype == 2 )
+      //   {
+      //     geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
+      //     geomechfile << pSim->vsPhysicalFacet[i].vCondition[0] << endl;
+      //   }
+      // }
     }
 
     is_ = false;
@@ -417,9 +418,7 @@ void OutputData::writeGeomechDataNewKeywords()
         if ( pSim->vsPhysicalFacet[i].ntype == 22)
         {
           geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-          geomechfile << pSim->vsPhysicalFacet[i].vCondition[0] << "\t";
-          geomechfile << pSim->vsPhysicalFacet[i].vCondition[1] << "\t";
-          geomechfile << pSim->vsPhysicalFacet[i].vCondition[2] << endl;
+          geomechfile << pSim->vsPhysicalFacet[i].condition << "\t";
         }
       }
     }
@@ -447,10 +446,10 @@ void OutputData::writeGeomechDataNewKeywords()
     {
       if ( pSim->vsPhysicalFacet[i].ntype == 1 )
       {
-        int n = pSim->vsPhysicalFacet[i].vCondition.size();
+        int n = 3;
 
         int j = 0;
-        if ( pSim->vsPhysicalFacet[i].vCondition[j] != pSim->dNotNumber )
+        if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
         {
           int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
           for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
@@ -472,10 +471,11 @@ void OutputData::writeGeomechDataNewKeywords()
     {
       if ( pSim->vsPhysicalFacet[i].ntype == 1 )
       {
-        int n = pSim->vsPhysicalFacet[i].vCondition.size();
+        // int n = pSim->vsPhysicalFacet[i].vCondition.size();
+        int n = 3;
 
         int j = 1;
-        if ( pSim->vsPhysicalFacet[i].vCondition[j] != pSim->dNotNumber )
+        if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
         {
           int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
           for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
@@ -497,10 +497,10 @@ void OutputData::writeGeomechDataNewKeywords()
     {
       if ( pSim->vsPhysicalFacet[i].ntype == 1 )
       {
-        int n = pSim->vsPhysicalFacet[i].vCondition.size();
+        int n = 3;
 
         int j = 2;
-        if ( pSim->vsPhysicalFacet[i].vCondition[j] != pSim->dNotNumber )
+        if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
         {
           int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
           for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
@@ -551,9 +551,9 @@ void OutputData::writeGeomechDataNewKeywords()
   }
   geomechfile.close();
 
- outstring =   outputPath_ + "gm_fractures.txt";
- geomechfile.open(outstring.c_str());
- set<int>::iterator itsetint;
+  outstring =   output_path + "gm_fractures.txt";
+  geomechfile.open(outstring.c_str());
+  set<int>::iterator itsetint;
 
  int counter = 0;
  if (pSim->nInternalBoundaryFaces > 0)
@@ -626,8 +626,8 @@ void OutputData::writeGeomechDataNewKeywords()
  }
  geomechfile.close();
 
-  outstring =   outputPath_ + "fl_pres.txt";
-    geomechfile.open(outstring.c_str());
+ outstring =   output_path + "fl_pres.txt";
+ geomechfile.open(outstring.c_str());
 
   // fractures first
   geomechfile << "PRESSURE" << endl;
@@ -642,7 +642,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "\n/\n\n";
   geomechfile.close();
 
-  outstring =   outputPath_ + "fl_temp.txt";
+  outstring =   output_path + "fl_temp.txt";
   geomechfile.open(outstring.c_str());
 
   // fractures first
@@ -664,7 +664,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile << "\n/\n\n";
   geomechfile.close();
 
-  outstring =   outputPath_ + "fl_zmf.txt";
+  outstring =   output_path + "fl_zmf.txt";
  geomechfile.open(outstring.c_str());
 
   geomechfile << "ZMF\n";
@@ -690,7 +690,7 @@ void OutputData::writeGeomechDataNewKeywords()
 
 
 #if 0
-  outstring =   outputPath_ + "gm_fracprops.txt";
+  outstring =   output_path + "gm_fracprops.txt";
   geomechfile.open ( outstring.c_str() );
 
   geomechfile <<  "GMCONTACT_THERMAL_EXPANSION" << endl;
@@ -792,7 +792,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile.close();
 #endif
 
-  outstring =   outputPath_ + "fl_satnum.txt";
+  outstring =   output_path + "fl_satnum.txt";
     geomechfile.open(outstring.c_str());
 
   geomechfile << "SATNUM" << endl;
@@ -809,7 +809,7 @@ void OutputData::writeGeomechDataNewKeywords()
   geomechfile.close();
 
 
- outstring =   outputPath_ + "fl_thc.txt";
+  outstring =   output_path + "fl_thc.txt";
     geomechfile.open(outstring.c_str());
 
   geomechfile << "THCROCK" << endl;
@@ -833,7 +833,7 @@ void OutputData::writeGeomechDataNewKeywords()
   cout << "write all wells\n";
   if ( pSim->nWells > 0 )
   {
-    outstring =   outputPath_ + "fl_wells.txt";
+    outstring =   output_path + "fl_wells.txt";
     geomechfile.open ( outstring.c_str() );
     geomechfile <<  "WELSPECS\n";
 

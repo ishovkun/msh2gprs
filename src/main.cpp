@@ -3,6 +3,9 @@
 #include "transes.hpp"
 #include <Parser.hpp>
 
+#include <experimental/filesystem>
+namespace filesystem = std::experimental::filesystem;
+
 class SimData;
 class CalcTranses;
 class OutputData;
@@ -11,34 +14,53 @@ class tetrahedralize;
 
 int main(int argc, char *argv[])
 {
-  string instream = argv[1];
-  std::cout << "parsing " << instream << std::endl;
+  if (argc < 3)
+  {
+    std::cout << "please specify msh and config files."
+              << std::endl
+              << "Example: "
+              << "msh2gprs domain.msh config.json"
+              << std::endl
+              << "for more information type: msh2gprs --help"
+              << std::endl;
+    return 0;
+  }
+  if (argc > 3)
+  {
+    std::cout << "what the hell did you pass?" << std::endl;
+    return 1;
+  }
+
+  std::string fname_gmsh = argv[1];  // msh file
+  std::string fname_config = argv[2];  // config file
+  return 0;
 
   Parsers::Parser parser;
-  parser.parse_file(instream);
+  std::cout << "parsing " << fname_config << std::endl;
+  parser.parse_file(fname_config);
+  SimdataConfig config = parser.get_config();
 
+  std::string outstream;
+  SimData * pSimData;
+  pSimData = new SimData(fname_gmsh, config);
 
-  // string outstream;
-  // SimData * pSimData;
-  // pSimData = new SimData(instream);
-
-  // cout << "Read setup data" << endl;
-  // pSimData->readSetupValues();
+  cout << "Read setup data" << endl;
+  pSimData->readSetupValues();
 
   // cout << "Reserve boundary conditions" << endl;
   // pSimData->initilizeBoundaryConditions();
 
-  // cout << "Read gmsh data" << endl;
-  // pSimData->readGmshFile();
+  cout << "Read gmsh data" << endl;
+  pSimData->readGmshFile();
 
-  // cout << "Extract all polygons (slow)" << endl;
-  // pSimData->extractInternalFaces();
+  cout << "Extract all polygons (slow)" << endl;
+  pSimData->extractInternalFaces();
 
-  // cout << "Convert GMSH FEM mesh into SIM data" << endl;
-  // pSimData->convertGmsh2Sim();
+  cout << "Convert GMSH FEM mesh into SIM data" << endl;
+  pSimData->convertGmsh2Sim();
 
-  // cout << "Fill 3D rock properties" << endl;
-  // pSimData->defineRockProperties();
+  cout << "Fill 3D rock properties" << endl;
+  pSimData->defineRockProperties();
 
   // cout << "Make SDA properties" << endl;
   // pSimData->defineEmbeddedFractureProperties();
@@ -64,10 +86,11 @@ int main(int argc, char *argv[])
   // // cout << "Split FEM mesh on internal surfaces" << endl;
   // // pSimData->splitInternalFaces();
 
-  // cout << "Write FEM mesh data\n";
-  // OutputData * pOut;
-  // pOut = new OutputData(pSimData);
+  cout << "Write FEM mesh data\n";
+  OutputData * pOut;
+  filesystem::path path_config(fname_config);
+  pOut = new OutputData(pSimData);
 
-  // pOut->writeGeomechDataNewKeywords();
+  pOut->writeGeomechDataNewKeywords(path_config.parent_path().string());
   // pTranses->outputKarimi();
 }

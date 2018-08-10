@@ -13,7 +13,9 @@ const std::size_t EMBEDDED_FRACTURE_CELL = 9999992;
 
 // using Point = angem::Point<3, double>;
 
-SimData::SimData(string inputstream)
+SimData::SimData(string & inputstream, const SimdataConfig & config)
+    :
+    config(config)
 {
   pStdElement = new StandardElements();
 
@@ -80,54 +82,59 @@ SimData::~SimData()
 
 void SimData::initilizeBoundaryConditions()
 {
-  vsPhysicalBoundary.resize(6);
-  // X
-  vsPhysicalBoundary[0].ntype = 1;
-  vsPhysicalBoundary[0].nmark = -1111111;  //left
-  vsPhysicalBoundary[0].vCondition.push_back(0.0);
-  vsPhysicalBoundary[0].vCondition.push_back(dNotNumber);
-  vsPhysicalBoundary[0].vCondition.push_back(dNotNumber);
+  // vsPhysicalBoundary.resize(6);
+  // for (const auto & bc : config.bcs)
+  //   if ( vsCellCustom[icell].nmark == bc.label ) // Regular cells
+  //   {
+  //     // vsPhysicalBoundary[0].ntype = 1;
+  //   }
+  // // X
+  // vsPhysicalBoundary[0].ntype = 1;
+  // vsPhysicalBoundary[0].nmark = -1111111;  //left
+  // vsPhysicalBoundary[0].vCondition.push_back(0.0);
+  // vsPhysicalBoundary[0].vCondition.push_back(dNotNumber);
+  // vsPhysicalBoundary[0].vCondition.push_back(dNotNumber);
 
-  vsPhysicalBoundary[1].ntype = 2;
-  vsPhysicalBoundary[1].nmark = -1111112;  //right
-  vsPhysicalBoundary[1].vCondition.push_back(700.0);  // *1e5 (bar)
+  // vsPhysicalBoundary[1].ntype = 2;
+  // vsPhysicalBoundary[1].nmark = -1111112;  //right
+  // vsPhysicalBoundary[1].vCondition.push_back(700.0);  // *1e5 (bar)
 
-  // Y
-  // Back
-  vsPhysicalBoundary[2].nmark = -2222221;  //back (extruded)
-  // neumann
-  vsPhysicalBoundary[2].ntype = 2;
-  vsPhysicalBoundary[2].vCondition.push_back(0.0);
-  // dirichlet
-  // vsPhysicalBoundary[2].ntype = 1;
-  // vsPhysicalBoundary[2].vCondition.push_back(dNotNumber);
+  // // Y
+  // // Back
+  // vsPhysicalBoundary[2].nmark = -2222221;  //back (extruded)
+  // // neumann
+  // vsPhysicalBoundary[2].ntype = 2;
   // vsPhysicalBoundary[2].vCondition.push_back(0.0);
-  // vsPhysicalBoundary[2].vCondition.push_back(dNotNumber);
+  // // dirichlet
+  // // vsPhysicalBoundary[2].ntype = 1;
+  // // vsPhysicalBoundary[2].vCondition.push_back(dNotNumber);
+  // // vsPhysicalBoundary[2].vCondition.push_back(0.0);
+  // // vsPhysicalBoundary[2].vCondition.push_back(dNotNumber);
 
-  // Front
-  vsPhysicalBoundary[3].nmark = -2222222;  //front(origin)
-  vsPhysicalBoundary[3].ntype = 1;
-  vsPhysicalBoundary[3].vCondition.push_back(dNotNumber);
-  vsPhysicalBoundary[3].vCondition.push_back(0.0);
-  vsPhysicalBoundary[3].vCondition.push_back(dNotNumber);
-
-  // neumann
-  // vsPhysicalBoundary[3].ntype = 2;
+  // // Front
+  // vsPhysicalBoundary[3].nmark = -2222222;  //front(origin)
+  // vsPhysicalBoundary[3].ntype = 1;
+  // vsPhysicalBoundary[3].vCondition.push_back(dNotNumber);
   // vsPhysicalBoundary[3].vCondition.push_back(0.0);
+  // vsPhysicalBoundary[3].vCondition.push_back(dNotNumber);
 
-  // Z
-  vsPhysicalBoundary[4].ntype = 1;
-  vsPhysicalBoundary[4].nmark = -3333331;  //top
+  // // neumann
+  // // vsPhysicalBoundary[3].ntype = 2;
+  // // vsPhysicalBoundary[3].vCondition.push_back(0.0);
+
+  // // Z
+  // vsPhysicalBoundary[4].ntype = 1;
+  // vsPhysicalBoundary[4].nmark = -3333331;  //top
+  // // vsPhysicalBoundary[4].vCondition.push_back(0.0);
+  // vsPhysicalBoundary[4].vCondition.push_back(dNotNumber);
+  // vsPhysicalBoundary[4].vCondition.push_back(dNotNumber);
   // vsPhysicalBoundary[4].vCondition.push_back(0.0);
-  vsPhysicalBoundary[4].vCondition.push_back(dNotNumber);
-  vsPhysicalBoundary[4].vCondition.push_back(dNotNumber);
-  vsPhysicalBoundary[4].vCondition.push_back(0.0);
 
-  vsPhysicalBoundary[5].ntype = 1;
-  vsPhysicalBoundary[5].nmark = -3333332; //bottom
-  vsPhysicalBoundary[5].vCondition.push_back(dNotNumber);
-  vsPhysicalBoundary[5].vCondition.push_back(dNotNumber);
-  vsPhysicalBoundary[5].vCondition.push_back(0.0);
+  // vsPhysicalBoundary[5].ntype = 1;
+  // vsPhysicalBoundary[5].nmark = -3333332; //bottom
+  // vsPhysicalBoundary[5].vCondition.push_back(dNotNumber);
+  // vsPhysicalBoundary[5].vCondition.push_back(dNotNumber);
+  // vsPhysicalBoundary[5].vCondition.push_back(0.0);
 }
 
 
@@ -233,166 +240,32 @@ void SimData::defineRockProperties()
 
   for ( int icell = 0; icell < nCells; icell++ )
   {
-    vsCellRockProps[icell].zmf.assign ( 5,0.0 );
-    vsCellRockProps[icell].stress.assign ( 6,0.0 );
-    vsCellRockProps[icell].biot_plas = 0.0;
 
-    vsCellRockProps[icell].poron = 0; // permability calculation k=k0*pow(phi/phi_o,poron)
-    vsCellRockProps[icell].model = 0; // Model type 0 - Elasticity, 1 - Drucker Prager (see Manual)
+    for (const auto & domain : config.domains)
+        if ( vsCellCustom[icell].nMarker == domain.label ) // Regular cells
+        {
+          vsCellRockProps[icell].model = domain.model;
+          vsCellRockProps[icell].biot = domain.biot;
+          vsCellRockProps[icell].biot_flow = 1;
+          vsCellRockProps[icell].poro = domain.porosity;
+          vsCellRockProps[icell].perm = domain.permeability; //mD
+          vsCellRockProps[icell].perm_x = domain.permeability;
+          vsCellRockProps[icell].perm_y = domain.permeability;
+          vsCellRockProps[icell].perm_z = domain.permeability;
+          vsCellRockProps[icell].density = domain.density;
+          vsCellRockProps[icell].poisson = domain.poisson_ratio;
+          vsCellRockProps[icell].young = domain.young_modulus;
+          vsCellRockProps[icell].thermal_expansion = domain.thermal_expansion;
+          vsCellRockProps[icell].pore_thermal_expansion = 0;
+          vsCellRockProps[icell].heat_capacity = domain.heat_capacity;
+          // vsCellRockProps[icell].temp = 473.15 + 40.* (fabs(vsCellCustom[icell].center[2]) - 3000.) / 1000;
+          vsCellRockProps[icell].temp = domain.temperature;
+          vsCellRockProps[icell].pressure = domain.pressure;
+          vsCellRockProps[icell].ref_pres = domain.ref_pressure;
+          vsCellRockProps[icell].ref_temp = domain.ref_temperature;
 
-    vsCellRockProps[icell].poro = 0.2;  // porosity
-    vsCellRockProps[icell].perm = 1e-12;
+        }
 
-    vsCellRockProps[icell].density = ( 2450.0 - ( vsCellRockProps[icell].poro * 1099.0 * 1.0)) / (1-vsCellRockProps[icell].poro);  // matrix rock density (kg/m3) = (bulk density - (porosity * water_density * water_saturation)) / (1-porosity)
-    vsCellRockProps[icell].heat_capacity = 942 * 1e-3 *vsCellRockProps[icell].density; // rock heat capacity (same units as for liquids )
-    vsCellRockProps[icell].thc = 216;            // rock thermal conductivity (same units as for liquids )
-    vsCellRockProps[icell].thc_x = vsCellRockProps[icell].thc;
-    vsCellRockProps[icell].thc_y = vsCellRockProps[icell].thc_x;
-    vsCellRockProps[icell].thc_z = vsCellRockProps[icell].thc_x;
-
-    vsCellRockProps[icell].thermal_expansion = .0;
-    vsCellRockProps[icell].pore_thermal_expansion = 3.0 * vsCellRockProps[icell].thermal_expansion * ( vsCellRockProps[icell].biot - vsCellRockProps[icell].poro );
-
-    vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
-    vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
-    vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm;
-
-    vsCellRockProps[icell].biot = 0.0;
-    vsCellRockProps[icell].biot_flow = 0.0;
-    vsCellRockProps[icell].young = 1.0; // *e10 Pa [default: 5.0]
-    vsCellRockProps[icell].poisson = 0.25; //[default: 0.3]
-    vsCellRockProps[icell].cohesion = 7e6; // 7e6 - Plasticity cohesion *e10 Pa [default: 1e10]
-    vsCellRockProps[icell].friction = 13;  // 13 -Plasticity friction angle < 90 [default: 0]
-    vsCellRockProps[icell].dilation = 0;  // Plasticity dilation angle < 90
-
-    vsCellRockProps[icell].temp = 373.15;
-    vsCellRockProps[icell].pressure = 500;
-
-    vsCellRockProps[icell].volmult = 1.0;
-    vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
-    vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
-
-    // vsCellRockProps[icell].stress[0] = - 0.16 * fabs(vsCellCustom[icell].center[2]);
-    // vsCellRockProps[icell].stress[1] = - 0.171 * fabs(vsCellCustom[icell].center[2]);
-    // vsCellRockProps[icell].stress[2] = - 0.214 * fabs(vsCellCustom[icell].center[2]);
-    vsCellRockProps[icell].stress[0] = Sxx;
-    vsCellRockProps[icell].stress[1] = Syy;
-    vsCellRockProps[icell].stress[2] = Szz;
-    vsCellRockProps[icell].stress[3] = Syz;
-    vsCellRockProps[icell].stress[4] = Sxz;
-    vsCellRockProps[icell].stress[5] = Sxy;
-
-    vsCellRockProps[icell].zmf[0] = 4.542e-05;
-    vsCellRockProps[icell].zmf[1] = 0.0005442;
-    vsCellRockProps[icell].zmf[2] = 0.003342;
-    vsCellRockProps[icell].zmf[3] = 0.0008709;
-    vsCellRockProps[icell].zmf[4] = 1.0 - vsCellRockProps[icell].zmf[ 0] - vsCellRockProps[icell].zmf[ 1] - vsCellRockProps[icell].zmf[ 2] - vsCellRockProps[icell].zmf[ 3];
-
-    if ( vsCellCustom[icell].nMarker == 9999991 ) // Regular cells
-    {
-      // Linear thermal expansion (matrix) 8.0e-6 1/K
-      // Thermal conductivity 3.5 W/m/K
-      vsCellRockProps[icell].model = 0;
-      vsCellRockProps[icell].biot = 1;
-      vsCellRockProps[icell].biot_flow = 1;
-
-      vsCellRockProps[icell].poro = 0.01;
-      vsCellRockProps[icell].perm = 1e-5; //mD
-      vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].density = 2500.0;
-      vsCellRockProps[icell].poisson = 0.25;
-      vsCellRockProps[icell].young = 1.0;
-
-      vsCellRockProps[icell].thermal_expansion = 8.0e-6;
-      vsCellRockProps[icell].pore_thermal_expansion = 3.0 * vsCellRockProps[icell].thermal_expansion * ( vsCellRockProps[icell].biot - vsCellRockProps[icell].poro );
-      vsCellRockProps[icell].heat_capacity = 790. * 1e-3 *vsCellRockProps[icell].density;
-
-      vsCellRockProps[icell].temp = 473.15 + 40.* (fabs(vsCellCustom[icell].center[2]) - 3000.) / 1000;
-      vsCellRockProps[icell].pressure = 340.0;
-      vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
-      vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
-    }
-    else if ( vsCellCustom[icell].nMarker == EMBEDDED_FRACTURE_CELL ) // SDA cells
-    {
-      vsCellRockProps[icell].model = 3;
-      vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm / 10.0;
-      vsCellRockProps[icell].density = 2700.0;
-
-      vsCellRockProps[icell].biot = 1; // [default:0.8]
-      vsCellRockProps[icell].biot_flow = 1; //[default:0.8]
-      vsCellRockProps[icell].young = 1.0;
-      vsCellRockProps[icell].poisson = 0.25;
-
-      vsCellRockProps[icell].temp = 343.15;
-      vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1166; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
-      vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
-      vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
-    }
-    else if ( vsCellCustom[icell].nMarker == 9999993 ) // Caprocks
-    {
-      vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm / 10.0;
-      vsCellRockProps[icell].density = 2450.0;
-
-      vsCellRockProps[icell].biot = 1; // [default:0.8]
-      vsCellRockProps[icell].biot_flow = 1; //[default:0.8]
-      vsCellRockProps[icell].young = 1.0;
-      vsCellRockProps[icell].poisson = 0.25;
-
-      vsCellRockProps[icell].temp = 343.15;
-      vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
-      vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
-      vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
-	}
-    else // Overburden Blocks
-    {
-      vsCellRockProps[icell].density = 2172.0;  // rock density kg/m3 [default: 2250.0]
-      vsCellRockProps[icell].perm_x = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_y = vsCellRockProps[icell].perm;
-      vsCellRockProps[icell].perm_z = vsCellRockProps[icell].perm / 10.0;
-
-      vsCellRockProps[icell].biot = 1; //[default:0.8]
-      vsCellRockProps[icell].biot_flow = 1; //[default:0.8]
-      vsCellRockProps[icell].young = 1.0;
-      vsCellRockProps[icell].poisson = 0.25;
-
-      vsCellRockProps[icell].temp = 343.15;
-      vsCellRockProps[icell].pressure = 1.01325 + fabs(vsCellCustom[icell].center[2]) * 0.1; // [default: 1.0 + fabs(vsCellCustom[icell].center[2]) * 0.1;]
-      vsCellRockProps[icell].ref_pres = vsCellRockProps[icell].pressure;
-      vsCellRockProps[icell].ref_temp = vsCellRockProps[icell].temp;
-    }
-
-    //@TODO Groningen fix
-    double x = 0;
-    double dx = 1;
-    double sv = 0;
-    while(x < fabs(vsCellCustom[icell].center[2]))
-    {
-      if(x <= 2780)
-      {
-        sv += dx * 2172 * 9.8 / 1e5;
-      }
-
-      if(x > 2780 && x <= 3045)
-      {
-        sv += dx * 2450 * 9.8 / 1e5;
-      }
-
-      if(x > 3045)
-      {
-        sv += dx * 2700 * 9.8 / 1e5;
-      }
-
-      x = x + dx;
-    }
-    // vsCellRockProps[icell].stress[2] = -sv;
-    // vsCellRockProps[icell].stress[0] = vsCellRockProps[icell].stress[2] * 0.748;
-    // vsCellRockProps[icell].stress[1] = 0.0;//vsCellRockProps[icell].stress[2] * 0.748;
   }
 }
 
@@ -1511,105 +1384,129 @@ void SimData::handleConnections()
 #include <random>
 void SimData::definePhysicalFacets()
 {
-  int nbnd = vsPhysicalBoundary.size();
-
-  nNeumannFaces = 0;
-  nDirichletFaces = 0;
-  nDirichletNodes = 0;
-
-  int nfacets = 0;
-  int nfluid = 0;
-  vsPhysicalFacet.resize(nFaces);
+  std::size_t n_facets = 0;
+  std::size_t n_dirichlet_faces = 0;
+  std::size_t n_neumann_faces = 0;
   for(int iface = 0; iface < nFaces; iface++)
   {
-    if( vsFaceCustom[iface].nMarker < 0)
-    {
-      for(int i = 0; i < nbnd; i++)
-      {
-        if( vsFaceCustom[iface].nMarker == vsPhysicalBoundary[i].nmark)
-        {
-          vsPhysicalFacet[nfacets].nface = nfacets;
-          vsPhysicalFacet[nfacets].ntype = vsPhysicalBoundary[i].ntype;
-          vsPhysicalFacet[nfacets].nmark = vsPhysicalBoundary[i].nmark;
-          vsPhysicalFacet[nfacets].vCondition.resize( vsPhysicalBoundary[i].vCondition.size() );
-          vsPhysicalFacet[nfacets].vCondition = vsPhysicalBoundary[i].vCondition;
-
-          vsPhysicalFacet[nfacets].nfluid = -1;
-          if(vsPhysicalBoundary[i].ntype == 1)
+      if(vsFaceCustom[iface].nMarker < 0)  // probably external face
+        for (const auto & conf : config.bcs)
+          if( vsFaceCustom[iface].nMarker == conf.label)
           {
-            nDirichletFaces++;
-          }
-	  else
-          {
-            nNeumannFaces++;
-	    vsPhysicalFacet[nfacets].vCondition[0] = vsPhysicalBoundary[i].vCondition[0];
-          }
-          nfacets++;
-        }
-      }
-    }
+            vsPhysicalFacet[n_facets].nface = n_facets;
+            vsPhysicalFacet[n_facets].ntype = conf.type;
+            vsPhysicalFacet[n_facets].nmark = conf.label;
+            vsPhysicalFacet[n_facets].condition = conf.value;
 
-    if ( vsFaceCustom[iface].nMarker > 0 && vsFaceCustom[iface].nMarker < 1111110 )
-    {
-      vsPhysicalFacet[nfacets].nface = nfacets;
-      vsPhysicalFacet[nfacets].ntype = 0;
-      vsPhysicalFacet[nfacets].nmark = vsFaceCustom[iface].nMarker;
-      vsPhysicalFacet[nfacets].nfluid = nfluid;
-      nfacets++;
-      nfluid++;
-    }
+            nPhysicalFacets++;
+            if (conf.type == 1)
+              n_dirichlet_faces++;
+            else
+              n_neumann_faces++;
+          }
+
   }
-  nPhysicalFacets = nfacets;
+  nPhysicalFacets = n_facets;
+
+
+  // int nbnd = vsPhysicalBoundary.size();
+  // nNeumannFaces = 0;
+  // nDirichletFaces = 0;
+  // nDirichletNodes = 0;
+
+  // int nfacets = 0;
+  // int nfluid = 0;
+  // vsPhysicalFacet.resize(nFaces);
+  // for(int iface = 0; iface < nFaces; iface++)
+  // {
+  //   if( vsFaceCustom[iface].nMarker < 0)
+  //   {
+  //     for(int i = 0; i < nbnd; i++)
+  //     {
+  //       if( vsFaceCustom[iface].nMarker == vsPhysicalBoundary[i].nmark)
+  //       {
+  //         vsPhysicalFacet[nfacets].nface = nfacets;
+  //         vsPhysicalFacet[nfacets].ntype = vsPhysicalBoundary[i].ntype;
+  //         vsPhysicalFacet[nfacets].nmark = vsPhysicalBoundary[i].nmark;
+  //         vsPhysicalFacet[nfacets].vCondition.resize( vsPhysicalBoundary[i].vCondition.size() );
+  //         vsPhysicalFacet[nfacets].vCondition = vsPhysicalBoundary[i].vCondition;
+
+  //         vsPhysicalFacet[nfacets].nfluid = -1;
+  //         if(vsPhysicalBoundary[i].ntype == 1)
+  //         {
+  //           nDirichletFaces++;
+  //         }
+	//   else
+  //         {
+  //           nNeumannFaces++;
+	//     vsPhysicalFacet[nfacets].vCondition[0] = vsPhysicalBoundary[i].vCondition[0];
+  //         }
+  //         nfacets++;
+  //       }
+  //     }
+  //   }
+
+  //   if ( vsFaceCustom[iface].nMarker > 0 && vsFaceCustom[iface].nMarker < 1111110 )
+  //   {
+  //     vsPhysicalFacet[nfacets].nface = nfacets;
+  //     vsPhysicalFacet[nfacets].ntype = 0;
+  //     vsPhysicalFacet[nfacets].nmark = vsFaceCustom[iface].nMarker;
+  //     vsPhysicalFacet[nfacets].nfluid = nfluid;
+  //     nfacets++;
+  //     nfluid++;
+  //   }
+  // }
 
   //std::default_random_engine generator;
   //std::default_random_engine generator2;
   //std::normal_distribution<double> distribution(100.0, 20.0);
   //std::normal_distribution<double> distribution2(10.0, 2.0); //mD
-  for ( int iface = 0; iface < nFaces; iface++ )
-  {
-    vsFaceCustom[iface].aperture = 2.0e-3; //m
-    vsFaceCustom[iface].conductivity = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15; //mD.m
-    if ( vsFaceCustom[iface].nMarker == 1 )
-    {
-      vsFaceCustom[iface].aperture = 2.0e-3; //m
-      vsFaceCustom[iface].conductivity = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15; //mD.m
-    }
-  }
+  // for ( int iface = 0; iface < nFaces; iface++ )
+  // {
+  //   vsFaceCustom[iface].aperture = 2.0e-3; //m
+  //   vsFaceCustom[iface].conductivity = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15; //mD.m
+  //   if ( vsFaceCustom[iface].nMarker == 1 )
+  //   {
+  //     vsFaceCustom[iface].aperture = 2.0e-3; //m
+  //     vsFaceCustom[iface].conductivity = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15; //mD.m
+  //   }
+  // }
 }
 
 void SimData::defineStressAndDispOnBoundary()
 {
-  PhysicalFace pfFace;
-  int inputBC = vvsBCIn.size();
+  // PhysicalFace pfFace;
+  // int inputBC = vvsBCIn.size();
 
-  vvsBCOut.resize( inputBC );
-  for(int ibnd = 0; ibnd < inputBC; ibnd++)
-  {
-    int nfacets = -1;
-    for ( int iface = 0; iface < nFaces; iface++ )
-    {
-      if ( vsFaceCustom[iface].nMarker != 0 ) nfacets++;
+  // vvsBCOut.resize( inputBC );
+  // for(int ibnd = 0; ibnd < inputBC; ibnd++)
+  // {
+  //   int nfacets = -1;
+  //   for ( int iface = 0; iface < nFaces; iface++ )
+  //   {
+  //     if ( vsFaceCustom[iface].nMarker != 0 ) nfacets++;
 
-      if ( vsFaceCustom[iface].nMarker < 0 )
-      {
-        for(int i = 0; i < vvsBCIn[ibnd].size(); i++ )
-        {
-          if( vsFaceCustom[iface].nMarker == vvsBCIn[ibnd][i].nmark )
-          {
-            pfFace.nface = nfacets;
-            pfFace.ntype = vvsBCIn[ibnd][i].ntype;
-            pfFace.nmark = vvsBCIn[ibnd][i].nmark;
-            pfFace.nfluid = -1;
-            pfFace.axle = vvsBCIn[ibnd][i].axle;
+  //     if ( vsFaceCustom[iface].nMarker < 0 )
+  //     {
+  //       for(int i = 0; i < vvsBCIn[ibnd].size(); i++ )
+  //       {
+  //         if( vsFaceCustom[iface].nMarker == vvsBCIn[ibnd][i].nmark )
+  //         {
+  //           pfFace.nface = nfacets;
+  //           pfFace.ntype = vvsBCIn[ibnd][i].ntype;
+  //           pfFace.nmark = vvsBCIn[ibnd][i].nmark;
+  //           pfFace.nfluid = -1;
+  //           pfFace.axle = vvsBCIn[ibnd][i].axle;
 
-            pfFace.vCondition.clear();
-            pfFace.vCondition.push_back( vvsBCIn[ibnd][i].vCondition[0] );
-            vvsBCOut[ibnd].push_back( pfFace );
-          }
-        }
-      }
-    }
-  }
+  //           pfFace.condition.clear();
+  //           pfFace.vCondition.push_back( vvsBCIn[ibnd][i].vCondition[0] );
+  //           // pfFace.condition[i] =;
+  //           vvsBCOut[ibnd].push_back( pfFace );
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 void SimData::createSimpleWells()

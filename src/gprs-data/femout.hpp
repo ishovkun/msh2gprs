@@ -10,9 +10,9 @@ class OutputData
 public:
    OutputData(SimData * pSimData);
   ~OutputData();
-  
-   void writeGeomechDataNewKeywords();
-  
+
+  void writeGeomechDataNewKeywords(const std::string & output_path);
+
 protected:
   SimData * pSim;
 };

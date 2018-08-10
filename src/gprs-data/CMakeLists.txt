@@ -8,6 +8,7 @@ ADD_LIBRARY(gprs_data
   simdata.hpp
   transes.hpp
   utils.hpp
+  SimdataConfig.hpp
   # IMPLEMENTATION
   element.cpp
   femout.cpp
@@ -21,4 +22,4 @@ SET_TARGET_PROPERTIES (
     PROPERTIES LINKER_LANGUAGE CXX
 )
 
-TARGET_LINK_LIBRARIES(gprs_data angem)
+TARGET_LINK_LIBRARIES(angem)

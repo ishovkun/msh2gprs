@@ -35,6 +35,8 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
     :
     Shape<Scalar>::Shape()
 {
+  assert(length > 0);
+  assert(height > 0);
   // convert to radians
   Scalar rdip    = dip_angle * M_PI / 180.;
   Scalar rstrike = strike_angle * M_PI / 180.;

@@ -1,5 +1,4 @@
-#ifndef __SIMDATA
-#define __SIMDATA
+#pragma once
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +18,7 @@ using namespace std;
 #include "renum.hpp"
 
 #include "Point.hpp"
+#include <SimdataConfig.hpp>
 
 struct GmConstraint
 {
@@ -95,7 +95,8 @@ struct PhysicalFace
   int nmark;
   int axle;
   int nfluid;
-  vector<double> vCondition;
+  // vector<double> vCondition;
+  angem::Point<3,double> condition;
 };
 
 
@@ -126,7 +127,7 @@ struct EmbeddedFracture
 class SimData
 {
 public:
-  SimData(string inputstream);
+  SimData(string & inputstream, const SimdataConfig & config);
   ~SimData();
   void readSetupValues();
   void readTotalData();
@@ -241,6 +242,7 @@ public:
   double Sxx, Syy, Szz, Syz, Sxz, Sxy;
 
 protected:
+  SimdataConfig config;
   StandardElements * pStdElement;
 
   struct tokens: std::ctype<char>
@@ -282,4 +284,3 @@ protected:
   vector<double> vPointCoord;
   vector<vector<double> > vvPlate;
 };
-#endif
