@@ -80,63 +80,6 @@ SimData::~SimData()
 {
 }
 
-void SimData::initilizeBoundaryConditions()
-{
-  // vsPhysicalBoundary.resize(6);
-  // for (const auto & bc : config.bcs)
-  //   if ( vsCellCustom[icell].nmark == bc.label ) // Regular cells
-  //   {
-  //     // vsPhysicalBoundary[0].ntype = 1;
-  //   }
-  // // X
-  // vsPhysicalBoundary[0].ntype = 1;
-  // vsPhysicalBoundary[0].nmark = -1111111;  //left
-  // vsPhysicalBoundary[0].vCondition.push_back(0.0);
-  // vsPhysicalBoundary[0].vCondition.push_back(dNotNumber);
-  // vsPhysicalBoundary[0].vCondition.push_back(dNotNumber);
-
-  // vsPhysicalBoundary[1].ntype = 2;
-  // vsPhysicalBoundary[1].nmark = -1111112;  //right
-  // vsPhysicalBoundary[1].vCondition.push_back(700.0);  // *1e5 (bar)
-
-  // // Y
-  // // Back
-  // vsPhysicalBoundary[2].nmark = -2222221;  //back (extruded)
-  // // neumann
-  // vsPhysicalBoundary[2].ntype = 2;
-  // vsPhysicalBoundary[2].vCondition.push_back(0.0);
-  // // dirichlet
-  // // vsPhysicalBoundary[2].ntype = 1;
-  // // vsPhysicalBoundary[2].vCondition.push_back(dNotNumber);
-  // // vsPhysicalBoundary[2].vCondition.push_back(0.0);
-  // // vsPhysicalBoundary[2].vCondition.push_back(dNotNumber);
-
-  // // Front
-  // vsPhysicalBoundary[3].nmark = -2222222;  //front(origin)
-  // vsPhysicalBoundary[3].ntype = 1;
-  // vsPhysicalBoundary[3].vCondition.push_back(dNotNumber);
-  // vsPhysicalBoundary[3].vCondition.push_back(0.0);
-  // vsPhysicalBoundary[3].vCondition.push_back(dNotNumber);
-
-  // // neumann
-  // // vsPhysicalBoundary[3].ntype = 2;
-  // // vsPhysicalBoundary[3].vCondition.push_back(0.0);
-
-  // // Z
-  // vsPhysicalBoundary[4].ntype = 1;
-  // vsPhysicalBoundary[4].nmark = -3333331;  //top
-  // // vsPhysicalBoundary[4].vCondition.push_back(0.0);
-  // vsPhysicalBoundary[4].vCondition.push_back(dNotNumber);
-  // vsPhysicalBoundary[4].vCondition.push_back(dNotNumber);
-  // vsPhysicalBoundary[4].vCondition.push_back(0.0);
-
-  // vsPhysicalBoundary[5].ntype = 1;
-  // vsPhysicalBoundary[5].nmark = -3333332; //bottom
-  // vsPhysicalBoundary[5].vCondition.push_back(dNotNumber);
-  // vsPhysicalBoundary[5].vCondition.push_back(dNotNumber);
-  // vsPhysicalBoundary[5].vCondition.push_back(0.0);
-}
-
 
 void SimData::defineEmbeddedFractureProperties()
 {
@@ -307,8 +250,6 @@ void SimData::readGmshFile()
       streamline.imbue(std::locale(std::locale(), new tokens()));
       copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
 
-      // for (int j = 1; j < 4; j++)
-      //   vvVrtxCoords[i].push_back( atof(vstrings[j].c_str()) );
       for (int j = 0; j < 3; j++)
         vvVrtxCoords[i][j] = atof(vstrings[j+1].c_str());
     }
