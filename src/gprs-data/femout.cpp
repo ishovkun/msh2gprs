@@ -521,6 +521,8 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   cout << "write all Dirichlet faces\n";
   if(vDisp_x_Idx.size() > 0)
   {
+    std::cout << "gmnode_bdispx" << std::endl << std::flush;
+
     geomechfile << "GMNODE_BCDISPX\n";
     for(int i = 0; i < vDisp_x_Idx.size(); ++i)
     {
@@ -531,6 +533,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   }
   if(vDisp_y_Idx.size() > 0)
   {
+    std::cout << "gmnode_bdispy" << std::endl << std::flush;
     geomechfile << "GMNODE_BCDISPY\n";
     for(int i = 0; i < vDisp_y_Idx.size(); ++i)
     {
@@ -539,6 +542,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     }
     geomechfile << "/\n\n";
   }
+
   if(vDisp_z_Idx.size() > 0)
   {
     geomechfile << "GMNODE_BCDISPZ\n";
@@ -551,83 +555,87 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   }
   geomechfile.close();
 
-  outstring =   output_path + "gm_fractures.txt";
+  // std::cout << "write fracs" << std::endl;
+
+  // outstring =   output_path + "gm_fractures.txt";
+  // geomechfile.open(outstring.c_str());
+  // set<int>::iterator itsetint;
+
+ // int counter = 0;
+ // if (pSim->nInternalBoundaryFaces > 0)
+ // {
+ //    int nFractures_ = 0;
+ //    cout << "write all fractured faces\n";
+
+ //    geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
+ //    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
+ //    {
+ //      for (int i = 0; i < pSim->nPhysicalFacets; i++)
+ //      {
+ //        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
+ //        {
+ //    geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
+ //          geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
+ //          if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
+ //          {
+ //            cout << "Fracture interface # " << nFractures_ << endl;
+ //            cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
+ //            cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
+ //            cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
+ //            exit(0);
+ //          }
+ //        }
+ //      }
+ //    }
+ //    geomechfile << "/" << endl << endl;
+
+ //    nFractures_ = 0;
+ //    geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << endl;
+ //    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
+ //    {
+ //      for (int i = 0; i < pSim->nPhysicalFacets; i++)
+ //      {
+ //        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
+ //    geomechfile << pSim->vsFaceCustom[pSim->vsPhysicalFacet[i].nface].conductivity << endl;
+ //      }
+ //    }
+ //    geomechfile << "/" << endl << endl;
+
+ //    nFractures_ = 0;
+ //    geomechfile << "GMFACE_FRACTURE_REGION\n";
+ //    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
+ //    {
+ //      for (int i = 0; i < pSim->nPhysicalFacets; i++)
+ //      {
+ //        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
+ //        {
+ //    geomechfile << 1 << endl;
+ //        }
+ //      }
+ //    }
+ //    geomechfile << "/" << endl << endl;
+
+ //    nFractures_ = 0;
+ //    geomechfile << "GMFACE_FRACTURE_GROUP\n";
+ //    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
+ //    {
+ //      for (int i = 0; i < pSim->nPhysicalFacets; i++)
+ //      {
+ //        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
+ //        {
+ //    geomechfile << nFractures_ + 1 << endl;
+ //        }
+ //      }
+ //    }
+ //    geomechfile << "/" << endl << endl;
+ //    geomechfile.close();
+ // }
+ // geomechfile.close();
+
+  std::cout << "pressure" << std::endl;
+
+  outstring =   output_path + "fl_pres.txt";
   geomechfile.open(outstring.c_str());
-  set<int>::iterator itsetint;
-
- int counter = 0;
- if (pSim->nInternalBoundaryFaces > 0)
- {
-    int nFractures_ = 0;
-    cout << "write all fractured faces\n";
-
-    geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
-    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
-    {
-      for (int i = 0; i < pSim->nPhysicalFacets; i++)
-      {
-        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-        {
-	  geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-          geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
-          if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
-          {
-            cout << "Fracture interface # " << nFractures_ << endl;
-            cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
-            cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
-            cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
-            exit(0);
-          }
-        }
-      }
-    }
-    geomechfile << "/" << endl << endl;
-
-    nFractures_ = 0;
-    geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << endl;
-    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
-    {
-      for (int i = 0; i < pSim->nPhysicalFacets; i++)
-      {
-        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-	  geomechfile << pSim->vsFaceCustom[pSim->vsPhysicalFacet[i].nface].conductivity << endl;
-      }
-    }
-    geomechfile << "/" << endl << endl;
-
-    nFractures_ = 0;
-    geomechfile << "GMFACE_FRACTURE_REGION\n";
-    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
-    {
-      for (int i = 0; i < pSim->nPhysicalFacets; i++)
-      {
-        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-        {
-	  geomechfile << 1 << endl;
-        }
-      }
-    }
-    geomechfile << "/" << endl << endl;
-
-    nFractures_ = 0;
-    geomechfile << "GMFACE_FRACTURE_GROUP\n";
-    for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
-    {
-      for (int i = 0; i < pSim->nPhysicalFacets; i++)
-      {
-        if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-        {
-	  geomechfile << nFractures_ + 1 << endl;
-        }
-      }
-    }
-    geomechfile << "/" << endl << endl;
-    geomechfile.close();
- }
- geomechfile.close();
-
- outstring =   output_path + "fl_pres.txt";
- geomechfile.open(outstring.c_str());
 
   // fractures first
   geomechfile << "PRESSURE" << endl;
@@ -641,6 +649,8 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile << pSim->vsCellRockProps[ib].pressure << endl;
   geomechfile << "\n/\n\n";
   geomechfile.close();
+
+  std::cout << "temperature" << std::endl;
 
   outstring =   output_path + "fl_temp.txt";
   geomechfile.open(outstring.c_str());
@@ -664,133 +674,35 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   geomechfile << "\n/\n\n";
   geomechfile.close();
 
-  outstring =   output_path + "fl_zmf.txt";
- geomechfile.open(outstring.c_str());
-
-  geomechfile << "ZMF\n";
-  for ( int k = 0; k < 5; ++k )
-  {
-    for ( int iface = 0; iface < pSim->nFaces; iface++ )
-    {
-      // internal suface
-      if ( pSim->vsFaceCustom[iface].nMarker > 0 )
-      {
-        int n1_ = pSim->vsFaceCustom[iface].vNeighbors[0];
-        int n2_ = pSim->vsFaceCustom[iface].vNeighbors[1];
-        geomechfile << min ( pSim->vsCellRockProps[n1_].zmf[k], pSim->vsCellRockProps[n2_].zmf[k] ) << endl;
-      }
-    }
-
-    for(int ib = 0; ib < pSim->nCells; ++ib)
-      geomechfile << pSim->vsCellRockProps[ib].zmf[k] << endl;
-  }
-
-  geomechfile << "\n/\n\n";
-  geomechfile.close();
+  // std::cout << "zmf" << std::endl;
 
 
-#if 0
-  outstring =   output_path + "gm_fracprops.txt";
-  geomechfile.open ( outstring.c_str() );
+  // outstring =   output_path + "fl_zmf.txt";
+  // geomechfile.open(outstring.c_str());
 
-  geomechfile <<  "GMCONTACT_THERMAL_EXPANSION" << endl;
-  geomechfile <<  0.0 << endl;
-  geomechfile << "/" << endl << endl;
-  vector<double> a_;
-  vector<double> b_;
-  vector<double> c_;
-  vector<double> d_;
-  vector<double> e_;
-  vector<double> f_;
+  // geomechfile << "ZMF\n";
+  // for ( int k = 0; k < 5; ++k )
+  // {
+  //   for ( int iface = 0; iface < pSim->nFaces; iface++ )
+  //   {
+  //     // internal suface
+  //     if ( pSim->vsFaceCustom[iface].nMarker > 0 )
+  //     {
+  //       int n1_ = pSim->vsFaceCustom[iface].vNeighbors[0];
+  //       int n2_ = pSim->vsFaceCustom[iface].vNeighbors[1];
+  //       geomechfile << min ( pSim->vsCellRockProps[n1_].zmf[k], pSim->vsCellRockProps[n2_].zmf[k] ) << endl;
+  //     }
+  //   }
 
-  // Default Tengiz values
-  a_.push_back(-5e-4); b_.push_back(0);
-  a_.push_back(-5e-5); b_.push_back(0);
-  a_.push_back(-5e-6); b_.push_back(0);
-  a_.push_back(0.0); b_.push_back(0.0);
-  for(unsigned int i = 4; i < 13; i++)
-  {
-    a_.push_back(0); b_.push_back(b_[i-1] + 25);
-  }
-  for(unsigned int i = 13; i < 20; i++)
-  {
-    a_.push_back(0); b_.push_back(b_[i-1] + 50);
-  }
+  //   for(int ib = 0; ib < pSim->nCells; ++ib)
+  //     geomechfile << pSim->vsCellRockProps[ib].zmf[k] << endl;
+  // }
 
-  c_.assign(b_.size(),0);
-  for(unsigned int i = 0; i < b_.size(); i++)
-    c_[i] = b_[i] * 0.6 + 100.0;
+  // geomechfile << "\n/\n\n";
+  // geomechfile.close();
 
-  d_.assign(b_.size(),0);
-  e_.assign(b_.size(),0);
-  f_.assign(b_.size(),0);
-  for(unsigned int i = 3; i < 20; i++)
-  {
-   d_[i] = 7.5 / (1.0 + exp(1.5e-2*(b_[i]+10))) + 1;
-   e_[i] = d_[i];
-   f_[i] = 4.0 / (1.0 + exp(1.0e-2 * b_[i]))+0.81;
-  }
-  for(unsigned int i = 0; i < 3; i++)
-  {
-   d_[i] = d_[3] - 1e15 * a_[i] * a_[i] * a_[i] / 12./10.; //10 is a reference conductivity
-   e_[i] = d_[i];
-   f_[i] = f_[3] - a_[i] / 5e-3; //1e-3 is a refernce aperture
-  }
-  // Default Tengiz values
 
-  geomechfile << "GMCONTACT_SLIP_RAMP" << endl;
-  geomechfile << 5e-4 << "\t" << 1e-3 << "\t" << 1.0 << "\t" << 1.0 << endl;
-  geomechfile << "/" << endl << endl;
-
-  int conductivity_table = 1;
-  if (conductivity_table < 0 )
-  {
-    for(unsigned int i = 3; i < 20; i++)
-     d_[i] = 150 / (1.0 + exp(2.1e-2*(b_[i]+90))) + 1;
-    for(unsigned int i = 0; i < 3; i++)
-     d_[i] = d_[3] - 1e15 * a_[i] * a_[i] * a_[i] / 12./10.; //10 is a reference conductivity
-    for(unsigned int i = 0; i < 20; i++)
-     e_[i] = d_[i];
-  }
-  else if (conductivity_table == 0 )
-  {
-     d_.assign(d_.size(),1);
-     e_.assign(d_.size(),1);
-  }
-  else
-  {
-    double c = double(conductivity_table);
-    double a = (c - 0.9999*c) / (b_[3] - b_[b_.size()-1]);
-    double b = c - a * b_[3];
-    e_.assign(d_.size(),0);
-    for(unsigned int i = 3; i < e_.size(); i++)
-      e_[i] = (a * b_[i] + b) * d_[i];
-
-    for(unsigned int i = 0; i < 3; i++)
-    {
-      d_[i] = d_[3] + fabs(a_[i] * a_[i] * a_[i]) / 12.0 / 1e-15 / 10.;
-      e_[i] = e_[3] + fabs(a_[i] * a_[i] * a_[i]) / 12.0 / 1e-15 / 10.;
-    }
-  }
-
-  int volume_table = 0;
-  if (volume_table < 1 )
-     f_.assign(d_.size(),1);
-
-  double slip_coefficient = 0.6;
-  geomechfile <<  "GMCONTACT_NORMAL_PROPS" << endl;
-  for ( int i = 0; i < a_.size(); ++i )
-  {
-    geomechfile << a_[i] << "\t";
-    geomechfile << b_[i] << "\t";
-    geomechfile << b_[i] * slip_coefficient << "\t";
-    geomechfile << d_[i] << "\t";
-    geomechfile << e_[i] << "\t";
-    geomechfile << f_[i] << endl;
-  }
-  geomechfile << "/" << endl << endl;
-  geomechfile.close();
-#endif
+  std::cout << "saturations" << std::endl;
 
   outstring =   output_path + "fl_satnum.txt";
     geomechfile.open(outstring.c_str());

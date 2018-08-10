@@ -39,6 +39,10 @@ class Plane
   const Point<3,Scalar> & normal() const {return basis(2);}
   Basis<3,Scalar> & get_basis() {return basis;}
 
+  // compute strike angle (degrees) from normal
+  Scalar strike_angle() const;
+  // compute dip angle (degrees) from normal
+  Scalar dip_angle() const;
 
   // get point projection on the plane (in global coordinates)
   Point<3,Scalar> project(const Point<3,Scalar> & p) const;
@@ -259,4 +263,27 @@ Plane<Scalar>::move(const Point<3,Scalar> & p)
   compute_algebraic_coeff();
 }
 
+
+template <typename Scalar>
+Scalar
+Plane<Scalar>::dip_angle() const
+{
+  Scalar rdip = static_cast<Scalar>(acos(basis(2)[2]));
+  return 180. * rdip / M_PI;
+}
+
+
+template <typename Scalar>
+Scalar
+Plane<Scalar>::strike_angle() const
+{
+  Scalar rdip = static_cast<Scalar>(acos(basis(2)[2]));
+  Scalar rstrike_from_cos = acos( basis(2)[0] / sin(rdip) ) - M_PI / 2.;
+  Scalar rstrike_from_sin = acos( basis(2)[1] / sin(rdip) ) - M_PI / 2.;
+  Scalar strike = 180. * rstrike_from_cos / M_PI;
+  if (rstrike_from_sin > 0)
+    return fabs(strike);
+
+  return strike;
+}
 }  // end namespace

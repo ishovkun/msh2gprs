@@ -1,5 +1,5 @@
 #pragma once
-#include <Shape.hpp>
+#include <Polygon.hpp>
 
 struct DomainConfig
 {
@@ -28,10 +28,18 @@ struct BCConfig
   const double nan = -999.999;
 };
 
+struct EmbeddedFractureConfig
+{
+  angem::Polygon<double> body;  // embedded fractures
+  double cohesion = 0;
+  double friction_angle = 30;
+  double dilation_angle = 0;
+};
+
 
 struct SimdataConfig
 {
-  std::vector<angem::Shape<double>> fractures;
+  std::vector<EmbeddedFractureConfig> fractures;  // embedded fractures
   std::vector<DomainConfig> domains;
   std::vector<BCConfig> bcs;
 };

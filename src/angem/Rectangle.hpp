@@ -1,12 +1,11 @@
 #pragma once
-#include "Shape.hpp"
-#include "Plane.hpp"
+#include <Polygon.hpp>
 
 namespace angem
 {
 
 template<typename Scalar>
-class Rectangle: public Shape<Scalar>
+class Rectangle: public Polygon<Scalar>
 {
 public:
 	Rectangle(Point<3,Scalar> center,
@@ -14,12 +13,6 @@ public:
             Scalar          height,
             Scalar          dip_angle,
             Scalar          strike_angle);
-
-  // shift all points in direction p
-  void move(const Point<3,Scalar> & p);
-
-  // Attributes
-  Plane<Scalar> plane;
 
  protected:
   std::vector<Point<3,Scalar>> v_points;
@@ -33,7 +26,7 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
                              Scalar          dip_angle,
                              Scalar          strike_angle)
     :
-    Shape<Scalar>::Shape()
+    Polygon<Scalar>::Polygon()
 {
   assert(length > 0);
   assert(height > 0);
@@ -62,24 +55,6 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
   v_points.back() = center + 0.5*length*t1 + 0.5*height*t2;
 
   this->set_data(v_points);
-
-  // for (const auto & c: v_points)
-  //   std::cout << c << std::endl;
-
-  plane.set_data(center, v_points[1], v_points[2]);
-}
-
-
-template<typename Scalar>
-void
-Rectangle<Scalar>::move(const Point<3,Scalar> & p)
-{
-  // std::cout << "moving fracture: ";
-  // std::cout << v_points[0] << " -> ";
-  Shape<Scalar>::move(p);
-  // std::cout << v_points[0];
-  // std::cout << std::endl;
-  plane.move(p);
 }
 
 } // end angem

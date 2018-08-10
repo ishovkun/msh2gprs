@@ -15,7 +15,7 @@ class Shape
     Shape(std::vector<Point<3,Scalar>> & point_list);
     Shape(std::vector<Point<3,Scalar> *> & points_list);
     // setter
-    void set_data(std::vector<Point<3,Scalar>> & point_list);
+    virtual void set_data(std::vector<Point<3,Scalar>> & point_list);
     // getter
     std::vector<Point<3,Scalar> *> & get_points();
     // check if empty
@@ -23,7 +23,7 @@ class Shape
     // support function for gjk collision algorithm
     virtual Point<3,Scalar> support(Point<3, Scalar> & direction) const;
     // shift all points in direction p
-    void move(const Point<3,Scalar> & p);
+    virtual void move(const Point<3,Scalar> & p);
 
    protected:
     std::vector<Point<3,Scalar> *> points;

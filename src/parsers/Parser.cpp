@@ -99,10 +99,15 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
 
   for (;frac_it != frac_end; ++frac_it)
   {
+
+    config.fractures.emplace_back();
+    auto & frac = config.fractures.back();
+
     if ((*frac_it)["type"] != "Rectangle")
     {
       std::cout << "Shape "<< (*frac_it)["type"]
                 <<" not implemented: skipping" << std::endl;
+      config.fractures.pop_back();
       continue;
     }
 
@@ -110,8 +115,8 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
         attrib_it = (*frac_it).begin(),
         attrib_end = (*frac_it).end();
 
-    double height = 0;
-    double length = 0;
+    double height = 1;  // for rectangles and ellipses
+    double length = 1;  // for rectangles and ellipses
     double dip = 0;
     double strike = 0;
     angem::Point<3,double> center;
@@ -128,13 +133,21 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
         strike = (*attrib_it).get<double>();
       else if (key == "center")
         center = (*attrib_it).get<std::vector<double>>();
+      else if (key == "cohesion")
+        frac.cohesion = (*attrib_it).get<double>();
+      else if (key == "friction angle")
+        frac.friction_angle = (*attrib_it).get<double>();
+      else if (key == "dilation angle")
+        frac.dilation_angle = (*attrib_it).get<double>();
+      else if (key == "_comment_")
+        continue;
       else
         std::cout << "attribute " << key
                   << " unknown: skipping" << std::endl;
     }
 
-    config.fractures.push_back
-        (angem::Rectangle<double>(center, length, height, dip, strike));
+    frac.body = angem::Rectangle<double>(center, length,
+                                         height, dip, strike);
   }
 
 }
@@ -183,6 +196,8 @@ Parser::boundary_conditions_json(const nlohmann::json::iterator & section_it)
         }
 
       }
+      else if (key == "_comment_")
+        continue;
       else
         std::cout << "attribute " << key << " unknown: skipping" << std::endl;
     }

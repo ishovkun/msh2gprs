@@ -33,7 +33,6 @@ int main(int argc, char *argv[])
 
   std::string fname_gmsh = argv[1];  // msh file
   std::string fname_config = argv[2];  // config file
-  return 0;
 
   Parsers::Parser parser;
   std::cout << "parsing " << fname_config << std::endl;
@@ -62,26 +61,26 @@ int main(int argc, char *argv[])
   cout << "Fill 3D rock properties" << endl;
   pSimData->defineRockProperties();
 
-  // cout << "Make SDA properties" << endl;
-  // pSimData->defineEmbeddedFractureProperties();
+  cout << "Make SDA properties" << endl;
+  pSimData->defineEmbeddedFractureProperties();
 
-  // cout << "Create physical facets" << endl;
-  // cout << " ( bnd & frac faces )" << endl;
-  // pSimData->definePhysicalFacets();
+  cout << "Create physical facets" << endl;
+  cout << " ( bnd & frac faces )" << endl;
+  pSimData->definePhysicalFacets();
 
-  // cout << "Create bc stress & disp" << endl;
-  // pSimData->defineStressAndDispOnBoundary();
+  cout << "Create bc stress & disp" << endl;
+  pSimData->defineStressAndDispOnBoundary();
 
-  // cout << endl << "Convert FEM mesh into FVM mesh" << endl;
-  // pSimData->handleConnections();
-  // CalcTranses * pTranses;
-  // pTranses = new CalcTranses(pSimData);
-  // pTranses->createKarimiData();
-  // cout << "Extract  transes from FVM mesh" << endl;
-  // pTranses->createKarimiApproximation();
+  cout << endl << "Convert FEM mesh into FVM mesh" << endl;
+  pSimData->handleConnections();
+  CalcTranses * pTranses;
+  pTranses = new CalcTranses(pSimData);
+  pTranses->createKarimiData();
+  cout << "Extract  transes from FVM mesh" << endl;
+  pTranses->createKarimiApproximation();
 
-  // cout << "Create simple wells" << endl;
-  // pSimData->createSimpleWells();
+  cout << "Create simple wells" << endl;
+  pSimData->createSimpleWells();
 
   // // cout << "Split FEM mesh on internal surfaces" << endl;
   // // pSimData->splitInternalFaces();
@@ -91,6 +90,7 @@ int main(int argc, char *argv[])
   filesystem::path path_config(fname_config);
   pOut = new OutputData(pSimData);
 
-  pOut->writeGeomechDataNewKeywords(path_config.parent_path().string());
+  std::cout << path_config.parent_path().string() << std::endl;
+  pOut->writeGeomechDataNewKeywords(path_config.parent_path().string() + "/");
   // pTranses->outputKarimi();
 }

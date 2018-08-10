@@ -8,7 +8,10 @@
             "length":  6,
             "height":  6,
             "dip":     90,
-            "strike":  45
+            "strike":  45,
+            "cohesion": 0,
+            "friction angle": 30,
+            "dilation angle": 30
         },
         "1":
         {
