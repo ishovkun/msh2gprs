@@ -156,15 +156,15 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
 void
 Parser::boundary_conditions_json(const nlohmann::json::iterator & section_it)
 {
-  config.bcs.emplace_back();
-  auto & conf = config.bcs.back();
-
   nlohmann::json::iterator
       bc_it = (*section_it).begin(),
       bc_end = (*section_it).end();
 
   for (;bc_it != bc_end; ++bc_it)
   {
+    config.bcs.emplace_back();
+    auto & conf = config.bcs.back();
+
     // std::cout << *bc_it << std::endl;
     conf.label = std::atoi(bc_it.key().c_str());
 
@@ -176,13 +176,7 @@ Parser::boundary_conditions_json(const nlohmann::json::iterator & section_it)
     {
       const auto key = attrib_it.key();
       if (key == "type")
-      {
-        const auto & bc_type = (*attrib_it).get<std::string>();
-        if(bc_type == "dirichlet")
-          conf.type = 1;
-        else if (bc_type == "neumann")
-          conf.type = 2;
-      }
+        conf.type  = (*attrib_it).get<int>();
       else if (key == "value")
       {
         const std::vector<std::string> str_values =

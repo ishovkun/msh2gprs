@@ -1373,36 +1373,41 @@ void SimData::handleConnections()
 void SimData::definePhysicalFacets()
 {
   std::size_t n_facets = 0;
-  std::size_t n_dirichlet_faces = 0;
-  std::size_t n_neumann_faces = 0;
+  nNeumannFaces = 0;
+  nDirichletFaces = 0;
+  nDirichletNodes = 0;
 
   vsPhysicalFacet.resize(nFaces);
   for (int iface = 0; iface < nFaces; iface++)
   {
     if(vsFaceCustom[iface].nMarker < 0)  // probably external face
       for (const auto & conf : config.bcs)
+      {
+        // std::cout << "key = "<< conf.label << std::endl;
+
         if( vsFaceCustom[iface].nMarker == conf.label)
         {
           vsPhysicalFacet[n_facets].nface = n_facets;
           vsPhysicalFacet[n_facets].ntype = conf.type;
           vsPhysicalFacet[n_facets].nmark = conf.label;
           vsPhysicalFacet[n_facets].condition = conf.value;
+          // std::cout << "doing something boundary "
+          //           << conf.label
+          //           << std::endl;
 
-          nPhysicalFacets++;
+          n_facets++;
           if (conf.type == 1)
-            n_dirichlet_faces++;
+            nDirichletFaces++;
           else
-            n_neumann_faces++;
+            nNeumannFaces++;
         }
+      }
   }
 
   nPhysicalFacets = n_facets;
 
 
   // int nbnd = vsPhysicalBoundary.size();
-  // nNeumannFaces = 0;
-  // nDirichletFaces = 0;
-  // nDirichletNodes = 0;
 
   // int nfacets = 0;
   // int nfluid = 0;

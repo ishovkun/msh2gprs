@@ -385,48 +385,19 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   {
     cout << "write all Neumann faces\n";
 
-    bool is_ = false;
-    for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
-    {
-      if ( pSim->vsPhysicalFacet[i].ntype == 2 )
-        is_= true;
-    }
-    if ( is_ )
-    {
-      // geomechfile << "GMFACE_TRACTION_N" << endl;
-      // for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
-      // {
-      //   if ( pSim->vsPhysicalFacet[i].ntype == 2 )
-      //   {
-      //     geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-      //     geomechfile << pSim->vsPhysicalFacet[i].vCondition[0] << endl;
-      //   }
-      // }
-    }
-
-    is_ = false;
-    for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
-    {
-      if ( pSim->vsPhysicalFacet[i].ntype == 22 )
-        is_= true;
-    }
-    if ( is_ )
-    {
-      geomechfile << "GMFACE_TRACTION_TXYZ" << endl;
-      for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
+    geomechfile << "GMFACE_TRACTION_TXYZ" << endl;
+    for ( std::size_t i = 0; i < pSim->nPhysicalFacets; i++ )
+      if (pSim->vsPhysicalFacet[i].ntype == 2)
       {
-        if ( pSim->vsPhysicalFacet[i].ntype == 22)
-        {
-          geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-          geomechfile << pSim->vsPhysicalFacet[i].condition << "\t";
-        }
+        geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
+        geomechfile << pSim->vsPhysicalFacet[i].condition << endl;
       }
-    }
+
     geomechfile << "/\n\n";
   }
 
 
-
+  // Dirichlet faces
   // @HACK SUPPORT POINTS
   std::set<int>::iterator it;
   std::pair<std::set<int>::iterator,bool> ret;
@@ -454,13 +425,13 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
           int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
           for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
           {
-	    ret = setDisp.insert(pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx]);
-	    if(ret.second == true)
-	    {
-	      int vertex_ = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
-	      vDisp_x_Idx.push_back(vertex_);
-	      vDisp_x_Val.push_back(0.0);
-	    }
+            ret = setDisp.insert(pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx]);
+            if(ret.second == true)
+            {
+              int vertex_ = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
+              vDisp_x_Idx.push_back(vertex_);
+              vDisp_x_Val.push_back(0.0);
+            }
           }
         }
       }

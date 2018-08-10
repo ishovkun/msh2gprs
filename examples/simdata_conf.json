@@ -73,31 +73,31 @@
         "-1111111" :
         {
             "_comment_": "Left",
-            "type" : "dirichlet",
+            "type" : 1,
             "value" : ["0", "nan", "nan"]
         },
         "-2222221" :
         {
             "_comment_": "back",
-            "type" : "neumann",
-            "value": ["nan", "0", "nan"]
+            "type" : 2,
+            "value": ["0", "0", "0"]
         },
         "-2222222" :
         {
             "_comment_": "front",
-            "type" : "dirichelt",
+            "type" : 1,
             "value": ["nan", "0", "nan"]
         },
         "-3333331" :
         {
             "_comment_": "top",
-            "type" : "dirichlet",
+            "type" : 1,
             "value": ["nan", "nan", "0"]
         },
         "-3333332" :
         {
             "_comment_": "bottom",
-            "type" : "dirichelt",
+            "type" : 1,
             "value": ["nan", "nan", "0"]
         }
     }

@@ -46,9 +46,6 @@ int main(int argc, char *argv[])
   cout << "Read setup data" << endl;
   pSimData->readSetupValues();
 
-  // cout << "Reserve boundary conditions" << endl;
-  // pSimData->initilizeBoundaryConditions();
-
   cout << "Read gmsh data" << endl;
   pSimData->readGmshFile();
 
