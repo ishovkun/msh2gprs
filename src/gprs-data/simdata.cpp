@@ -5,6 +5,7 @@
 // #include "GJK_Algorithm.hpp"
 #include "Rectangle.hpp"
 #include "CollisionGJK.hpp"
+#include <muParser.h>
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -138,13 +139,6 @@ void SimData::defineEmbeddedFractureProperties()
       continue;
     }
 
-    //   std::cout << "final set:" << std::endl;
-    //   for (const auto & cell : sda_cells)
-    //   {
-    //     std::cout << "sda cell " << cell << ": ";
-    //     std::cout << vsCellCustom[cell].center << std::endl;
-    //   }
-
     // fill out properties
     vsEmbeddedFractures[ef_ind].points.assign(n_efrac_cells,
                                               frac_conf.body.center());
@@ -160,50 +154,97 @@ void SimData::defineEmbeddedFractureProperties()
     ef_ind++;
   }  // end efracs loop
 
-
 }
-
 
 
 void SimData::defineRockProperties()
 {
-  vsCellRockProps.resize ( nCells );
-
-  for ( int icell = 0; icell < nCells; icell++ )
+  // print header
+  std::cout << "function parsers setup" << std::endl;
+  std::cout << "Variables:" << std::endl;
+  for (std::size_t i=0; i<config.all_vars.size(); ++i)
   {
+    std::cout << config.all_vars[i] << "\t";
+    if ((i+1)%10 == 0)
+      std::cout << std::endl;
+  }
+  std::cout << std::endl;
 
-    for (const auto & domain : config.domains)
-        if ( vsCellCustom[icell].nMarker == domain.label ) // Regular cells
+  // resize rock properties
+  vsCellRockProps.resize(nCells);
+
+  const std::size_t n_variables = config.all_vars.size();
+  std::vector<double> vars(n_variables);
+
+  // loop various domain configs:
+  // they may have different number of variables and expressions
+  for (const auto & conf: config.domains)
+  {
+    const std::size_t n_expressions = conf.expressions.size();
+    std::vector<mu::Parser> parsers(n_expressions);
+
+    // assign expressions and variables
+    for (std::size_t i=0; i<n_expressions; ++i)
+    {
+      for (std::size_t j=0; j<n_variables; ++j)
+      {
+        try {
+          parsers[i].DefineVar(config.all_vars[j], &vars[j]);
+        }
+        catch(mu::Parser::exception_type & e)
         {
-          vsCellRockProps[icell].model = domain.model;
-          vsCellRockProps[icell].biot = domain.biot;
-          vsCellRockProps[icell].biot_flow = 1;
-          vsCellRockProps[icell].poro = domain.porosity;
-          vsCellRockProps[icell].perm = domain.permeability; //mD
-          vsCellRockProps[icell].perm_x = domain.permeability;
-          vsCellRockProps[icell].perm_y = domain.permeability;
-          vsCellRockProps[icell].perm_z = domain.permeability;
-          vsCellRockProps[icell].density = domain.density;
-          vsCellRockProps[icell].poisson = domain.poisson_ratio;
-          vsCellRockProps[icell].young = domain.young_modulus;
-          vsCellRockProps[icell].thermal_expansion = domain.thermal_expansion;
-          vsCellRockProps[icell].pore_thermal_expansion = 0;
-          vsCellRockProps[icell].heat_capacity = domain.heat_capacity;
-          // vsCellRockProps[icell].temp = 473.15 + 40.* (fabs(vsCellCustom[icell].center[2]) - 3000.) / 1000;
-          vsCellRockProps[icell].temp = domain.temperature;
-          vsCellRockProps[icell].pressure = domain.pressure;
-          vsCellRockProps[icell].ref_pres = domain.ref_pressure;
-          vsCellRockProps[icell].ref_temp = domain.ref_temperature;
-
+          std::cout << _T("Initialization error:  ") << e.GetMsg() << endl;
+          std::cout << "when setting variable '"
+                    << config.all_vars[j]
+                    << "'" << std::endl;
         }
 
-  }
+      }
+      try {
+        parsers[i].SetExpr(conf.expressions[i]);
+      }
+      catch(mu::Parser::exception_type & e)
+      {
+        std::cout << _T("Initialization error:  ") << e.GetMsg() << endl;
+        std::cout << "when setting expression '"
+                  << conf.expressions[i]
+                  << "'" << std::endl;
+      }
+    }
+
+    // loop cells and evaluate expressions
+    for ( int icell = 0; icell < nCells; icell++ )
+      if ( vsCellCustom[icell].nMarker == conf.label ) // Regular cells
+      {
+        std::fill(vars.begin(), vars.end(), 0);
+        vars[0] = vsCellCustom[icell].center(0);
+        vars[1] = vsCellCustom[icell].center(1);
+        vars[2] = vsCellCustom[icell].center(2);
+
+        // Evaluate expression -> write into variable
+        for (std::size_t i=0; i<n_expressions; ++i)
+          vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
+
+        // copy vars to cell properties
+        vsCellRockProps[icell].v_props.resize(n_variables);
+        for (std::size_t j=0; j<n_variables; ++j)
+        {
+          try
+          {
+            vsCellRockProps[icell].v_props[j] =
+                vars[conf.global_to_local_vars.at(j)];
+          }
+          catch (std::out_of_range & e)
+          {
+            vsCellRockProps[icell].v_props[j] = 0;
+          }
+        }
+      }  // cell loop
+
+  }  // end domain loop
+
 }
 
-
-void SimData::readSetupValues()
-{
-}
 
 void SimData::readGmshFile()
 {

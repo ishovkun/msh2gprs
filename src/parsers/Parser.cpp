@@ -45,9 +45,9 @@ Parser::parse_json(const std::string & fname)
        section_it != jparser.end(); ++section_it)
   {
       std::cout << "Entering section " << section_it.key() << '\n';
-      // std::cout << "   " <<  *((*section_it).begin()) << std::endl;
-    if (section_it.key() == "Rock Properties")
-      rock_props_json(section_it);
+
+    if (section_it.key() == "Domain Properties")
+      domain_props_json(section_it);
     else if (section_it.key() == "Embedded Fractures")
       embedded_fracs_json(section_it);
     else if (section_it.key() == "Boundary conditions")
@@ -59,7 +59,7 @@ Parser::parse_json(const std::string & fname)
 
 
 void
-Parser::rock_props_json(const nlohmann::json::iterator & section_it)
+Parser::domain_props_json(const nlohmann::json::iterator & section_it)
 {
   nlohmann::json::iterator
       domain_it = (*section_it).begin(),
@@ -68,27 +68,63 @@ Parser::rock_props_json(const nlohmann::json::iterator & section_it)
   // iterate domains
   for (;domain_it != domain_end; ++domain_it)
   {
+    if (domain_it.key() == comment)
+      continue;
+    if (domain_it.key() == "file")
+    {
+      config.domain_file = (*domain_it).get<std::string>();
+      continue;
+    }
+
     // define local config
     config.domains.emplace_back();
     auto & conf = config.domains.back();
 
     // set props
     conf.label             = std::atoi(domain_it.key().c_str());
-    conf.model             = (*domain_it)["model"].get<int>();
-    conf.biot              = (*domain_it)["biot"].get<double>();
-    conf.porosity          = (*domain_it)["porosity"].get<double>();
-    conf.permeability      = (*domain_it)["permeability"].get<double>();
-    conf.density           = (*domain_it)["density"].get<double>();
-    conf.young_modulus     = (*domain_it)["young modulus"].get<double>();
-    conf.poisson_ratio     = (*domain_it)["poisson ratio"].get<double>();
-    conf.thermal_expansion = (*domain_it)["thermal expansion"].get<double>();
-    conf.heat_capacity     = (*domain_it)["heat capacity"].get<double>();
-    conf.temperature       = (*domain_it)["temperature"].get<double>();
-    conf.pressure          = (*domain_it)["pressure"].get<double>();
-    conf.ref_temperature   = (*domain_it)["reference temperature"].get<double>();
-    conf.ref_pressure      = (*domain_it)["reference pressure"].get<double>();
+    std::cout << "Reading domain " << conf.label << std::endl;
+
+    nlohmann::json::iterator
+        attrib_it = (*domain_it).begin(),
+        attrib_end = (*domain_it).end();
+
+    std::size_t exp_counter = 0;
+    for (;attrib_it != attrib_end; ++attrib_it)
+    {
+      const std::pair<std::string, std::string> key_value =
+          get_pair_json((*attrib_it).begin());
+
+      if (key_value.first == comment)
+        continue;
+      else if (key_value.first == "model")
+        conf.model = std::atoi(key_value.second.c_str());
+      else
+      {
+        std::cout << "reading expression " << key_value.first << std::endl;
+        // save property name and expression
+        conf.variables.push_back(key_value.first);
+        conf.expressions.push_back(key_value.second);
+        // check if in global list and append if so
+        const std::size_t ind = find(key_value.first, config.all_vars);
+        if (ind == config.all_vars.size())
+          config.all_vars.push_back(key_value.first);
+        // save positions in the global list
+        conf.local_to_global_vars[exp_counter] = ind;
+        conf.global_to_local_vars[ind] = exp_counter;
+        exp_counter++;
+      }
+
+    }
  }
 }
+
+
+std::pair<std::string,std::string>
+Parser::get_pair_json(const nlohmann::json::iterator & pair_it)
+{
+  return std::make_pair(pair_it.key(), (*pair_it).get<std::string>());
+}
+
 
 void
 Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
@@ -99,6 +135,13 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
 
   for (;frac_it != frac_end; ++frac_it)
   {
+    if (frac_it.key() == comment)
+      continue;
+    if (frac_it.key() == "file")
+    {
+      config.efrac_file = (*frac_it).get<std::string>();
+      continue;
+    }
 
     config.fractures.emplace_back();
     auto & frac = config.fractures.back();
@@ -139,7 +182,7 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
         frac.friction_angle = (*attrib_it).get<double>();
       else if (key == "dilation angle")
         frac.dilation_angle = (*attrib_it).get<double>();
-      else if (key == "_comment_")
+      else if (key == comment)
         continue;
       else
         std::cout << "attribute " << key
@@ -162,6 +205,14 @@ Parser::boundary_conditions_json(const nlohmann::json::iterator & section_it)
 
   for (;bc_it != bc_end; ++bc_it)
   {
+    if (bc_it.key() == comment)
+      continue;
+    if (bc_it.key() == "file")
+    {
+      config.bcond_file = (*bc_it).get<std::string>();
+      continue;
+    }
+
     config.bcs.emplace_back();
     auto & conf = config.bcs.back();
 
@@ -190,7 +241,7 @@ Parser::boundary_conditions_json(const nlohmann::json::iterator & section_it)
         }
 
       }
-      else if (key == "_comment_")
+      else if (key == comment)
         continue;
       else
         std::cout << "attribute " << key << " unknown: skipping" << std::endl;

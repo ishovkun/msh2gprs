@@ -43,9 +43,6 @@ int main(int argc, char *argv[])
   SimData * pSimData;
   pSimData = new SimData(fname_gmsh, config);
 
-  cout << "Read setup data" << endl;
-  pSimData->readSetupValues();
-
   cout << "Read gmsh data" << endl;
   pSimData->readGmshFile();
 
@@ -79,15 +76,14 @@ int main(int argc, char *argv[])
   cout << "Create simple wells" << endl;
   pSimData->createSimpleWells();
 
-  // // cout << "Split FEM mesh on internal surfaces" << endl;
-  // // pSimData->splitInternalFaces();
+  cout << "Split FEM mesh on internal surfaces" << endl;
+  pSimData->splitInternalFaces();
 
   cout << "Write FEM mesh data\n";
   OutputData * pOut;
   filesystem::path path_config(fname_config);
   pOut = new OutputData(pSimData);
 
-  std::cout << path_config.parent_path().string() << std::endl;
   pOut->writeGeomechDataNewKeywords(path_config.parent_path().string() + "/");
   // pTranses->outputKarimi();
 }

@@ -1,14 +1,16 @@
 #pragma once
 #include <Polygon.hpp>
-#include <muParser.h>
 
 struct DomainConfig
 {
   int model;
   int label;
-  mu::Parser function_parser;
   std::vector<std::string> expressions;
-  // std::map<std::string, >
+  std::vector<std::string> variables;
+  // map expressions to variables
+  std::map<int,int> local_to_global_vars;
+  std::map<int,int> global_to_local_vars;
+
   double biot;
   double porosity;
   double permeability;
@@ -46,4 +48,20 @@ struct SimdataConfig
   std::vector<EmbeddedFractureConfig> fractures;  // embedded fractures
   std::vector<DomainConfig> domains;
   std::vector<BCConfig> bcs;
+  // all variables used for function parsing
+  std::vector<std::string> all_vars = {"x", "y", "z"};
+  // output file names
+  std::string domain_file = "domain.txt";
+  std::string efrac_file = "efrac.txt";
+  std::string bcond_file = "bcond.txt";
+};
+
+
+template<typename T>
+std::size_t find(const T & item, const std::vector<T> & vec)
+{
+  for (std::size_t i=0; i<vec.size(); ++i)
+    if (vec[i] == item)
+      return i;
+  return vec.size();
 };

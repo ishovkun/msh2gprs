@@ -170,122 +170,139 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile << pSim->vsCellRockProps[ib].model << endl;
   }
   geomechfile << "/" << endl << endl;
- geomechfile.close();
-
- outstring =   output_path + "gm_capacity.txt";
- geomechfile.open(outstring.c_str());
-  geomechfile << "GMCELL_HEAT_CAPACITY" << endl;
-  for(int ib = 0; ib < pSim->nCells; ++ib)
-  {
-    geomechfile << pSim->vsCellRockProps[ib].heat_capacity << endl;
-  }
-  geomechfile << "/" << endl << endl;
- geomechfile.close();
-
- outstring =   output_path + "gm_density.txt";
- geomechfile.open(outstring.c_str());
-
-  geomechfile << "GMCELL_DENSITY\n";
-  int j = 0;
-  for ( int i = 0; i < pSim->nCells; i++, j++ )
-  {
-    geomechfile << pSim->vsCellRockProps[i].density << "\t";
-    if( j == 10 )
-    {
-      j = 0;
-      geomechfile << endl;
-    }
-  }
-  geomechfile << "\n/\n\n";
   geomechfile.close();
 
-  outstring =   output_path + "gm_biot.txt";
-  geomechfile.open(outstring.c_str());
-  geomechfile << "GMCELL_BIOT\n";
-  j = 0;
-  for ( int i = 0; i < pSim->nCells; i++, j++ )
-  {
-    geomechfile << pSim->vsCellRockProps[i].biot << "\t";
-    if( j == 10 )
-    {
-      j = 0;
-      geomechfile << endl;
-    }
-  }
-  geomechfile << "\n/\n\n";
+  {  // write domain properties
+    outstring =   output_path + pSim->config.domain_file;
+    geomechfile.open(outstring.c_str());
+    geomechfile.close();
 
-  geomechfile << "GMCELL_BIOT_FLOW\n";
-  j = 0;
-  for ( int i = 0; i < pSim->nCells; i++, j++ )
-  {
-    geomechfile << pSim->vsCellRockProps[i].biot_flow << "\t";
-    if( j == 10 )
+    for (std::size_t ivar=0; ivar<pSim->config.all_vars.size(); ++ivar)
     {
-      j = 0;
-      geomechfile << endl;
+      geomechfile << pSim->config.all_vars[ivar] << std::endl;
+      for (std::size_t icell=0; icell<pSim->nCells; ++icell)
+      {
+        geomechfile << pSim->vsCellRockProps[icell].v_props[ivar] << "\t";
+        if ((icell+1)%10 == 0)
+          std::cout << std::endl;
+      }
+      geomechfile << std::endl << "/" << std::endl;
     }
-  }
-  geomechfile << "\n/\n\n";
-  geomechfile.close();
 
-  outstring =   output_path + "gm_elastic.txt";
-  geomechfile.open(outstring.c_str());
-  geomechfile << "GMCELL_YOUNG\n";
-  j = 0;
-  for ( int i = 0; i < pSim->nCells; i++, j++ )
-  {
-    geomechfile << pSim->vsCellRockProps[i].young << "\t";
-    if( j == 10 )
-    {
-      j = 0;
-      geomechfile << endl;
-    }
+    geomechfile.close();
   }
-  geomechfile << "\n/\n\n";
+  //  geomechfile << "GMCELL_HEAT_CAPACITY" << endl;
+ //  for(int ib = 0; ib < pSim->nCells; ++ib)
+ //  {
+ //    geomechfile << pSim->vsCellRockProps[ib].heat_capacity << endl;
+ //  }
+ //  geomechfile << "/" << endl << endl;
+ // geomechfile.close();
 
- geomechfile << "GMCELL_POISSON\n";
-  j = 0;
-  for ( int i = 0; i < pSim->nCells; i++, j++ )
-  {
-    geomechfile << pSim->vsCellRockProps[i].poisson << "\t";
-    if( j == 8)
-    {
-      j = 0;
-      geomechfile << endl;
-    }
-  }
-  geomechfile << "\n/\n\n";
-  geomechfile.close();
+ // outstring =   output_path + "gm_density.txt";
+ // geomechfile.open(outstring.c_str());
 
-  outstring =   output_path + "gm_thermal.txt";
-  geomechfile.open(outstring.c_str());
+ //  geomechfile << "GMCELL_DENSITY\n";
+ //  int j = 0;
+ //  for ( int i = 0; i < pSim->nCells; i++, j++ )
+ //  {
+ //    geomechfile << pSim->vsCellRockProps[i].density << "\t";
+ //    if( j == 10 )
+ //    {
+ //      j = 0;
+ //      geomechfile << endl;
+ //    }
+ //  }
+ //  geomechfile << "\n/\n\n";
+ //  geomechfile.close();
 
- geomechfile << "GMCELL_THERMAL_EXPANSION\n";
-  j = 0;
-  for ( int i = 0; i < pSim->nCells; i++, j++ )
-  {
-    geomechfile << pSim->vsCellRockProps[i].thermal_expansion  << "\t";
-    if( j == 10 )
-    {
-      j = 0;
-      geomechfile << endl;
-    }
-  }
-  geomechfile << "\n/\n\n";
+  // outstring =   output_path + "gm_biot.txt";
+  // geomechfile.open(outstring.c_str());
+  // geomechfile << "GMCELL_BIOT\n";
+  // j = 0;
+  // for ( int i = 0; i < pSim->nCells; i++, j++ )
+  // {
+  //   geomechfile << pSim->vsCellRockProps[i].biot << "\t";
+  //   if( j == 10 )
+  //   {
+  //     j = 0;
+  //     geomechfile << endl;
+  //   }
+  // }
+  // geomechfile << "\n/\n\n";
 
- geomechfile << "GMCELL_PORE_THERMAL_EXPANSION\n";
-  j = 0;
-  for ( int i = 0; i < pSim->nCells; i++, j++ )
-  {
-   geomechfile << 3.0 * pSim->vsCellRockProps[i].thermal_expansion * (pSim->vsCellRockProps[i].biot - pSim->vsCellRockProps[i].poro) << "\t";
-   if( j == 10 )
-    {
-      j = 0;
-      geomechfile << endl;
-    }
-  }
-  geomechfile << "\n/\n\n";
-  geomechfile.close();
+  // geomechfile << "GMCELL_BIOT_FLOW\n";
+  // j = 0;
+  // for ( int i = 0; i < pSim->nCells; i++, j++ )
+  // {
+  //   geomechfile << pSim->vsCellRockProps[i].biot_flow << "\t";
+  //   if( j == 10 )
+  //   {
+  //     j = 0;
+  //     geomechfile << endl;
+  //   }
+  // }
+  // geomechfile << "\n/\n\n";
+  // geomechfile.close();
+
+  // outstring =   output_path + "gm_elastic.txt";
+  // geomechfile.open(outstring.c_str());
+  // geomechfile << "GMCELL_YOUNG\n";
+  // j = 0;
+  // for ( int i = 0; i < pSim->nCells; i++, j++ )
+  // {
+  //   geomechfile << pSim->vsCellRockProps[i].young << "\t";
+  //   if( j == 10 )
+  //   {
+  //     j = 0;
+  //     geomechfile << endl;
+  //   }
+  // }
+  // geomechfile << "\n/\n\n";
+
+ // geomechfile << "GMCELL_POISSON\n";
+ //  j = 0;
+ //  for ( int i = 0; i < pSim->nCells; i++, j++ )
+ //  {
+ //    geomechfile << pSim->vsCellRockProps[i].poisson << "\t";
+ //    if( j == 8)
+ //    {
+ //      j = 0;
+ //      geomechfile << endl;
+ //    }
+ //  }
+ //  geomechfile << "\n/\n\n";
+ //  geomechfile.close();
+
+ //  outstring =   output_path + "gm_thermal.txt";
+ //  geomechfile.open(outstring.c_str());
+
+ // geomechfile << "GMCELL_THERMAL_EXPANSION\n";
+ //  j = 0;
+ //  for ( int i = 0; i < pSim->nCells; i++, j++ )
+ //  {
+ //    geomechfile << pSim->vsCellRockProps[i].thermal_expansion  << "\t";
+ //    if( j == 10 )
+ //    {
+ //      j = 0;
+ //      geomechfile << endl;
+ //    }
+ //  }
+ //  geomechfile << "\n/\n\n";
+
+ // geomechfile << "GMCELL_PORE_THERMAL_EXPANSION\n";
+ //  j = 0;
+ //  for ( int i = 0; i < pSim->nCells; i++, j++ )
+ //  {
+ //   geomechfile << 3.0 * pSim->vsCellRockProps[i].thermal_expansion * (pSim->vsCellRockProps[i].biot - pSim->vsCellRockProps[i].poro) << "\t";
+ //   if( j == 10 )
+ //    {
+ //      j = 0;
+ //      geomechfile << endl;
+ //    }
+ //  }
+ //  geomechfile << "\n/\n\n";
+ //  geomechfile.close();
 
   {  // Strong discontinuity
     std::cout  << "Writing SDA props" << std::endl;
@@ -358,25 +375,25 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile.close();
   }
 
-  outstring =   output_path + "gm_reference.txt";
-  geomechfile.open(outstring.c_str());
+  // outstring =   output_path + "gm_reference.txt";
+  // geomechfile.open(outstring.c_str());
 
-  geomechfile << "GMREF_TEMPERATURE" << endl;
-  for(int ib = 0; ib < pSim->nCells; ++ib)
-  {
-    geomechfile << pSim->vsCellRockProps[ib].ref_temp << endl;
-  }
-  geomechfile << "/" << endl << endl;
+  // geomechfile << "GMREF_TEMPERATURE" << endl;
+  // for(int ib = 0; ib < pSim->nCells; ++ib)
+  // {
+  //   geomechfile << pSim->vsCellRockProps[ib].ref_temp << endl;
+  // }
+  // geomechfile << "/" << endl << endl;
 
-  geomechfile << "GMREF_PRESSURE" << endl;
-  for(int ib = 0; ib < pSim->nCells; ++ib)
-  {
-    geomechfile << pSim->vsCellRockProps[ib].ref_pres << endl;
-  }
-  geomechfile << "/" << endl << endl;
+  // geomechfile << "GMREF_PRESSURE" << endl;
+  // for(int ib = 0; ib < pSim->nCells; ++ib)
+  // {
+  //   geomechfile << pSim->vsCellRockProps[ib].ref_pres << endl;
+  // }
+  // geomechfile << "/" << endl << endl;
 
-  geomechfile << "/" << endl << endl;
-  geomechfile.close();
+  // geomechfile << "/" << endl << endl;
+  // geomechfile.close();
 
   outstring =   output_path + "gm_bcond.txt";
   geomechfile.open(outstring.c_str());

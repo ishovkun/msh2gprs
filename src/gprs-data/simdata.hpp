@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <map>
 
 #include <algorithm>
 #include <cmath>
@@ -32,6 +33,7 @@ struct GmConstraint
 struct RockProps
 {
   int model;
+  std::vector<double> v_props;
   double poro;
   double perm, perm_x, perm_y, perm_z;
   double thc, thc_x, thc_y, thc_z;
@@ -124,12 +126,14 @@ struct EmbeddedFracture
 };
 
 
+
+
 class SimData
 {
 public:
   SimData(string & inputstream, const SimdataConfig & config);
   ~SimData();
-  void readSetupValues();
+  // void readSetupValues();
   void readTotalData();
   void readTotalTemp();
 
@@ -241,9 +245,12 @@ public:
 
   double Sxx, Syy, Szz, Syz, Sxz, Sxy;
 
-protected:
   SimdataConfig config;
+
+
+protected:
   StandardElements * pStdElement;
+  void computePropertyMaps();
 
   struct tokens: std::ctype<char>
   {
