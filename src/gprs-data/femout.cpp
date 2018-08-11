@@ -183,73 +183,64 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile.close();
   }
 
-  {  // Strong discontinuity
+  // Strong discontinuity
+  if (pSim->vsEmbeddedFractures.size() > 0)
+  {
     std::cout  << "Writing SDA props" << std::endl;
     outstring =   output_path + "gm_SDA.txt";
     geomechfile.open(outstring.c_str());
 
-    std::size_t ef_ind = 0;
-    const auto & efrac = pSim->vsEmbeddedFractures[ef_ind];
-    const std::size_t n_sda = efrac.cells.size();
-
-    { // cells
-      geomechfile << "GM_EFRAC_CELLS\n";
-      geomechfile << n_sda << std::endl;
-
-      for (std::size_t i=0; i<n_sda; ++i)
+    geomechfile << "GM_EFRAC_CELLS\n";
+    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    {
+      geomechfile << efrac.cells.size() << std::endl << "\t";
+      for (std::size_t i=0; i<efrac.cells.size(); ++i)
       {
         geomechfile << efrac.cells[i] + 1 << "\t";
         if ((i+1)%10 == 0)
           geomechfile << std::endl;
       }
-      geomechfile << "/" << std::endl << std::endl;
     }
-    { // points
-      const std::size_t dim = 3;
-      geomechfile << "GM_EFRAC_POINTS" << std::endl;
-      for (std::size_t i=0; i<n_sda; ++i)
-      {
-        for (std::size_t j=0; j<dim; ++j)
-          geomechfile << efrac.points[i](j) << "\t";
-        geomechfile << std::endl;
-      }
-      geomechfile << "/" << std::endl << std::endl;
-    }
-    { // Dip
-      geomechfile << "GM_EFRAC_DIP" << std::endl;
-      for (std::size_t i=0; i<n_sda; ++i)
+    geomechfile << "/" << std::endl << std::endl;
+
+    geomechfile << "GM_EFRAC_POINTS" << std::endl;
+    for (const auto & efrac : pSim->vsEmbeddedFractures)
+      for (std::size_t i=0; i<efrac.points.size(); ++i)
+          geomechfile << efrac.points[i] << std::endl;
+    geomechfile << "/" << std::endl << std::endl;
+
+    geomechfile << "GM_EFRAC_DIP" << std::endl;
+    for (const auto & efrac : pSim->vsEmbeddedFractures)
+      for (std::size_t i=0; i<efrac.points.size(); ++i)
       {
         geomechfile << efrac.dip[i] << "\t";
-        if ((i+1)%10 == 0)
-          geomechfile << std::endl;
+        if ((i+1)%10 == 0) geomechfile << std::endl;
       }
-      geomechfile << "/" << std::endl << std::endl;
-    }
-    { // Strike
-      geomechfile << "GM_EFRAC_STRIKE" << std::endl;
-      for (std::size_t i=0; i<n_sda; ++i)
+    geomechfile << "/" << std::endl << std::endl;
+
+    geomechfile << "GM_EFRAC_STRIKE" << std::endl;
+    for (const auto & efrac : pSim->vsEmbeddedFractures)
+      for (std::size_t i=0; i<efrac.points.size(); ++i)
       {
         geomechfile << efrac.strike[i] << "\t";
-        if ((i+1)%10 == 0)
-          geomechfile << std::endl;
+        if ((i+1)%10 == 0) geomechfile << std::endl;
       }
-      geomechfile << "/" << std::endl << std::endl;
-    }
-    {// cohesion
-      geomechfile << "GM_EFRAC_COHESION" << std::endl;
+    geomechfile << "/" << std::endl << std::endl;
+
+    geomechfile << "GM_EFRAC_COHESION" << std::endl;
+    for (const auto & efrac : pSim->vsEmbeddedFractures)
       geomechfile << efrac.cohesion << std::endl;
-      geomechfile << "/" << std::endl << std::endl;
-    }
-    {// friction
-      geomechfile << "GM_EFRAC_FRICTION" << std::endl;
+    geomechfile << "/" << std::endl << std::endl;
+
+    geomechfile << "GM_EFRAC_FRICTION" << std::endl;
+    for (const auto & efrac : pSim->vsEmbeddedFractures)
       geomechfile << efrac.friction_angle << std::endl;
-      geomechfile << "/" << std::endl << std::endl;
-    }
-    {// dilation
-      geomechfile << "GM_EFRAC_DILATION" << std::endl;
+    geomechfile << "/" << std::endl << std::endl;
+
+    geomechfile << "GM_EFRAC_DILATION" << std::endl;
+    for (const auto & efrac : pSim->vsEmbeddedFractures)
       geomechfile << efrac.dilation_angle << std::endl;
-      geomechfile << "/" << std::endl << std::endl;
-    }
+    geomechfile << "/" << std::endl << std::endl;
 
     geomechfile.close();
   }

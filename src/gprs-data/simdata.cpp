@@ -10,8 +10,6 @@
 #define SPECIAL_CELL = 999
 #include <algorithm>
 
-const std::size_t EMBEDDED_FRACTURE_CELL = 9999992;
-
 using Point = angem::Point<3, double>;
 
 SimData::SimData(const string & inputstream, const SimdataConfig & config)
@@ -133,6 +131,10 @@ void SimData::defineEmbeddedFractureProperties()
     }    // end cell loop
     std::cout << "Total shift = " << total_shift << std::endl;
     const std::size_t n_efrac_cells = frac.cells.size();
+    std::cout << "fracture " << ef_ind
+              << " occupies " << n_efrac_cells
+              << " cells"
+              << std::endl;
     if (n_efrac_cells == 0)
     {
       vsEmbeddedFractures.pop_back();
@@ -140,6 +142,8 @@ void SimData::defineEmbeddedFractureProperties()
     }
 
     // fill out properties
+    std::cout << "n_efrac_cells = " << n_efrac_cells << std::endl;
+
     vsEmbeddedFractures[ef_ind].points.assign(n_efrac_cells,
                                               frac_conf.body.center());
     vsEmbeddedFractures[ef_ind].dip.assign(n_efrac_cells,
@@ -153,6 +157,9 @@ void SimData::defineEmbeddedFractureProperties()
 
     ef_ind++;
   }  // end efracs loop
+
+  // std::cout << vsEmbeddedFractures.size() << std::endl;
+  // abort();
 
 }
 
@@ -1384,9 +1391,6 @@ void SimData::definePhysicalFacets()
           vsPhysicalFacet[n_facets].ntype = conf.type;
           vsPhysicalFacet[n_facets].nmark = conf.label;
           vsPhysicalFacet[n_facets].condition = conf.value;
-          if (conf.type == 1)
-            std::cout << "bc value"<< conf.value << std::endl;
-
           n_facets++;
           if (conf.type == 1)
             nDirichletFaces++;
