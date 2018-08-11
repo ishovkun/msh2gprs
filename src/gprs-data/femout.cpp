@@ -331,40 +331,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       geomechfile << "/" << std::endl << std::endl;
     }
 
-  // if(vDisp_x_Idx.size() > 0)
-  // {
-  //   std::cout << "gmnode_bdispx" << std::endl << std::flush;
-
-  //   geomechfile << "GMNODE_BCDISPX\n";
-  //   for(int i = 0; i < vDisp_x_Idx.size(); ++i)
-  //   {
-  //     geomechfile <<  vDisp_x_Idx[i] + 1 << "\t";
-  //     geomechfile << vDisp_x_Val[i] << endl;
-  //   }
-  //   geomechfile << "/\n\n";
-  // }
-  // if(vDisp_y_Idx.size() > 0)
-  // {
-  //   std::cout << "gmnode_bdispy" << std::endl << std::flush;
-  //   geomechfile << "GMNODE_BCDISPY\n";
-  //   for(int i = 0; i < vDisp_y_Idx.size(); ++i)
-  //   {
-  //     geomechfile <<  vDisp_y_Idx[i] + 1 << "\t";
-  //     geomechfile << vDisp_y_Val[i] << endl;
-  //   }
-  //   geomechfile << "/\n\n";
-  // }
-
-  // if(vDisp_z_Idx.size() > 0)
-  // {
-  //   geomechfile << "GMNODE_BCDISPZ\n";
-  //   for(int i = 0; i < vDisp_z_Idx.size(); ++i)
-  //   {
-  //     geomechfile <<  vDisp_z_Idx[i] + 1 << "\t";
-  //     geomechfile << vDisp_z_Val[i] << endl;
-  //   }
-  //   geomechfile << "/\n\n";
-  // }
   geomechfile.close();
 
   // std::cout << "write fracs" << std::endl;
@@ -444,50 +410,50 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
  // }
  // geomechfile.close();
 
-  std::cout << "pressure" << std::endl;
+  // std::cout << "pressure" << std::endl;
 
-  outstring =   output_path + "fl_pres.txt";
-  geomechfile.open(outstring.c_str());
+  // outstring =   output_path + "fl_pres.txt";
+  // geomechfile.open(outstring.c_str());
 
-  // fractures first
-  geomechfile << "PRESSURE" << endl;
-  for(int iface = 0; iface < pSim->nFaces; iface++)
-  {
-    if( pSim->vsFaceCustom[iface].nMarker > 0)
-      geomechfile << (pSim->vsCellRockProps[pSim->vsFaceCustom[iface].vNeighbors[0]].pressure + pSim->vsCellRockProps[pSim->vsFaceCustom[iface].vNeighbors[1]].pressure) / 2.0 << endl;
-  }
-  // matrix
-  for(int ib = 0; ib < pSim->nCells; ++ib)
-    geomechfile << pSim->vsCellRockProps[ib].pressure << endl;
-  geomechfile << "\n/\n\n";
-  geomechfile.close();
+  // // fractures first
+  // geomechfile << "PRESSURE" << endl;
+  // for(int iface = 0; iface < pSim->nFaces; iface++)
+  // {
+  //   if( pSim->vsFaceCustom[iface].nMarker > 0)
+  //     geomechfile << (pSim->vsCellRockProps[pSim->vsFaceCustom[iface].vNeighbors[0]].pressure +
+  //                     pSim->vsCellRockProps[pSim->vsFaceCustom[iface].vNeighbors[1]].pressure) / 2.0 << endl;
+  // }
+  // // matrix
+  // for(int ib = 0; ib < pSim->nCells; ++ib)
+  //   geomechfile << pSim->vsCellRockProps[ib].pressure << endl;
+  // geomechfile << "\n/\n\n";
+  // geomechfile.close();
 
-  std::cout << "temperature" << std::endl;
+  // std::cout << "temperature" << std::endl;
 
-  outstring =   output_path + "fl_temp.txt";
-  geomechfile.open(outstring.c_str());
+  // outstring =   output_path + "fl_temp.txt";
+  // geomechfile.open(outstring.c_str());
 
-  // fractures first
-  geomechfile << "RTEMP" << endl;
-  for(int iface = 0; iface < pSim->nFaces; iface++)
-  {
-    // internal suface
-    if( pSim->vsFaceCustom[iface].nMarker > 0)
-    {
-      int n1_ = pSim->vsFaceCustom[iface].vNeighbors[0];
-      int n2_ = pSim->vsFaceCustom[iface].vNeighbors[1];
-      geomechfile << min(pSim->vsCellRockProps[n1_].temp, pSim->vsCellRockProps[n2_].temp) << endl;
-    }
-  }
-  // matrix
-  for(int ib = 0; ib < pSim->nCells; ++ib)
-    geomechfile << pSim->vsCellRockProps[ib].temp << endl;
+  // // fractures first
+  // geomechfile << "RTEMP" << endl;
+  // for(int iface = 0; iface < pSim->nFaces; iface++)
+  // {
+  //   // internal suface
+  //   if( pSim->vsFaceCustom[iface].nMarker > 0)
+  //   {
+  //     int n1_ = pSim->vsFaceCustom[iface].vNeighbors[0];
+  //     int n2_ = pSim->vsFaceCustom[iface].vNeighbors[1];
+  //     geomechfile << min(pSim->vsCellRockProps[n1_].temp, pSim->vsCellRockProps[n2_].temp) << endl;
+  //   }
+  // }
+  // // matrix
+  // for(int ib = 0; ib < pSim->nCells; ++ib)
+  //   geomechfile << pSim->vsCellRockProps[ib].temp << endl;
 
-  geomechfile << "\n/\n\n";
-  geomechfile.close();
+  // geomechfile << "\n/\n\n";
+  // geomechfile.close();
 
   // std::cout << "zmf" << std::endl;
-
 
   // outstring =   output_path + "fl_zmf.txt";
   // geomechfile.open(outstring.c_str());
@@ -511,46 +477,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   // }
 
   // geomechfile << "\n/\n\n";
-  // geomechfile.close();
-
-
-  std::cout << "saturations" << std::endl;
-
-  outstring =   output_path + "fl_satnum.txt";
-    geomechfile.open(outstring.c_str());
-
-  geomechfile << "SATNUM" << endl;
-  for(int iface = 0; iface < pSim->nFaces; iface++)
-  {
-    if( pSim->vsFaceCustom[iface].nMarker > 0)
-      geomechfile << 1 << endl;
-  }
-
-  for(int ib = 0; ib < pSim->nCells; ++ib)
-    geomechfile << 0 << endl;
-
-  geomechfile << "/" << endl;
-  geomechfile.close();
-
-
-  // outstring =   output_path + "fl_thc.txt";
-  //   geomechfile.open(outstring.c_str());
-
-  // geomechfile << "THCROCK" << endl;
-  // for(int iface = 0; iface < pSim->nFaces; iface++)
-  // {
-  //   // internal suface
-  //   if( pSim->vsFaceCustom[iface].nMarker > 0)
-  //   {
-  //     int n1_ = pSim->vsFaceCustom[iface].vNeighbors[0];
-  //     int n2_ = pSim->vsFaceCustom[iface].vNeighbors[1];
-  //     geomechfile << min(pSim->vsCellRockProps[n1_].thc, pSim->vsCellRockProps[n2_].thc) << endl;
-  //   }
-  // }
-  // for(int ib = 0; ib < pSim->nCells; ++ib)
-  //   geomechfile << pSim->vsCellRockProps[ib].thc << endl;
-
-  // geomechfile << "/" << endl;
   // geomechfile.close();
 
 
