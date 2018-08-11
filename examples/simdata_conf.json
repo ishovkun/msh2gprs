@@ -74,25 +74,25 @@
         {
             "_comment_": "back",
             "type" : 2,
-            "value": ["0", "0", "0"]
+            "value": ["0", "700", "0"]
         },
         "-2222222" :
         {
             "_comment_": "front",
             "type" : 1,
-            "value": ["nan", "0", "nan"]
+            "value": ["nan", "3", "nan"]
         },
         "-3333331" :
         {
             "_comment_": "top",
             "type" : 1,
-            "value": ["nan", "nan", "0"]
+            "value": ["nan", "nan", "-0.01"]
         },
         "-3333332" :
         {
             "_comment_": "bottom",
             "type" : 1,
-            "value": ["nan", "nan", "0"]
+            "value": ["nan", "nan", "0.01"]
         }
     }
 }
