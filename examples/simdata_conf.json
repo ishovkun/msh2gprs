@@ -59,40 +59,54 @@
             {"density":               "100*z"},
             {"cool_prop" :            "15-porosity"}
         ]
-    },
-
-    "Boundary conditions" :
+    }
+    , "Boundary conditions" :
     {
         "file" : "bcond.txt",
-        "-1111111" :
+        "Faces" :
         {
-            "_comment_": "Left",
-            "type" : 1,
-            "value" : ["0", "nan", "nan"]
-        },
-        "-2222221" :
-        {
-            "_comment_": "back",
-            "type" : 2,
-            "value": ["0", "700", "0"]
-        },
-        "-2222222" :
-        {
-            "_comment_": "front",
-            "type" : 1,
-            "value": ["nan", "3", "nan"]
-        },
-        "-3333331" :
-        {
-            "_comment_": "top",
-            "type" : 1,
-            "value": ["nan", "nan", "-0.01"]
-        },
-        "-3333332" :
-        {
-            "_comment_": "bottom",
-            "type" : 1,
-            "value": ["nan", "nan", "0.01"]
+            "-1111111" :
+            {
+                "_comment_": "Left",
+                "type" : 1,
+                "value" : ["0", "nan", "nan"]
+            }
+            , "-2222221" :
+            {
+                "_comment_": "back",
+                "type" : 2,
+                "value": ["0", "700", "0"]
+            }
+            , "-2222222" :
+            {
+                "_comment_": "front",
+                "type" : 1,
+                "value": ["nan", "3", "nan"]
+            }
+            , "-3333331" : {
+                "_comment_": "top",
+                "type" : 1,
+                "value": ["nan", "nan", "-0.01"]
+            }
+            , "-3333332" : {
+                "_comment_": "bottom",
+                "type" : 1,
+                "value": ["nan", "nan", "0.01"]
+            }
+        }
+        , "Dirichlet nodes" : {
+            "_comment_" : "assign specific points to be fixed",
+            "0" :
+            {
+                "coord" : [0, 1, 0],
+                "value" : ["nan", "0" , "0"]
+            },
+
+            "1" :
+            {
+                "coord" : [0, 4, 0],
+                "value" : ["nan", "0" , "0"]
+            }
         }
     }
 }

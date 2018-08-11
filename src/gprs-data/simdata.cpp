@@ -1381,7 +1381,7 @@ void SimData::definePhysicalFacets()
   for (int iface = 0; iface < nFaces; iface++)
   {
     if(vsFaceCustom[iface].nMarker < 0)  // probably external face
-      for (const auto & conf : config.bcs)
+      for (const auto & conf : config.bc_faces)
       {
         // std::cout << "key = "<< conf.label << std::endl;
 

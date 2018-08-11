@@ -12,12 +12,18 @@ struct DomainConfig
 };
 
 
+struct BCNodeConfig
+{
+  static const int type = 1;
+  angem::Point<3,double> value;
+  angem::Point<3,double> coord;
+};
+
 struct BCConfig
 {
   int label;
   int type;
   angem::Point<3,double> value;
-  const double nan = -999.999;
 };
 
 struct EmbeddedFractureConfig
@@ -33,7 +39,8 @@ struct SimdataConfig
 {
   std::vector<EmbeddedFractureConfig> fractures;  // embedded fractures
   std::vector<DomainConfig> domains;
-  std::vector<BCConfig> bcs;
+  std::vector<BCConfig> bc_faces;
+  std::vector <BCNodeConfig> bc_nodes;
   // all variables used for function parsing
   std::vector<std::string> all_vars = {"x", "y", "z"};
   // output file names
@@ -41,6 +48,8 @@ struct SimdataConfig
   std::string domain_file = "domain.txt";
   std::string efrac_file = "efrac.txt";
   std::string bcond_file = "bcond.txt";
+
+  static constexpr double nan = -999.999;
 };
 
 
