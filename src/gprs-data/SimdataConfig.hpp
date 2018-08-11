@@ -1,10 +1,14 @@
 #pragma once
 #include <Polygon.hpp>
+#include <muParser.h>
 
 struct DomainConfig
 {
   int model;
   int label;
+  mu::Parser function_parser;
+  std::vector<std::string> expressions;
+  // std::map<std::string, >
   double biot;
   double porosity;
   double permeability;
