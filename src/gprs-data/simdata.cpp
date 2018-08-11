@@ -1384,9 +1384,8 @@ void SimData::definePhysicalFacets()
           vsPhysicalFacet[n_facets].ntype = conf.type;
           vsPhysicalFacet[n_facets].nmark = conf.label;
           vsPhysicalFacet[n_facets].condition = conf.value;
-          // std::cout << "doing something boundary "
-          //           << conf.label
-          //           << std::endl;
+          if (conf.type == 1)
+            std::cout << "bc value"<< conf.value << std::endl;
 
           n_facets++;
           if (conf.type == 1)
@@ -1399,66 +1398,6 @@ void SimData::definePhysicalFacets()
 
   nPhysicalFacets = n_facets;
 
-
-  // int nbnd = vsPhysicalBoundary.size();
-
-  // int nfacets = 0;
-  // int nfluid = 0;
-  // vsPhysicalFacet.resize(nFaces);
-  // for(int iface = 0; iface < nFaces; iface++)
-  // {
-  //   if( vsFaceCustom[iface].nMarker < 0)
-  //   {
-  //     for(int i = 0; i < nbnd; i++)
-  //     {
-  //       if( vsFaceCustom[iface].nMarker == vsPhysicalBoundary[i].nmark)
-  //       {
-  //         vsPhysicalFacet[nfacets].nface = nfacets;
-  //         vsPhysicalFacet[nfacets].ntype = vsPhysicalBoundary[i].ntype;
-  //         vsPhysicalFacet[nfacets].nmark = vsPhysicalBoundary[i].nmark;
-  //         vsPhysicalFacet[nfacets].vCondition.resize( vsPhysicalBoundary[i].vCondition.size() );
-  //         vsPhysicalFacet[nfacets].vCondition = vsPhysicalBoundary[i].vCondition;
-
-  //         vsPhysicalFacet[nfacets].nfluid = -1;
-  //         if(vsPhysicalBoundary[i].ntype == 1)
-  //         {
-  //           nDirichletFaces++;
-  //         }
-	//   else
-  //         {
-  //           nNeumannFaces++;
-	//     vsPhysicalFacet[nfacets].vCondition[0] = vsPhysicalBoundary[i].vCondition[0];
-  //         }
-  //         nfacets++;
-  //       }
-  //     }
-  //   }
-
-  //   if ( vsFaceCustom[iface].nMarker > 0 && vsFaceCustom[iface].nMarker < 1111110 )
-  //   {
-  //     vsPhysicalFacet[nfacets].nface = nfacets;
-  //     vsPhysicalFacet[nfacets].ntype = 0;
-  //     vsPhysicalFacet[nfacets].nmark = vsFaceCustom[iface].nMarker;
-  //     vsPhysicalFacet[nfacets].nfluid = nfluid;
-  //     nfacets++;
-  //     nfluid++;
-  //   }
-  // }
-
-  //std::default_random_engine generator;
-  //std::default_random_engine generator2;
-  //std::normal_distribution<double> distribution(100.0, 20.0);
-  //std::normal_distribution<double> distribution2(10.0, 2.0); //mD
-  // for ( int iface = 0; iface < nFaces; iface++ )
-  // {
-  //   vsFaceCustom[iface].aperture = 2.0e-3; //m
-  //   vsFaceCustom[iface].conductivity = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15; //mD.m
-  //   if ( vsFaceCustom[iface].nMarker == 1 )
-  //   {
-  //     vsFaceCustom[iface].aperture = 2.0e-3; //m
-  //     vsFaceCustom[iface].conductivity = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15; //mD.m
-  //   }
-  // }
 }
 
 void SimData::defineStressAndDispOnBoundary()

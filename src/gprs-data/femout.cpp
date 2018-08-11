@@ -162,16 +162,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   geomechfile << "/" << endl << endl;
   geomechfile.close();
 
-  // outstring =   output_path + "gm_model.txt";
-  // geomechfile.open(outstring.c_str());
-  // geomechfile << "GMCELL_MODEL" << endl;
-  // for(int ib = 0; ib < pSim->nCells; ++ib)
-  // {
-  //   geomechfile << pSim->vsCellRockProps[ib].model << endl;
-  // }
-  // geomechfile << "/" << endl << endl;
-  // geomechfile.close();
-
   std::cout << "Writing all domain from user input properties" << std::endl;
   {  // write domain properties
     outstring =   output_path + pSim->config.domain_file;
@@ -264,26 +254,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile.close();
   }
 
-  // outstring =   output_path + "gm_reference.txt";
-  // geomechfile.open(outstring.c_str());
-
-  // geomechfile << "GMREF_TEMPERATURE" << endl;
-  // for(int ib = 0; ib < pSim->nCells; ++ib)
-  // {
-  //   geomechfile << pSim->vsCellRockProps[ib].ref_temp << endl;
-  // }
-  // geomechfile << "/" << endl << endl;
-
-  // geomechfile << "GMREF_PRESSURE" << endl;
-  // for(int ib = 0; ib < pSim->nCells; ++ib)
-  // {
-  //   geomechfile << pSim->vsCellRockProps[ib].ref_pres << endl;
-  // }
-  // geomechfile << "/" << endl << endl;
-
-  // geomechfile << "/" << endl << endl;
-  // geomechfile.close();
-
   outstring =   output_path + "gm_bcond.txt";
   geomechfile.open(outstring.c_str());
 
@@ -306,130 +276,95 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   // Dirichlet faces
   // @HACK SUPPORT POINTS
   std::set<int>::iterator it;
-  std::pair<std::set<int>::iterator,bool> ret;
-  set<int> setDisp;
-  vector<int> vDisp_x_Idx;
-  vector<double> vDisp_x_Val;
-  vector<int> vDisp_y_Idx;
-  vector<double> vDisp_y_Val;
-  vector<int> vDisp_z_Idx;
-  vector<double> vDisp_z_Val;
+  const int dim = 3;
+  std::vector<set<int>> setDisp(dim);
+  std::vector<std::vector<std::size_t>> vv_disp_node_ind(dim);
+  std::vector<std::vector<double>> vv_disp_node_values(dim);
 
   setDisp.clear();
   if ( pSim->nDirichletFaces > 0 )
-  {
-    setDisp.clear();
     for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
-    {
-      if ( pSim->vsPhysicalFacet[i].ntype == 1 )
-      {
-        int n = 3;
-
-        int j = 0;
-        if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
+      if ( pSim->vsPhysicalFacet[i].ntype == 1 )  // dirichlet
+        for (std::size_t j=0; j<dim; ++j)
         {
-          int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
-          for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
+          if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
           {
-            ret = setDisp.insert(pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx]);
-            if(ret.second == true)
+            int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
+            for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
             {
-              int vertex_ = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
-              vDisp_x_Idx.push_back(vertex_);
-              vDisp_x_Val.push_back(0.0);
-            }
-          }
-        }
-      }
-    }
+              // check if already in set
+              const auto ret = setDisp[j].insert
+                  (pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx]);
+              if(ret.second)
+              {
+                std::size_t vertex_ = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
+                vv_disp_node_ind[j].push_back(vertex_);
+                vv_disp_node_values[j].push_back(pSim->vsPhysicalFacet[i].condition[j]);
+              }
+            }  // end face vertices loop
+          } // end nan condition
+        }  // end j loop
 
-    setDisp.clear();
-    for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
-    {
-      if ( pSim->vsPhysicalFacet[i].ntype == 1 )
-      {
-        // int n = pSim->vsPhysicalFacet[i].vCondition.size();
-        int n = 3;
-
-        int j = 1;
-        if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
-        {
-          int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
-          for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
-          {
-	    ret = setDisp.insert(pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx]);
-	    if(ret.second == true)
-	    {
-	      int vertex_ = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
-	      vDisp_y_Idx.push_back(vertex_);
-	      vDisp_y_Val.push_back(0.0);
-	    }
-          }
-        }
-      }
-    }
-
-    setDisp.clear();
-    for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
-    {
-      if ( pSim->vsPhysicalFacet[i].ntype == 1 )
-      {
-        int n = 3;
-
-        int j = 2;
-        if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
-        {
-          int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
-          for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
-          {
-	    ret = setDisp.insert(pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx]);
-	    int vertex_ = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
-	    if(ret.second == true)
-	    {
-	      vDisp_z_Idx.push_back(vertex_);
-	      vDisp_z_Val.push_back(0.0);
-	    }
-          }
-        }
-      }
-    }
-  }
+  setDisp.clear();
 
   cout << "write all Dirichlet faces\n";
-  if(vDisp_x_Idx.size() > 0)
-  {
-    std::cout << "gmnode_bdispx" << std::endl << std::flush;
+  for (std::size_t j=0; j<dim; ++j)
+    if (vv_disp_node_ind[j].size() > 0)
+    {
+      switch (j)
+      {
+        case 0:
+          geomechfile << "GMNODE_BCDISPX" << std::endl;
+          break;
+        case 1:
+          geomechfile << "GMNODE_BCDISPY" << std::endl;
+          break;
+        case 2:
+          geomechfile << "GMNODE_BCDISPZ" << std::endl;
+          break;
+      }
+      for(int i = 0; i < vv_disp_node_ind[j].size(); ++i)
+      {
+        geomechfile <<  vv_disp_node_ind[j][i] + 1 << "\t";
+        geomechfile << vv_disp_node_values[j][i] << std::endl;
+      }
+      geomechfile << "/" << std::endl << std::endl;
+    }
 
-    geomechfile << "GMNODE_BCDISPX\n";
-    for(int i = 0; i < vDisp_x_Idx.size(); ++i)
-    {
-      geomechfile <<  vDisp_x_Idx[i] + 1 << "\t";
-      geomechfile << vDisp_x_Val[i] << endl;
-    }
-    geomechfile << "/\n\n";
-  }
-  if(vDisp_y_Idx.size() > 0)
-  {
-    std::cout << "gmnode_bdispy" << std::endl << std::flush;
-    geomechfile << "GMNODE_BCDISPY\n";
-    for(int i = 0; i < vDisp_y_Idx.size(); ++i)
-    {
-      geomechfile <<  vDisp_y_Idx[i] + 1 << "\t";
-      geomechfile << vDisp_y_Val[i] << endl;
-    }
-    geomechfile << "/\n\n";
-  }
+  // if(vDisp_x_Idx.size() > 0)
+  // {
+  //   std::cout << "gmnode_bdispx" << std::endl << std::flush;
 
-  if(vDisp_z_Idx.size() > 0)
-  {
-    geomechfile << "GMNODE_BCDISPZ\n";
-    for(int i = 0; i < vDisp_z_Idx.size(); ++i)
-    {
-      geomechfile <<  vDisp_z_Idx[i] + 1 << "\t";
-      geomechfile << vDisp_z_Val[i] << endl;
-    }
-    geomechfile << "/\n\n";
-  }
+  //   geomechfile << "GMNODE_BCDISPX\n";
+  //   for(int i = 0; i < vDisp_x_Idx.size(); ++i)
+  //   {
+  //     geomechfile <<  vDisp_x_Idx[i] + 1 << "\t";
+  //     geomechfile << vDisp_x_Val[i] << endl;
+  //   }
+  //   geomechfile << "/\n\n";
+  // }
+  // if(vDisp_y_Idx.size() > 0)
+  // {
+  //   std::cout << "gmnode_bdispy" << std::endl << std::flush;
+  //   geomechfile << "GMNODE_BCDISPY\n";
+  //   for(int i = 0; i < vDisp_y_Idx.size(); ++i)
+  //   {
+  //     geomechfile <<  vDisp_y_Idx[i] + 1 << "\t";
+  //     geomechfile << vDisp_y_Val[i] << endl;
+  //   }
+  //   geomechfile << "/\n\n";
+  // }
+
+  // if(vDisp_z_Idx.size() > 0)
+  // {
+  //   geomechfile << "GMNODE_BCDISPZ\n";
+  //   for(int i = 0; i < vDisp_z_Idx.size(); ++i)
+  //   {
+  //     geomechfile <<  vDisp_z_Idx[i] + 1 << "\t";
+  //     geomechfile << vDisp_z_Val[i] << endl;
+  //   }
+  //   geomechfile << "/\n\n";
+  // }
   geomechfile.close();
 
   // std::cout << "write fracs" << std::endl;
