@@ -14,7 +14,7 @@ const std::size_t EMBEDDED_FRACTURE_CELL = 9999992;
 
 using Point = angem::Point<3, double>;
 
-SimData::SimData(string & inputstream, const SimdataConfig & config)
+SimData::SimData(const string & inputstream, const SimdataConfig & config)
     :
     config(config)
 {
@@ -157,6 +157,14 @@ void SimData::defineEmbeddedFractureProperties()
 }
 
 
+std::size_t SimData::n_default_vars()
+{
+  SimdataConfig dummy;
+  // return 0;
+  return dummy.all_vars.size();
+}
+
+
 void SimData::defineRockProperties()
 {
   // print header
@@ -169,6 +177,9 @@ void SimData::defineRockProperties()
       std::cout << std::endl;
   }
   std::cout << std::endl;
+
+  // get number of variables in an empty simdataconfig - should be 3=x+y+z
+  const std::size_t shift = n_default_vars();
 
   // resize rock properties
   vsCellRockProps.resize(nCells);
@@ -217,26 +228,26 @@ void SimData::defineRockProperties()
       if ( vsCellCustom[icell].nMarker == conf.label ) // Regular cells
       {
         std::fill(vars.begin(), vars.end(), 0);
-        vars[0] = vsCellCustom[icell].center(0);
-        vars[1] = vsCellCustom[icell].center(1);
-        vars[2] = vsCellCustom[icell].center(2);
+        vars[0] = vsCellCustom[icell].center(0);  // x
+        vars[1] = vsCellCustom[icell].center(1);  // y
+        vars[2] = vsCellCustom[icell].center(2);  // z
 
         // Evaluate expression -> write into variable
         for (std::size_t i=0; i<n_expressions; ++i)
           vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
 
         // copy vars to cell properties
-        vsCellRockProps[icell].v_props.resize(n_variables);
-        for (std::size_t j=0; j<n_variables; ++j)
+        vsCellRockProps[icell].v_props.resize(n_variables-shift);
+        // start from 3 to skip x,y,z
+        for (std::size_t j=shift; j<n_variables; ++j)
         {
           try
           {
-            vsCellRockProps[icell].v_props[j] =
-                vars[conf.global_to_local_vars.at(j)];
+            vsCellRockProps[icell].v_props[j-shift] = vars[j];
           }
           catch (std::out_of_range & e)
           {
-            vsCellRockProps[icell].v_props[j] = 0;
+            vsCellRockProps[icell].v_props[j-shift] = 0;
           }
         }
       }  // cell loop

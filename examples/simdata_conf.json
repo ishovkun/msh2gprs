@@ -1,6 +1,9 @@
 {
+    "Mesh file" : "domain.msh",
+
     "Embedded Fractures" :
     {
+        "file" : "efrac.txt",
 		    "0":
         {
             "type": "Rectangle",
@@ -30,46 +33,37 @@
         }
     },
 
-    "Rock Properties" :
+    "Domain Properties" :
     {
-        "9999991":
-        {
-            "_comment_": "Linear Elastic",
-            "model":                 1,
-            "biot":                  1,
-            "porosity":              0.01,
-            "permeability":          1e-5,
-            "density":               2500,
-            "young modulus":         1,
-            "poisson ratio":         0.25,
-            "thermal expansion" :    0,
-            "heat capacity":         790,
-            "temperature":           473.15,
-            "pressure":              340,
-            "reference pressure":    340,
-            "reference temperature": 473.15
-        },
-        "9999992"  :
-        {
-            "_comment_": "Strong Discontinuity",
-            "model":                 3,
-            "biot":                  1,
-            "porosity":              0.01,
-            "permeability":          1e-5,
-            "density":               2500,
-            "young modulus":         1,
-            "poisson ratio":         0.25,
-            "thermal expansion":     0,
-            "heat capacity":         790,
-            "temperature":           473.15,
-            "pressure":              340,
-            "reference pressure":    340,
-            "reference temperature": 473.15
-        }
+        "_comment_" : "sort is the order of evaluation!",
+        "file" : "domain.txt",
+        "9999991": [
+            {"_comment_": "Linear Elastic"},
+            {"GMCELL_MODEL":          "1"},
+            {"biot":                  "1"},
+            {"porosity":              "0.3 - 0.001*z"},
+            {"pressure":              "500 - 0.1*z"},
+            {"RTEMP" :                "300"},
+            {"THCROCK":               "2.8"},
+            {"SATNUM":                "1.0"},
+            {"density":              "500 - 0.1*pressure"}
+        ],
+        "9999992": [
+            {"_comment_": "SDA"},
+            {"shit":                  "0.8"},
+            {"GMCELL_MODEL":          "3"},
+            {"RTEMP" :                "300"},
+            {"biot":                  "0.8"},
+            {"porosity":              "0.3 - 15*z"},
+            {"pressure":              "500 - 0.1*z + biot"},
+            {"density":               "100*z"},
+            {"cool_prop" :            "15-porosity"}
+        ]
     },
 
     "Boundary conditions" :
     {
+        "file" : "bcond.txt",
         "-1111111" :
         {
             "_comment_": "Left",

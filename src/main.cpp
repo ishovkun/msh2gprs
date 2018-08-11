@@ -14,30 +14,34 @@ class tetrahedralize;
 
 int main(int argc, char *argv[])
 {
-  if (argc < 3)
+  if (argc < 2)
   {
-    std::cout << "please specify msh and config files."
+    std::cout << "please specify a config file."
               << std::endl
               << "Example: "
-              << "msh2gprs domain.msh config.json"
+              << "msh2gprs config.json"
               << std::endl
-              << "for more information type: msh2gprs --help"
+              << "an example config is distributed with this code"
               << std::endl;
     return 0;
   }
-  if (argc > 3)
+  if (argc > 2)
   {
     std::cout << "what the hell did you pass?" << std::endl;
     return 1;
   }
 
-  std::string fname_gmsh = argv[1];  // msh file
-  std::string fname_config = argv[2];  // config file
+  const std::string fname_config = argv[1];  // config file
 
   Parsers::Parser parser;
   std::cout << "parsing " << fname_config << std::endl;
   parser.parse_file(fname_config);
-  SimdataConfig config = parser.get_config();
+  const SimdataConfig config = parser.get_config();
+
+  // get path of the config file -- mesh is searched for in relative path
+  const filesystem::path path_config(fname_config);
+  const std::string config_dir = path_config.parent_path().string() + "/";
+  const std::string fname_gmsh = config_dir + config.mesh_file;  // msh file
 
   std::string outstream;
   SimData * pSimData;
@@ -81,7 +85,6 @@ int main(int argc, char *argv[])
 
   cout << "Write FEM mesh data\n";
   OutputData * pOut;
-  filesystem::path path_config(fname_config);
   pOut = new OutputData(pSimData);
 
   pOut->writeGeomechDataNewKeywords(path_config.parent_path().string() + "/");

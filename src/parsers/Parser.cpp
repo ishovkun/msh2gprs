@@ -52,6 +52,8 @@ Parser::parse_json(const std::string & fname)
       embedded_fracs_json(section_it);
     else if (section_it.key() == "Boundary conditions")
       boundary_conditions_json(section_it);
+    else if (section_it.key() == "Mesh file")
+      config.mesh_file = (*section_it).get<std::string>();
     else
       std::cout << "Skipping section " << section_it.key() << std::endl;
   }  // end section loop
@@ -96,11 +98,9 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it)
 
       if (key_value.first == comment)
         continue;
-      else if (key_value.first == "model")
-        conf.model = std::atoi(key_value.second.c_str());
       else
       {
-        std::cout << "reading expression " << key_value.first << std::endl;
+        std::cout << "reading expression " << key_value.first << "\t";
         // save property name and expression
         conf.variables.push_back(key_value.first);
         conf.expressions.push_back(key_value.second);
@@ -111,6 +111,9 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it)
         // save positions in the global list
         conf.local_to_global_vars[exp_counter] = ind;
         conf.global_to_local_vars[ind] = exp_counter;
+        std::cout << "var number " << ind << "\t";
+        std::cout << "return map " << exp_counter << "\t";
+        std::cout << std::endl;
         exp_counter++;
       }
 

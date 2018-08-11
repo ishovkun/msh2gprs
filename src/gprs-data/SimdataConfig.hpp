@@ -3,26 +3,12 @@
 
 struct DomainConfig
 {
-  int model;
   int label;
   std::vector<std::string> expressions;
   std::vector<std::string> variables;
   // map expressions to variables
   std::map<int,int> local_to_global_vars;
   std::map<int,int> global_to_local_vars;
-
-  double biot;
-  double porosity;
-  double permeability;
-  double density;
-  double young_modulus;
-  double poisson_ratio;
-  double thermal_expansion;
-  double heat_capacity;
-  double temperature;
-  double pressure;
-  double ref_temperature;
-  double ref_pressure;
 };
 
 
@@ -51,6 +37,7 @@ struct SimdataConfig
   // all variables used for function parsing
   std::vector<std::string> all_vars = {"x", "y", "z"};
   // output file names
+  std::string mesh_file;
   std::string domain_file = "domain.txt";
   std::string efrac_file = "efrac.txt";
   std::string bcond_file = "bcond.txt";

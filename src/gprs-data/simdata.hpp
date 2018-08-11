@@ -131,7 +131,7 @@ struct EmbeddedFracture
 class SimData
 {
 public:
-  SimData(string & inputstream, const SimdataConfig & config);
+  SimData(const string & inputstream, const SimdataConfig & config);
   ~SimData();
   // void readSetupValues();
   void readTotalData();
@@ -154,6 +154,7 @@ public:
   void createSimpleWells();
 
   void extractInternalFaces();
+  std::size_t n_default_vars();
 
 protected:
    void methodElementCenter(int nelem, vector<Gelement> &vsElement);
