@@ -7,15 +7,15 @@ class SimData;
 CalcTranses::CalcTranses(SimData * pSimdata)
 {
     pSim = pSimdata;
-        
+
     NbNodes = pSim->nNodes;
     NbPolyhedra = pSim->nCells;
-    NbPolygons  = pSim->nFaces;        
+    NbPolygons  = pSim->nFaces;
     NbFracs = pSim->nInternalBoundaryFaces;
     NbZones = NbFracs + pSim->nCells;
     NbOptions = 1;
     fracporo = 1.0;
-   
+
     //coordinates
     vCoordinatesX.resize(NbNodes);
     vCoordinatesY.resize(NbNodes);
@@ -35,7 +35,7 @@ CalcTranses::CalcTranses(SimData * pSimdata)
     vZPorosity.resize(NbZones);
     vZPermCode.resize(NbZones);
     vZPermeability.resize(NbZones);
-    
+
     OptionVC = 0;
     OptionGO = 0;
     OptionMC = 0;
@@ -60,7 +60,7 @@ void CalcTranses::createKarimiData()
     vCoordinatesY[i] = pSim->vvVrtxCoords[i][1];
     vCoordinatesZ[i] = pSim->vvVrtxCoords[i][2];
   }
-  
+
   cout << "\t create karimi 2D elements" << endl;
   int code_polygon = 0;
   vNbFNodes.clear();
@@ -72,21 +72,21 @@ void CalcTranses::createKarimiData()
   {
     if(pSim->vsFaceCustom[ipoly].nMarker > 0)
     {
-      vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices); 
-      vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() ); 
-      vCodePolygon.push_back( code_polygon ); 
+      vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
+      vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
+      vCodePolygon.push_back( code_polygon );
       code_polygon++;
-      vConductivity.push_back(pSim->vsFaceCustom[ipoly].conductivity); 
-      vAperture.push_back(pSim->vsFaceCustom[ipoly].aperture); 
-    }    
+      vConductivity.push_back(pSim->vsFaceCustom[ipoly].conductivity);
+      vAperture.push_back(pSim->vsFaceCustom[ipoly].aperture);
+    }
     else
     {
-      vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices); 
-      vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() ); 
+      vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
+      vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
       vCodePolygon.push_back( -1 );
-    }    
+    }
   }
-  
+
   cout << "\t create karimi 3D elements\n";
   set<int>::iterator itintset;
   vNbVFaces.clear();
@@ -97,55 +97,87 @@ void CalcTranses::createKarimiData()
     int n = pSim->vsetPolyhedronPolygon[ipoly].size();
     itintset = pSim->vsetPolyhedronPolygon[ipoly].begin();
     for(int i = 0; i < n; i++)
-    {      
+    {
       vvVFaces[ipoly].push_back( *itintset );
       itintset++;
     }
-    vNbVFaces.push_back( n ); 
+    vNbVFaces.push_back( n );
     vCodePolyhedron.push_back( NbFracs + ipoly);
   }
-  
-  //create karimi properties  
+
+  //create karimi properties
   cout << "create karimi properties\n";
-  vZPermeability.assign(NbZones * 3, 0.0);  
-  vZConduction.assign( (NbPolyhedra + NbFracs) * 3, 0.0);  
+  vZPermeability.assign(NbZones * 3, 0.0);
+  vZConduction.assign( (NbPolyhedra + NbFracs) * 3, 0.0);
+  // std::cout << "NbZones = "<< NbZones << std::endl;
+  // std::cout << "NbPolyhedra = "<< NbPolyhedra << std::endl;
+
+
 
   for ( int i = 0; i < NbFracs; i++ )
-  {    
+  {
     vZoneCode[i] = i;
     vZVolumeFactor[i] = vAperture[i];
     vZPorosity[i] = 1.0;
     vZPermCode[i] = 1;
-    
+
     //@HACK default permeability for all fractures
-    vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12; 
+    vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
     vZPermeability[i*3+1] = vZPermeability[i*3+0];
     vZPermeability[i*3+2] = vZPermeability[i*3+0];
-    
+
     vZConduction[i*3+0] = 1;
     vZConduction[i*3+1] = 1;
     vZConduction[i*3+2] = 1;
-    vTimurConnectionFactor[i] = 1.0;     
+    vTimurConnectionFactor[i] = 1.0;
   }
-    
-  for ( int i = 0; i < NbPolyhedra; i++ )
-  {        
-    int n = i + NbFracs;
+  std::cout << "done with faces" << std::endl;
+
+
+  for ( std::size_t i = 0; i < NbPolyhedra; i++ )
+  {
+    std::cout << "i = "<< i << std::endl;
+
+    const std::size_t n = i + NbFracs;
     vZoneCode[n] = vCodePolyhedron[i];
-    vZPorosity[n] = pSim->vsCellRockProps[i].poro;
+    std::cout << "zone code ok" << std::endl;
+
+    vZPorosity[n] = pSim->get_property(i, "PORO");
     vZPermCode[n] = 1;
-    
-    vZPermeability[n*3+0] = pSim->vsCellRockProps[i].perm_x;
-    vZPermeability[n*3+1] = pSim->vsCellRockProps[i].perm_y;
-    vZPermeability[n*3+2] = pSim->vsCellRockProps[i].perm_z;
-    
-    vZConduction[n*3+0] = pSim->vsCellRockProps[i].thc_x;
-    vZConduction[n*3+1] = pSim->vsCellRockProps[i].thc_y;
-    vZConduction[n*3+2] = pSim->vsCellRockProps[i].thc_z;
-            
+
+    std::cout << "poro ok" << std::endl;
+
+
+    const auto perm = pSim->get_permeability(i);
+    vZPermeability[n*3+0] = perm[0];
+    vZPermeability[n*3+1] = perm[1];
+    vZPermeability[n*3+2] = perm[2];
+
+    std::cout << "perm ok" << std::endl;
+
+
+    double thc = 0;
+    try
+    {
+      thc = pSim->get_property(i, "THCROCK");
+    }
+    catch (const std::out_of_range& e)
+    {
+      vZConduction[n*3+0] = thc;
+      vZConduction[n*3+1] = thc;
+      vZConduction[n*3+2] = thc;
+    }
+    std::cout << "tc ok" << std::endl;
+
+
     vZVolumeFactor[n] = 1;
-    vTimurConnectionFactor[n] = 1.0;    
-  }  
+    vTimurConnectionFactor[n] = 1.0;
+    std::cout << "connection ok" << std::endl;
+
+  }
+
+  std::cout << "done with karimi" << std::endl;
+
 }
 
 double CalcTranses::ABS(double v)
@@ -228,7 +260,7 @@ void CalcTranses::ComputeBasicGeometry()
             FXG[i]+=areatmp*(X[FNodes[i][0]]+X[FNodes[i][j]]+X[FNodes[i][j+1]])/3.;
             FYG[i]+=areatmp*(Y[FNodes[i][0]]+Y[FNodes[i][j]]+Y[FNodes[i][j+1]])/3.;
             FZG[i]+=areatmp*(Z[FNodes[i][0]]+Z[FNodes[i][j]]+Z[FNodes[i][j+1]])/3.;
-	    
+
             Fnx[i]+=.5*nx;
             Fny[i]+=.5*ny;
             Fnz[i]+=.5*nz;
@@ -265,27 +297,30 @@ void CalcTranses::ComputeBasicGeometry()
             yi+=FYG[VFaces[i][j]];
             zi+=FZG[VFaces[i][j]];
         }
+
         xi=xi/NbVFaces[i];
         yi=yi/NbVFaces[i];
         zi=zi/NbVFaces[i];
+
         for (j=0;j<NbVFaces[i];j++)
         {
-            k=VFaces[i][j];
-            h=Fnx[k]*(FXG[k]-xi)+
+            k = VFaces[i][j];
+            h = Fnx[k]*(FXG[k]-xi)+
               Fny[k]*(FYG[k]-yi)+
               Fnz[k]*(FZG[k]-zi);
-            volumetmp=ABS(h*FArea[k])/3.;
-            VXG[i]+=(FXG[k]+.25*(xi-FXG[k]))*volumetmp;
-            VYG[i]+=(FYG[k]+.25*(yi-FYG[k]))*volumetmp;
-            VZG[i]+=(FZG[k]+.25*(zi-FZG[k]))*volumetmp;
-            VVolume[i]+=volumetmp;
+
+            volumetmp = ABS(h*FArea[k])/3.;
+
+            VXG[i] += (FXG[k]+.25*(xi-FXG[k]))*volumetmp;
+            VYG[i] += (FYG[k]+.25*(yi-FYG[k]))*volumetmp;
+            VZG[i] += (FZG[k]+.25*(zi-FZG[k]))*volumetmp;
+            VVolume[i] += volumetmp;
         }
-        VXG[i]=VXG[i]/VVolume[i];
-        VYG[i]=VYG[i]/VVolume[i];
-        VZG[i]=VZG[i]/VVolume[i];
-        
-	// TODO @HACK
-        VVolume[i] *= pSim->vsCellRockProps[i].volmult;
+
+        VXG[i] = VXG[i] / VVolume[i];
+        VYG[i] = VYG[i] / VVolume[i];
+        VZG[i] = VZG[i] / VVolume[i];
+
     }
 }
 /********************************************************************/
@@ -311,7 +346,7 @@ void CalcTranses::ComputeControlVolumeList()
             CVz[j]=FZG[i];
             CVVolume[j]=FArea[i]*ZVolumeFactor[CVZone[j]];
         }
-        
+
     for (i=0;i<NbPolyhedra;i++)
     {
         if (EQV[i]!=-1)	// Active polyhedron
@@ -472,10 +507,10 @@ void CalcTranses::ConstructConnectionList()
     CheckIt(ConTr==NULL);
     ConArea	=	(double**)malloc(NbConnections*(sizeof(double*)));
     CheckIt(ConArea==NULL);
-    
-    ConGeom	=	(double**)malloc(NbConnections*(sizeof(double*)));    
-    ConMult	=	(double**)malloc(NbConnections*(sizeof(double*)));    
-    
+
+    ConGeom	=	(double**)malloc(NbConnections*(sizeof(double*)));
+    ConMult	=	(double**)malloc(NbConnections*(sizeof(double*)));
+
     ConPerm	=	(double**)malloc(NbConnections*(sizeof(double*)));
     CheckIt(ConPerm==NULL);
     ConP1x	=	(double*)malloc(NbConnections*(sizeof(double)));
@@ -606,7 +641,7 @@ void CalcTranses::ConstructConnectionList()
 
             ConGeom[k]=(double*)malloc(2*(sizeof(double)));
             ConMult[k]=(double*)malloc(2*(sizeof(double)));
-	    
+
             k++;
 
             ConType[k]=2;
@@ -781,12 +816,12 @@ void CalcTranses::ComputeDirectionalPermeability()
             // @HACK
 	    // We dont need a REAL value of conductivity
 	    // We just calculate geometric part (@HACK)
-	    Kx=1.0; Ky=1.0; Kz=1.0; 
+	    Kx=1.0; Ky=1.0; Kz=1.0;
             if(ZConduction[CVZone[k]][0] != 0.0)
 	    {
 	      Kx=(ZConduction[CVZone[k]][0]*fx+ZConduction[CVZone[k]][3]*fy+ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
 	      Ky=(ZConduction[CVZone[k]][3]*fx+ZConduction[CVZone[k]][1]*fy+ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
-	      Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];            
+	      Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
 	    }
             ConMult[i][0]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
 
@@ -803,18 +838,18 @@ void CalcTranses::ComputeDirectionalPermeability()
             Ky=ZPermeability[CVZone[k]][3]*fx+ZPermeability[CVZone[k]][1]*fy+ZPermeability[CVZone[k]][5]*fz;
             Kz=ZPermeability[CVZone[k]][4]*fx+ZPermeability[CVZone[k]][5]*fy+ZPermeability[CVZone[k]][2]*fz;
             ConPerm[i][1]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
-	    
+
             // @HACK
 	    // We dont need a REAL value of conductivity
 	    // We just calculate geometric part
-	    Kx=1.0; Ky=1.0; Kz=1.0; 
+	    Kx=1.0; Ky=1.0; Kz=1.0;
             if(ZConduction[CVZone[k]][0] != 0.0)
 	    {
 	     Kx=(ZConduction[CVZone[k]][0]*fx+ZConduction[CVZone[k]][3]*fy+ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
              Ky=(ZConduction[CVZone[k]][3]*fx+ZConduction[CVZone[k]][1]*fy+ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
-             Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];            
+             Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
 	    }
-            ConMult[i][1]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);	    
+            ConMult[i][1]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
         }
         if (ConType[i]==2)	// M-F /////////////////////////////////////////////////
         {
@@ -838,12 +873,12 @@ void CalcTranses::ComputeDirectionalPermeability()
             // @HACK
 	    // We dont need a REAL value of conductivity
 	    // We just calculate geometric part
-	    Kx=1.0; Ky=1.0; Kz=1.0; 
+	    Kx=1.0; Ky=1.0; Kz=1.0;
             if(ZConduction[CVZone[k]][0] != 0.0)
 	    {
 	     Kx=(ZConduction[CVZone[k]][0]*fx+ZConduction[CVZone[k]][3]*fy+ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
              Ky=(ZConduction[CVZone[k]][3]*fx+ZConduction[CVZone[k]][1]*fy+ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
-             Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];            
+             Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
 	    }
             ConMult[i][0] = sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
             ConMult[i][1] = 1.0;
@@ -854,7 +889,7 @@ void CalcTranses::ComputeDirectionalPermeability()
             {
                 k=ConCV[i][j];
                 ConPerm[i][j] = ZPermeability[CVZone[k]][0];	// Kp (1)
-                
+
                 // @HACK
                 // for fractures all directions are identiacal
                 // and multiplicator is UNIT
@@ -887,9 +922,9 @@ void CalcTranses::ComputeTransmissibilityPart()
             fz=fz/fl;
 
 	    //    ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*ABS(nx*fx+ny*fy+nz*fz)/fl;
-            ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*1./fl;	    
+            ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*1./fl;
             ConGeom[i][0]=ConArea[i][0]*ConMult[i][0] *1./fl;
-	                
+
             k=ConCV[i][1];
             nx=ConP2x[i];
             ny=ConP2y[i];
@@ -903,7 +938,7 @@ void CalcTranses::ComputeTransmissibilityPart()
             fy=fy/fl;
             fz=fz/fl;
 	    //    ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*ABS(nx*fx+ny*fy+nz*fz)/fl;
-            ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*1./fl;            
+            ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*1./fl;
 	    ConGeom[i][1]=ConArea[i][1]*ConMult[i][1]*1./fl;
         }
         if (ConType[i]==2)	// M-F /////////////////////////////////////////////////
@@ -974,14 +1009,14 @@ void CalcTranses::ComputeTransmissibilityList()
 
       if ( ConGeom[i][0]+ConGeom[i][1] != 0.0 )
         TConductionIJ[k]= ( ConGeom[i][0] * ConGeom[i][1] ) / ( ConGeom[i][0] + ConGeom[i][1] );
-      
+
       if ( TConductionIJ[k] < 0.0 )
       {
         cout << "M-M or M-F : Conduction is negative: check values" << endl;
         exit ( 0 );
       }
       k++;
-    }    
+    }
     else if ( ConType[i]==3 )	// F-F /////////////////////////////////////////////////
     {
       SumTr=0;
@@ -994,7 +1029,7 @@ void CalcTranses::ComputeTransmissibilityList()
           iTr[k]=ConCV[i][j];
           jTr[k]=ConCV[i][n];
           Tij[k]= ( ConTr[i][j]*ConTr[i][n] ) /SumTr;
-	  
+
           TConductionIJ[k]= ( ConGeom[i][j]*ConGeom[i][n] ) /SumTr2;
           if ( TConductionIJ[k] < 0.0 )
           {
@@ -1010,7 +1045,7 @@ void CalcTranses::ComputeTransmissibilityList()
             exit ( 0 );
     }
   }
-    
+
 }
 
 /********************************************************************/
@@ -1096,7 +1131,7 @@ void CalcTranses::createKarimiApproximation()
     ZVolumeFactor	=	(double*)malloc(NbZones*(sizeof(double)));
     ZPorosity	=	(double*)malloc(NbZones*(sizeof(double)));
     ZPermCode	=	(int*)malloc(NbZones*(sizeof(int)));
-    
+
     ZPermeability	=	(double**)malloc(NbZones*(sizeof(double*)));
     ZConduction	=	(double**)malloc(NbZones*(sizeof(double*)));
 
@@ -1105,6 +1140,7 @@ void CalcTranses::createKarimiApproximation()
         ZoneCode[i] = vZoneCode[i];
         j=ZoneCode[i];
         ZVolumeFactor[j] = vZVolumeFactor[j];
+
         ZPorosity[j] = vZPorosity[j];
         ZPermCode[j] = vZPermCode[j];
         ZPermeability[j]=(double*)malloc(6*(sizeof(double)));
@@ -1113,7 +1149,7 @@ void CalcTranses::createKarimiApproximation()
         ZPermeability[j][0] = vZPermeability[j * 3 + 0];
         ZPermeability[j][1] = vZPermeability[j * 3 + 1];
         ZPermeability[j][2] = vZPermeability[j * 3 + 2];
-	
+
         ZPermeability[j][3] = 0.0;
         ZPermeability[j][4] = 0.0;
         ZPermeability[j][5] = 0.0;
@@ -1121,7 +1157,7 @@ void CalcTranses::createKarimiApproximation()
         ZConduction[j][0] = vZConduction[j * 3 + 0];
         ZConduction[j][1] = vZConduction[j * 3 + 1];
         ZConduction[j][2] = vZConduction[j * 3 + 2];
-	
+
         ZConduction[j][3] = 0.0;
         ZConduction[j][4] = 0.0;
         ZConduction[j][5] = 0.0;
@@ -1152,7 +1188,7 @@ void CalcTranses::createKarimiApproximation()
 
 
 /* OUTPUT MAPPING FOR GEOMECHANICS  */
-    
+
 // ASSUMING FIRST THE FEATURE CODES ARE NUMBERED
   printf("Prepare reservoir-geomechanical mapping...\n");
   NbFeatureCode = 0;
@@ -1170,16 +1206,16 @@ void CalcTranses::createKarimiApproximation()
   for (i = 0; i < NbPolygons; i++)
   {
     if(CodePolygon[i] > -1) {vPriority[i] = kk; kk++;}
-  }  
+  }
 }
 
 
-void CalcTranses::outputKarimi()
+void CalcTranses::outputKarimi(const std::string & output_path)
 {
-  stringstream out;  
+  stringstream out;
   out << "model/";
   out << "/";
-  string outputPath_ = "";// out.str();
+  string outputPath_ = output_path;// out.str();
  //////////////////////////
 ///// OUTPUT Volumes /////
 //////////////////////////
@@ -1190,7 +1226,7 @@ void CalcTranses::outputKarimi()
   poutfile=fopen ( outfile.c_str(),"w");
   //fprintf(out,"%d\n",NbCVs);
   fprintf ( poutfile,"%s\n","VOLUME" );
-  for ( i=0; i<NbCVs; i++ )    
+  for ( i=0; i<NbCVs; i++ )
     fprintf ( poutfile,"%e\n",CVVolume[i] );
   fprintf(poutfile,"%s\n","/\n");
   fclose(poutfile);
@@ -1199,23 +1235,23 @@ void CalcTranses::outputKarimi()
   ///////////////////////////
 
     printf("Output Porosity...\n");
-    outfile = outputPath_ + "fl_poro.txt";    
+    outfile = outputPath_ + "fl_poro.txt";
     poutfile=fopen( outfile.c_str(),"w");
     fprintf(poutfile,"%s\n","PORO");
     for (i=0;i<NbCVs;i++) fprintf(poutfile,"%e\n",ZPorosity[CVZone[i]]);
-    
+
     fprintf(poutfile,"%s\n","/\n");
     fclose(poutfile);
 
   ///////////////////////////
   ///// OUTPUT Depth  /////
   ///////////////////////////
-    printf("Output Depth (z)...\n");    
-    outfile = outputPath_ + "fl_depth.txt";    
-    poutfile=fopen( outfile.c_str(),"w");    
+    printf("Output Depth (z)...\n");
+    outfile = outputPath_ + "fl_depth.txt";
+    poutfile=fopen( outfile.c_str(),"w");
     //fprintf(out,"%d\n",NbCVs);
-    fprintf(poutfile,"%s\n","DEPTH");    
-    for (i=0;i<NbCVs;i++) 
+    fprintf(poutfile,"%s\n","DEPTH");
+    for (i=0;i<NbCVs;i++)
       fprintf(poutfile,"%e\n",fabs(CVz[i]));
 
     fprintf(poutfile,"%s\n","/\n");
@@ -1223,7 +1259,7 @@ void CalcTranses::outputKarimi()
 
     /* OUTPUT Transmissibility */
     printf("Output Transmissibility...\n");
-    outfile = outputPath_ + "fl_tran.txt";    
+    outfile = outputPath_ + "fl_tran.txt";
     poutfile=fopen( outfile.c_str(),"w");
     fprintf(poutfile,"%s\n","TPFACONNS");
     fprintf(poutfile,"%d\n",NbTransmissibility);
@@ -1233,19 +1269,19 @@ void CalcTranses::outputKarimi()
 
     fprintf(poutfile,"%s\n","/\n");
     fclose(poutfile);
-    
+
     printf("Output Transmissibility and Geometrical part...\n");
-    outfile = outputPath_ + "fl_tran_n.txt";    
+    outfile = outputPath_ + "fl_tran_n.txt";
     poutfile=fopen( outfile.c_str(),"w");
     fprintf(poutfile,"%s\n","TPFACONNSN");
     fprintf(poutfile,"%d\n",NbTransmissibility);
-    
-    for (i=0;i<NbTransmissibility;i++) 
+
+    for (i=0;i<NbTransmissibility;i++)
       fprintf(poutfile,"%d\t%d\t%e\t%e\n",iTr[i],jTr[i],Tij[i] * 0.0085267146719160104986876640419948, TConductionIJ[i]);
 
     fprintf(poutfile,"%s\n","/\n");
     fclose(poutfile);
-    
+
     string outstring =  outputPath_ + "fl_tran_u.txt";
     poutfile = fopen(outstring.c_str(),"w");
     fprintf(poutfile,"GMUPDATETRANS\n");
@@ -1257,7 +1293,7 @@ for(i=0;i<NbConnections;i++)
 	if(ConType[i]==1)		// M-M ////////////////////////////
 	{
           // Con# ConType i ai j aj -> Tij=ai*aj/(ai+aj)
-	  fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\n", k, 
+	  fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\n", k,
 		  ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1], ConTr[i][1]);
 	}
 	if(ConType[i]==2)		// M-F ////////////////////////////
@@ -1272,16 +1308,16 @@ for(i=0;i<NbConnections;i++)
   if(ConType[i]==3)	// F-F /////////////////////////////////////////////////
     {
      //Con# ConType i ci ei ki j cj ej kj N n cn en kn
-     //ai=ci*ki*ei aj=cj*kj*ej an=cn*kn*en		
+     //ai=ci*ki*ei aj=cj*kj*ej an=cn*kn*en
      //-> Tij=ai*aj/(SUM an)
-     //	
+     //
     for(int j=0;j<ConN[i]-1;j++)
     for(int n=j+1;n<ConN[i];n++)
       {
       fprintf(poutfile,"%d\t%d\t%d\t%e\t%e\t%e\t%d\t%e\t%e\t%e\t",
       k,
       ConType[i],
-      
+
       ConCV[i][j],
       ConTr[i][j]/(ConPerm[i][j]*ZVolumeFactor[CVZone[ConCV[i][j]]]),
       ZVolumeFactor[CVZone[ConCV[i][j]]],
@@ -1291,7 +1327,7 @@ for(i=0;i<NbConnections;i++)
       ConTr[i][n]/(ConPerm[i][n]*ZVolumeFactor[CVZone[ConCV[i][n]]]),
       ZVolumeFactor[CVZone[ConCV[i][n]]],
       ConPerm[i][n]);
-      
+
       fprintf(poutfile,"%d\t",ConN[i]);
 	for(int m=0;m<ConN[i];m++)
 	fprintf(poutfile,"%d\t%e\t%e\t%e\t",
@@ -1299,13 +1335,12 @@ for(i=0;i<NbConnections;i++)
 	ConTr[i][m]/(ConPerm[i][m]*ZVolumeFactor[CVZone[ConCV[i][m]]]),
 	ZVolumeFactor[CVZone[ConCV[i][m]]],
 	ConPerm[i][m]);
-	
+
 	fprintf(poutfile,"\n");
-      k++;      
+      k++;
       }
     }
    }
     fprintf(poutfile,"/\n");
     fclose(poutfile);
 }
-

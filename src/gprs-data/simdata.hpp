@@ -156,6 +156,12 @@ public:
   void extractInternalFaces();
   std::size_t n_default_vars();
 
+  // get property from cell->v_props by key
+  double get_property(const std::size_t cell,
+                      const std::string & key) const;
+
+  angem::Point<3,double> get_permeability(const std::size_t cell) const;
+
 protected:
    void methodElementCenter(int nelem, vector<Gelement> &vsElement);
    void methodFaceNormalVector(int nelem, vector<Gelement> &vsElement);

@@ -22,7 +22,7 @@
 #include <iterator>
 #include <vector>
 #include <set>
-#include <time.h>    
+#include <time.h>
 
 #include "simdata.hpp"
 class SimData;
@@ -35,10 +35,10 @@ public:
   ~CalcTranses();
   void createKarimiData();
   void createKarimiApproximation();
-  void outputKarimi();
+  void outputKarimi(const std::string & output_path);
 
 
-public:    
+public:
   int NbNodes;
   int NbPolygons;
   int NbPolyhedra;
@@ -51,15 +51,15 @@ public:
   vector<double> vCoordinatesZ;
   //faces
   vector<int> vNbVFaces;
-  vector<vector<int> > vvVFaces;    
+  vector<vector<int> > vvVFaces;
   vector<int> vCodePolygon;
   //elements
   vector<int> vNbFNodes;
   vector<vector<int> > vvFNodes;
   vector<int> vCodePolyhedron;
-  //properties  
+  //properties
   vector<int> vZoneCode;
-  vector<double> vZVolumeFactor;  
+  vector<double> vZVolumeFactor;
   vector<double> vTimurConnectionFactor;
   vector<double> vZPorosity;
   vector<int> vZPermCode;
@@ -133,8 +133,8 @@ int		*ZoneCode;
 double		*ZVolumeFactor;
 double		*ZPorosity;
 int		*ZPermCode;
-double		**ZPermeability;	
-double		**ZConduction;	
+double		**ZPermeability;
+double		**ZConduction;
 double		K1,K2,K3,K4,K5,K6;
 double		Kx,Ky,Kz;
 
@@ -163,7 +163,7 @@ double		*Tij,SumTr, *TConductionIJ;
 
 int		NbEdges;	// Actives
 int		*ListV1,*ListV2;
-int		*ListE1,*ListE2,*ListF;	
+int		*ListE1,*ListE2,*ListF;
 
 double		TotalVolume,FaceArea,delta;
 double		LocalDistance,t,xt,yt,zt;

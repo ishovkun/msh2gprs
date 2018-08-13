@@ -296,7 +296,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
                 bool is_constrained = false;
                 for (const auto & bc_node : pSim->config.bc_nodes)
                   if (bc_node.coord.distance(coord) < 1e-10)
-                    if (bc_node.value[j] == pSim->config.nan)
+                    if (bc_node.value[j] != pSim->config.nan)
                     {
                       is_constrained = true;
                       vv_disp_node_values[j].push_back(bc_node.value[j]);

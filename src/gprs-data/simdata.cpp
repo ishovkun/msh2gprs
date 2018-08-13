@@ -9,6 +9,7 @@
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
+#include <exception>
 
 using Point = angem::Point<3, double>;
 
@@ -1549,4 +1550,47 @@ void SimData::createSimpleWells()
     }
   }
 #endif
+}
+
+
+double SimData::get_property(const std::size_t cell,
+                             const std::string & key) const
+{
+  // get index in all_var array
+  const std::size_t ikey = find(key, config.all_vars);
+  // get domain index
+  int i_domain = 0;
+  for (int i=0; i<config.domains.size(); ++i)
+    if ( vsCellCustom[cell].nMarker == config.domains[i].label ) // Regular cells
+      i_domain = i;
+
+  // query property by key
+  if (ikey == config.all_vars.size())
+    throw std::out_of_range(key);
+  else
+    return vsCellRockProps[cell].
+        v_props[config.domains[i_domain].global_to_local_vars.at(ikey)];
+
+  return 0;
+}
+
+
+angem::Point<3,double> SimData::get_permeability(const std::size_t cell) const
+{
+  try
+  {
+    const double perm = get_property(cell, "PERM");
+    return angem::Point<3,double>(perm, perm, perm);
+
+  }
+  catch (const std::out_of_range& e)
+  {
+    const double permx = get_property(cell, "PERMX");
+    const double permy = get_property(cell, "PERMY");
+    const double permz = get_property(cell, "PERMZ");
+    return angem::Point<3,double>(permx, permy, permz);
+  }
+  // vector<RockProps> vsCellRockProps;
+  // std::vector<double> v_props;
+
 }

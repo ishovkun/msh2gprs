@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
   OutputData * pOut;
   pOut = new OutputData(pSimData);
 
-  pOut->writeGeomechDataNewKeywords(path_config.parent_path().string() + "/");
-  // pTranses->outputKarimi();
+  const auto output_path = path_config.parent_path().string() + "/";
+  pOut->writeGeomechDataNewKeywords(output_path);
+  pTranses->outputKarimi(output_path);
 }
