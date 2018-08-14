@@ -259,10 +259,8 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
         geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
         geomechfile << pSim->vsPhysicalFacet[i].condition << endl;
       }
-
     geomechfile << "/\n\n";
   }
-
 
   // Dirichlet faces
   // @HACK SUPPORT POINTS
@@ -272,15 +270,14 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   std::vector<std::vector<std::size_t>> vv_disp_node_ind(dim);
   std::vector<std::vector<double>> vv_disp_node_values(dim);
 
-  setDisp.clear();
   if ( pSim->nDirichletFaces > 0 )
     for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
       if ( pSim->vsPhysicalFacet[i].ntype == 1 )  // dirichlet
         for (std::size_t j=0; j<dim; ++j)
-        {
           if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
           {
-            int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
+            const int nvrtx = pSim->vsFaceCustom
+                [ pSim->vsPhysicalFacet[i].nface ].nVertices;
             for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
             {
               // check if already in set
@@ -292,12 +289,16 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
                 vv_disp_node_ind[j].push_back(vertex_);
 
                 // check if this specific point is user-constrained
-                const auto & coord = pSim->vvVrtxCoords[vertex_];
                 bool is_constrained = false;
+                std::cout << "checking constraints" << std::endl;
+
+                const auto & coord = pSim->vvVrtxCoords[vertex_];
                 for (const auto & bc_node : pSim->config.bc_nodes)
                   if (bc_node.coord.distance(coord) < 1e-10)
                     if (bc_node.value[j] != pSim->config.nan)
                     {
+                      std::cout << "hit constrained node" << std::endl;
+
                       is_constrained = true;
                       vv_disp_node_values[j].push_back(bc_node.value[j]);
                       break;
@@ -308,11 +309,10 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
               }
             }  // end face vertices loop
           } // end nan condition
-        }  // end j loop
 
   setDisp.clear();
 
-  cout << "write all Dirichlet faces\n";
+  std::cout << "write all Dirichlet faces" << std::endl;
   for (std::size_t j=0; j<dim; ++j)
     if (vv_disp_node_ind[j].size() > 0)
     {

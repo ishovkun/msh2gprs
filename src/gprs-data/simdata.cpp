@@ -1379,26 +1379,24 @@ void SimData::definePhysicalFacets()
   nDirichletNodes = 0;
 
   vsPhysicalFacet.resize(nFaces);
-  for (int iface = 0; iface < nFaces; iface++)
+  for (std::size_t iface = 0; iface < nFaces; iface++)
   {
     if(vsFaceCustom[iface].nMarker < 0)  // probably external face
       for (const auto & conf : config.bc_faces)
-      {
-        // std::cout << "key = "<< conf.label << std::endl;
-
         if( vsFaceCustom[iface].nMarker == conf.label)
         {
-          vsPhysicalFacet[n_facets].nface = n_facets;
+          vsPhysicalFacet[n_facets].nface = iface;
           vsPhysicalFacet[n_facets].ntype = conf.type;
           vsPhysicalFacet[n_facets].nmark = conf.label;
           vsPhysicalFacet[n_facets].condition = conf.value;
           n_facets++;
           if (conf.type == 1)
             nDirichletFaces++;
-          else
+          else if (conf.type == 2)
             nNeumannFaces++;
+          else
+            throw std::invalid_argument("boundary type can be only 1 and 2");
         }
-      }
   }
 
   nPhysicalFacets = n_facets;

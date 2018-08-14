@@ -220,7 +220,7 @@ public:
 
   int nExternalBoundaryFaces;
   int nInternalBoundaryFaces;
-  int nFaces;
+  std::size_t nFaces;
   vector<Gelement> vsFaceCustom;
 
   set<int> setIdenticalExternalMarker;
