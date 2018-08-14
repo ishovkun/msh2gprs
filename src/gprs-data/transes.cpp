@@ -136,25 +136,16 @@ void CalcTranses::createKarimiData()
 
   for ( std::size_t i = 0; i < NbPolyhedra; i++ )
   {
-    std::cout << "i = "<< i << std::endl;
-
     const std::size_t n = i + NbFracs;
     vZoneCode[n] = vCodePolyhedron[i];
-    std::cout << "zone code ok" << std::endl;
 
     vZPorosity[n] = pSim->get_property(i, "PORO");
     vZPermCode[n] = 1;
-
-    std::cout << "poro ok" << std::endl;
-
 
     const auto perm = pSim->get_permeability(i);
     vZPermeability[n*3+0] = perm[0];
     vZPermeability[n*3+1] = perm[1];
     vZPermeability[n*3+2] = perm[2];
-
-    std::cout << "perm ok" << std::endl;
-
 
     double thc = 0;
     try
@@ -167,16 +158,12 @@ void CalcTranses::createKarimiData()
       vZConduction[n*3+1] = thc;
       vZConduction[n*3+2] = thc;
     }
-    std::cout << "tc ok" << std::endl;
 
 
     vZVolumeFactor[n] = 1;
     vTimurConnectionFactor[n] = 1.0;
-    std::cout << "connection ok" << std::endl;
 
   }
-
-  std::cout << "done with karimi" << std::endl;
 
 }
 

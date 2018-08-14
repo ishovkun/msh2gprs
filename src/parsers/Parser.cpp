@@ -111,9 +111,6 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it)
         // save positions in the global list
         conf.local_to_global_vars[exp_counter] = ind;
         conf.global_to_local_vars[ind] = exp_counter;
-        std::cout << "var number " << ind << "\t";
-        std::cout << "return map " << exp_counter << "\t";
-        std::cout << std::endl;
         exp_counter++;
       }
 

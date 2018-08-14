@@ -175,7 +175,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       {
         geomechfile << pSim->vsCellRockProps[icell].v_props[ivar] << "\t";
         if ((icell+1)%10 == 0)
-          std::cout << std::endl;
+          geomechfile << std::endl;
       }
       geomechfile << std::endl << "/" << std::endl << std::endl;
     }
