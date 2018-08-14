@@ -1,0 +1,102 @@
+{
+    "Mesh file" : "geom.msh",
+
+    "Embedded Fractures" :
+    {
+        "file" : "efrac.txt",
+		    "0":
+        {
+            "type": "Rectangle",
+            "center" : [0,  5,  0],
+            "length":  2,
+            "height":  1,
+            "dip":     90,
+            "strike":  0,
+            "cohesion": 0,
+            "friction angle": 30,
+            "dilation angle": 30
+        }
+    }
+
+    , "Domain Properties" :
+    {
+        "_comment_" : "sort is the order of evaluation!",
+        "file" : "domain.txt",
+        "9999992": [
+            {"_comment_"                     : "SDA"},
+            {"GMCELL_MODEL"                  : "3"},
+            {"RTEMP"                         : "343.15"},
+            {"THCROCK"                       : "2.8"},
+            {"GMREF_PRESSURE"                : "1"},
+            {"GMCELL_DENSITY"                : "1000"},
+            {"GMCELL_BIOT"                   : "1"},
+            {"GMREF_TEMPERATURE"             : "343.15"},
+            {"GMCELL_HEAT_CAPACITY"          : "2626.0605"},
+            {"GMCELL_THERMAL_EXPANSION"      : "0"},
+            {"GMCELL_PORE_THERMAL_EXPANSION" : "0"},
+            {"PORO"                          : "0.2"},
+            {"PERM"                          : "10"},
+            {"GMCELL_POISSON"                : "0.25"},
+            {"GMCELL_YOUNG"                  : "1"},
+            {"PRESSURE"                      : "1"}
+        ]
+    }
+    , "Boundary conditions" :
+    {
+        "file" : "bcond.txt",
+        "Faces" :
+        {
+            "-1111111" :
+            {
+                "_comment_": "Left",
+                "type" : 1,
+                "value" : ["0", "nan", "nan"]
+            }
+            , "-2222221" :
+            {
+                "_comment_": "back",
+                "type" : 1,
+                "value": ["nan", "0", "nan"]
+            }
+            , "-2222222" :
+            {
+                "_comment_": "front",
+                "type" : 1,
+                "value": ["nan", "0", "nan"]
+            }
+            , "-3333331" : {
+                "_comment_": "top",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+            , "-3333332" : {
+                "_comment_": "bottom",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+        }
+        , "Dirichlet nodes" : {
+            "_comment_" : "assign specific points to be fixed",
+            "0" :
+            {
+                "coord" : [5, 0, 0],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "1" :
+            {
+                "coord" : [5, 0, 1],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "2" :
+            {
+                "coord" : [5, 10, 0],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "3" :
+            {
+                "coord" : [5, 10, 1],
+                "value" : ["nan", "0" , "nan"]
+            }
+        }
+    }
+}
