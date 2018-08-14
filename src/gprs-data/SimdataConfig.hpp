@@ -1,6 +1,8 @@
 #pragma once
 #include <Polygon.hpp>
 
+#include <memory> // shared / unique_ptr
+
 struct DomainConfig
 {
   int label;
@@ -28,7 +30,7 @@ struct BCConfig
 
 struct EmbeddedFractureConfig
 {
-  angem::Polygon<double> body;  // embedded fractures
+  std::shared_ptr<angem::Polygon<double>> body;  // embedded fractures
   double cohesion = 0;
   double friction_angle = 30;
   double dilation_angle = 0;
@@ -50,6 +52,7 @@ struct SimdataConfig
   std::string bcond_file = "bcond.txt";
 
   static constexpr double nan = -999.999;
+  double node_search_tolerance = 1e-10;
 };
 
 

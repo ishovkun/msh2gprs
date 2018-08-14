@@ -198,14 +198,13 @@ public:
   string outstream;
 
   // Internal Data
-  int nVertices;
+  std::size_t nVertices;
   double maxVrtxCoordsX;
   double maxVrtxCoordsY;
   double maxVrtxCoordsZ;
   double minVrtxCoordsX;
   double minVrtxCoordsY;
   double minVrtxCoordsZ;
-  // vector<vector<double> > vvVrtxCoords;
   vector< angem::Point<3,double> > vvVrtxCoords;
   vector<vector<double> > vvVrtxDisp;
   vector<int> vConstraintVertex;

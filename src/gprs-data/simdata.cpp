@@ -94,6 +94,8 @@ void SimData::defineEmbeddedFractureProperties()
     Point total_shift = {0, 0, 0};
 
  redo_collision:
+    std::cout << *(frac_conf.body) << std::endl;
+
     // find cells intersected by the fracture
     frac.cells.clear();
     for(std::size_t icell = 0; icell < nCells; icell++)
@@ -106,7 +108,7 @@ void SimData::defineEmbeddedFractureProperties()
 
       angem::Shape<double> pcell(verts);
 
-      if (collision.check(frac_conf.body, pcell))
+      if (collision.check(*frac_conf.body, pcell))
       {
         frac.cells.push_back(icell);
 
@@ -116,15 +118,15 @@ void SimData::defineEmbeddedFractureProperties()
         {
           const auto & vert = vvVrtxCoords[ivertex];
           const auto vc = vsCellCustom[icell].center - vert;
-          if ( fabs(frac_conf.body.plane.distance(vert)/vc.norm()) < 1e-6 )
+          if ( fabs(frac_conf.body->plane.distance(vert)/vc.norm()) < 1e-6 )
           {
-            const auto shift = 1e-5 * frac_conf.body.plane.normal();
+            const auto shift = 1e-5 * frac_conf.body->plane.normal();
             total_shift += shift;
             std::cout << "shifting fracture: " << shift ;
             std::cout << " due to collision with vertex: " << ivertex;
             std::cout << std::endl;
             // std::cout << frac.plane.point << "\t";
-            frac_conf.body.move(shift);
+            frac_conf.body->move(shift);
             goto redo_collision;
           }
         }  // end adjusting fracture
@@ -146,11 +148,11 @@ void SimData::defineEmbeddedFractureProperties()
     std::cout << "n_efrac_cells = " << n_efrac_cells << std::endl;
 
     vsEmbeddedFractures[ef_ind].points.assign(n_efrac_cells,
-                                              frac_conf.body.center());
+                                              frac_conf.body->center());
     vsEmbeddedFractures[ef_ind].dip.assign(n_efrac_cells,
-                                           frac_conf.body.plane.dip_angle());
+                                           frac_conf.body->plane.dip_angle());
     vsEmbeddedFractures[ef_ind].strike.assign(n_efrac_cells,
-                                              frac_conf.body.plane.strike_angle());
+                                              frac_conf.body->plane.strike_angle());
 
     vsEmbeddedFractures[ef_ind].cohesion = frac_conf.cohesion;
     vsEmbeddedFractures[ef_ind].friction_angle = frac_conf.friction_angle;

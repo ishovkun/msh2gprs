@@ -40,6 +40,7 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
   // heading up the fracture
   Point<3,Scalar> t2 = {cos(rdip)*sin(rstrike), -cos(rdip)*cos(rstrike), sin(rdip)};
 
+  v_points.clear();
   // define rectangle vertices
   // top left
   v_points.emplace_back();
@@ -54,7 +55,7 @@ Rectangle<Scalar>::Rectangle(Point<3,Scalar> center,
   v_points.emplace_back();
   v_points.back() = center + 0.5*length*t1 + 0.5*height*t2;
 
-  this->set_data(v_points);
+  Polygon<Scalar>::set_data(v_points);
 }
 
 } // end angem

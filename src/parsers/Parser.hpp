@@ -30,6 +30,10 @@ class Parser
   void boundary_conditions_node(nlohmann::json::iterator it,
                                 const nlohmann::json::iterator & end,
                                 BCNodeConfig & conf);
+  void embedded_fracture(nlohmann::json::iterator it,
+                         const nlohmann::json::iterator & end,
+                         EmbeddedFractureConfig & conf);
+
 
   std::pair<std::string,std::string>
   get_pair_json(const nlohmann::json::iterator & section_it);

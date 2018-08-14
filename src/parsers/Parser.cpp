@@ -137,60 +137,17 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
   {
     if (frac_it.key() == comment)
       continue;
-    if (frac_it.key() == "file")
+    else if (frac_it.key() == "file")
     {
       config.efrac_file = (*frac_it).get<std::string>();
       continue;
     }
-
-    config.fractures.emplace_back();
-    auto & frac = config.fractures.back();
-
-    if ((*frac_it)["type"] != "Rectangle")
+    else
     {
-      std::cout << "Shape "<< (*frac_it)["type"]
-                <<" not implemented: skipping" << std::endl;
-      config.fractures.pop_back();
-      continue;
+      config.fractures.emplace_back();
+      embedded_fracture((*frac_it).begin(), (*frac_it).end(),
+                        config.fractures.back());
     }
-
-    nlohmann::json::iterator
-        attrib_it = (*frac_it).begin(),
-        attrib_end = (*frac_it).end();
-
-    double height = 1;  // for rectangles and ellipses
-    double length = 1;  // for rectangles and ellipses
-    double dip = 0;
-    double strike = 0;
-    angem::Point<3,double> center;
-    for (;attrib_it != attrib_end; ++attrib_it)
-    {
-      const auto key = attrib_it.key();
-      if (key == "height")
-        height = (*attrib_it).get<double>();
-      else if (key == "length")
-          length = (*attrib_it).get<double>();
-      else if (key == "dip")
-        dip = (*attrib_it).get<double>();
-      else if (key == "strike")
-        strike = (*attrib_it).get<double>();
-      else if (key == "center")
-        center = (*attrib_it).get<std::vector<double>>();
-      else if (key == "cohesion")
-        frac.cohesion = (*attrib_it).get<double>();
-      else if (key == "friction angle")
-        frac.friction_angle = (*attrib_it).get<double>();
-      else if (key == "dilation angle")
-        frac.dilation_angle = (*attrib_it).get<double>();
-      else if (key == comment)
-        continue;
-      else
-        std::cout << "attribute " << key
-                  << " unknown: skipping" << std::endl;
-    }
-
-    frac.body = angem::Rectangle<double>(center, length,
-                                         height, dip, strike);
   }
 
 }
@@ -205,6 +162,8 @@ Parser::boundary_conditions_json(const nlohmann::json::iterator & it)
 
   for (;bc_it != bc_end; ++bc_it)
   {
+    std::cout << "parsing " << bc_it.key() << std::endl;
+
     if (bc_it.key() == comment)
       continue;
     else if (bc_it.key() == "file")
@@ -237,6 +196,7 @@ Parser::boundary_conditions_faces(nlohmann::json::iterator it,
 {
   for (; it != end; ++it)
   {
+    std::cout << "parsing entry " << it.key() << std::endl;
     if (it.key() == comment)
       continue;
 
@@ -284,8 +244,16 @@ Parser::boundary_conditions_nodes(nlohmann::json::iterator         it,
 {
   for (; it != end; ++it)
   {
+    std::cout << "parsing entry "<< it.key() << std::endl;
+
     if (it.key() == comment)
       continue;
+    else if (it.key() == "search tolerance")
+    {
+      config.node_search_tolerance = (*it).get<double>();
+      continue;
+    }
+
 
     config.bc_nodes.emplace_back();
     auto & conf = config.bc_nodes.back();
@@ -325,6 +293,61 @@ Parser::boundary_conditions_node(nlohmann::json::iterator it,
       std::cout << "attribute " << it.key()
                 << " unknown: skipping" << std::endl;
   }
+}
+
+void Parser::embedded_fracture(nlohmann::json::iterator it,
+                               const nlohmann::json::iterator & end,
+                               EmbeddedFractureConfig & conf)
+{
+  // default parameters
+  std::string shape = "Rectangle";
+  double height = 1;  // for rectangles and ellipses
+  double length = 1;  // for rectangles and ellipses
+  double dip = 0;
+  double strike = 0;
+  double cohesion = 0;
+  angem::Point<3,double> center = {0, 0, 0};
+  double friction_angle = 30;
+  double dilation_angle = 0;
+
+  for (; it != end; ++it)
+  {
+    const auto key = it.key();
+    std::cout << "parsing entry " << key << std::endl;
+    if (key == comment)
+      continue;
+    else if (key == "type")
+    {
+      assert (shape == (*it).get<std::string>());
+      shape = (*it).get<std::string>();
+    }
+    else if (key == "height")
+      height = (*it).get<double>();
+    else if (key == "length")
+      length = (*it).get<double>();
+    else if (key == "strike")
+      strike = (*it).get<double>();
+    else if (key == "dip")
+      dip = (*it).get<double>();
+    else if (key == "cohesion")
+      cohesion = (*it).get<double>();
+    else if (key == "friction angle")
+      friction_angle = (*it).get<double>();
+    else if (key == "dilation angle")
+      dilation_angle = (*it).get<double>();
+    else if (key == "center")
+      center = (*it).get<std::vector<double>>();
+    else
+      std::cout << "attribute " << key
+                << " unknown: skipping" << std::endl;
+  }
+
+  conf.body = std::make_shared<angem::Rectangle<double>>
+      (center, length, height, dip, strike);
+
+  conf.cohesion = cohesion;
+  conf.friction_angle = friction_angle;
+  conf.dilation_angle = dilation_angle;
 }
 
 }  // end namespace
