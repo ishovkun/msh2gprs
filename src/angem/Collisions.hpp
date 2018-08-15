@@ -57,14 +57,58 @@ bool collision(const Polygon<Scalar>        & poly,
                std::vector<Point<3,Scalar>> & intersection)
 {
   // call collision of all edges
+  bool result = false;
+  const auto & p_pts = poly.get_points();
+  for (std::size_t i=0; i<p_pts.size(); ++i)
+  {
+    bool loc_collision = false;
+    if (i < p_pts.size() - 1)
+      loc_collision = collision(*p_pts[i], *p_pts[i+1], plane, intersection);
+    else
+      loc_collision = collision(*p_pts[i], *p_pts[0], plane, intersection);
+    if (loc_collision)
+      result = true;
+  }
+
+  return result;
 }
 
 
+// intersection is appended to!
 template <typename Scalar>
-Point<3,Scalar> collision(const Segment<Scalar>  & seg,
-                          const Plane<Scalar>    & plane,
-                          Point<3,Scalar>        & intersection)
+bool collision(const Point<3,Scalar>        & l0,
+               const Point<3,Scalar>        & l1,
+               const Plane<Scalar>          & plane,
+               std::vector<Point<3,Scalar>> & intersection,
+               const double                   tol = 1e-10)
 {
+  // Plane : (p - p0) · n = 0
+  // line p = d l + l0
+  // segment : l0, l1
+  // intersection: d = (p0 - l0) · n / (l · n)
   // call collision of all edges
+  const Scalar d1 = plane.distance(l0);
+  const Scalar d2 = plane.distance(l1);
+
+  // both points are on the plane
+  if (fabs(d1) + fabs(d2) < tol)
+  {
+    return true;
+    intersection.push_back(l0);
+    intersection.push_back(l1);
+  }
+
+  if (d1*d2 > 0)  // both points on one side of plane
+    return false;
+
+  // compute intersection point
+  const Point<3,Scalar> l = l1 - l0;
+  const Scalar d = (plane.point - l0).dot(plane.normal()) /
+                    l.dot(plane.normal());
+  intersection.push_back(l0 + d * l);
+  return true;
+
+
 }
+
 }  // end namespace

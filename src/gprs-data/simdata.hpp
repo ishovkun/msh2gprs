@@ -124,6 +124,7 @@ struct EmbeddedFracture
   double                              cohesion;
   double                              friction_angle;
   double                              dilation_angle;
+  std::vector<std::vector<angem::Point<3,double>>> vvSection;
 };
 
 
@@ -200,14 +201,13 @@ public:
   string outstream;
 
   // Internal Data
-  int nVertices;
+  std::size_t nVertices;
   double maxVrtxCoordsX;
   double maxVrtxCoordsY;
   double maxVrtxCoordsZ;
   double minVrtxCoordsX;
   double minVrtxCoordsY;
   double minVrtxCoordsZ;
-  // vector<vector<double> > vvVrtxCoords;
   vector< angem::Point<3,double> > vvVrtxCoords;
   vector<vector<double> > vvVrtxDisp;
   vector<int> vConstraintVertex;
@@ -215,14 +215,14 @@ public:
   int nCells;
   vector<Gelement> vsCellCustom;
   vector<RockProps> vsCellRockProps;
-  vector<EmbeddedFracture> vsEmbeddedFractures;
+  vector<EmbeddedFracture> vEfrac;
 
   int nAtoms;
   vector<vector<int> > vvAtoms;
 
   int nExternalBoundaryFaces;
   int nInternalBoundaryFaces;
-  int nFaces;
+  std::size_t nFaces;
   vector<Gelement> vsFaceCustom;
 
   set<int> setIdenticalExternalMarker;

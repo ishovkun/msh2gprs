@@ -2,6 +2,7 @@
 
 #include <Point.hpp>
 #include <limits>
+#include <iostream>
 
 namespace angem
 {
@@ -20,10 +21,13 @@ class Shape
 
     // getter
     std::vector<Point<3,Scalar> *> & get_points();
+    const std::vector<Point<3,Scalar> *> & get_points() const;
     // check if empty
     bool empty() const;
     // support function for gjk collision algorithm
     virtual Point<3,Scalar> support(Point<3, Scalar> & direction) const;
+    // center mass
+    virtual Point<3,Scalar> center() const;
     // shift all points in direction p
     virtual void move(const Point<3,Scalar> & p);
 
@@ -39,9 +43,13 @@ Shape<Scalar>::Shape()
 
 template<typename Scalar>
 Shape<Scalar>::Shape(std::vector<Point<3,Scalar> *> & point_list)
-    :
-    points(point_list)
-{}
+{
+  points.clear();
+  points.resize(point_list.size());
+
+  for (std::size_t i=0; i<point_list.size(); ++i)
+    points[i] = point_list[i];
+}
 
 
 template<typename Scalar>
@@ -55,9 +63,11 @@ template<typename Scalar>
 void
 Shape<Scalar>::set_data(std::vector<Point<3,Scalar>> & point_list)
 {
-  points.reserve(point_list.size());
-  for (auto & p : point_list)
-    points.push_back(&p);
+  points.clear();
+  points.resize(point_list.size());
+
+  for (std::size_t i=0; i<point_list.size(); ++i)
+    points[i] = &point_list[i];
 }
 
 
@@ -114,11 +124,39 @@ Shape<Scalar>::get_points()
 
 
 template<typename Scalar>
+const std::vector<Point<3,Scalar> *> &
+Shape<Scalar>::get_points() const
+{
+  return points;
+}
+
+
+template<typename Scalar>
 void
 Shape<Scalar>::move(const Point<3,Scalar> & p)
 {
   for (std::size_t i=0; i<points.size(); ++i)
     *points[i] += p;
+}
+
+
+template<typename Scalar>
+Point<3,Scalar>
+Shape<Scalar>::center() const
+{
+  return compute_center_mass(points);
+}
+
+
+template<typename Scalar>
+std::ostream &operator<<(std::ostream        & os,
+                         const Shape<Scalar> & p)
+{
+  const std::vector<Point<3,Scalar> *> & points = p.get_points();
+
+  for (std::size_t i=0; i<points.size(); ++i)
+    os << *(points[i]) << std::endl;
+  return os;
 }
 
 }

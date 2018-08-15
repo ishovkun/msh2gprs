@@ -7,9 +7,9 @@
 		    "0":
         {
             "type": "Rectangle",
-            "center" : [0,  5,  0],
+            "center" : [-4,  0,  0],
             "length":  2,
-            "height":  1,
+            "height":  2,
             "dip":     90,
             "strike":  0,
             "cohesion": 0,
@@ -46,56 +46,51 @@
         "file" : "bcond.txt",
         "Faces" :
         {
-            "-1111111" :
-            {
-                "_comment_": "Left",
-                "type" : 1,
-                "value" : ["0", "nan", "nan"]
-            }
-            , "-2222221" :
-            {
-                "_comment_": "back",
-                "type" : 1,
-                "value": ["nan", "0", "nan"]
-            }
-            , "-2222222" :
+            "-2222221" :
             {
                 "_comment_": "front",
                 "type" : 1,
                 "value": ["nan", "0", "nan"]
             }
-            , "-3333331" : {
+            , "-2222222" : {
+                "_comment_": "back",
+                "type" : 2,
+                "value": ["0", "-10", "0"]
+            }
+            , "-3333332" : {
                 "_comment_": "top",
                 "type" : 1,
                 "value": ["nan", "nan", "0"]
             }
-            , "-3333332" : {
+            , "-3333331" : {
                 "_comment_": "bottom",
                 "type" : 1,
                 "value": ["nan", "nan", "0"]
             }
         }
+
         , "Dirichlet nodes" : {
             "_comment_" : "assign specific points to be fixed",
+            "search tolerance" : 1e-10,
             "0" :
             {
-                "coord" : [5, 0, 0],
-                "value" : ["nan", "0" , "nan"]
+                "coord" : [-5, 0, 0],
+                "value" : ["0", "nan" , "nan"]
             }
             , "1" :
             {
-                "coord" : [5, 0, 1],
-                "value" : ["nan", "0" , "nan"]
+                "coord" : [-5, 0, 1],
+                "value" : ["0", "nan" , "nan"]
             }
             , "2" :
             {
-                "coord" : [5, 10, 0],
-                "value" : ["nan", "0" , "nan"]
+                "coord" : [5, 0, 0],
+                "value" : ["0", "nan" , "nan"]
             }
             , "3" :
             {
-                "coord" : [5, 10, 1],
-                "value" : ["nan", "0" , "nan"]
+                "coord" : [5, 0, 1],
+                "value" : ["0", "nan" , "nan"]
             }
         }
     }

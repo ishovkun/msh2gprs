@@ -5,6 +5,7 @@
 // #include "GJK_Algorithm.hpp"
 #include "Rectangle.hpp"
 #include "CollisionGJK.hpp"
+#include <Collisions.hpp>
 #include <muParser.h>
 
 #define SPECIAL_CELL = 999
@@ -89,11 +90,13 @@ void SimData::defineEmbeddedFractureProperties()
   // non-const since fracture is adjusted to avoid collision with vertices
   for (auto & frac_conf : config.fractures)
   {
-    vsEmbeddedFractures.emplace_back();
-    auto & frac = vsEmbeddedFractures.back();
+    vEfrac.emplace_back();
+    auto & frac = vEfrac.back();
     Point total_shift = {0, 0, 0};
 
  redo_collision:
+    std::cout << *(frac_conf.body) << std::endl;
+
     // find cells intersected by the fracture
     frac.cells.clear();
     for(std::size_t icell = 0; icell < nCells; icell++)
@@ -106,7 +109,7 @@ void SimData::defineEmbeddedFractureProperties()
 
       angem::Shape<double> pcell(verts);
 
-      if (collision.check(frac_conf.body, pcell))
+      if (collision.check(*frac_conf.body, pcell))
       {
         frac.cells.push_back(icell);
 
@@ -116,15 +119,15 @@ void SimData::defineEmbeddedFractureProperties()
         {
           const auto & vert = vvVrtxCoords[ivertex];
           const auto vc = vsCellCustom[icell].center - vert;
-          if ( fabs(frac_conf.body.plane.distance(vert)/vc.norm()) < 1e-6 )
+          if ( fabs(frac_conf.body->plane.distance(vert)/vc.norm()) < 1e-6 )
           {
-            const auto shift = 1e-5 * frac_conf.body.plane.normal();
+            const auto shift = 1e-5 * frac_conf.body->plane.normal();
             total_shift += shift;
             std::cout << "shifting fracture: " << shift ;
             std::cout << " due to collision with vertex: " << ivertex;
             std::cout << std::endl;
             // std::cout << frac.plane.point << "\t";
-            frac_conf.body.move(shift);
+            frac_conf.body->move(shift);
             goto redo_collision;
           }
         }  // end adjusting fracture
@@ -138,28 +141,28 @@ void SimData::defineEmbeddedFractureProperties()
               << std::endl;
     if (n_efrac_cells == 0)
     {
-      vsEmbeddedFractures.pop_back();
+      vEfrac.pop_back();
       continue;
     }
 
     // fill out properties
     std::cout << "n_efrac_cells = " << n_efrac_cells << std::endl;
 
-    vsEmbeddedFractures[ef_ind].points.assign(n_efrac_cells,
-                                              frac_conf.body.center());
-    vsEmbeddedFractures[ef_ind].dip.assign(n_efrac_cells,
-                                           frac_conf.body.plane.dip_angle());
-    vsEmbeddedFractures[ef_ind].strike.assign(n_efrac_cells,
-                                              frac_conf.body.plane.strike_angle());
+    vEfrac[ef_ind].points.assign(n_efrac_cells,
+                                 frac_conf.body->center());
+    vEfrac[ef_ind].dip.assign(n_efrac_cells,
+                              frac_conf.body->plane.dip_angle());
+    vEfrac[ef_ind].strike.assign(n_efrac_cells,
+                                 frac_conf.body->plane.strike_angle());
 
-    vsEmbeddedFractures[ef_ind].cohesion = frac_conf.cohesion;
-    vsEmbeddedFractures[ef_ind].friction_angle = frac_conf.friction_angle;
-    vsEmbeddedFractures[ef_ind].dilation_angle = frac_conf.dilation_angle;
+    vEfrac[ef_ind].cohesion = frac_conf.cohesion;
+    vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
+    vEfrac[ef_ind].dilation_angle = frac_conf.dilation_angle;
 
     ef_ind++;
   }  // end efracs loop
 
-  // std::cout << vsEmbeddedFractures.size() << std::endl;
+  // std::cout << vEfrac.size() << std::endl;
   // abort();
 
 }
@@ -171,42 +174,77 @@ void SimData::computeCellClipping()
   // the mesh
 
   // criterion for point residing on the plane
-  const double tol = 1e-14;
+  const double tol = 1e-11;
 
   // too lazy to account for fractures not collided with any cells
-  assert(config.fractures.size() == vsEmbeddedFractures.size());
+  assert(config.fractures.size() == vEfrac.size());
 
   for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
   {
-    const auto & frac_cells = vsEmbeddedFractures[ifrac].cells;
+    std::cout << "looping efracs" << std::endl;
+    const auto & frac_cells = vEfrac[ifrac].cells;
+    const auto & frac_plane = config.fractures[ifrac].body->plane;
+    vEfrac[ifrac].vvSection.resize(frac_cells.size());
     /* loop faces:
      * if any neighbor cell is in collision list,
      * determine the intersection points with the fracture plane
      * add these points to the point set for cells
      * then loop cells and compute areas enclosed by points
      */
-    for(int iface = 0; iface < nFaces; iface++)
+    for(int iface = 0; iface < vsFaceCustom.size(); iface++)
     {
+      std::cout << "loop face = " << iface << std::endl;
+
+      bool has_fracture_neighbors = false;
       for (const auto & ineighbor : vsFaceCustom[iface].vNeighbors)
       {
-        const std::size_t frac_cell = find(ineighbor, frac_cells);
-        if (frac_cell != frac_cells.size())
+        const std::size_t frac_cell_local_ind = find(ineighbor, frac_cells);
+        if (frac_cell_local_ind != frac_cells.size())
+          has_fracture_neighbors = true;
+      }
+      if (has_fracture_neighbors)
+      {
+        // construct polygon and determine intersection points
+        angem::Polygon<double> poly_face(vvVrtxCoords,
+                                         vsFaceCustom[iface].vVertices);
+        std::vector<Point> section;
+        angem::collision(poly_face, frac_plane, section);
+
+        std::cout << "collision result:" << std::endl;
+        for (const auto & p : section)
+          std::cout << p << std::endl;
+
+        // if just one point -> discard
+        if (section.size() < 2)
+          continue;
+
+        // save intersection data into neighbor fracture cells
+        for (const auto & ineighbor : vsFaceCustom[iface].vNeighbors)
         {
-          // construct polygon and determine intersection points
-          angem::Polygon<double> poly_face(vvVrtxCoords,
-                                           vsFaceCustom[iface].vVertices);
+          const std::size_t frac_cell_local_ind = find(ineighbor, frac_cells);
+          if (frac_cell_local_ind != frac_cells.size())
+            for (const auto & p : section)
+              vEfrac[ifrac]. vvSection[frac_cell_local_ind]. push_back(p);
         }
       }
     }
 
-    // std::set<angem::Point<3,double>> points_on_plane;
-    // for (std::size_t icell=0; icell<vsEmbeddedFractures.cells.size(); ++icell)
-    // {
+    for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
+    {
+      std::cout << "cell: " << vEfrac[ifrac].cells[i] << std::endl;
+      for (auto & section_points : vEfrac[ifrac].vvSection)
+      {
+        angem::Polygon<double> poly;
+        poly.set_data(section_points);
+        std::cout << poly << std::endl;
+      }
+    }
 
 
-    // }
+  }  // end efrac loop
 
-  }
+  std::cout << "exiting" << std::endl;
+  exit(0);
 
 }
 
@@ -1425,26 +1463,24 @@ void SimData::definePhysicalFacets()
   nDirichletNodes = 0;
 
   vsPhysicalFacet.resize(nFaces);
-  for (int iface = 0; iface < nFaces; iface++)
+  for (std::size_t iface = 0; iface < nFaces; iface++)
   {
     if(vsFaceCustom[iface].nMarker < 0)  // probably external face
       for (const auto & conf : config.bc_faces)
-      {
-        // std::cout << "key = "<< conf.label << std::endl;
-
         if( vsFaceCustom[iface].nMarker == conf.label)
         {
-          vsPhysicalFacet[n_facets].nface = n_facets;
+          vsPhysicalFacet[n_facets].nface = iface;
           vsPhysicalFacet[n_facets].ntype = conf.type;
           vsPhysicalFacet[n_facets].nmark = conf.label;
           vsPhysicalFacet[n_facets].condition = conf.value;
           n_facets++;
           if (conf.type == 1)
             nDirichletFaces++;
-          else
+          else if (conf.type == 2)
             nNeumannFaces++;
+          else
+            throw std::invalid_argument("boundary type can be only 1 and 2");
         }
-      }
   }
 
   nPhysicalFacets = n_facets;

@@ -184,14 +184,14 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   }
 
   // Strong discontinuity
-  if (pSim->vsEmbeddedFractures.size() > 0)
+  if (pSim->vEfrac.size() > 0)
   {
     std::cout  << "Writing SDA props" << std::endl;
     outstring =   output_path + "gm_SDA.txt";
     geomechfile.open(outstring.c_str());
 
     geomechfile << "GM_EFRAC_CELLS\n";
-    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    for (const auto & efrac : pSim->vEfrac)
     {
       geomechfile << efrac.cells.size() << std::endl << "\t";
       for (std::size_t i=0; i<efrac.cells.size(); ++i)
@@ -204,13 +204,13 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile << "/" << std::endl << std::endl;
 
     geomechfile << "GM_EFRAC_POINTS" << std::endl;
-    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    for (const auto & efrac : pSim->vEfrac)
       for (std::size_t i=0; i<efrac.points.size(); ++i)
           geomechfile << efrac.points[i] << std::endl;
     geomechfile << "/" << std::endl << std::endl;
 
     geomechfile << "GM_EFRAC_DIP" << std::endl;
-    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    for (const auto & efrac : pSim->vEfrac)
       for (std::size_t i=0; i<efrac.points.size(); ++i)
       {
         geomechfile << efrac.dip[i] << "\t";
@@ -219,7 +219,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile << "/" << std::endl << std::endl;
 
     geomechfile << "GM_EFRAC_STRIKE" << std::endl;
-    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    for (const auto & efrac : pSim->vEfrac)
       for (std::size_t i=0; i<efrac.points.size(); ++i)
       {
         geomechfile << efrac.strike[i] << "\t";
@@ -228,17 +228,17 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile << "/" << std::endl << std::endl;
 
     geomechfile << "GM_EFRAC_COHESION" << std::endl;
-    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    for (const auto & efrac : pSim->vEfrac)
       geomechfile << efrac.cohesion << std::endl;
     geomechfile << "/" << std::endl << std::endl;
 
     geomechfile << "GM_EFRAC_FRICTION" << std::endl;
-    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    for (const auto & efrac : pSim->vEfrac)
       geomechfile << efrac.friction_angle << std::endl;
     geomechfile << "/" << std::endl << std::endl;
 
     geomechfile << "GM_EFRAC_DILATION" << std::endl;
-    for (const auto & efrac : pSim->vsEmbeddedFractures)
+    for (const auto & efrac : pSim->vEfrac)
       geomechfile << efrac.dilation_angle << std::endl;
     geomechfile << "/" << std::endl << std::endl;
 
@@ -259,60 +259,69 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
         geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
         geomechfile << pSim->vsPhysicalFacet[i].condition << endl;
       }
-
     geomechfile << "/\n\n";
   }
 
 
-  // Dirichlet faces
-  // @HACK SUPPORT POINTS
-  std::set<int>::iterator it;
+  std::cout << "Computing Dirichlet nodes" << std::endl;
+  /* this chunk of code find dirichlet nodes
+   * Algorithm:
+   * 1. First add all Dirichlet nodes specified by the user
+   * to the set
+   * 2. loop Dirichlet faces.
+   * loop nodes withing dirichlet faces
+   * add node as a part of dirichlet face
+   */
   const int dim = 3;
   std::vector<set<int>> setDisp(dim);
   std::vector<std::vector<std::size_t>> vv_disp_node_ind(dim);
   std::vector<std::vector<double>> vv_disp_node_values(dim);
 
-  setDisp.clear();
+  // search tolerance
+  const double tol = pSim->config.node_search_tolerance;
+
+  for (std::size_t ivert=0; ivert<pSim->vvVrtxCoords.size(); ++ivert)
+  {
+    const auto & vertex = pSim->vvVrtxCoords[ivert];
+    for (const auto & bc_node : pSim->config.bc_nodes)
+      if (bc_node.coord.distance(vertex) < tol)
+      {
+        for (int d=0; d<dim; ++d)
+          if (bc_node.value[d] != pSim->config.nan)
+          {
+            setDisp[d].insert(ivert);
+            vv_disp_node_values[d].push_back(bc_node.value[d]);
+            vv_disp_node_ind[d].push_back(ivert);
+          }
+      }
+  }
+
   if ( pSim->nDirichletFaces > 0 )
     for ( int i = 0; i < pSim->nPhysicalFacets; i++ )
       if ( pSim->vsPhysicalFacet[i].ntype == 1 )  // dirichlet
-        for (std::size_t j=0; j<dim; ++j)
-        {
-          if ( pSim->vsPhysicalFacet[i].condition[j] != pSim->dNotNumber )
+        for (std::size_t d=0; d<dim; ++d)
+          if ( pSim->vsPhysicalFacet[i].condition[d] != pSim->config.nan )
           {
-            int nvrtx = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nVertices;
+            const int nvrtx = pSim->vsFaceCustom
+                [ pSim->vsPhysicalFacet[i].nface ].nVertices;
             for ( int ivrtx = 0; ivrtx < nvrtx; ++ivrtx )
             {
+              const std::size_t global_vertex_index =
+                  pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
+              const auto ret = setDisp[d].insert(global_vertex_index);
+
               // check if already in set
-              const auto ret = setDisp[j].insert
-                  (pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx]);
               if(ret.second)
               {
-                std::size_t vertex_ = pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].vVertices[ivrtx];
-                vv_disp_node_ind[j].push_back(vertex_);
-
-                // check if this specific point is user-constrained
-                const auto & coord = pSim->vvVrtxCoords[vertex_];
-                bool is_constrained = false;
-                for (const auto & bc_node : pSim->config.bc_nodes)
-                  if (bc_node.coord.distance(coord) < 1e-10)
-                    if (bc_node.value[j] != pSim->config.nan)
-                    {
-                      is_constrained = true;
-                      vv_disp_node_values[j].push_back(bc_node.value[j]);
-                      break;
-                    }
-
-                if (!is_constrained)
-                  vv_disp_node_values[j].push_back(pSim->vsPhysicalFacet[i].condition[j]);
-              }
+                vv_disp_node_ind[d].push_back(global_vertex_index);
+                vv_disp_node_values[d].push_back(pSim->vsPhysicalFacet[i].condition[d]);
+              } // end if vertex is new
             }  // end face vertices loop
           } // end nan condition
-        }  // end j loop
 
   setDisp.clear();
 
-  cout << "write all Dirichlet faces\n";
+  std::cout << "write all Dirichlet nodes" << std::endl;
   for (std::size_t j=0; j<dim; ++j)
     if (vv_disp_node_ind[j].size() > 0)
     {
