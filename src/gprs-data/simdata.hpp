@@ -30,6 +30,7 @@ struct GmConstraint
   vector<vector<double> > vvCoefficient;
 };
 
+
 struct RockProps
 {
   int model;
@@ -76,11 +77,11 @@ struct Gelement
   int vtkIndex, formIndex;
   int fluidElement;
 
-  vector<int> vVertices;
-  vector<int> vVerticesSorted;
+  vector<std::size_t> vVertices;
+  vector<std::size_t> vVerticesSorted;
   vector<int> vVerticesNewnum;
 
-  vector<int> vNeighbors;
+  vector<std::size_t> vNeighbors;
 
   double thickness, center_distance;
   // vector<double> vCenter;
@@ -144,6 +145,7 @@ public:
 
   void defineRockProperties();
   void defineEmbeddedFractureProperties();
+  void computeCellClipping();
   void definePhysicalFacets();
   void defineStressAndDispOnBoundary();
 

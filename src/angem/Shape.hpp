@@ -14,8 +14,10 @@ class Shape
     Shape();
     Shape(std::vector<Point<3,Scalar>> & point_list);
     Shape(std::vector<Point<3,Scalar> *> & points_list);
-    // setter
+    // setters
     virtual void set_data(std::vector<Point<3,Scalar>> & point_list);
+    virtual void set_data(std::vector<Point<3,Scalar> *> & point_list);
+
     // getter
     std::vector<Point<3,Scalar> *> & get_points();
     // check if empty
@@ -39,16 +41,7 @@ template<typename Scalar>
 Shape<Scalar>::Shape(std::vector<Point<3,Scalar> *> & point_list)
     :
     points(point_list)
-{
-  // std::cout << "s1 = " << points.size() << std::endl;
-  // std::cout << "s2 = " << point_list.size() << std::endl;
-  // for (int i=0; i<point_list.size(); ++i)
-  // {
-  //   std::cout << *point_list[i] << "\t";
-  //   std::cout << *points[i] << "\t";
-  //   std::cout << std::endl;
-  // }
-}
+{}
 
 
 template<typename Scalar>
@@ -65,6 +58,14 @@ Shape<Scalar>::set_data(std::vector<Point<3,Scalar>> & point_list)
   points.reserve(point_list.size());
   for (auto & p : point_list)
     points.push_back(&p);
+}
+
+
+template<typename Scalar>
+void
+Shape<Scalar>::set_data(std::vector<Point<3,Scalar> *> & point_list)
+{
+  points = point_list;
 }
 
 

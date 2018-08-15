@@ -13,6 +13,10 @@ class Polygon: public Shape<Scalar>
  public:
 	Polygon();
   Polygon(std::vector<Point<3,Scalar> *> & points_list);
+  // construct a polygon (face) from some mesh vertices
+  Polygon(std::vector<Point<3,Scalar>> & all_mesh_vertices,
+          std::vector<std::size_t>     & indices);
+
   Point<3,Scalar> center() const {return plane.point;};
 
   // shift all points in direction p
@@ -36,6 +40,21 @@ Polygon<Scalar>::Polygon(std::vector<Point<3,Scalar> *> & point_list)
     :
     Shape<Scalar>::Shape(point_list)
 {}
+
+
+template<typename Scalar>
+Polygon<Scalar>::Polygon(std::vector<Point<3,Scalar>> & all_mesh_vertices,
+                         std::vector<std::size_t>     & indices)
+    :
+    Shape<Scalar>::Shape()
+{
+  std::vector<Point<3,Scalar> *> p_points;
+  p_points.reserve(indices.size());
+  for (const auto & ind : indices)
+    p_points.push_back(&all_mesh_vertices[ind]);
+
+  Shape<Scalar>::set_data(p_points);
+}
 
 
 template<typename Scalar>

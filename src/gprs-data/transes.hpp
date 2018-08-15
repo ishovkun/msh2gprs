@@ -55,7 +55,7 @@ public:
   vector<int> vCodePolygon;
   //elements
   vector<int> vNbFNodes;
-  vector<vector<int> > vvFNodes;
+  vector<vector<std::size_t> > vvFNodes;
   vector<int> vCodePolyhedron;
   //properties
   vector<int> vZoneCode;

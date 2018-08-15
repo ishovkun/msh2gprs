@@ -51,5 +51,20 @@ bool collision(const Plane<Scalar> & pl1,
 }
 
 
+template <typename Scalar>
+bool collision(const Polygon<Scalar>        & poly,
+               const Plane<Scalar>          & plane,
+               std::vector<Point<3,Scalar>> & intersection)
+{
+  // call collision of all edges
+}
 
+
+template <typename Scalar>
+Point<3,Scalar> collision(const Segment<Scalar>  & seg,
+                          const Plane<Scalar>    & plane,
+                          Point<3,Scalar>        & intersection)
+{
+  // call collision of all edges
+}
 }  // end namespace

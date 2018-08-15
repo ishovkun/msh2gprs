@@ -165,6 +165,52 @@ void SimData::defineEmbeddedFractureProperties()
 }
 
 
+void SimData::computeCellClipping()
+{
+  // determine points of intersection of embedded fractures with
+  // the mesh
+
+  // criterion for point residing on the plane
+  const double tol = 1e-14;
+
+  // too lazy to account for fractures not collided with any cells
+  assert(config.fractures.size() == vsEmbeddedFractures.size());
+
+  for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
+  {
+    const auto & frac_cells = vsEmbeddedFractures[ifrac].cells;
+    /* loop faces:
+     * if any neighbor cell is in collision list,
+     * determine the intersection points with the fracture plane
+     * add these points to the point set for cells
+     * then loop cells and compute areas enclosed by points
+     */
+    for(int iface = 0; iface < nFaces; iface++)
+    {
+      for (const auto & ineighbor : vsFaceCustom[iface].vNeighbors)
+      {
+        const std::size_t frac_cell = find(ineighbor, frac_cells);
+        if (frac_cell != frac_cells.size())
+        {
+          // construct polygon and determine intersection points
+          angem::Polygon<double> poly_face(vvVrtxCoords,
+                                           vsFaceCustom[iface].vVertices);
+        }
+      }
+    }
+
+    // std::set<angem::Point<3,double>> points_on_plane;
+    // for (std::size_t icell=0; icell<vsEmbeddedFractures.cells.size(); ++icell)
+    // {
+
+
+    // }
+
+  }
+
+}
+
+
 std::size_t SimData::n_default_vars()
 {
   SimdataConfig dummy;
@@ -535,22 +581,22 @@ void SimData::readGmshFile()
 
 void SimData::extractInternalFaces()
 {
-  vector<int> vLocalPolygonVertices;
-  set<int> setLocalPolygonVertices;
+  vector<std::size_t> vLocalPolygonVertices;
+  set<std::size_t> setLocalPolygonVertices;
   stringstream vertices_stream;
 
   set<string>  setIdenticalPolygons;
   pair<set<string>::iterator, bool> pair_itstring_bool;
 
   // At first we should write all input polygons
-  for(int iface = 0; iface < nFaces; iface++ )
+  for(std::size_t iface = 0; iface < nFaces; iface++ )
   {
     setLocalPolygonVertices.clear();
     for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++ )
     {
       setLocalPolygonVertices.insert ( vsFaceCustom[iface].vVertices[ivrtx] );
     }
-    set<int>::iterator it_set;
+    set<std::size_t>::iterator it_set;
     vertices_stream.str ( "" );
     for(it_set = setLocalPolygonVertices.begin(); it_set != setLocalPolygonVertices.end(); ++it_set) vertices_stream << *it_set;
     //try write into set
@@ -581,7 +627,7 @@ void SimData::extractInternalFaces()
         setLocalPolygonVertices.insert ( global_node );
       }
 
-      set<int>::iterator it_set;
+      set<std::size_t>::iterator it_set;
       vertices_stream.str ( "" );
 
       for ( it_set = setLocalPolygonVertices.begin(); it_set != setLocalPolygonVertices.end(); ++it_set )
@@ -927,7 +973,7 @@ void SimData::methodChangeFacesNormalVector()
   pair<set<int>::iterator, bool> pairIterBool;
   angem::Point<3,double> vDatumNormal = {0,0,0};
 
-  vector<int> vFacevVertices;
+  vector<std::size_t> vFacevVertices;
 
   nExternalBoundaryFaces = 0;
   nInternalBoundaryFaces = 0;
