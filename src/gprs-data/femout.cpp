@@ -1,5 +1,8 @@
 #include "femout.hpp"
 
+const int n_entries_per_line = 10;
+
+
 OutputData::OutputData(SimData * pSimData)
 {
   pSim = pSimData;
@@ -174,7 +177,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       for (std::size_t icell=0; icell<pSim->nCells; ++icell)
       {
         geomechfile << pSim->vsCellRockProps[icell].v_props[ivar] << "\t";
-        if ((icell+1)%10 == 0)
+        if ((icell+1)%n_entries_per_line == 0)
           geomechfile << std::endl;
       }
       geomechfile << std::endl << "/" << std::endl << std::endl;
@@ -197,7 +200,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       for (std::size_t i=0; i<efrac.cells.size(); ++i)
       {
         geomechfile << efrac.cells[i] + 1 << "\t";
-        if ((i+1)%10 == 0)
+        if ((i+1)%n_entries_per_line == 0)
           geomechfile << std::endl;
       }
     }
@@ -214,7 +217,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       for (std::size_t i=0; i<efrac.points.size(); ++i)
       {
         geomechfile << efrac.dip[i] << "\t";
-        if ((i+1)%10 == 0) geomechfile << std::endl;
+        if ((i+1)%n_entries_per_line == 0) geomechfile << std::endl;
       }
     geomechfile << "/" << std::endl << std::endl;
 
@@ -223,7 +226,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       for (std::size_t i=0; i<efrac.points.size(); ++i)
       {
         geomechfile << efrac.strike[i] << "\t";
-        if ((i+1)%10 == 0) geomechfile << std::endl;
+        if ((i+1)%n_entries_per_line == 0) geomechfile << std::endl;
       }
     geomechfile << "/" << std::endl << std::endl;
 
