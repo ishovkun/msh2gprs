@@ -155,7 +155,11 @@ std::ostream &operator<<(std::ostream        & os,
   const std::vector<Point<3,Scalar> *> & points = p.get_points();
 
   for (std::size_t i=0; i<points.size(); ++i)
-    os << *(points[i]) << std::endl;
+  {
+    os << *(points[i]);
+    if (i < points.size() - 1)
+      os << std::endl;
+  }
   return os;
 }
 

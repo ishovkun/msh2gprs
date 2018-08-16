@@ -507,7 +507,11 @@ std::ostream &operator<<(std::ostream            & os,
                          const Point<dim,Scalar> & p)
 {
   for (int i=0; i<dim; ++i)
-    os << p(i) << "\t";
+  {
+    os << p(i);
+    if (i < dim - 1)
+      os << "\t";
+  }
   return os;
 }
 

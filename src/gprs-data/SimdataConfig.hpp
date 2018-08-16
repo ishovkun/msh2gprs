@@ -21,12 +21,14 @@ struct BCNodeConfig
   angem::Point<3,double> coord;
 };
 
+
 struct BCConfig
 {
   int label;
   int type;
   angem::Point<3,double> value;
 };
+
 
 struct EmbeddedFractureConfig
 {

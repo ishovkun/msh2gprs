@@ -63,12 +63,25 @@ template<typename Scalar>
 void
 Polygon<Scalar>::set_data(std::vector<Point<3,Scalar>> & point_list)
 {
+  // TODO: i don't check whether all points aren't on one line
   assert(point_list.size() > 3);
 
   Shape<Scalar>::set_data(point_list);
-  Point<3,Scalar> center = compute_center_mass(point_list);
-  plane.set_data(compute_center_mass(point_list),
-                 point_list[1], point_list[2]);
+  Point<3, Scalar> cm = Shape<Scalar>::center();
+  /* i'd like the plane support point (first argument) to be
+     the center of the poly
+     to create the plane I need to pass three points that are not
+     aligned on a line this could happen if I do it like that:
+     plane.set_data(cm, point_list[1], point_list[2]);
+     Therefore, I need to selects points appropriately.
+     only two polygon vertices can potentially be on the same line
+     as the center of mass. So i need to do only one check
+  */
+  if ( ((point_list[0] - cm).cross(point_list[1] - cm)).norm() > 1e-16 )
+    plane.set_data(cm, point_list[0], point_list[1]);
+  else
+    plane.set_data(cm, point_list[0], point_list[2]);
+
 }
 
 

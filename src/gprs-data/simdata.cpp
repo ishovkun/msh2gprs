@@ -6,6 +6,7 @@
 #include "Rectangle.hpp"
 #include "CollisionGJK.hpp"
 #include <Collisions.hpp>
+#include <utils.hpp>
 #include <muParser.h>
 
 #define SPECIAL_CELL = 999
@@ -95,6 +96,7 @@ void SimData::defineEmbeddedFractureProperties()
     Point total_shift = {0, 0, 0};
 
  redo_collision:
+    std::cout << "fracture polygon" << std::endl;
     std::cout << *(frac_conf.body) << std::endl;
 
     // find cells intersected by the fracture
@@ -174,7 +176,7 @@ void SimData::computeCellClipping()
   // the mesh
 
   // criterion for point residing on the plane
-  const double tol = 1e-11;
+  const double tol = config.node_search_tolerance;
 
   // too lazy to account for fractures not collided with any cells
   assert(config.fractures.size() == vEfrac.size());
@@ -185,6 +187,7 @@ void SimData::computeCellClipping()
     const auto & frac_cells = vEfrac[ifrac].cells;
     const auto & frac_plane = config.fractures[ifrac].body->plane;
     vEfrac[ifrac].vvSection.resize(frac_cells.size());
+
     /* loop faces:
      * if any neighbor cell is in collision list,
      * determine the intersection points with the fracture plane
@@ -193,16 +196,16 @@ void SimData::computeCellClipping()
      */
     for(int iface = 0; iface < vsFaceCustom.size(); iface++)
     {
-      std::cout << "loop face = " << iface << std::endl;
-
-      bool has_fracture_neighbors = false;
-      for (const auto & ineighbor : vsFaceCustom[iface].vNeighbors)
+      // vector of cells containing efrac and neighboring face
+      std::vector<std::size_t> v_neighbors;
+      for (const std::size_t & ineighbor : vsFaceCustom[iface].vNeighbors)
       {
         const std::size_t frac_cell_local_ind = find(ineighbor, frac_cells);
         if (frac_cell_local_ind != frac_cells.size())
-          has_fracture_neighbors = true;
+          v_neighbors.push_back(frac_cell_local_ind);
       }
-      if (has_fracture_neighbors)
+
+      if (v_neighbors.size() > 0)
       {
         // construct polygon and determine intersection points
         angem::Polygon<double> poly_face(vvVrtxCoords,
@@ -210,34 +213,43 @@ void SimData::computeCellClipping()
         std::vector<Point> section;
         angem::collision(poly_face, frac_plane, section);
 
-        std::cout << "collision result:" << std::endl;
-        for (const auto & p : section)
-          std::cout << p << std::endl;
-
         // if just one point -> discard
         if (section.size() < 2)
           continue;
 
         // save intersection data into neighbor fracture cells
-        for (const auto & ineighbor : vsFaceCustom[iface].vNeighbors)
-        {
-          const std::size_t frac_cell_local_ind = find(ineighbor, frac_cells);
-          if (frac_cell_local_ind != frac_cells.size())
-            for (const auto & p : section)
-              vEfrac[ifrac]. vvSection[frac_cell_local_ind]. push_back(p);
-        }
-      }
-    }
+        for (const auto & ineighbor : v_neighbors)
+          for (const auto & p : section)
+            vEfrac[ifrac].vvSection[ineighbor].push_back(p);
+
+      }  // end if has ef cells neighbors
+    }    // end face loop
 
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
+      std::cout << std::endl;
       std::cout << "cell: " << vEfrac[ifrac].cells[i] << std::endl;
-      for (auto & section_points : vEfrac[ifrac].vvSection)
+      // loop through sda cells
+      auto & section_points = vEfrac[ifrac].vvSection[i];
+
+      // some point among those we obtain in the previous part of code
+      // are duplicated since two adjacent faces intersecting a plane
+      // have one point in common
+      std::vector<Point> set_points;
+      angem::remove_duplicates(section_points, set_points, tol);
+      vEfrac[ifrac].vvSection[i] = set_points;
+
+      // remove cell if number of points < 3 <=> area = 0
+      if (set_points.size() < 3)
       {
-        angem::Polygon<double> poly;
-        poly.set_data(section_points);
-        std::cout << poly << std::endl;
+        vEfrac[ifrac].cells.erase(vEfrac[ifrac].cells.begin() + i);
+        vEfrac[ifrac].vvSection.erase(vEfrac[ifrac].vvSection.begin() + i);
+        i--;
       }
+
+      angem::Polygon<double> poly;
+      poly.set_data(set_points);
+      std::cout << poly << std::endl;
     }
 
 

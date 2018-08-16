@@ -124,6 +124,7 @@ struct EmbeddedFracture
   double                              cohesion;
   double                              friction_angle;
   double                              dilation_angle;
+  // cells -> points
   std::vector<std::vector<angem::Point<3,double>>> vvSection;
 };
 
