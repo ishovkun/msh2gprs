@@ -255,9 +255,6 @@ void SimData::computeCellClipping()
 
   }  // end efrac loop
 
-  std::cout << "exiting" << std::endl;
-  exit(0);
-
 }
 
 
