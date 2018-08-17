@@ -286,7 +286,9 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   for (std::size_t ivert=0; ivert<pSim->vvVrtxCoords.size(); ++ivert)
   {
     const auto & vertex = pSim->vvVrtxCoords[ivert];
+
     for (const auto & bc_node : pSim->config.bc_nodes)
+    {
       if (bc_node.coord.distance(vertex) < tol)
       {
         for (int d=0; d<dim; ++d)
@@ -297,6 +299,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
             vv_disp_node_ind[d].push_back(ivert);
           }
       }
+    }
   }
 
   if ( pSim->nDirichletFaces > 0 )

@@ -176,7 +176,7 @@ void SimData::computeCellClipping()
   // the mesh
 
   // criterion for point residing on the plane
-  const double tol = config.node_search_tolerance;
+  const double tol = 1e-10;
 
   // too lazy to account for fractures not collided with any cells
   assert(config.fractures.size() == vEfrac.size());
@@ -227,8 +227,8 @@ void SimData::computeCellClipping()
 
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
-      std::cout << std::endl;
-      std::cout << "cell: " << vEfrac[ifrac].cells[i] << std::endl;
+      // std::cout << std::endl;
+      // std::cout << "cell: " << vEfrac[ifrac].cells[i] << std::endl;
       // loop through sda cells
       auto & section_points = vEfrac[ifrac].vvSection[i];
 
@@ -242,9 +242,14 @@ void SimData::computeCellClipping()
       // remove cell if number of points < 3 <=> area = 0
       if (set_points.size() < 3)
       {
+        std::cout << "erasing fracture cell" << vEfrac[ifrac].cells[i] << std::endl;
         vEfrac[ifrac].cells.erase(vEfrac[ifrac].cells.begin() + i);
         vEfrac[ifrac].vvSection.erase(vEfrac[ifrac].vvSection.begin() + i);
+        vEfrac[ifrac].points.erase(vEfrac[ifrac].points.begin() + i);
+        vEfrac[ifrac].strike.erase(vEfrac[ifrac].strike.begin() + i);
+        vEfrac[ifrac].dip.erase(vEfrac[ifrac].dip.begin() + i);
         i--;
+        continue;
       }
 
       angem::Polygon<double> poly;
@@ -768,14 +773,88 @@ void SimData::convertGmsh2Sim()
     sort(vsCellCustom[icell].vVerticesSorted.begin(), vsCellCustom[icell].vVerticesSorted.end());
   }
 
-  cout << "\t find face neighbor cells / cell neighbor faces (slow)" << endl;
+  // -----------------------------------------------------------------------
+  // Deprecated (slow)
+  // cout << "\t find face neighbor cells / cell neighbor faces (slow)" << endl;
+  // vsetPolyhedronPolygon.resize(nCells);
+  // vsetPolygonPolyhedron.resize(nFaces);
+  // for ( int iface = 0; iface < nFaces; iface++ )
+  // {
+  //   int job_percent = int ( ( 100. * iface ) / ( nFaces ) );
+  //   cout << "\r    " << job_percent << "%";
+  //   for ( int icell = 0; icell < nCells; icell++ )
+  //   {
+  //     if ((vsCellCustom[icell].center - vsFaceCustom[iface].center).norm() >
+  //         4 * (vvVrtxCoords[vsFaceCustom[iface].vVertices[0]] - vvVrtxCoords[vsFaceCustom[iface].vVertices[1]]).norm() )
+  //       continue;
+
+  //     // const std::size_t i_face_vert = vsFaceCustom[icell].vVerticesSorted[0];
+  //     // for (const auto & i_cell_vert : vsCellCustom[iface].vVerticesSorted)
+  //     //   if (i_face_vert == i_cell_vert)
+  //     //   {
+  //     //       vsetPolyhedronPolygon[icell].insert ( iface );
+  //     //       vsetPolygonPolyhedron[iface].insert ( icell );
+  //     //   }
+  //     if ( includes ( vsCellCustom[icell].vVerticesSorted.begin(), vsCellCustom[icell].vVerticesSorted.end(),
+  //                     vsFaceCustom[iface].vVerticesSorted.begin(), vsFaceCustom[iface].vVerticesSorted.end() ) )
+  //     {
+  //       vsetPolyhedronPolygon[icell].insert ( iface );
+  //       vsetPolygonPolyhedron[iface].insert ( icell );
+  //     }
+  //   }
+  // }
+
+  // -----------------------------------------------------------------------
+  // faster way to compute neighbors
+  cout << "\t find face neighbor cells / cell neighbor faces (stage 1)" << endl;
+  vector<set<std::size_t> > vvNodePossibleFaces;
+  vvNodePossibleFaces.resize(nNodes);
+  nFaces = vsFaceCustom.size();
+  // std::cout << "nNodes = "<< nNodes << std::endl;
+  // std::cout << "nFaces = "<< nFaces << std::endl;
+
+  for ( int iface = 0; iface < nFaces; ++iface )
+  {
+    int job_percent = static_cast<int> ( ( 100. * iface ) / ( nFaces ) );
+    cout << "\r    " << job_percent << "%";
+    for(const auto & ivert : vsFaceCustom[iface].vVerticesSorted)
+      vvNodePossibleFaces[ivert].insert(iface);
+  }
+
+  cout << "\t find face neighbor cells / cell neighbor faces (stage 2)" << endl;
+  vector<set<std::size_t> > vvNodePossibleCells;
+  vvNodePossibleCells.resize(nNodes);
+  for ( int icell = 0; icell < nCells; ++icell)
+  {
+    int job_percent = static_cast<int> ( ( 100. * icell ) / ( nCells ) );
+    cout << "\r    " << job_percent << "%";
+    for(const auto & it : vsCellCustom[icell].vVerticesSorted)
+      vvNodePossibleCells[it].insert(icell);
+  }
+
+  cout << "\t find face neighbor cells / cell neighbor faces (stage 3)" << endl;
+  vector<set<std::size_t> > vvFacePossibleCells;
+  vvFacePossibleCells.resize(nFaces);
+  for ( std::size_t inode = 0; inode < nNodes; inode++ )
+  {
+    int job_percent = static_cast<int> ( ( 100. * inode ) / ( nNodes ) );
+    cout << "\r    " << job_percent << "%";
+        for(const auto & it : vvNodePossibleFaces[inode])
+        {
+            for(const auto & it2 : vvNodePossibleCells[inode])
+                vvFacePossibleCells[it].insert(it2);
+        }
+  }
+
+  cout << "\t find face neighbor cells / cell neighbor faces (stage 4)" << endl;
   vsetPolyhedronPolygon.resize(nCells);
   vsetPolygonPolyhedron.resize(nFaces);
-  for ( int iface = 0; iface < nFaces; iface++ )
+
+  for ( std::size_t iface = 0; iface < nFaces; iface++ )
   {
     int job_percent = int ( ( 100. * iface ) / ( nFaces ) );
     cout << "\r    " << job_percent << "%";
-    for ( int icell = 0; icell < nCells; icell++ )
+    for(const auto & icell : vvFacePossibleCells[iface])
     {
       if ( includes ( vsCellCustom[icell].vVerticesSorted.begin(), vsCellCustom[icell].vVerticesSorted.end(),
                       vsFaceCustom[iface].vVerticesSorted.begin(), vsFaceCustom[iface].vVerticesSorted.end() ) )
@@ -784,7 +863,7 @@ void SimData::convertGmsh2Sim()
         vsetPolygonPolyhedron[iface].insert ( icell );
       }
     }
-  }
+  }  // -----------------------------------------------------------------------
 
   for ( int iface = 0; iface < nFaces; iface++ )
   {

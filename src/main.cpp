@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
 
   cout << "Compute cell clipping" << endl;
   pSimData->computeCellClipping();
-  return 0;
 
   cout << "Create physical facets" << endl;
   cout << " ( bnd & frac faces )" << endl;
