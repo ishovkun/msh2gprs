@@ -193,14 +193,16 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     outstring =   output_path + "gm_SDA.txt";
     geomechfile.open(outstring.c_str());
 
-    geomechfile << "GM_EFRAC_CELLS\n";
+    geomechfile << "GM_EFRAC_CELLS" << std::endl;
     for (const auto & efrac : pSim->vEfrac)
     {
       geomechfile << efrac.cells.size() << std::endl << "\t";
       for (std::size_t i=0; i<efrac.cells.size(); ++i)
       {
         geomechfile << efrac.cells[i] + 1 << "\t";
-        if ((i+1)%n_entries_per_line == 0)
+        if ((i+1) % n_entries_per_line == 0)
+          geomechfile << std::endl;
+        if (i == efrac.cells.size() - 1)
           geomechfile << std::endl;
       }
     }
@@ -217,7 +219,8 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       for (std::size_t i=0; i<efrac.points.size(); ++i)
       {
         geomechfile << efrac.dip[i] << "\t";
-        if ((i+1)%n_entries_per_line == 0) geomechfile << std::endl;
+        if ((i+1) % n_entries_per_line == 0)
+          geomechfile << std::endl;
       }
     geomechfile << "/" << std::endl << std::endl;
 

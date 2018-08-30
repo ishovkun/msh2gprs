@@ -279,10 +279,27 @@ Plane<Scalar>::strike_angle() const
 {
   Scalar rdip = static_cast<Scalar>(acos(basis(2)[2]));
   Scalar rstrike_from_cos = acos( basis(2)[0] / sin(rdip) ) - M_PI / 2.;
-  Scalar rstrike_from_sin = acos( basis(2)[1] / sin(rdip) ) - M_PI / 2.;
-  Scalar strike = 180. * rstrike_from_cos / M_PI;
-  if (rstrike_from_sin > 0)
-    return fabs(strike);
+  Scalar rstrike_from_sin = asin( basis(2)[1] / sin(rdip) ) - M_PI / 2.;
+
+  Scalar strike;
+  if (rstrike_from_sin >= 0 and rstrike_from_cos >= 0)
+  {
+    strike = 180. * rstrike_from_cos / M_PI;
+  }
+  else if (rstrike_from_sin < 0 and rstrike_from_cos > 0)
+  {
+    strike = - 180. * rstrike_from_cos / M_PI;
+  }
+  else if (rstrike_from_sin > 0 and rstrike_from_cos < 0)
+  {
+    strike = 180. * rstrike_from_cos / M_PI;
+    strike = fabs(strike);
+  }
+  else // if (rstrike_from_sin < 0 and rstrike_from_cos < 0)
+  {
+    strike = 180. * rstrike_from_cos / M_PI;
+    strike = fabs(strike);
+  }
 
   return strike;
 }

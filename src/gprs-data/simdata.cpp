@@ -165,7 +165,7 @@ void SimData::defineEmbeddedFractureProperties()
   }  // end efracs loop
 
   // std::cout << vEfrac.size() << std::endl;
-  // abort();
+  // exit(0);
 
 }
 
