@@ -43,6 +43,14 @@ int main(int argc, char *argv[])
   const std::string config_dir = path_config.parent_path().string() + "/";
   const std::string fname_gmsh = config_dir + config.mesh_file;  // msh file
 
+  // check if mesh file exists
+  const filesystem::path path_msh(fname_gmsh);
+  if (!filesystem::exists(fname_gmsh))
+  {
+    std::cout << "msh file does not exist" << std::endl;
+    return 0;
+  }
+
   std::string outstream;
   SimData * pSimData;
   pSimData = new SimData(fname_gmsh, config);

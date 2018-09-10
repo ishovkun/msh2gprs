@@ -64,7 +64,7 @@ void
 Polygon<Scalar>::set_data(std::vector<Point<3,Scalar>> & point_list)
 {
   // TODO: i don't check whether all points aren't on one line
-  assert(point_list.size() > 3);
+  assert(point_list.size() >= 3);
 
   Shape<Scalar>::set_data(point_list);
   Point<3, Scalar> cm = Shape<Scalar>::center();

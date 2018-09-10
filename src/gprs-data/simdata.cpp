@@ -523,8 +523,8 @@ void SimData::readGmshFile()
             for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
             Element3D.vtkIndex = 12;
             // @HACK: use elements with one integration point for SDA
-            if (config.fractures.size() > 0)
-              Element3D.vtkIndex = 17;
+            // if (config.fractures.size() > 0)
+            //   Element3D.vtkIndex = 17;
             Element3D.formIndex = PRISM8;
             Element3D.nMarker = atoi(vstrings[3].c_str());
             vsCellCustom.push_back( Element3D );
