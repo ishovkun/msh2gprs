@@ -277,7 +277,10 @@ Scalar
 Plane<Scalar>::dip_angle() const
 {
   Scalar rdip = static_cast<Scalar>(acos(basis(2)[2]));
-  return 180. * rdip / M_PI;
+  double dip = 180. * rdip / M_PI;
+  if (dip > 90.0)
+    dip = 180. - dip;
+  return dip;
 }
 
 
@@ -293,6 +296,9 @@ Plane<Scalar>::strike_angle() const
 
   Scalar rstrike_from_cos = acos(v1) - M_PI / 2.;
   Scalar rstrike_from_sin = asin(v2) - M_PI / 2.;
+  std::cout << "rstrike_from_sin = "<< rstrike_from_sin << std::endl;
+  std::cout << "rstrike_from_cos = "<< rstrike_from_cos << std::endl;
+
 
   Scalar strike;
   if (rstrike_from_sin >= 0 and rstrike_from_cos >= 0)

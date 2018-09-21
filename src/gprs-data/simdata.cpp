@@ -156,6 +156,7 @@ void SimData::defineEmbeddedFractureProperties()
                               frac_conf.body->plane.dip_angle());
     vEfrac[ef_ind].strike.assign(n_efrac_cells,
                                  frac_conf.body->plane.strike_angle());
+    // abort();
 
     vEfrac[ef_ind].cohesion = frac_conf.cohesion;
     vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
