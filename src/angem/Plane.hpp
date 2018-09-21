@@ -201,11 +201,19 @@ void Plane<Scalar>::compute_basis(const Point<3,Scalar> & normal)
    * project it on the plane - first tangent basis vector e1
    * complete the basis with e2 = n x e1
    */
-  const Point<3,Scalar> rv = {normal.x() + 1, normal.y(), normal.z()};
+  // const Point<3,Scalar> rv = {normal.x() + 1, normal.y(), normal.z()};
+  Point<3,Scalar> rv = normal;
+  rv[0] += 1;
   Point<3,Scalar> e1 = project_vector(rv);
 
   // check
-  assert(e1.norm() > 1e-16);
+  // assert(e1.norm() > 1e-16);
+  if (e1.norm() < 1e-16)
+  {
+    rv = normal;
+    rv[1] += 1;
+    e1 = project_vector(rv);
+  }
   e1.normalize();
 
   Point<3,Scalar> e2 = normal.cross(e1);
@@ -278,8 +286,13 @@ Scalar
 Plane<Scalar>::strike_angle() const
 {
   Scalar rdip = static_cast<Scalar>(acos(basis(2)[2]));
-  Scalar rstrike_from_cos = acos( basis(2)[0] / sin(rdip) ) - M_PI / 2.;
-  Scalar rstrike_from_sin = asin( basis(2)[1] / sin(rdip) ) - M_PI / 2.;
+
+  // avoid taking acos(+- 1) -- causes errors due to roundoff
+  const double v1 = std::min(  std::max( -1., basis(2)[0] / sin(rdip) ) , 1.  );
+  const double v2 = std::min(  std::max( -1., basis(2)[1] / sin(rdip) ) , 1.  );
+
+  Scalar rstrike_from_cos = acos(v1) - M_PI / 2.;
+  Scalar rstrike_from_sin = asin(v2) - M_PI / 2.;
 
   Scalar strike;
   if (rstrike_from_sin >= 0 and rstrike_from_cos >= 0)
