@@ -5,6 +5,7 @@
 
 #include <experimental/filesystem>
 namespace filesystem = std::experimental::filesystem;
+using Path = filesystem::path;
 
 class SimData;
 class CalcTranses;
@@ -39,21 +40,21 @@ int main(int argc, char *argv[])
   const SimdataConfig config = parser.get_config();
 
   // get path of the config file -- mesh is searched for in relative path
-  const filesystem::path path_config(fname_config);
-  const std::string config_dir = path_config.parent_path().string() + "/";
-  const std::string fname_gmsh = config_dir + config.mesh_file;  // msh file
+  const Path path_config(fname_config);
+  const Path config_dir_path = path_config.parent_path();
+  Path path_gmsh = config_dir_path / config.mesh_file;
 
   // check if mesh file exists
-  const filesystem::path path_msh(fname_gmsh);
-  if (!filesystem::exists(fname_gmsh))
+  if (!filesystem::exists(path_gmsh))
   {
-    std::cout << "msh file does not exist" << std::endl;
+    std::cout << "msh file does not exist:" << std::endl;
+    std::cout << filesystem::absolute(path_gmsh) << std::endl;
     return 0;
   }
 
   std::string outstream;
   SimData * pSimData;
-  pSimData = new SimData(fname_gmsh, config);
+  pSimData = new SimData(filesystem::absolute(path_gmsh), config);
 
   cout << "Read gmsh data" << endl;
   pSimData->readGmshFile();
@@ -98,7 +99,9 @@ int main(int argc, char *argv[])
   OutputData * pOut;
   pOut = new OutputData(pSimData);
 
-  const auto output_path = path_config.parent_path().string() + "/";
-  pOut->writeGeomechDataNewKeywords(output_path);
-  pTranses->outputKarimi(output_path);
+  const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
+  std::cout << "output directory: " << output_dir << std::endl;
+  pOut->writeGeomechDataNewKeywords(output_dir);
+  pTranses->outputKarimi(output_dir);
+  return 0;
 }

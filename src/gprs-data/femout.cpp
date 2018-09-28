@@ -32,6 +32,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
 
   ofstream geomechfile;
   outstring =   output_path + "fl_dimens.txt";
+  std::cout << "writing file: " << outstring  << std::endl;
   geomechfile.open(outstring.c_str());
 
   geomechfile << "DIMENS" << endl;
@@ -40,6 +41,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
 
 
   outstring = output_path + "gm_depth.txt";
+  std::cout << "writing file: " << outstring  << std::endl;
   geomechfile.open(outstring.c_str());
   geomechfile << "GDEPTH" << endl;
 
