@@ -277,7 +277,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
 
     geomechfile << "CELLS" << "\t"
                 << efrac.vIndices.size() << "\t"
-                << vind_size_total
+                << vind_size_total + efrac.vIndices.size()
                 << std::endl;
     for (const auto & cell : efrac.vIndices)
     {
