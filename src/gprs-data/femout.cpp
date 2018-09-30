@@ -251,7 +251,62 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     geomechfile << "/" << std::endl << std::endl;
 
     geomechfile.close();
+
+    // write vtk data
+    // std::cout  << "Writing SDA props" << std::endl;
+    outstring =   output_path + "efrac.vtk";
+    geomechfile.open(outstring.c_str());
+
+    const auto & efrac = pSim->vEfrac[0];
+    geomechfile << "# vtk DataFile Version 2.0 \n";
+    geomechfile << "3D Fractures \n";
+    geomechfile << "ASCII \n \n";
+    geomechfile << "DATASET UNSTRUCTURED_GRID \n";
+
+    geomechfile << "POINTS" << "\t"
+                << efrac.vVertices.size() << " float"
+                << std::endl;
+    for (const auto & p : efrac.vVertices)
+      geomechfile << p << std::endl;
+    geomechfile << std::endl;
+
+    // count number of entries in vindices
+    std::size_t vind_size_total = 0;
+    for (const auto & vec : efrac.vIndices)
+      vind_size_total += vec.size();
+
+    geomechfile << "CELLS" << "\t"
+                << efrac.vIndices.size() << "\t"
+                << vind_size_total
+                << std::endl;
+    for (const auto & cell : efrac.vIndices)
+    {
+      geomechfile << cell.size() << "\t";
+      for (const std::size_t & ivert : cell)
+        geomechfile << ivert << "\t";
+      geomechfile << std::endl;
+    }
+
+    geomechfile << std::endl;
+    geomechfile << "CELL_TYPES" << "\t" << efrac.vIndices.size() << std::endl;
+    // vtk_index = 9; // quads
+    // vtk_index = 5; // tria
+    for (const auto & cell : efrac.vIndices)
+    {
+      if (cell.size() == 4)
+        geomechfile << 9 << std::endl;
+      else if (cell.size() == 3)
+        geomechfile << 5 << std::endl;
+      else
+      {
+        std::cout << "unknown cell type" << std::endl;
+        exit(-1);
+      }
+    }
+
+    geomechfile.close();
   }
+
 
   outstring =   output_path + "gm_bcond.txt";
   geomechfile.open(outstring.c_str());

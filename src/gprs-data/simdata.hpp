@@ -125,7 +125,10 @@ struct EmbeddedFracture
   double                              friction_angle;
   double                              dilation_angle;
   // cells -> points
-  std::vector<std::vector<angem::Point<3,double>>> vvSection;
+  // these two entries represent mesh within the frac
+  std::vector<angem::Point<3,double>>  vVertices;
+  // cells -> vertex indiced
+  std::vector<std::vector<std::size_t>> vIndices;
 };
 
 

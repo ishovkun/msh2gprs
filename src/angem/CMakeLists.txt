@@ -8,6 +8,7 @@ ADD_LIBRARY(angem
   Plane.hpp
   Shape.hpp
   Rectangle.hpp
+  Quad.hpp
   Collisions.hpp
   CollisionGJK.hpp
   Line.hpp

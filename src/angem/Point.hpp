@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <iostream>  // debug
 #include <ostream>
 #include <cmath>
 #include <vector>
@@ -44,6 +45,8 @@ class Point
   // comparison
   bool operator==(const Point<dim, Scalar> & p) const;
   bool operator!=(const Point<dim, Scalar> & p) const;
+  // compares the norms, can be used for sorting
+  bool operator< (const Point<dim, Scalar> & other) const;
   // point-wise sum
   void operator+=(const Point<dim, Scalar> & p);
   // point-wise difference
@@ -62,6 +65,10 @@ class Point
   void cross(const Point<3, Scalar> & p,
              Point<3, Scalar>       & result) const;
   Point<3, Scalar> cross(const Point<3, Scalar> & p) const;
+
+  // if norm of the cross_product is small
+  bool parallel(const Point<dim, Scalar> & other,
+                const double               tol = 1e-5) const;
 
   // Euclidian distance
   Scalar distance(const Point<dim, Scalar> & p) const;
@@ -278,6 +285,17 @@ bool Point<dim,Scalar>::operator!=(const Point<dim, Scalar> & p) const
 
 
 template<int dim, typename Scalar>
+bool Point<dim,Scalar>::operator< (const Point<dim, Scalar> & other) const
+{
+  if (norm() < other.norm())
+    return true;
+  else
+    return false;
+}
+
+
+
+template<int dim, typename Scalar>
 void Point<dim,Scalar>::operator+=(const Point<dim, Scalar> & p)
 {
   for (int i=0; i<dim; ++i)
@@ -352,6 +370,22 @@ Point<3,Scalar> Point<dim,Scalar>::cross(const Point<3, Scalar> & p) const
   cross(p, result);
   return result;
 }
+
+
+template<int dim, typename Scalar>
+bool Point<dim,Scalar>::parallel(const Point<dim, Scalar> & other,
+                                 const double               tol) const
+{
+  // auto result = (cross(other)).norm();
+  // std::cout << "res = " << result << std::endl;
+  if ( (cross(other)).norm() < tol )
+  {
+    return true;
+  }
+  else
+    return false;
+}
+
 
 
 template<int dim, typename Scalar>
@@ -516,3 +550,20 @@ std::ostream &operator<<(std::ostream            & os,
 }
 
 }  // end namespace
+
+namespace std
+{
+template <>
+struct hash<angem::Point<3,double>>
+{
+  size_t operator()(angem::Point<3,double> const & p) const noexcept
+  {
+    return (
+        (51 + std::hash<int>()(p.x())) * 51 +
+        (23 + std::hash<int>()(p.y())) * 23 +
+        (std::hash<int>()(p.z()))
+            );
+  }
+};
+
+}

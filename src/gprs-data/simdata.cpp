@@ -4,6 +4,7 @@
 #include "Point.hpp"
 // #include "GJK_Algorithm.hpp"
 #include "Rectangle.hpp"
+#include "Quad.hpp"
 #include "CollisionGJK.hpp"
 #include <Collisions.hpp>
 #include <utils.hpp>
@@ -12,6 +13,7 @@
 #define SPECIAL_CELL = 999
 #include <algorithm>
 #include <exception>
+#include <unordered_set>
 
 using Point = angem::Point<3, double>;
 
@@ -187,7 +189,10 @@ void SimData::computeCellClipping()
     std::cout << "looping efracs" << std::endl;
     const auto & frac_cells = vEfrac[ifrac].cells;
     const auto & frac_plane = config.fractures[ifrac].body->plane;
-    vEfrac[ifrac].vvSection.resize(frac_cells.size());
+
+    std::vector<std::vector<angem::Point<3,double>>> vvSection;
+    // vEfrac[ifrac].vvSection.resize(frac_cells.size());
+    vvSection.resize(frac_cells.size());
 
     /* loop faces:
      * if any neighbor cell is in collision list,
@@ -221,31 +226,40 @@ void SimData::computeCellClipping()
         // save intersection data into neighbor fracture cells
         for (const auto & ineighbor : v_neighbors)
           for (const auto & p : section)
-            vEfrac[ifrac].vvSection[ineighbor].push_back(p);
+            vvSection[ineighbor].push_back(p);
+            // vEfrac[ifrac].vvSection[ineighbor].push_back(p);
 
       }  // end if has ef cells neighbors
     }    // end face loop
 
+    std::set<Point> setVert;
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
       // std::cout << std::endl;
       // std::cout << "cell: " << vEfrac[ifrac].cells[i] << std::endl;
       // loop through sda cells
-      auto & section_points = vEfrac[ifrac].vvSection[i];
+      auto & section_points = vvSection[i];
 
       // some point among those we obtain in the previous part of code
       // are duplicated since two adjacent faces intersecting a plane
       // have one point in common
       std::vector<Point> set_points;
       angem::remove_duplicates(section_points, set_points, tol);
-      vEfrac[ifrac].vvSection[i] = set_points;
+
+      // correct ordering for quads
+      if (set_points.size() == 4)
+      {
+        angem::Quad<double> quad(set_points);
+        set_points = quad.get_points();
+      }
+      vvSection[i] = set_points;
 
       // remove cell if number of points < 3 <=> area = 0
       if (set_points.size() < 3)
       {
         std::cout << "erasing fracture cell" << vEfrac[ifrac].cells[i] << std::endl;
         vEfrac[ifrac].cells.erase(vEfrac[ifrac].cells.begin() + i);
-        vEfrac[ifrac].vvSection.erase(vEfrac[ifrac].vvSection.begin() + i);
+        vvSection.erase(vvSection.begin() + i);
         vEfrac[ifrac].points.erase(vEfrac[ifrac].points.begin() + i);
         vEfrac[ifrac].strike.erase(vEfrac[ifrac].strike.begin() + i);
         vEfrac[ifrac].dip.erase(vEfrac[ifrac].dip.begin() + i);
@@ -253,11 +267,39 @@ void SimData::computeCellClipping()
         continue;
       }
 
-      angem::Polygon<double> poly;
-      poly.set_data(set_points);
-      std::cout << poly << std::endl;
+      // write points into a global set so we have an ordered set
+      // of vertices and we can retreive indices
+      for (const Point & p : set_points)
+        setVert.insert(p);
+
     }
 
+    // get indices of frac vertices
+    std::cout << "computing indices of frac vertices" << std::endl;
+    vEfrac[ifrac].vIndices.resize(vvSection.size());
+    const auto it_begin = setVert.begin();
+    std::size_t icell = 0;
+    for (const auto & cell_section : vvSection)
+    {
+      for (const Point & p : cell_section)
+      {
+        std::cout << p << "\t";
+        const std::size_t ind = std::distance(it_begin, setVert.find(p));
+        std::cout << "ind = " << ind << std::endl;
+        vEfrac[ifrac].vIndices[icell].push_back(ind);
+      }
+      std::cout << std::endl;
+      icell++;
+    }
+
+    // convert set of vertices to std::vector
+    vEfrac[ifrac].vVertices.resize(setVert.size());
+    std::size_t ivert = 0;
+    for (const Point & p : setVert)
+    {
+      vEfrac[ifrac].vVertices[ivert] = p;
+      ivert++;
+    }
 
   }  // end efrac loop
 

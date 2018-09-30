@@ -112,8 +112,6 @@ void CalcTranses::createKarimiData()
   // std::cout << "NbZones = "<< NbZones << std::endl;
   // std::cout << "NbPolyhedra = "<< NbPolyhedra << std::endl;
 
-
-
   for ( int i = 0; i < NbFracs; i++ )
   {
     vZoneCode[i] = i;
@@ -142,7 +140,7 @@ void CalcTranses::createKarimiData()
     vZPorosity[n] = pSim->get_property(i, "PORO");
     vZPermCode[n] = 1;
 
-    const auto perm = pSim->get_permeability(i);
+    const angem::Point<3,double> perm = pSim->get_permeability(i);
     vZPermeability[n*3+0] = perm[0];
     vZPermeability[n*3+1] = perm[1];
     vZPermeability[n*3+2] = perm[2];
@@ -165,6 +163,7 @@ void CalcTranses::createKarimiData()
 
   }
 
+  std::cout << "end Karimi data" << std::endl;
 }
 
 double CalcTranses::ABS(double v)
