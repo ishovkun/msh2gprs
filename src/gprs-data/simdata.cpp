@@ -2,9 +2,7 @@
 
 
 #include "Point.hpp"
-// #include "GJK_Algorithm.hpp"
 #include "Rectangle.hpp"
-#include "Quad.hpp"
 #include "CollisionGJK.hpp"
 #include <Collisions.hpp>
 #include <utils.hpp>
@@ -247,10 +245,10 @@ void SimData::computeCellClipping()
       angem::remove_duplicates(section_points, set_points, tol);
 
       // correct ordering for quads
-      if (set_points.size() == 4)
+      if (set_points.size() > 3)
       {
-        angem::Quad<double> quad(set_points);
-        set_points = quad.get_points();
+        bool gotcha = false;
+        angem::Polygon<double>::reorder(set_points);
       }
       vvSection[i] = set_points;
 

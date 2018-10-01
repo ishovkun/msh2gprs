@@ -21,6 +21,7 @@ class Polygon: public Shape<Scalar>
   // shift all points in direction p
   virtual void set_data(std::vector<Point<3,Scalar>> & point_list) override;
   virtual void move(const Point<3,Scalar> & p) override;
+  static  void reorder(std::vector<Point<3,Scalar>> & points);
 
   // Attributes
   Plane<Scalar> plane;
@@ -91,6 +92,81 @@ Polygon<Scalar>::move(const Point<3,Scalar> & p)
 {
   Shape<Scalar>::move(p);
   plane.move(p);
+}
+
+
+template<typename Scalar>
+void
+Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
+{
+  const std::size_t n_points = points.size();
+  assert(n_points > 2);
+  if (n_points == 3)
+    return;
+
+  Plane<Scalar> plane(points[0], points[1], points[2]);
+  Point<3,Scalar> normal = plane.normal();
+
+      // Point<3,Scalar> x1 = plane.local_coordinates(points[0]);
+  // std::cout << "x1 = " << x1 << std::endl;
+  // i want v_points to have a proper vtk numbering
+  // Point<3,Scalar> center = compute_center_mass(points);
+  // std::cout << "center = " << center << std::endl;
+  // for (auto & p : points)
+  //   std::cout << p << std::endl;
+
+
+  std::vector<Point<3, Scalar> > v_points;
+  std::vector<Point<3,Scalar>> copy = points;
+  v_points.push_back(copy.front());
+  copy.erase(copy.begin());
+
+  while (!copy.empty())
+  {
+    if (copy.size() == 1)
+    {
+      v_points.push_back(copy[0]);
+      break;
+    }
+    // find such vertex that all other vertices are on one side of the edge
+    for (std::size_t i=0; i<copy.size(); ++i)
+    {
+      // make plane object that we use to check on which side of the plane
+      // any point is
+      Scalar len = (copy[i] - v_points.back()).norm();
+      Point<3, Scalar> p_perp = v_points.back() + normal*len;
+      Plane<Scalar> pln(v_points.back(), p_perp, copy[i]);
+      bool all_above = true;
+      bool orientation;
+      bool orientation_set = false;  // set after first assignment
+      for (std::size_t j=0; j<points.size(); ++j)
+      {
+        if (points[j] == copy[i] || points[j] == v_points.back())
+          continue;
+        const bool above = pln.above(points[j]);
+        if (!orientation_set)
+        {
+          orientation = above;
+          orientation_set = true;
+        }
+        if (above != orientation)
+        {
+          all_above = false;
+          break;
+        }
+      }
+      if (all_above)
+      {
+        v_points.push_back(copy[i]);
+        copy.erase(copy.begin() + i);
+        break;
+      }
+
+    }
+  }
+
+  points = v_points;
+
 }
 
 }

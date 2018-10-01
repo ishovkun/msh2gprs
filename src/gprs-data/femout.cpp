@@ -284,6 +284,13 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       geomechfile << cell.size() << "\t";
       for (const std::size_t & ivert : cell)
         geomechfile << ivert << "\t";
+      // if (cell.size() == 5)
+      // {
+      //   std::cout << "5 verts!!!" << std::endl;
+      //   for (const std::size_t & ivert : cell)
+      //     std::cout << efrac.vVertices[ivert] << std::endl;
+      //   abort();
+      // }
       geomechfile << std::endl;
     }
 
@@ -297,6 +304,8 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
         geomechfile << 9 << std::endl;
       else if (cell.size() == 3)
         geomechfile << 5 << std::endl;
+      else if (cell.size() == 5)
+        geomechfile << 7 << std::endl;
       else
       {
         std::cout << "unknown cell type" << std::endl;
