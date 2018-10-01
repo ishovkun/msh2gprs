@@ -290,7 +290,9 @@ bool Point<dim,Scalar>::operator< (const Point<dim, Scalar> & other) const
   if (norm() < other.norm())
     return true;
   else
+  {
     return false;
+  }
 }
 
 
@@ -558,11 +560,16 @@ struct hash<angem::Point<3,double>>
 {
   size_t operator()(angem::Point<3,double> const & p) const noexcept
   {
+    // return (
+    //     (51 + std::hash<int>()(p.x())) * 51 +
+    //     (23 + std::hash<int>()(p.y())) * 23 +
+    //     (std::hash<int>()(p.z()))
+    //         );
     return (
-        (51 + std::hash<int>()(p.x())) * 51 +
-        (23 + std::hash<int>()(p.y())) * 23 +
-        (std::hash<int>()(p.z()))
-            );
+        (51 + std::hash<double>()(p.x())) * 51 +
+        (23 + std::hash<double>()(p.y())) * 23 +
+        (std::hash<double>()(p.z()))
+        );
   }
 };
 

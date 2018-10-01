@@ -194,9 +194,8 @@ void SimData::computeCellClipping()
 
     /* loop faces:
      * if any neighbor cell is in collision list,
-     * determine the intersection points with the fracture plane
+     * determine the intersection points of the face with the fracture plane
      * add these points to the point set for cells
-     * then loop cells and compute areas enclosed by points
      */
     for(int iface = 0; iface < vsFaceCustom.size(); iface++)
     {
@@ -225,16 +224,14 @@ void SimData::computeCellClipping()
         for (const auto & ineighbor : v_neighbors)
           for (const auto & p : section)
             vvSection[ineighbor].push_back(p);
-            // vEfrac[ifrac].vvSection[ineighbor].push_back(p);
 
       }  // end if has ef cells neighbors
     }    // end face loop
 
-    std::set<Point> setVert;
+    // std::set<Point> setVert;
+    std::unordered_set<Point> setVert;
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
-      // std::cout << std::endl;
-      // std::cout << "cell: " << vEfrac[ifrac].cells[i] << std::endl;
       // loop through sda cells
       auto & section_points = vvSection[i];
 
@@ -247,7 +244,6 @@ void SimData::computeCellClipping()
       // correct ordering for quads
       if (set_points.size() > 3)
       {
-        bool gotcha = false;
         angem::Polygon<double>::reorder(set_points);
       }
       vvSection[i] = set_points;
@@ -279,14 +275,23 @@ void SimData::computeCellClipping()
     std::size_t icell = 0;
     for (const auto & cell_section : vvSection)
     {
+      if (icell == 50)
+        std::cout << "cell 50" << std::endl;
       for (const Point & p : cell_section)
       {
-        std::cout << p << "\t";
+        if (icell == 50)
+        {
+          std::cout << p << "\t";
+          std::cout << "but found" << std::endl;
+          std::cout << *(setVert.find(p)) << std::endl;
+        }
         const std::size_t ind = std::distance(it_begin, setVert.find(p));
-        std::cout << "ind = " << ind << std::endl;
+        if (icell == 50)
+          std::cout << "ind = " << ind << std::endl;
         vEfrac[ifrac].vIndices[icell].push_back(ind);
       }
-      std::cout << std::endl;
+      if (icell == 50)
+        std::cout << std::endl;
       icell++;
     }
 
