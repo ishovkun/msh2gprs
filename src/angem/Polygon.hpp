@@ -13,13 +13,13 @@ class Polygon: public Shape<Scalar>
 {
  public:
 	Polygon();
-  Polygon(std::vector<Point<3,Scalar> *> & points_list);
+  Polygon(const std::vector<Point<3,Scalar>> & points_list);
   // construct a polygon (face) from some mesh vertices
-  Polygon(std::vector<Point<3,Scalar>> & all_mesh_vertices,
-          std::vector<std::size_t>     & indices);
+  Polygon(const std::vector<Point<3,Scalar>> & all_mesh_vertices,
+          const std::vector<std::size_t>     & indices);
 
   // shift all points in direction p
-  virtual void set_data(std::vector<Point<3,Scalar>> & point_list) override;
+  virtual void set_data(const std::vector<Point<3,Scalar>> & point_list) override;
   virtual void move(const Point<3,Scalar> & p) override;
   static  void reorder(std::vector<Point<3,Scalar>> & points);
 
@@ -36,39 +36,35 @@ Polygon<Scalar>::Polygon()
 
 
 template<typename Scalar>
-Polygon<Scalar>::Polygon(std::vector<Point<3,Scalar> *> & point_list)
+Polygon<Scalar>::Polygon(const std::vector<Point<3,Scalar>> & point_list)
 {
-  assert(point_list.size() > 3);
-  plane.set_data(compute_center_mass(point_list),
-                 *point_list[1], *point_list[2]);
-  Shape<Scalar>::set_data(point_list);
+  assert(point_list.size() > 2);
+  set_data(point_list);
 }
 
 
 template<typename Scalar>
-Polygon<Scalar>::Polygon(std::vector<Point<3,Scalar>> & all_mesh_vertices,
-                         std::vector<std::size_t>     & indices)
-    :
-    Shape<Scalar>::Shape()
+Polygon<Scalar>::Polygon(const std::vector<Point<3,Scalar>> & all_mesh_vertices,
+                         const std::vector<std::size_t>     & indices)
 {
-  std::vector<Point<3,Scalar> *> p_points;
-  p_points.reserve(indices.size());
-  for (const auto & ind : indices)
-    p_points.push_back(&all_mesh_vertices[ind]);
-
-  Shape<Scalar>::set_data(p_points);
+  assert(indices.size() > 2);
+  std::vector<Point<3,Scalar>> point_list;
+  for (const std::size_t & i : indices)
+    point_list.push_back(all_mesh_vertices[i]);
+  set_data(point_list);
 }
 
 
 template<typename Scalar>
 void
-Polygon<Scalar>::set_data(std::vector<Point<3,Scalar>> & point_list)
+Polygon<Scalar>::set_data(const std::vector<Point<3,Scalar>> & point_list)
 {
   // TODO: i don't check whether all points aren't on one line
   assert(point_list.size() >= 3);
 
-  Shape<Scalar>::set_data(point_list);
-  Point<3, Scalar> cm = Shape<Scalar>::center();
+  this->points = point_list;
+  reorder(this->points);
+  Point<3, Scalar> cm = compute_center_mass(point_list);
   /* i'd like the plane support point (first argument) to be
      the center of the poly
      to create the plane I need to pass three points that are not

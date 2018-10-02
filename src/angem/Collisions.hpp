@@ -59,14 +59,14 @@ bool collision(const Polygon<Scalar>        & poly,
 {
   // call collision of all edges
   bool result = false;
-  const auto & p_pts = poly.get_points();
-  for (std::size_t i=0; i<p_pts.size(); ++i)
+  const auto & pts = poly.get_points();
+  for (std::size_t i=0; i<pts.size(); ++i)
   {
     bool loc_collision = false;
-    if (i < p_pts.size() - 1)
-      loc_collision = collision(*p_pts[i], *p_pts[i+1], plane, intersection);
+    if (i < pts.size() - 1)
+      loc_collision = collision(pts[i], pts[i+1], plane, intersection);
     else
-      loc_collision = collision(*p_pts[i], *p_pts[0], plane, intersection);
+      loc_collision = collision(pts[i], pts[0], plane, intersection);
     if (loc_collision)
       result = true;
   }

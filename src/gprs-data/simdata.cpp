@@ -105,11 +105,11 @@ void SimData::defineEmbeddedFractureProperties()
     {
       const auto & cell = vsCellCustom[icell];
 
-      std::vector<angem::Point<3,double> *> verts;
+      std::vector<angem::Point<3,double>> verts;
       for (const auto & ivertex : cell.vVertices)
-        verts.push_back(&vvVrtxCoords[ivertex]);
+        verts.push_back(vvVrtxCoords[ivertex]);
 
-      angem::Shape<double> pcell(verts);
+      angem::Shape<double> pcell(vvVrtxCoords, cell.vVertices);
 
       if (collision.check(*frac_conf.body, pcell))
       {
