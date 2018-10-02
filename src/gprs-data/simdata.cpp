@@ -128,7 +128,6 @@ void SimData::defineEmbeddedFractureProperties()
             std::cout << "shifting fracture: " << shift ;
             std::cout << " due to collision with vertex: " << ivertex;
             std::cout << std::endl;
-            // std::cout << frac.plane.point << "\t";
             frac_conf.body->move(shift);
             goto redo_collision;
           }
@@ -156,7 +155,6 @@ void SimData::defineEmbeddedFractureProperties()
                               frac_conf.body->plane.dip_angle());
     vEfrac[ef_ind].strike.assign(n_efrac_cells,
                                  frac_conf.body->plane.strike_angle());
-    // abort();
 
     vEfrac[ef_ind].cohesion = frac_conf.cohesion;
     vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
@@ -164,9 +162,6 @@ void SimData::defineEmbeddedFractureProperties()
 
     ef_ind++;
   }  // end efracs loop
-
-  // std::cout << vEfrac.size() << std::endl;
-  // exit(0);
 
 }
 
@@ -189,8 +184,8 @@ void SimData::computeCellClipping()
     const auto & frac_plane = config.fractures[ifrac].body->plane;
 
     std::vector<std::vector<angem::Point<3,double>>> vvSection;
-    // vEfrac[ifrac].vvSection.resize(frac_cells.size());
     vvSection.resize(frac_cells.size());
+    // angem::PolyGroup<double> split;
 
     /* loop faces:
      * if any neighbor cell is in collision list,
@@ -225,6 +220,19 @@ void SimData::computeCellClipping()
           for (const auto & p : section)
             vvSection[ineighbor].push_back(p);
 
+        // build polygons from intersection and save to scratch
+        // angem::split(poly_face, frac_plane, split);
+        // std::cout << "printing first group" << std::endl;
+        // std::cout << "vertices" << std::endl;
+        // for (const auto & p : split.vertices)
+        //   std::cout << p << std::endl;
+        // std::cout << "polygons" << std::endl;
+        // for (const auto & poly : split.polygons)
+        // {
+        //   std::cout << poly << std::endl;
+        //   std::cout << std::endl;
+        // }
+        exit(0);
       }  // end if has ef cells neighbors
     }    // end face loop
 
@@ -275,24 +283,11 @@ void SimData::computeCellClipping()
     std::size_t icell = 0;
     for (const auto & cell_section : vvSection)
     {
-      if (icell == 50)
-        std::cout << "cell 50" << std::endl;
       for (const Point & p : cell_section)
       {
-        if (icell == 50)
-        {
-          std::cout << p << "\t";
-          std::cout << "but found" << std::endl;
-          std::cout << *(setVert.find(p)) << std::endl;
-        }
         const std::size_t ind = std::distance(it_begin, setVert.find(p));
-        if (icell == 50)
-          std::cout << "ind = " << ind << std::endl;
         vEfrac[ifrac].vIndices[icell].push_back(ind);
       }
-      if (icell == 50)
-        std::cout << std::endl;
-      icell++;
     }
 
     // convert set of vertices to std::vector

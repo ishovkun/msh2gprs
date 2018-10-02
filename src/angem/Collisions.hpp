@@ -3,6 +3,7 @@
 #include "Point.hpp"
 #include "Plane.hpp"
 #include "Polygon.hpp"
+// #include "PolyGroup.hpp"
 
 namespace angem
 {
@@ -93,9 +94,9 @@ bool collision(const Point<3,Scalar>        & l0,
   // both points are on the plane
   if (fabs(d1) + fabs(d2) < tol)
   {
-    return true;
     intersection.push_back(l0);
     intersection.push_back(l1);
+    return true;
   }
 
   if (d1*d2 > 0)  // both points on one side of plane
@@ -107,8 +108,73 @@ bool collision(const Point<3,Scalar>        & l0,
                     l.dot(plane.normal());
   intersection.push_back(l0 + d * l);
   return true;
-
-
 }
+
+
+// template <typename Scalar>
+// void split(const Polygon<Scalar> & poly,
+//            const Plane<Scalar>   & plane,
+//            PolyGroup<Scalar>     & result)
+// {
+//   std::vector<Point<3,Scalar>> section;
+//   collision(poly, plane, section);
+//   if (section.size() == 0)
+//   {
+//     std::vector<Point<3,Scalar>*> p_points;
+//     for (const auto p_point : poly.get_points())
+//     {
+//       result.vertices.push_back(*p_point);
+//       auto & back = result.vertices.back();
+//       p_points.push_back(&back);
+//     }
+
+//     std::cout << "case 1" << std::endl;
+//     result.polygons.push_back(Polygon<Scalar>(p_points));
+//     return;
+//   }
+
+//   std::cout << "case 2" << std::endl;
+//   std::vector<Point<3,Scalar>*> points_above, points_below;
+//   for (const auto p_point : poly.get_points())
+//   {
+//     result.vertices.push_back(*p_point);
+//     Point<3,Scalar> & p = result.vertices.back();
+//     std::cout << "adding " << p << " (" << &p << ")" << std::endl;
+//     if (plane.above(p))
+//       points_above.push_back(&p);
+//     else
+//       points_below.push_back(&p);
+//   }
+
+//   for (Point<3,Scalar> & p : section)
+//   {
+//     result.vertices.push_back(p);
+//     Point<3,Scalar> & pp = result.vertices.back();
+//     std::cout << "adding " << pp << " (" << &pp << ")"<< std::endl;
+//     std::cout << "same as " <<  &(result.vertices.back()) << ")"<< std::endl;
+//     points_above.push_back(&pp);
+//     points_below.push_back(&pp);
+//   }
+
+
+//   // if (points_above.size() > 2)
+//   //   result.polygons.push_back(std::move(Polygon<Scalar>(points_above)));
+//   // if (points_below.size() > 2)
+//   //   result.polygons.push_back(std::move(Polygon<Scalar>(points_below)));
+
+//   // std::cout << "poly_above" << std::endl;
+//   // std::cout << result.polygons[0] << std::endl;
+//   std::cout << "points_below" << std::endl;
+//   for (const auto & pp : points_below)
+//     std::cout << *pp << " (" << pp << ")" << std::endl;
+//   // std::cout << "poly_below" << std::endl;
+//   // std::cout << result.polygons[1] << std::endl;
+//   std::cout << "all addresses" << std::endl;
+//   for (const auto & p : result.vertices)
+//     std::cout << p << " (" << &p << ")"<< std::endl;
+
+// }
+
+
 
 }  // end namespace

@@ -19,6 +19,7 @@ using namespace std;
 #include "renum.hpp"
 
 #include "Point.hpp"
+#include "Collisions.hpp"
 #include <SimdataConfig.hpp>
 
 struct GmConstraint
@@ -129,6 +130,7 @@ struct EmbeddedFracture
   std::vector<angem::Point<3,double>>  vVertices;
   // cells -> vertex indiced
   std::vector<std::vector<std::size_t>> vIndices;
+  // std::vector<ScratchData>              vSplits;
 };
 
 

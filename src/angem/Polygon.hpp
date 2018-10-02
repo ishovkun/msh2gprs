@@ -107,15 +107,6 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
   Plane<Scalar> plane(points[0], points[1], points[2]);
   Point<3,Scalar> normal = plane.normal();
 
-      // Point<3,Scalar> x1 = plane.local_coordinates(points[0]);
-  // std::cout << "x1 = " << x1 << std::endl;
-  // i want v_points to have a proper vtk numbering
-  // Point<3,Scalar> center = compute_center_mass(points);
-  // std::cout << "center = " << center << std::endl;
-  // for (auto & p : points)
-  //   std::cout << p << std::endl;
-
-
   std::vector<Point<3, Scalar> > v_points;
   std::vector<Point<3,Scalar>> copy = points;
   v_points.push_back(copy.front());
