@@ -208,7 +208,7 @@ void Plane<Scalar>::compute_basis(const Point<3,Scalar> & normal)
 
   // check
   // assert(e1.norm() > 1e-16);
-  if (e1.norm() < 1e-16)
+  if (e1.norm() < 1e-16 || (e1.cross(normal)).norm() < 1e-6)
   {
     rv = normal;
     rv[1] += 1;

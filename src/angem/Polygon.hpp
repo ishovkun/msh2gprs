@@ -62,6 +62,10 @@ Polygon<Scalar>::set_data(const std::vector<Point<3,Scalar>> & point_list)
   // TODO: i don't check whether all points aren't on one line
   assert(point_list.size() >= 3);
 
+  // std::cout << "making poly" << std::endl;
+  // for (const auto & p : point_list)
+  //   std::cout << p << std::endl;
+
   this->points = point_list;
   reorder(this->points);
   Point<3, Scalar> cm = compute_center_mass(point_list);
@@ -121,8 +125,9 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
       // make plane object that we use to check on which side of the plane
       // any point is
       Scalar len = (copy[i] - v_points.back()).norm();
-      Point<3, Scalar> p_perp = v_points.back() + normal*len;
+      Point<3, Scalar> p_perp = v_points.back() + normal * len;
       Plane<Scalar> pln(v_points.back(), p_perp, copy[i]);
+
       bool all_above = true;
       bool orientation;
       bool orientation_set = false;  // set after first assignment

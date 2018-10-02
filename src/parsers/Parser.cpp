@@ -100,7 +100,7 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it)
         continue;
       else
       {
-        std::cout << "reading expression " << key_value.first << "\t";
+        std::cout << "\treading expression " << key_value.first << std::endl;
         // save property name and expression
         conf.variables.push_back(key_value.first);
         conf.expressions.push_back(key_value.second);
@@ -342,6 +342,7 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
                 << " unknown: skipping" << std::endl;
   }
 
+  std::cout << "Making fracture" << std::endl;
   conf.body = std::make_shared<angem::Rectangle<double>>
       (center, length, height, dip, strike);
 

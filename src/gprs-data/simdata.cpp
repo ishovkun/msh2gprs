@@ -232,11 +232,10 @@ void SimData::computeCellClipping()
         //   std::cout << poly << std::endl;
         //   std::cout << std::endl;
         // }
-        exit(0);
+        // exit(0);
       }  // end if has ef cells neighbors
     }    // end face loop
 
-    // std::set<Point> setVert;
     std::unordered_set<Point> setVert;
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
@@ -248,6 +247,10 @@ void SimData::computeCellClipping()
       // have one point in common
       std::vector<Point> set_points;
       angem::remove_duplicates(section_points, set_points, tol);
+      // std::cout << "cell = " << i << std::endl;
+      // for (const auto & p : set_points)
+      //   std::cout << p << std::endl;
+      // std::cout << std::endl;
 
       // correct ordering for quads
       if (set_points.size() > 3)
@@ -288,6 +291,7 @@ void SimData::computeCellClipping()
         const std::size_t ind = std::distance(it_begin, setVert.find(p));
         vEfrac[ifrac].vIndices[icell].push_back(ind);
       }
+      icell++;
     }
 
     // convert set of vertices to std::vector
@@ -307,7 +311,6 @@ void SimData::computeCellClipping()
 std::size_t SimData::n_default_vars()
 {
   SimdataConfig dummy;
-  // return 0;
   return dummy.all_vars.size();
 }
 
