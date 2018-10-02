@@ -304,11 +304,11 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
         geomechfile << 9 << std::endl;
       else if (cell.size() == 3)
         geomechfile << 5 << std::endl;
-      else if (cell.size() == 5)
+      else if (cell.size() == 5 || cell.size() == 6)
         geomechfile << 7 << std::endl;
       else
       {
-        std::cout << "unknown cell type" << std::endl;
+        std::cout << "unknown cell type : " << cell.size() << " vertices" << std::endl;
         exit(-1);
       }
     }
