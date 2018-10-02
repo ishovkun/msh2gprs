@@ -19,6 +19,7 @@ using namespace std;
 #include "renum.hpp"
 
 #include "Point.hpp"
+#include "PolyGroup.hpp"
 #include "Collisions.hpp"
 #include <SimdataConfig.hpp>
 

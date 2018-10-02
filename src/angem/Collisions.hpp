@@ -120,12 +120,9 @@ bool collision(const Point<3,Scalar>        & l0,
 //   collision(poly, plane, section);
 //   if (section.size() == 0)
 //   {
-//     std::vector<Point<3,Scalar>*> p_points;
-//     for (const auto p_point : poly.get_points())
+//     for (const auto & p : poly.get_points())
 //     {
-//       result.vertices.push_back(*p_point);
-//       auto & back = result.vertices.back();
-//       p_points.push_back(&back);
+//       result.vertices.push_back(p);
 //     }
 
 //     std::cout << "case 1" << std::endl;
@@ -161,18 +158,6 @@ bool collision(const Point<3,Scalar>        & l0,
 //   //   result.polygons.push_back(std::move(Polygon<Scalar>(points_above)));
 //   // if (points_below.size() > 2)
 //   //   result.polygons.push_back(std::move(Polygon<Scalar>(points_below)));
-
-//   // std::cout << "poly_above" << std::endl;
-//   // std::cout << result.polygons[0] << std::endl;
-//   std::cout << "points_below" << std::endl;
-//   for (const auto & pp : points_below)
-//     std::cout << *pp << " (" << pp << ")" << std::endl;
-//   // std::cout << "poly_below" << std::endl;
-//   // std::cout << result.polygons[1] << std::endl;
-//   std::cout << "all addresses" << std::endl;
-//   for (const auto & p : result.vertices)
-//     std::cout << p << " (" << &p << ")"<< std::endl;
-
 // }
 
 

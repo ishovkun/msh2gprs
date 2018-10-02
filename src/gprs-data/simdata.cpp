@@ -185,7 +185,7 @@ void SimData::computeCellClipping()
 
     std::vector<std::vector<angem::Point<3,double>>> vvSection;
     vvSection.resize(frac_cells.size());
-    // angem::PolyGroup<double> split;
+    // std::vector<angem::PolyGroup<double>> splits(frac_cells.size());
 
     /* loop faces:
      * if any neighbor cell is in collision list,
@@ -221,6 +221,7 @@ void SimData::computeCellClipping()
             vvSection[ineighbor].push_back(p);
 
         // build polygons from intersection and save to scratch
+        // angem::PolyGroup<double> split;
         // angem::split(poly_face, frac_plane, split);
         // std::cout << "printing first group" << std::endl;
         // std::cout << "vertices" << std::endl;
