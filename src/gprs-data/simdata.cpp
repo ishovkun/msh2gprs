@@ -185,7 +185,7 @@ void SimData::computeCellClipping()
 
     std::vector<std::vector<angem::Point<3,double>>> vvSection;
     vvSection.resize(frac_cells.size());
-    // std::vector<angem::PolyGroup<double>> splits(frac_cells.size());
+    std::vector<angem::PolyGroup<double>> splits(frac_cells.size());
 
     /* loop faces:
      * if any neighbor cell is in collision list,
@@ -221,19 +221,13 @@ void SimData::computeCellClipping()
             vvSection[ineighbor].push_back(p);
 
         // build polygons from intersection and save to scratch
-        // angem::PolyGroup<double> split;
-        // angem::split(poly_face, frac_plane, split);
-        // std::cout << "printing first group" << std::endl;
-        // std::cout << "vertices" << std::endl;
-        // for (const auto & p : split.vertices)
-        //   std::cout << p << std::endl;
-        // std::cout << "polygons" << std::endl;
-        // for (const auto & poly : split.polygons)
-        // {
-        //   std::cout << poly << std::endl;
-        //   std::cout << std::endl;
-        // }
-        // exit(0);
+        angem::PolyGroup<double> split;
+        angem::split(poly_face, frac_plane, split);
+
+        // add split to neighbor cess splits
+        for (const auto & ineighbor : v_neighbors)
+          splits[ineighbor].add(split);
+
       }  // end if has ef cells neighbors
     }    // end face loop
 
@@ -248,10 +242,6 @@ void SimData::computeCellClipping()
       // have one point in common
       std::vector<Point> set_points;
       angem::remove_duplicates(section_points, set_points, tol);
-      // std::cout << "cell = " << i << std::endl;
-      // for (const auto & p : set_points)
-      //   std::cout << p << std::endl;
-      // std::cout << std::endl;
 
       // correct ordering for quads
       if (set_points.size() > 3)
@@ -272,6 +262,8 @@ void SimData::computeCellClipping()
         i--;
         continue;
       }
+
+      splits[i].add(angem::Polygon<double>(set_points));
 
       // write points into a global set so we have an ordered set
       // of vertices and we can retreive indices

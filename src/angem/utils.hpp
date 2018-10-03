@@ -31,23 +31,6 @@ compute_center_mass(const std::vector<Point<dim,Scalar> *> & points)
 
 
 template<int dim, typename Scalar>
-std::size_t
-find(const Point<dim,Scalar>              & p,
-     const std::vector<Point<dim,Scalar>> & points,
-     const double                           tol)
-{
-  std::size_t counter = 0;
-  for (const auto & point : points)
-  {
-    if (p.distance(point) < tol)
-      return counter;
-    counter++;
-  }
-  return counter;
-}
-
-
-template<int dim, typename Scalar>
 void
 remove_duplicates(const std::vector<Point<dim,Scalar>> & points,
                   std::vector<Point<dim,Scalar>>       & result,

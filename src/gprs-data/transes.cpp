@@ -67,6 +67,7 @@ void CalcTranses::createKarimiData()
   vvFNodes.clear();
   vCodePolygon.clear();
   vector<double> vConductivity, vAperture;
+
   // internal boundaries
   for(int ipoly = 0; ipoly < NbPolygons; ipoly++)
   {

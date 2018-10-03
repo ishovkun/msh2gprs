@@ -551,6 +551,49 @@ std::ostream &operator<<(std::ostream            & os,
   return os;
 }
 
+
+template<int dim, typename Scalar>
+std::ostream &operator<<(std::ostream                         & os,
+                         const std::vector<Point<dim,Scalar>> & points)
+{
+  for (const auto & p : points)
+    os << p << std::endl;
+  return os;
+}
+
+
+template<int dim, typename Scalar>
+std::size_t
+find(const Point<dim,Scalar>              & p,
+     const std::vector<Point<dim,Scalar>> & points,
+     const double                           tol = 1e-6)
+{
+  std::size_t counter = 0;
+  for (const auto & point : points)
+  {
+    if (p.distance(point) < tol)
+      return counter;
+    counter++;
+  }
+  return counter;
+}
+
+
+
+
+template<int dim, typename Scalar>
+std::size_t insert(const Point<dim,Scalar>        & point,
+                   std::vector<Point<dim,Scalar>> & points,
+                   const Scalar                     tol = 1e-6)
+{
+  const std::size_t ind = find(point, points, tol);
+  if (ind == points.size())
+    points.push_back(point);
+  return ind;
+}
+
+
+
 }  // end namespace
 
 namespace std

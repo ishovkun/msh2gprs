@@ -111,54 +111,52 @@ bool collision(const Point<3,Scalar>        & l0,
 }
 
 
-// template <typename Scalar>
-// void split(const Polygon<Scalar> & poly,
-//            const Plane<Scalar>   & plane,
-//            PolyGroup<Scalar>     & result)
-// {
-//   std::vector<Point<3,Scalar>> section;
-//   collision(poly, plane, section);
-//   if (section.size() == 0)
-//   {
-//     for (const auto & p : poly.get_points())
-//     {
-//       result.vertices.push_back(p);
-//     }
+template <typename Scalar>
+void split(const Polygon<Scalar> & poly,
+           const Plane<Scalar>   & plane,
+           PolyGroup<Scalar>     & result)
+{
+  std::vector<Point<3,Scalar>> section;
+  collision(poly, plane, section);
 
-//     std::cout << "case 1" << std::endl;
-//     result.polygons.push_back(Polygon<Scalar>(p_points));
-//     return;
-//   }
+  if (section.size() == 0)
+  {
+    std::vector<std::size_t> indices;
+    for (const auto & p : poly.get_points())
+    {
+      const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
+      indices.push_back(ind);
+    }
+    result.polygons.push_back(std::move(indices));
 
-//   std::cout << "case 2" << std::endl;
-//   std::vector<Point<3,Scalar>*> points_above, points_below;
-//   for (const auto p_point : poly.get_points())
-//   {
-//     result.vertices.push_back(*p_point);
-//     Point<3,Scalar> & p = result.vertices.back();
-//     std::cout << "adding " << p << " (" << &p << ")" << std::endl;
-//     if (plane.above(p))
-//       points_above.push_back(&p);
-//     else
-//       points_below.push_back(&p);
-//   }
+    return;
+  }
 
-//   for (Point<3,Scalar> & p : section)
-//   {
-//     result.vertices.push_back(p);
-//     Point<3,Scalar> & pp = result.vertices.back();
-//     std::cout << "adding " << pp << " (" << &pp << ")"<< std::endl;
-//     std::cout << "same as " <<  &(result.vertices.back()) << ")"<< std::endl;
-//     points_above.push_back(&pp);
-//     points_below.push_back(&pp);
-//   }
+  std::vector<std::size_t> above, below;
+
+  for (const auto p : poly.get_points())
+  {
+    const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
+    if (plane.above(p))
+      above.push_back(ind);
+    else
+      below.push_back(ind);
+
+  }
+
+  for (Point<3,Scalar> & p : section)
+  {
+    const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
+    above.push_back(ind);
+    below.push_back(ind);
+  }
 
 
-//   // if (points_above.size() > 2)
-//   //   result.polygons.push_back(std::move(Polygon<Scalar>(points_above)));
-//   // if (points_below.size() > 2)
-//   //   result.polygons.push_back(std::move(Polygon<Scalar>(points_below)));
-// }
+  if (above.size() > 2)
+    result.polygons.push_back(std::move(above));
+  if (below.size() > 2)
+    result.polygons.push_back(std::move(below));
+}
 
 
 
