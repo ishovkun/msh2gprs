@@ -83,25 +83,30 @@ int main(int argc, char *argv[])
 
   cout << endl << "Convert FEM mesh into FVM mesh" << endl;
   pSimData->handleConnections();
-  CalcTranses * pTranses;
-  pTranses = new CalcTranses(pSimData);
-  pTranses->createKarimiData();
-  cout << "Extract  transes from FVM mesh" << endl;
-  pTranses->createKarimiApproximation();
 
-  cout << "Create simple wells" << endl;
-  pSimData->createSimpleWells();
+  std::cout << "computing reservoir transes" << std::endl;
+  pSimData->computeReservoirTransmissibilities();
+  // std::cout << "computing EDFM transes" << std::endl;
+  // pSimData->computeEDFMTransmissibilities();
+  // CalcTranses * pTranses;
+  // pTranses = new CalcTranses(pSimData);
+  // pTranses->createKarimiData();
+  // cout << "Extract  transes from FVM mesh" << endl;
+  // pTranses->createKarimiApproximation();
 
-  cout << "Split FEM mesh on internal surfaces" << endl;
-  pSimData->splitInternalFaces();
+  // cout << "Create simple wells" << endl;
+  // pSimData->createSimpleWells();
 
-  cout << "Write FEM mesh data\n";
-  OutputData * pOut;
-  pOut = new OutputData(pSimData);
+  // cout << "Split FEM mesh on internal surfaces" << endl;
+  // pSimData->splitInternalFaces();
 
-  const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
-  std::cout << "output directory: " << output_dir << std::endl;
-  pOut->writeGeomechDataNewKeywords(output_dir);
-  pTranses->outputKarimi(output_dir);
+  // cout << "Write FEM mesh data\n";
+  // OutputData * pOut;
+  // pOut = new OutputData(pSimData);
+
+  // const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
+  // std::cout << "output directory: " << output_dir << std::endl;
+  // pOut->writeGeomechDataNewKeywords(output_dir);
+  // pTranses->outputKarimi(output_dir);
   return 0;
 }

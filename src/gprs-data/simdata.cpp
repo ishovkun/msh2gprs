@@ -7,6 +7,7 @@
 #include <Collisions.hpp>
 #include <utils.hpp>
 #include <muParser.h>
+#include "transes.hpp"
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -299,6 +300,8 @@ void SimData::computeCellClipping()
       ivert++;
     }
 
+    computeEDFMTransmissibilities(splits, ifrac);
+
     // std::cout << "polygons" << std::endl;
     // for (std::size_t i=0; i<splits.size(); ++i)
     // {
@@ -324,6 +327,158 @@ void SimData::computeCellClipping()
 
   }  // end efrac loop
 
+}
+
+
+void SimData::computeReservoirTransmissibilities()
+{
+  // init tran
+  CalcTranses tran;
+  tran.NbNodes     = nNodes;
+  tran.NbPolyhedra = nCells;
+  tran.NbPolygons  = nFaces;
+  tran.NbFracs     = nDFMFracs;
+  tran.NbZones     = nDFMFracs + nCells;
+  tran.NbOptions   = 1;
+  tran.fracporo    = 1.0;
+  tran.init();
+
+  // std::cout << "nDFMFracs = "<< nDFMFracs << std::endl;
+
+
+  // fill data
+  // nodes
+  for ( std::size_t i = 0; i < nNodes; i++ )
+  {
+    tran.vCoordinatesX[i] = vvVrtxCoords[i][0];
+    tran.vCoordinatesY[i] = vvVrtxCoords[i][1];
+    tran.vCoordinatesZ[i] = vvVrtxCoords[i][2];
+  }
+
+  // polygons (2d elements)
+  int code_polygon = 0;
+  tran.vNbFNodes.clear();
+  tran.vvFNodes.clear();
+  tran.vCodePolygon.clear();
+  vector<double> vConductivity, vAperture;
+
+  // internal boundaries
+  for(int ipoly = 0; ipoly < nFaces; ipoly++)
+  {
+    if(vsFaceCustom[ipoly].nMarker > 0)
+    {
+      tran.vvFNodes.push_back( vsFaceCustom[ipoly].vVertices);
+      tran.vNbFNodes.push_back( vsFaceCustom[ipoly].vVertices.size() );
+      tran.vCodePolygon.push_back( code_polygon );
+      code_polygon++;
+      vConductivity.push_back(vsFaceCustom[ipoly].conductivity);
+      vAperture.push_back(vsFaceCustom[ipoly].aperture);
+    }
+    else
+    {
+      tran.vvFNodes.push_back( vsFaceCustom[ipoly].vVertices);
+      tran.vNbFNodes.push_back( vsFaceCustom[ipoly].vVertices.size() );
+      tran.vCodePolygon.push_back( -1 );
+    }
+  }
+
+  // polyhedra (3d elements)
+  set<int>::iterator itintset;
+  tran.vNbVFaces.clear();
+  tran.vvVFaces.resize(nCells);
+  tran.vCodePolyhedron.clear();
+  for(int ipoly = 0; ipoly < nCells; ipoly++)
+  {
+    int n = vsetPolyhedronPolygon[ipoly].size();
+    itintset = vsetPolyhedronPolygon[ipoly].begin();
+    for(int i = 0; i < n; i++)
+    {
+      tran.vvVFaces[ipoly].push_back( *itintset );
+      itintset++;
+    }
+    tran.vNbVFaces.push_back( n );
+    tran.vCodePolyhedron.push_back( nDFMFracs + ipoly);
+  }
+
+  // Properties
+  tran.vZPermeability.assign(tran.NbZones * 3, 0.0);
+  tran.vZConduction.assign( (tran.NbPolyhedra + tran.NbFracs) * 3, 0.0);
+
+  // DFM fractures
+  for ( int i = 0; i < tran.NbFracs; i++ )
+  {
+    tran.vZoneCode[i] = i;
+    tran.vZVolumeFactor[i] = vAperture[i];
+    tran.vZPorosity[i] = 1.0;
+    tran.vZPermCode[i] = 1;
+
+    //@HACK default permeability for all fractures
+    tran.vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
+    tran.vZPermeability[i*3+1] = tran.vZPermeability[i*3+0];
+    tran.vZPermeability[i*3+2] = tran.vZPermeability[i*3+0];
+
+    tran.vZConduction[i*3+0] = 1;
+    tran.vZConduction[i*3+1] = 1;
+    tran.vZConduction[i*3+2] = 1;
+    tran.vTimurConnectionFactor[i] = 1.0;
+  }
+
+  // Transmissibility between regular cells
+  for ( std::size_t i = 0; i < tran.NbPolyhedra; i++ )
+  {
+    const std::size_t n = i + tran.NbFracs;
+    tran.vZoneCode[n] = tran.vCodePolyhedron[i];
+
+    tran.vZPorosity[n] = get_property(i, "PORO");
+    tran.vZPermCode[n] = 1;
+
+    const angem::Point<3,double> perm = get_permeability(i);
+    tran.vZPermeability[n*3+0] = perm[0];
+    tran.vZPermeability[n*3+1] = perm[1];
+    tran.vZPermeability[n*3+2] = perm[2];
+
+    double thc = 0;
+    try
+    {
+      thc = get_property(i, "THCROCK");
+    }
+    catch (const std::out_of_range& e)
+    {
+      tran.vZConduction[n*3+0] = thc;
+      tran.vZConduction[n*3+1] = thc;
+      tran.vZConduction[n*3+2] = thc;
+    }
+
+
+    tran.vZVolumeFactor[n] = 1;
+    tran.vTimurConnectionFactor[n] = 1.0;
+
+  }
+
+  tran.createKarimiApproximation();
+
+}
+
+
+void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
+                                            const int frac_ind)
+{
+  const auto & efrac = vEfrac[frac_ind];
+  // compute transmissibilities between one embedded fracture and cells
+  // run karimi class once per cell
+  for (const auto & split : splits)
+  {
+    // init tran
+    CalcTranses tran;
+    tran.NbNodes     = split.vertices.size();
+    tran.NbPolyhedra = 2;  // frac splits a cell into two polehedra
+    tran.NbPolygons  = split.polygons.size();
+    tran.NbFracs     = 0;
+    tran.NbZones     = nDFMFracs + nCells;
+    tran.NbOptions   = 1;  // when 2 runs volume correction procedure
+    // tran.fracporo    = 1.0;
+    tran.init();
+  }
 }
 
 
@@ -1168,7 +1323,7 @@ void SimData::methodChangeFacesNormalVector()
   vector<std::size_t> vFacevVertices;
 
   nExternalBoundaryFaces = 0;
-  nInternalBoundaryFaces = 0;
+  nDFMFracs = 0;
 
   for(int iface = 0; iface < nFaces; iface++)
   {
@@ -1186,7 +1341,7 @@ void SimData::methodChangeFacesNormalVector()
       vIdenticalInternalFacetAperture.push_back ( 0.001 );
       vIdenticalInternalFacetFFpermMult.push_back ( 1.0 );
 
-      nInternalBoundaryFaces++;
+      nDFMFracs++;
     }
   }
   set<int>::iterator itintset;

@@ -4,42 +4,40 @@
 #include <random>
 class SimData;
 
-CalcTranses::CalcTranses(SimData * pSimdata)
+CalcTranses::CalcTranses()
+{}
+
+
+void CalcTranses::init()
 {
-    pSim = pSimdata;
+  //coordinates
+  vCoordinatesX.resize(NbNodes);
+  vCoordinatesY.resize(NbNodes);
+  vCoordinatesZ.resize(NbNodes);
+  //faces
+  vNbVFaces.resize(NbPolyhedra);
+  vvVFaces.resize(NbPolyhedra);
+  // vCodePolygon;
+  //elements
+  vNbFNodes.resize(NbPolygons, 3);
+  vvFNodes.resize(NbPolygons);
+  vCodePolyhedron.resize(NbPolyhedra);
+  //properties
+  vZoneCode.resize(NbZones);
+  vZVolumeFactor.resize(NbZones);
+  vTimurConnectionFactor.resize(NbZones);
+  vZPorosity.resize(NbZones);
+  vZPermCode.resize(NbZones);
+  vZPermeability.resize(NbZones);
 
-    NbNodes = pSim->nNodes;
-    NbPolyhedra = pSim->nCells;
-    NbPolygons  = pSim->nFaces;
-    NbFracs = pSim->nInternalBoundaryFaces;
-    NbZones = NbFracs + pSim->nCells;
-    NbOptions = 1;
-    fracporo = 1.0;
+  OptionVC = 0;
+  OptionGO = 0;
+  OptionMC = 0;
+  Tolerance = 0.05;
 
-    //coordinates
-    vCoordinatesX.resize(NbNodes);
-    vCoordinatesY.resize(NbNodes);
-    vCoordinatesZ.resize(NbNodes);
-    //faces
-    vNbVFaces.resize(NbPolyhedra);
-    vvVFaces.resize(NbPolyhedra);
-    vCodePolygon;
-    //elements
-    vNbFNodes.resize(NbPolygons, 3);
-    vvFNodes.resize(NbPolygons);
-    vCodePolyhedron.resize(NbPolyhedra);
-    //properties
-    vZoneCode.resize(NbZones);
-    vZVolumeFactor.resize(NbZones);
-    vTimurConnectionFactor.resize(NbZones);
-    vZPorosity.resize(NbZones);
-    vZPermCode.resize(NbZones);
-    vZPermeability.resize(NbZones);
-
-    OptionVC = 0;
-    OptionGO = 0;
-    OptionMC = 0;
-    Tolerance = 0.05;
+  vCoordinatesX.resize ( NbNodes );
+  vCoordinatesY.resize ( NbNodes );
+  vCoordinatesZ.resize ( NbNodes );
 }
 
 CalcTranses::~CalcTranses()
@@ -48,123 +46,120 @@ CalcTranses::~CalcTranses()
 
 void CalcTranses::createKarimiData()
 {
-  cout << "\t create karimi coordinates" << endl;
-  vCoordinatesX.resize ( NbNodes );
-  vCoordinatesY.resize ( NbNodes );
-  vCoordinatesZ.resize ( NbNodes );
 
+  // cout << "\t create karimi coordinates" << endl;
   //@HACK
-  for ( int i = 0; i < NbNodes; i++ )
-  {
-    vCoordinatesX[i] = pSim->vvVrtxCoords[i][0];
-    vCoordinatesY[i] = pSim->vvVrtxCoords[i][1];
-    vCoordinatesZ[i] = pSim->vvVrtxCoords[i][2];
-  }
+  // for ( int i = 0; i < NbNodes; i++ )
+  // {
+  //   vCoordinatesX[i] = pSim->vvVrtxCoords[i][0];
+  //   vCoordinatesY[i] = pSim->vvVrtxCoords[i][1];
+  //   vCoordinatesZ[i] = pSim->vvVrtxCoords[i][2];
+  // }
 
-  cout << "\t create karimi 2D elements" << endl;
-  int code_polygon = 0;
-  vNbFNodes.clear();
-  vvFNodes.clear();
-  vCodePolygon.clear();
-  vector<double> vConductivity, vAperture;
+  // cout << "\t create karimi 2D elements" << endl;
+  // int code_polygon = 0;
+  // vNbFNodes.clear();
+  // vvFNodes.clear();
+  // vCodePolygon.clear();
+  // vector<double> vConductivity, vAperture;
 
-  // internal boundaries
-  for(int ipoly = 0; ipoly < NbPolygons; ipoly++)
-  {
-    if(pSim->vsFaceCustom[ipoly].nMarker > 0)
-    {
-      vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
-      vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
-      vCodePolygon.push_back( code_polygon );
-      code_polygon++;
-      vConductivity.push_back(pSim->vsFaceCustom[ipoly].conductivity);
-      vAperture.push_back(pSim->vsFaceCustom[ipoly].aperture);
-    }
-    else
-    {
-      vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
-      vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
-      vCodePolygon.push_back( -1 );
-    }
-  }
+  // // internal boundaries
+  // for(int ipoly = 0; ipoly < NbPolygons; ipoly++)
+  // {
+  //   if(pSim->vsFaceCustom[ipoly].nMarker > 0)
+  //   {
+  //     vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
+  //     vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
+  //     vCodePolygon.push_back( code_polygon );
+  //     code_polygon++;
+  //     vConductivity.push_back(pSim->vsFaceCustom[ipoly].conductivity);
+  //     vAperture.push_back(pSim->vsFaceCustom[ipoly].aperture);
+  //   }
+  //   else
+  //   {
+  //     vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
+  //     vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
+  //     vCodePolygon.push_back( -1 );
+  //   }
+  // }
 
-  cout << "\t create karimi 3D elements\n";
-  set<int>::iterator itintset;
-  vNbVFaces.clear();
-  vvVFaces.resize(NbPolyhedra);
-  vCodePolyhedron.clear();
-  for(int ipoly = 0; ipoly < NbPolyhedra; ipoly++)
-  {
-    int n = pSim->vsetPolyhedronPolygon[ipoly].size();
-    itintset = pSim->vsetPolyhedronPolygon[ipoly].begin();
-    for(int i = 0; i < n; i++)
-    {
-      vvVFaces[ipoly].push_back( *itintset );
-      itintset++;
-    }
-    vNbVFaces.push_back( n );
-    vCodePolyhedron.push_back( NbFracs + ipoly);
-  }
+  // cout << "\t create karimi 3D elements\n";
+  // set<int>::iterator itintset;
+  // vNbVFaces.clear();
+  // vvVFaces.resize(NbPolyhedra);
+  // vCodePolyhedron.clear();
+  // for(int ipoly = 0; ipoly < NbPolyhedra; ipoly++)
+  // {
+  //   int n = pSim->vsetPolyhedronPolygon[ipoly].size();
+  //   itintset = pSim->vsetPolyhedronPolygon[ipoly].begin();
+  //   for(int i = 0; i < n; i++)
+  //   {
+  //     vvVFaces[ipoly].push_back( *itintset );
+  //     itintset++;
+  //   }
+  //   vNbVFaces.push_back( n );
+  //   vCodePolyhedron.push_back( NbFracs + ipoly);
+  // }
 
   //create karimi properties
-  cout << "create karimi properties\n";
-  vZPermeability.assign(NbZones * 3, 0.0);
-  vZConduction.assign( (NbPolyhedra + NbFracs) * 3, 0.0);
-  // std::cout << "NbZones = "<< NbZones << std::endl;
-  // std::cout << "NbPolyhedra = "<< NbPolyhedra << std::endl;
+  // cout << "create karimi properties\n";
+  // vZPermeability.assign(NbZones * 3, 0.0);
+  // vZConduction.assign( (NbPolyhedra + NbFracs) * 3, 0.0);
+  // // std::cout << "NbZones = "<< NbZones << std::endl;
+  // // std::cout << "NbPolyhedra = "<< NbPolyhedra << std::endl;
 
-  for ( int i = 0; i < NbFracs; i++ )
-  {
-    vZoneCode[i] = i;
-    vZVolumeFactor[i] = vAperture[i];
-    vZPorosity[i] = 1.0;
-    vZPermCode[i] = 1;
+  // for ( int i = 0; i < NbFracs; i++ )
+  // {
+  //   vZoneCode[i] = i;
+  //   vZVolumeFactor[i] = vAperture[i];
+  //   vZPorosity[i] = 1.0;
+  //   vZPermCode[i] = 1;
 
-    //@HACK default permeability for all fractures
-    vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
-    vZPermeability[i*3+1] = vZPermeability[i*3+0];
-    vZPermeability[i*3+2] = vZPermeability[i*3+0];
+  //   //@HACK default permeability for all fractures
+  //   vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
+  //   vZPermeability[i*3+1] = vZPermeability[i*3+0];
+  //   vZPermeability[i*3+2] = vZPermeability[i*3+0];
 
-    vZConduction[i*3+0] = 1;
-    vZConduction[i*3+1] = 1;
-    vZConduction[i*3+2] = 1;
-    vTimurConnectionFactor[i] = 1.0;
-  }
-  std::cout << "done with faces" << std::endl;
-
-
-  for ( std::size_t i = 0; i < NbPolyhedra; i++ )
-  {
-    const std::size_t n = i + NbFracs;
-    vZoneCode[n] = vCodePolyhedron[i];
-
-    vZPorosity[n] = pSim->get_property(i, "PORO");
-    vZPermCode[n] = 1;
-
-    const angem::Point<3,double> perm = pSim->get_permeability(i);
-    vZPermeability[n*3+0] = perm[0];
-    vZPermeability[n*3+1] = perm[1];
-    vZPermeability[n*3+2] = perm[2];
-
-    double thc = 0;
-    try
-    {
-      thc = pSim->get_property(i, "THCROCK");
-    }
-    catch (const std::out_of_range& e)
-    {
-      vZConduction[n*3+0] = thc;
-      vZConduction[n*3+1] = thc;
-      vZConduction[n*3+2] = thc;
-    }
+  //   vZConduction[i*3+0] = 1;
+  //   vZConduction[i*3+1] = 1;
+  //   vZConduction[i*3+2] = 1;
+  //   vTimurConnectionFactor[i] = 1.0;
+  // }
+  // std::cout << "done with faces" << std::endl;
 
 
-    vZVolumeFactor[n] = 1;
-    vTimurConnectionFactor[n] = 1.0;
+  // for ( std::size_t i = 0; i < NbPolyhedra; i++ )
+  // {
+  //   const std::size_t n = i + NbFracs;
+  //   vZoneCode[n] = vCodePolyhedron[i];
 
-  }
+  //   vZPorosity[n] = pSim->get_property(i, "PORO");
+  //   vZPermCode[n] = 1;
 
-  std::cout << "end Karimi data" << std::endl;
+  //   const angem::Point<3,double> perm = pSim->get_permeability(i);
+  //   vZPermeability[n*3+0] = perm[0];
+  //   vZPermeability[n*3+1] = perm[1];
+  //   vZPermeability[n*3+2] = perm[2];
+
+  //   double thc = 0;
+  //   try
+  //   {
+  //     thc = pSim->get_property(i, "THCROCK");
+  //   }
+  //   catch (const std::out_of_range& e)
+  //   {
+  //     vZConduction[n*3+0] = thc;
+  //     vZConduction[n*3+1] = thc;
+  //     vZConduction[n*3+2] = thc;
+  //   }
+
+
+  //   vZVolumeFactor[n] = 1;
+  //   vTimurConnectionFactor[n] = 1.0;
+
+  // }
+
+  // std::cout << "end Karimi data" << std::endl;
 }
 
 double CalcTranses::ABS(double v)
@@ -702,7 +697,7 @@ void CalcTranses::ConstructConnectionList()
       NbTransmissibility+= ( ConN[k]* ( ConN[k]-1 ) ) /2;
       k++;
     }
-    i=j;
+    i = j;
   }
 
 }
@@ -1038,7 +1033,7 @@ void CalcTranses::ComputeTransmissibilityList()
 /********************************************************************/
 void CalcTranses::createKarimiApproximation()
 {
-    pSim->outstream = "adgprs";
+    // pSim->outstream = "adgprs";
     FILE	*poutfile;
     int		i,j,k,n,m;
 

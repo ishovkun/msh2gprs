@@ -29,11 +29,12 @@
 class CalcTranses
 {
 public:
-   CalcTranses(SimData * pSimdata);
+   CalcTranses();
   ~CalcTranses();
   void createKarimiData();
   void createKarimiApproximation();
   void outputKarimi(const std::string & output_path);
+  void init();
 
 
 public:
@@ -86,7 +87,7 @@ protected:
   void ComputeTransmissibilityList();
 
 protected:
-SimData * pSim;
+// SimData * pSim;
 
 int		NbCVs,NbVolumes,NbInterfaces,NbEquations,NbFeatures,NbCF,NbConnections,NbIntersections;
 int		NbTransmissibility,NbMetric;
@@ -169,6 +170,7 @@ double		LocalDistance,t,xt,yt,zt;
 clock_t		t1,t2,t3,t4,t5,t6,t7,t8,t9;
 clock_t		Deb_Computing,Fin_Computing;
 
+ public:
 double fracporo;
 };
 #endif

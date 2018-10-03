@@ -131,7 +131,7 @@ struct EmbeddedFracture
   std::vector<angem::Point<3,double>>  vVertices;
   // cells -> vertex indiced
   std::vector<std::vector<std::size_t>> vIndices;
-  // std::vector<ScratchData>              vSplits;
+  // std::vector<angem::PolyGroup<double>> vSplits;
 };
 
 
@@ -160,6 +160,9 @@ public:
   void splitInternalFaces();
 
   void handleConnections();
+  void computeReservoirTransmissibilities();
+  void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
+                                     const int frac_ind);
 
   void createSimpleWells();
 
@@ -228,7 +231,7 @@ public:
   vector<vector<int> > vvAtoms;
 
   int nExternalBoundaryFaces;
-  int nInternalBoundaryFaces;
+  int nDFMFracs;
   std::size_t nFaces;
   vector<Gelement> vsFaceCustom;
 
