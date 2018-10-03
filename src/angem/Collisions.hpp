@@ -111,6 +111,8 @@ bool collision(const Point<3,Scalar>        & l0,
 }
 
 
+// marks polygons above fracture as 1
+// polygons below fracture as 0
 template <typename Scalar>
 void split(const Polygon<Scalar> & poly,
            const Plane<Scalar>   & plane,
@@ -153,9 +155,15 @@ void split(const Polygon<Scalar> & poly,
 
 
   if (above.size() > 2)
+  {
     result.polygons.push_back(std::move(above));
+    result.markers.push_back(1);
+  }
   if (below.size() > 2)
+  {
     result.polygons.push_back(std::move(below));
+    result.markers.push_back(0);
+  }
 }
 
 

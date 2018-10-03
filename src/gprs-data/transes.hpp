@@ -25,8 +25,6 @@
 #include <time.h>
 
 #include "simdata.hpp"
-class SimData;
-struct ElementInformation;
 
 class CalcTranses
 {

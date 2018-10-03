@@ -263,7 +263,10 @@ void SimData::computeCellClipping()
         continue;
       }
 
-      splits[i].add(angem::Polygon<double>(set_points));
+      // add fracture polygon to splits to compute transes
+      // @TODO: add marker to consider this an active poly
+      splits[i].add(angem::Polygon<double>(set_points),
+                    /* marker = */ 2);
 
       // write points into a global set so we have an ordered set
       // of vertices and we can retreive indices
@@ -295,6 +298,29 @@ void SimData::computeCellClipping()
       vEfrac[ifrac].vVertices[ivert] = p;
       ivert++;
     }
+
+    // std::cout << "polygons" << std::endl;
+    // for (std::size_t i=0; i<splits.size(); ++i)
+    // {
+    //   const std::size_t icell = vEfrac[ifrac].cells[i];
+    //   std::cout << "================= cell = "
+    //             << icell << " =================" << std::endl;
+    //   const auto & split = splits[i];
+    //   for (std::size_t j=0; j<split.polygons.size(); ++j)
+    //   // for (const auto & poly : split.polygons)
+    //   {
+    //     const auto & poly = split.polygons[j];
+    //     const int marker = split.markers[j];
+    //     std::cout << "marker = "<< marker << std::endl;
+    //     for (const auto & ivertex : poly)
+    //       std::cout << split.vertices[ivertex] << std::endl;
+    //     std::cout << std::endl;
+    //   }
+    // }
+
+    // // @DEBUG: print polygons
+    // std::cout << "exiting" << std::endl;
+    // exit(0);
 
   }  // end efrac loop
 
