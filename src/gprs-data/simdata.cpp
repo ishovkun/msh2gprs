@@ -467,7 +467,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.NbPolyhedra = 2;  // frac splits a cell into two polehedra
     tran.NbPolygons  = split.polygons.size();
     tran.NbFracs     = 0;
-    tran.NbZones     = nDFMFracs + nCells;
+    tran.NbZones     = 3;  // 2 block + 1 frac
     tran.NbOptions   = 1;  // when 2 runs volume correction procedure
     // tran.fracporo    = 1.0;
     tran.init();
@@ -532,7 +532,11 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.vCodePolyhedron.push_back( 0 );
     tran.vCodePolyhedron.push_back( 1 );
 
-  }
+    // Properties
+    // tran.vZPermeability.assign(tran.NbZones * 3, 0.0);
+    // tran.vZConduction.assign( (tran.NbPolyhedra + tran.NbFracs) * 3, 0.0);
+
+  }  // end splits loop
 }
 
 
