@@ -42,6 +42,13 @@ void CalcTranses::init()
 
 CalcTranses::~CalcTranses()
 {
+  // for (std::size_t)
+  // free(vNbFNodes);
+  // // **FNodes -- need to remove subelements but i'm lazy
+  // for ()
+  // free(FNodes);
+  // free(NbVFaces);
+  // free (VFaces);
 }
 
 void CalcTranses::createKarimiData()
@@ -206,47 +213,51 @@ void CalcTranses::ProjectionB(	double mx,double my,double mz,
 /********************************************************************/
 void CalcTranses::ComputeBasicGeometry()
 {
-    int	i,j,k;
-    double	xi,yi,zi,areatmp,volumetmp;
-    double	ux,uy,uz,vx,vy,vz,nx,ny,nz,nl,h;
+    int	i, j, k;
+    double	xi, yi, zi, areatmp, volumetmp;
+    double	ux, uy, uz,
+        vx, vy, vz,
+        nx,ny,nz,
+        nl,h;
 
 //////////////////////////////////////////////////////////////////
 ///// Polygon Area, Center of Mass, and Normal (Unit vector) /////
 //////////////////////////////////////////////////////////////////
 
     FArea	=	(double*)malloc(NbPolygons*(sizeof(double)));
-    FXG	=	(double*)malloc(NbPolygons*(sizeof(double)));
-    FYG	=	(double*)malloc(NbPolygons*(sizeof(double)));
-    FZG	=	(double*)malloc(NbPolygons*(sizeof(double)));
-    Fnx	=	(double*)malloc(NbPolygons*(sizeof(double)));
-    Fny	=	(double*)malloc(NbPolygons*(sizeof(double)));
-    Fnz	=	(double*)malloc(NbPolygons*(sizeof(double)));
+    FXG   =	(double*)malloc(NbPolygons*(sizeof(double)));
+    FYG   =	(double*)malloc(NbPolygons*(sizeof(double)));
+    FZG   =	(double*)malloc(NbPolygons*(sizeof(double)));
+    Fnx   =	(double*)malloc(NbPolygons*(sizeof(double)));
+    Fny   =	(double*)malloc(NbPolygons*(sizeof(double)));
+    Fnz   =	(double*)malloc(NbPolygons*(sizeof(double)));
 
     for (i=0;i<NbPolygons;i++)
     {
         FArea[i]=FXG[i]=FYG[i]=FZG[i]=Fnx[i]=Fny[i]=Fnz[i]=0;
         for (j=1;j<NbFNodes[i]-1;j++)
         {
-            ux=X[FNodes[i][j]]-X[FNodes[i][0]];
-            uy=Y[FNodes[i][j]]-Y[FNodes[i][0]];
-            uz=Z[FNodes[i][j]]-Z[FNodes[i][0]];
-            vx=X[FNodes[i][j+1]]-X[FNodes[i][0]];
-            vy=Y[FNodes[i][j+1]]-Y[FNodes[i][0]];
-            vz=Z[FNodes[i][j+1]]-Z[FNodes[i][0]];
-            nx=(uy*vz-vy*uz);
-            ny=(vx*uz-ux*vz);
-            nz=(ux*vy-uy*vx);
+            ux = X[FNodes[i][j]] - X[FNodes[i][0]];
+            uy = Y[FNodes[i][j]] - Y[FNodes[i][0]];
+            uz = Z[FNodes[i][j]] - Z[FNodes[i][0]];
+            vx = X[FNodes[i][j+1]] - X[FNodes[i][0]];
+            vy = Y[FNodes[i][j+1]] - Y[FNodes[i][0]];
+            vz = Z[FNodes[i][j+1]] - Z[FNodes[i][0]];
+            nx = (uy*vz-vy*uz);
+            ny = (vx*uz-ux*vz);
+            nz = (ux*vy-uy*vx);
             areatmp=.5*sqrt(nx*nx+ny*ny+nz*nz);
 
             FArea[i]+=areatmp;
-            FXG[i]+=areatmp*(X[FNodes[i][0]]+X[FNodes[i][j]]+X[FNodes[i][j+1]])/3.;
-            FYG[i]+=areatmp*(Y[FNodes[i][0]]+Y[FNodes[i][j]]+Y[FNodes[i][j+1]])/3.;
-            FZG[i]+=areatmp*(Z[FNodes[i][0]]+Z[FNodes[i][j]]+Z[FNodes[i][j+1]])/3.;
+            FXG[i] += areatmp*(X[FNodes[i][0]] + X[FNodes[i][j]] + X[FNodes[i][j+1]])/3.;
+            FYG[i] += areatmp*(Y[FNodes[i][0]] + Y[FNodes[i][j]] + Y[FNodes[i][j+1]])/3.;
+            FZG[i] += areatmp*(Z[FNodes[i][0]] + Z[FNodes[i][j]] + Z[FNodes[i][j+1]])/3.;
 
             Fnx[i]+=.5*nx;
             Fny[i]+=.5*ny;
             Fnz[i]+=.5*nz;
         }
+
         FXG[i]=FXG[i]/FArea[i];
         FYG[i]=FYG[i]/FArea[i];
         FZG[i]=FZG[i]/FArea[i];
@@ -254,7 +265,9 @@ void CalcTranses::ComputeBasicGeometry()
         Fnx[i]=Fnx[i]/FArea[i];
         Fny[i]=Fny[i]/FArea[i];
         Fnz[i]=Fnz[i]/FArea[i];
-        nl=sqrt(Fnx[i]*Fnx[i]+Fny[i]*Fny[i]+Fnz[i]*Fnz[i]);
+
+        nl=sqrt(Fnx[i]*Fnx[i] + Fny[i]*Fny[i] + Fnz[i]*Fnz[i]);
+
         Fnx[i]=Fnx[i]/nl;
         Fny[i]=Fny[i]/nl;
         Fnz[i]=Fnz[i]/nl;
@@ -287,9 +300,9 @@ void CalcTranses::ComputeBasicGeometry()
         for (j=0;j<NbVFaces[i];j++)
         {
             k = VFaces[i][j];
-            h = Fnx[k]*(FXG[k]-xi)+
-              Fny[k]*(FYG[k]-yi)+
-              Fnz[k]*(FZG[k]-zi);
+            h = Fnx[k]*(FXG[k]-xi) +
+                Fny[k]*(FYG[k]-yi) +
+                Fnz[k]*(FZG[k]-zi);
 
             volumetmp = ABS(h*FArea[k])/3.;
 
@@ -1045,12 +1058,12 @@ void CalcTranses::createKarimiApproximation()
     int		NbActivePolygon;
     int		NbFeatureCode;
 
-    printf("/*************************************************/\n");
-    printf("/* DISCRETE FEATURE MODEL                        */\n");
-    printf("/* by Mohammad Karimi-Fard (karimi@stanford.edu) */\n");
-    printf("/* March 2007, Stanford, CA.                     */\n");
-    printf("/*************************************************/\n");
-    printf("\n");
+    // printf("/*************************************************/\n");
+    // printf("/* DISCRETE FEATURE MODEL                        */\n");
+    // printf("/* by Mohammad Karimi-Fard (karimi@stanford.edu) */\n");
+    // printf("/* March 2007, Stanford, CA.                     */\n");
+    // printf("/*************************************************/\n");
+    // printf("\n");
 
     X		=	(double*)malloc(NbNodes*(sizeof(double)));
     Y		=	(double*)malloc(NbNodes*(sizeof(double)));
@@ -1192,8 +1205,17 @@ void CalcTranses::createKarimiApproximation()
 }
 
 
-void CalcTranses::outputKarimi(const std::string & output_path)
+void CalcTranses::writeOutputFiles(const std::string & output_path) const
 {
+  /* Creates files:
+   * fl_vol.txt
+   * fl_poro.txt
+   * fl_depth.txt
+   * fl_tran.txt
+   * fl_tran_n.txt
+   * fl_tran_u.txt
+   */
+
   stringstream out;
   out << "model/";
   out << "/";
@@ -1209,7 +1231,7 @@ void CalcTranses::outputKarimi(const std::string & output_path)
   //fprintf(out,"%d\n",NbCVs);
   fprintf ( poutfile,"%s\n","VOLUME" );
   for ( i=0; i<NbCVs; i++ )
-    fprintf ( poutfile,"%e\n",CVVolume[i] );
+    fprintf ( poutfile,"%e\n", CVVolume[i] );
   fprintf(poutfile,"%s\n","/\n");
   fclose(poutfile);
   ///////////////////////////
@@ -1234,7 +1256,7 @@ void CalcTranses::outputKarimi(const std::string & output_path)
     //fprintf(out,"%d\n",NbCVs);
     fprintf(poutfile,"%s\n","DEPTH");
     for (i=0;i<NbCVs;i++)
-      fprintf(poutfile,"%e\n",fabs(CVz[i]));
+      fprintf(poutfile,"%e\n",-CVz[i]);
 
     fprintf(poutfile,"%s\n","/\n");
     fclose(poutfile);
@@ -1247,7 +1269,9 @@ void CalcTranses::outputKarimi(const std::string & output_path)
     fprintf(poutfile,"%d\n",NbTransmissibility);
 
     for (i=0;i<NbTransmissibility;i++)
-      fprintf(poutfile,"%d\t%d\t%e\n",iTr[i],jTr[i],Tij[i] * 0.0085267146719160104986876640419948);
+      fprintf(poutfile,
+              "%d\t%d\t%e\n",
+              iTr[i],jTr[i],Tij[i] * transmissibility_conversion_factor);
 
     fprintf(poutfile,"%s\n","/\n");
     fclose(poutfile);
@@ -1259,7 +1283,10 @@ void CalcTranses::outputKarimi(const std::string & output_path)
     fprintf(poutfile,"%d\n",NbTransmissibility);
 
     for (i=0;i<NbTransmissibility;i++)
-      fprintf(poutfile,"%d\t%d\t%e\t%e\n",iTr[i],jTr[i],Tij[i] * 0.0085267146719160104986876640419948, TConductionIJ[i]);
+      fprintf(poutfile,
+              "%d\t%d\t%e\t%e\n",
+              iTr[i],jTr[i],Tij[i] * transmissibility_conversion_factor,
+              TConductionIJ[i]);
 
     fprintf(poutfile,"%s\n","/\n");
     fclose(poutfile);
@@ -1283,7 +1310,7 @@ for(i=0;i<NbConnections;i++)
           //Con# ConType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
 	  fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\t%e\t%e\n", k,
 	          ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1],
-	          2.*ConArea[i][1], ZVolumeFactor[CVZone[ConCV[i][1]]],ConPerm[i][1]);
+	          2.*ConArea[i][1], ZVolumeFactor[CVZone[ConCV[i][1]]], ConPerm[i][1]);
 	}
     k++;
     }
@@ -1325,4 +1352,48 @@ for(i=0;i<NbConnections;i++)
    }
     fprintf(poutfile,"/\n");
     fclose(poutfile);
+}
+
+
+void CalcTranses::extractData(FlowData & data) const
+{
+  // std::cout << "extracting volume data" << std::endl;
+  // Extract Volumes, porosity, depth
+  data.volumes.resize(NbCVs);
+  data.poro.resize(NbCVs);
+  data.depth.resize(NbCVs);
+  for (std::size_t i=0; i<NbCVs; i++ )
+  {
+    // std::cout << "volume" << i << "\t" << CVVolume[i] << std::endl;
+    // std::cout << "poro" << i << "\t" << ZPorosity[CVZone[i]] << std::endl;
+    data.volumes[i] = CVVolume[i];
+    data.poro[i]    = ZPorosity[CVZone[i]];
+    data.depth[i]   = -CVz[i];
+    // std::cout << std::endl;
+  }
+
+  // Transmissibility
+  // std::cout << "extracting transes" << std::endl;
+  data.ielement.resize(NbTransmissibility);
+  data.jelement.resize(NbTransmissibility);
+  data.trans_ij.resize(NbTransmissibility);
+  data.conduct_ij.resize(NbTransmissibility);
+  for (std::size_t i=0;i<NbTransmissibility; i++)
+  {
+    data.ielement[i]   = iTr[i];
+    data.jelement[i]   = jTr[i];
+    data.trans_ij[i]   = Tij[i];
+    data.conduct_ij[i] = TConductionIJ[i];
+  }
+
+  // std::cout << "extracting geomechanics-related stuff" << std::endl;
+  // Geomechanics
+  data.connection_type.resize(NbConnections);
+  for(std::size_t i=0;i<NbConnections;i++)
+  {
+    data.connection_type[i] = ConType[i];
+    // data.connection_n[i] =
+  }
+
+
 }

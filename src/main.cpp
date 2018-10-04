@@ -74,18 +74,18 @@ int main(int argc, char *argv[])
   cout << "Compute cell clipping" << endl;
   pSimData->computeCellClipping();
 
-  cout << "Create physical facets" << endl;
-  cout << " ( bnd & frac faces )" << endl;
-  pSimData->definePhysicalFacets();
+  // cout << "Create physical facets" << endl;
+  // cout << " ( bnd & frac faces )" << endl;
+  // pSimData->definePhysicalFacets();
 
-  cout << "Create bc stress & disp" << endl;
-  pSimData->defineStressAndDispOnBoundary();
+  // cout << "Create bc stress & disp" << endl;
+  // pSimData->defineStressAndDispOnBoundary();
 
-  cout << endl << "Convert FEM mesh into FVM mesh" << endl;
-  pSimData->handleConnections();
+  // cout << endl << "Convert FEM mesh into FVM mesh" << endl;
+  // pSimData->handleConnections();
 
-  std::cout << "computing reservoir transes" << std::endl;
-  pSimData->computeReservoirTransmissibilities();
+  // std::cout << "computing reservoir transes" << std::endl;
+  // pSimData->computeReservoirTransmissibilities();
   // std::cout << "computing EDFM transes" << std::endl;
   // pSimData->computeEDFMTransmissibilities();
   // CalcTranses * pTranses;

@@ -6,8 +6,7 @@
 /* December 2012. Modifications by Timur Garipov                        */
 /* Geomechanical interface. Convert Tetgen data to Karimi data           */
 /************************************************************************/
-#ifndef __CALCTRANSES
-#define __CALCTRANSES
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +23,20 @@
 #include <set>
 #include <time.h>
 
-#include "simdata.hpp"
+// #include "simdata.hpp"
+
+
+struct FlowData
+{
+  std::vector<double> volumes, poro, depth;
+  // regular transmissibilities
+  std::vector<std::size_t> ielement, jelement;
+  std::vector<double>      trans_ij, conduct_ij;
+  // connections
+  std::vector<int> connection_type;
+  std::vector<int> connection_n;
+};
+
 
 class CalcTranses
 {
@@ -33,7 +45,9 @@ public:
   ~CalcTranses();
   void createKarimiData();
   void createKarimiApproximation();
-  void outputKarimi(const std::string & output_path);
+  // this guy writes text output in a series of files
+  void writeOutputFiles(const std::string & output_path) const;
+  void extractData(FlowData & data) const;
   void init();
 
 
@@ -45,25 +59,25 @@ public:
   int NbFracs;
   int NbOptions;
   //coordinates
-  vector<double> vCoordinatesX;
-  vector<double> vCoordinatesY;
-  vector<double> vCoordinatesZ;
+  std::vector<double> vCoordinatesX;
+  std::vector<double> vCoordinatesY;
+  std::vector<double> vCoordinatesZ;
   //faces
-  vector<int> vNbVFaces;
-  vector<vector<int> > vvVFaces;
-  vector<int> vCodePolygon;
+  std::vector<int> vNbVFaces;
+  std::vector<std::vector<int> > vvVFaces;
+  std::vector<int> vCodePolygon;
   //elements
-  vector<int> vNbFNodes;
-  vector<vector<std::size_t> > vvFNodes;
-  vector<int> vCodePolyhedron;
+  std::vector<int> vNbFNodes;
+  std::vector<std::vector<std::size_t> > vvFNodes;
+  std::vector<int> vCodePolyhedron;
   //properties
-  vector<int> vZoneCode;
-  vector<double> vZVolumeFactor;
-  vector<double> vTimurConnectionFactor;
-  vector<double> vZPorosity;
-  vector<int> vZPermCode;
-  vector<double> vZPermeability;
-  vector<double> vZConduction;
+  std::vector<int> vZoneCode;
+  std::vector<double> vZVolumeFactor;
+  std::vector<double> vTimurConnectionFactor;
+  std::vector<double> vZPorosity;
+  std::vector<int> vZPermCode;
+  std::vector<double> vZPermeability;
+  std::vector<double> vZConduction;
 protected:
   double ABS(double v);
   void CheckIt(int TEST);
@@ -171,6 +185,7 @@ clock_t		t1,t2,t3,t4,t5,t6,t7,t8,t9;
 clock_t		Deb_Computing,Fin_Computing;
 
  public:
-double fracporo;
+  double fracporo;
+  static constexpr double transmissibility_conversion_factor =
+      0.0085267146719160104986876640419948;
 };
-#endif

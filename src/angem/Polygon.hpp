@@ -22,6 +22,9 @@ class Polygon: public Shape<Scalar>
   virtual void set_data(const std::vector<Point<3,Scalar>> & point_list) override;
   virtual void move(const Point<3,Scalar> & p) override;
   static  void reorder(std::vector<Point<3,Scalar>> & points);
+  static  void reorder_indices(const std::vector<Point<3, Scalar>> &verts,
+                               std::vector<std::size_t>            &indices);
+
 
   // Attributes
   Plane<Scalar> plane;
@@ -158,7 +161,28 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
   }
 
   points = v_points;
+}
+
+template<typename Scalar>
+void
+Polygon<Scalar>::reorder_indices(const std::vector<Point<3, Scalar>> &verts,
+                                 std::vector<std::size_t>            &indices)
+{
+  std::vector<Point<3, Scalar>> points(indices.size());
+  for (std::size_t i=0; i<indices.size(); ++i)
+  {
+    points[i] = verts[indices[i]];
+  }
+  reorder(points);
+
+  for (std::size_t i=0; i<points.size(); ++i)
+  {
+    std::size_t ind = find(points[i], verts, 1e-6);
+    indices[i] = ind;
+  }
 
 }
+
+
 
 }

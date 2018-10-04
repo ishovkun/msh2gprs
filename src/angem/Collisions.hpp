@@ -116,7 +116,9 @@ bool collision(const Point<3,Scalar>        & l0,
 template <typename Scalar>
 void split(const Polygon<Scalar> & poly,
            const Plane<Scalar>   & plane,
-           PolyGroup<Scalar>     & result)
+           PolyGroup<Scalar>     & result,
+           const int               marker_below = 0,
+           const int               marker_above = 1)
 {
   std::vector<Point<3,Scalar>> section;
   collision(poly, plane, section);
@@ -124,12 +126,23 @@ void split(const Polygon<Scalar> & poly,
   if (section.size() == 0)
   {
     std::vector<std::size_t> indices;
+    bool above = false;
     for (const auto & p : poly.get_points())
     {
       const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
       indices.push_back(ind);
+
+      if (plane.above(p))  // technically need to check only one
+        above = true;
     }
-    result.polygons.push_back(std::move(indices));
+
+    result.polygons.push_back(indices);
+
+    // assign markers
+    if (above)
+      result.markers.push_back(marker_above);
+    else
+      result.markers.push_back(marker_below);
 
     return;
   }
@@ -157,12 +170,12 @@ void split(const Polygon<Scalar> & poly,
   if (above.size() > 2)
   {
     result.polygons.push_back(std::move(above));
-    result.markers.push_back(1);
+    result.markers.push_back(marker_above);
   }
   if (below.size() > 2)
   {
     result.polygons.push_back(std::move(below));
-    result.markers.push_back(0);
+    result.markers.push_back(marker_below);
   }
 }
 
