@@ -132,6 +132,8 @@ struct EmbeddedFracture
   // cells -> vertex indiced
   std::vector<std::vector<std::size_t>> vIndices;
   // std::vector<angem::PolyGroup<double>> vSplits;
+  double                               aperture = 1;
+  double                               conductivity = 1;
 };
 
 

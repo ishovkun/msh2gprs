@@ -343,9 +343,6 @@ void SimData::computeReservoirTransmissibilities()
   tran.fracporo    = 1.0;
   tran.init();
 
-  // std::cout << "nDFMFracs = "<< nDFMFracs << std::endl;
-
-
   // fill data
   // nodes
   for ( std::size_t i = 0; i < nNodes; i++ )
@@ -362,24 +359,20 @@ void SimData::computeReservoirTransmissibilities()
   tran.vCodePolygon.clear();
   vector<double> vConductivity, vAperture;
 
-  // internal boundaries
   for(int ipoly = 0; ipoly < nFaces; ipoly++)
   {
-    if(vsFaceCustom[ipoly].nMarker > 0)
+    tran.vvFNodes.push_back( vsFaceCustom[ipoly].vVertices);
+    tran.vNbFNodes.push_back( vsFaceCustom[ipoly].vVertices.size() );
+    if(vsFaceCustom[ipoly].nMarker > 0)  // dfm frac
     {
-      tran.vvFNodes.push_back( vsFaceCustom[ipoly].vVertices);
-      tran.vNbFNodes.push_back( vsFaceCustom[ipoly].vVertices.size() );
       tran.vCodePolygon.push_back( code_polygon );
       code_polygon++;
       vConductivity.push_back(vsFaceCustom[ipoly].conductivity);
       vAperture.push_back(vsFaceCustom[ipoly].aperture);
     }
-    else
-    {
-      tran.vvFNodes.push_back( vsFaceCustom[ipoly].vVertices);
-      tran.vNbFNodes.push_back( vsFaceCustom[ipoly].vVertices.size() );
+    else  // cells
       tran.vCodePolygon.push_back( -1 );
-    }
+
   }
 
   // polyhedra (3d elements)
@@ -466,7 +459,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   const auto & efrac = vEfrac[frac_ind];
   // compute transmissibilities between one embedded fracture and cells
   // run karimi class once per cell
-  for (const auto & split : splits)
+  for (const auto & split : splits)  // loop split edfm cells
   {
     // init tran
     CalcTranses tran;
@@ -478,6 +471,67 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.NbOptions   = 1;  // when 2 runs volume correction procedure
     // tran.fracporo    = 1.0;
     tran.init();
+
+    // --------------- fill data -------------------
+    // vertices
+    for ( std::size_t i = 0; i < split.vertices.size(); i++ )
+    {
+      tran.vCoordinatesX[i] = split.vertices[i][0];
+      tran.vCoordinatesY[i] = split.vertices[i][1];
+      tran.vCoordinatesZ[i] = split.vertices[i][2];
+    }
+
+    // polygons (2d elements)
+    int code_polygon = 0;
+    tran.vNbFNodes.clear();
+    tran.vvFNodes.clear();
+    tran.vCodePolygon.clear();
+    vector<double> vConductivity, vAperture;
+
+    for(int ipoly = 0; ipoly < split.polygons.size(); ipoly++)
+    {
+      tran.vvFNodes.push_back( split.polygons[ipoly]);
+      tran.vNbFNodes.push_back( split.polygons[ipoly].size() );
+
+      if(split.markers[ipoly] == 2)  // fracture polygons
+      {
+        tran.vCodePolygon.push_back( code_polygon );
+        code_polygon++;
+        vConductivity.push_back(efrac.conductivity);
+        vAperture.push_back(efrac.aperture);
+      }
+      else  // cell polygons
+        tran.vCodePolygon.push_back( -1 );
+    }
+
+    // polyhedra (3d elements)
+    set<int>::iterator itintset;
+    tran.vNbVFaces.clear();
+    tran.vvVFaces.resize(2);
+    tran.vCodePolyhedron.clear();
+
+    // polyhedra resulting from split, on both sides of frac
+    // only two polyhedra result from split of a cell by a fracture
+    int n_poly_above = 0, n_poly_below = 0;
+    for(int ipoly = 0; ipoly < split.polygons.size(); ipoly++)
+    {
+      if (split.markers[ipoly] == 0)  // below frac
+      {
+        tran.vvVFaces[0].push_back( ipoly );
+        n_poly_below++;
+      }
+      else if (split.markers[ipoly] == 1)  // above frac
+      {
+        tran.vvVFaces[1].push_back( ipoly );
+        n_poly_above++;
+      }
+    }
+
+    tran.vNbVFaces.push_back( n_poly_below );
+    tran.vNbVFaces.push_back( n_poly_above );
+    tran.vCodePolyhedron.push_back( 0 );
+    tran.vCodePolyhedron.push_back( 1 );
+
   }
 }
 
