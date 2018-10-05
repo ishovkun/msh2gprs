@@ -34,9 +34,9 @@ void CalcTranses::init()
   OptionMC = 0;
   Tolerance = 0.05;
 
-  vCoordinatesX.resize ( NbNodes );
-  vCoordinatesY.resize ( NbNodes );
-  vCoordinatesZ.resize ( NbNodes );
+  vCoordinatesX.resize( NbNodes );
+  vCoordinatesY.resize( NbNodes );
+  vCoordinatesZ.resize( NbNodes );
 }
 
 CalcTranses::~CalcTranses()
@@ -62,32 +62,33 @@ double CalcTranses::ABS(double v)
 /********************************************************************/
 void CalcTranses::CheckIt(int TEST)
 {
-    if (TEST==1) {
-        printf("Memory Allocation Problem.\n");
-        exit(0);
-    }
+  if (TEST == 1)
+  {
+    printf("Memory Allocation Problem.\n");
+    exit(0);
+  }
 }
 /********************************************************************/
-void CalcTranses::ProjectionA(	double mx,double my,double mz,
+void CalcTranses::ProjectionA(  double mx,double my,double mz,
                                double px,double py,double pz,
                                double ix,double iy,double iz,
                                double nx,double ny,double nz,
                                double *hx,double *hy,double *hz)
 {
-    double	t;
+  double  t;
 
-    t=((ix-mx)*nx+(iy-my)*ny+(iz-mz)*nz)/(px*nx+py*ny+pz*nz);
-    *hx=mx+t*px;
-    *hy=my+t*py;
-    *hz=mz+t*pz;
+  t=((ix-mx)*nx+(iy-my)*ny+(iz-mz)*nz)/(px*nx+py*ny+pz*nz);
+  *hx = mx + t*px;
+  *hy = my + t*py;
+  *hz = mz + t*pz;
 }
 /********************************************************************/
-void CalcTranses::ProjectionB(	double mx,double my,double mz,
-                               double ix,double iy,double iz,
-                               double ux,double uy,double uz,
-                               double *hx,double *hy,double *hz)
+void CalcTranses::ProjectionB( double mx,  double my,  double mz,
+                               double ix,  double iy,  double iz,
+                               double ux,  double uy,  double uz,
+                               double *hx, double *hy, double *hz)
 {
-    double	t;
+    double  t;
 
     t=(ux*(mx-ix)+uy*(my-iy)+uz*(mz-iz))/(ux*ux+uy*uy+uz*uz);
 
@@ -98,9 +99,9 @@ void CalcTranses::ProjectionB(	double mx,double my,double mz,
 /********************************************************************/
 void CalcTranses::ComputeBasicGeometry()
 {
-    int	i, j, k;
-    double	xi, yi, zi, areatmp, volumetmp;
-    double	ux, uy, uz,
+    int i, j, k;
+    double  xi, yi, zi, areatmp, volumetmp;
+    double  ux, uy, uz,
         vx, vy, vz,
         nx,ny,nz,
         nl,h;
@@ -109,13 +110,13 @@ void CalcTranses::ComputeBasicGeometry()
 ///// Polygon Area, Center of Mass, and Normal (Unit vector) /////
 //////////////////////////////////////////////////////////////////
 
-    FArea	=	(double*)malloc(NbPolygons*(sizeof(double)));
-    FXG   =	(double*)malloc(NbPolygons*(sizeof(double)));
-    FYG   =	(double*)malloc(NbPolygons*(sizeof(double)));
-    FZG   =	(double*)malloc(NbPolygons*(sizeof(double)));
-    Fnx   =	(double*)malloc(NbPolygons*(sizeof(double)));
-    Fny   =	(double*)malloc(NbPolygons*(sizeof(double)));
-    Fnz   =	(double*)malloc(NbPolygons*(sizeof(double)));
+    FArea = (double*)malloc(NbPolygons*(sizeof(double)));
+    FXG   = (double*)malloc(NbPolygons*(sizeof(double)));
+    FYG   = (double*)malloc(NbPolygons*(sizeof(double)));
+    FZG   = (double*)malloc(NbPolygons*(sizeof(double)));
+    Fnx   = (double*)malloc(NbPolygons*(sizeof(double)));
+    Fny   = (double*)malloc(NbPolygons*(sizeof(double)));
+    Fnz   = (double*)malloc(NbPolygons*(sizeof(double)));
 
     for (i=0;i<NbPolygons;i++)
     {
@@ -151,7 +152,7 @@ void CalcTranses::ComputeBasicGeometry()
         Fny[i]=Fny[i]/FArea[i];
         Fnz[i]=Fnz[i]/FArea[i];
 
-        nl=sqrt(Fnx[i]*Fnx[i] + Fny[i]*Fny[i] + Fnz[i]*Fnz[i]);
+        nl = sqrt(Fnx[i]*Fnx[i] + Fny[i]*Fny[i] + Fnz[i]*Fnz[i]);
 
         Fnx[i]=Fnx[i]/nl;
         Fny[i]=Fny[i]/nl;
@@ -162,38 +163,38 @@ void CalcTranses::ComputeBasicGeometry()
 ///// Polyhedron Volume and Center of Mass /////
 ////////////////////////////////////////////////
 
-    VVolume	=	(double*)malloc(NbPolyhedra*(sizeof(double)));
-    VXG		=	(double*)malloc(NbPolyhedra*(sizeof(double)));
-    VYG		=	(double*)malloc(NbPolyhedra*(sizeof(double)));
-    VZG		=	(double*)malloc(NbPolyhedra*(sizeof(double)));
+    VVolume = (double*)malloc(NbPolyhedra*(sizeof(double)));
+    VXG     = (double*)malloc(NbPolyhedra*(sizeof(double)));
+    VYG     = (double*)malloc(NbPolyhedra*(sizeof(double)));
+    VZG     = (double*)malloc(NbPolyhedra*(sizeof(double)));
 
     for (i=0;i<NbPolyhedra;i++)
     {
         VVolume[i]=VXG[i]=VYG[i]=VZG[i]=0;
         xi=yi=zi=0;
-        for (j=0;j<NbVFaces[i];j++)	// Defining a node inside the polyhedron
+        for (j=0;j<NbVFaces[i];j++) // Defining a node inside the polyhedron
         {
-            xi+=FXG[VFaces[i][j]];
-            yi+=FYG[VFaces[i][j]];
-            zi+=FZG[VFaces[i][j]];
+            xi += FXG[VFaces[i][j]];
+            yi += FYG[VFaces[i][j]];
+            zi += FZG[VFaces[i][j]];
         }
 
-        xi=xi/NbVFaces[i];
-        yi=yi/NbVFaces[i];
-        zi=zi/NbVFaces[i];
+        xi = xi/NbVFaces[i];
+        yi = yi/NbVFaces[i];
+        zi = zi/NbVFaces[i];
 
-        for (j=0;j<NbVFaces[i];j++)
+        for (j=0; j<NbVFaces[i]; j++)
         {
             k = VFaces[i][j];
             h = Fnx[k]*(FXG[k]-xi) +
                 Fny[k]*(FYG[k]-yi) +
                 Fnz[k]*(FZG[k]-zi);
 
-            volumetmp = ABS(h*FArea[k])/3.;
+            volumetmp = ABS(h*FArea[k]) / 3.;
 
-            VXG[i] += (FXG[k]+.25*(xi-FXG[k]))*volumetmp;
-            VYG[i] += (FYG[k]+.25*(yi-FYG[k]))*volumetmp;
-            VZG[i] += (FZG[k]+.25*(zi-FZG[k]))*volumetmp;
+            VXG[i] += (FXG[k] + .25*(xi-FXG[k])) * volumetmp;
+            VYG[i] += (FYG[k] + .25*(yi-FYG[k])) * volumetmp;
+            VZG[i] += (FZG[k] + .25*(zi-FZG[k])) * volumetmp;
             VVolume[i] += volumetmp;
         }
 
@@ -206,97 +207,101 @@ void CalcTranses::ComputeBasicGeometry()
 /********************************************************************/
 void CalcTranses::ComputeControlVolumeList()
 {
-    int	i,j;
+  int j;
 
-    CVType		=	(int*)malloc(NbCVs*(sizeof(int)));
-    CVZone		=	(int*)malloc(NbCVs*(sizeof(int)));
-    CVVolume	=	(double*)malloc(NbCVs*(sizeof(double)));
-    CVx		=	(double*)malloc(NbCVs*(sizeof(double)));
-    CVy		=	(double*)malloc(NbCVs*(sizeof(double)));
-    CVz		=	(double*)malloc(NbCVs*(sizeof(double)));
+  CVType   =  (int*)malloc(NbCVs*(sizeof(int)));
+  CVZone   =  (int*)malloc(NbCVs*(sizeof(int)));
+  CVVolume =  (double*)malloc(NbCVs*(sizeof(double)));
+  CVx      =  (double*)malloc(NbCVs*(sizeof(double)));
+  CVy      =  (double*)malloc(NbCVs*(sizeof(double)));
+  CVz      =  (double*)malloc(NbCVs*(sizeof(double)));
 
-    for (i=0;i<NbPolygons;i++)
-        if (EQF[i]!=-1)	// Active polygon
-        {
-            j=EQF[i];
-            CVZone[j]=CodePolygon[i];
-            CVType[j]=2;	// Feature
-            CVx[j]=FXG[i];
-            CVy[j]=FYG[i];
-            CVz[j]=FZG[i];
-            CVVolume[j]=FArea[i]*ZVolumeFactor[CVZone[j]];
-        }
-
-    for (i=0;i<NbPolyhedra;i++)
+  for (int i=0;i<NbPolygons;i++)
+    if (EQF[i] != -1) // Active polygon
     {
-        if (EQV[i]!=-1)	// Active polyhedron
-        {
-            j=EQV[i];
-            CVZone[j]=CodePolyhedron[i];
-            CVType[j]=1;	// Volume
-            CVx[j]=VXG[i];
-            CVy[j]=VYG[i];
-            CVz[j]=VZG[i];
-            CVVolume[j]=VVolume[i]*ZVolumeFactor[CVZone[j]];
-        }
+      j=EQF[i];
+      CVZone[j] = CodePolygon[i];
+      CVType[j] = 2;  // Feature
+      CVx[j] = FXG[i];
+      CVy[j] = FYG[i];
+      CVz[j] = FZG[i];
+      CVVolume[j] = FArea[i] * ZVolumeFactor[CVZone[j]];
     }
+
+  for (int i=0;i<NbPolyhedra;i++)
+  {
+    if (EQV[i] != -1) // Active polyhedron
+    {
+      j = EQV[i];
+      CVZone[j] = CodePolyhedron[i];
+      CVType[j] = 1;  // Volume
+      CVx[j] = VXG[i];
+      CVy[j] = VYG[i];
+      CVz[j] = VZG[i];
+      CVVolume[j] = VVolume[i]*ZVolumeFactor[CVZone[j]];
+    }
+  }
 }
 /********************************************************************/
 void CalcTranses::PrepareConnectionList()
 {
-    int	i,j,k,iswap;
+    int i,j,k,iswap;
 
 ///// Direct construction of M-M and M-F connections /////
 
     ListV1 = (int*)malloc(NbPolygons*(sizeof(int)));
     ListV2 = (int*)malloc(NbPolygons*(sizeof(int)));
-    for (i=0;i<NbPolygons;i++) ListV1[i]=ListV2[i]=-1;
+
+    for (i=0;i<NbPolygons;i++)
+      ListV1[i]=ListV2[i]=-1;
 
     for (i=0;i<NbPolyhedra;i++)
         for (j=0;j<NbVFaces[i];j++)
         {
-            if (ListV1[VFaces[i][j]]==-1)	ListV1[VFaces[i][j]]=i;
-            else				ListV2[VFaces[i][j]]=i;
+            if (ListV1[VFaces[i][j]] == -1)
+              ListV1[VFaces[i][j]] = i;
+            else
+              ListV2[VFaces[i][j]] = i;
         }
 
 ///// Construction of F-F needs sorting... less efficient /////
 
-    ListE1	=	(int*)malloc(NbEdges*(sizeof(int)));
-    ListE2	=	(int*)malloc(NbEdges*(sizeof(int)));
-    ListF	=	(int*)malloc(NbEdges*(sizeof(int)));
+    ListE1 = (int*)malloc(NbEdges*(sizeof(int)));
+    ListE2 = (int*)malloc(NbEdges*(sizeof(int)));
+    ListF  = (int*)malloc(NbEdges*(sizeof(int)));
 
     k=0;
-    for (i=0;i<NbPolygons;i++)
+    for (i=0; i<NbPolygons; i++)
     {
-        if (CodePolygon[i]>=0)
+        if (CodePolygon[i] >= 0)
         {
-            for (j=0;j<NbFNodes[i]-1;j++)
+            for (j=0; j<NbFNodes[i]-1; j++)
             {
-                if (FNodes[i][j]<FNodes[i][j+1])
+                if (FNodes[i][j] < FNodes[i][j+1])
                 {
-                    ListE1[k]=FNodes[i][j];
-                    ListE2[k]=FNodes[i][j+1];
-                    ListF [k]=i;
+                    ListE1[k] = FNodes[i][j];
+                    ListE2[k] = FNodes[i][j+1];
+                    ListF [k] = i;
                 }
                 else
                 {
-                    ListE1[k]=FNodes[i][j+1];
-                    ListE2[k]=FNodes[i][j];
-                    ListF [k]=i;
+                    ListE1[k] = FNodes[i][j+1];
+                    ListE2[k] = FNodes[i][j];
+                    ListF [k] = i;
                 }
                 k++;
             }
-            if (FNodes[i][0]<FNodes[i][NbFNodes[i]-1])
+            if (FNodes[i][0] < FNodes[i][NbFNodes[i]-1])
             {
-                ListE1[k]=FNodes[i][0];
-                ListE2[k]=FNodes[i][NbFNodes[i]-1];
-                ListF [k]=i;
+                ListE1[k] = FNodes[i][0];
+                ListE2[k] = FNodes[i][NbFNodes[i]-1];
+                ListF [k] = i;
             }
             else
             {
-                ListE1[k]=FNodes[i][NbFNodes[i]-1];
-                ListE2[k]=FNodes[i][0];
-                ListF [k]=i;
+                ListE1[k] = FNodes[i][NbFNodes[i]-1];
+                ListE2[k] = FNodes[i][0];
+                ListF [k] = i;
             }
             k++;
         }
@@ -306,36 +311,39 @@ void CalcTranses::PrepareConnectionList()
 
 // First
 
-    for (i=0;i<NbEdges-1;i++)
-        for (j=i+1;j<NbEdges;j++)
+    for (i=0; i<NbEdges-1; i++)
+        for (j=i+1; j<NbEdges; j++)
         {
-            if (ListE1[i]>ListE1[j])
+            if (ListE1[i] > ListE1[j])
             {
-                iswap=ListE1[i];
-                ListE1[i]=ListE1[j];
-                ListE1[j]=iswap;
-                iswap=ListE2[i];
-                ListE2[i]=ListE2[j];
-                ListE2[j]=iswap;
-                iswap=ListF[i];
-                ListF[i]=ListF[j];
-                ListF[j]=iswap;
+                iswap     = ListE1[i];
+                ListE1[i] = ListE1[j];
+                ListE1[j] = iswap;
+
+                iswap     = ListE2[i];
+                ListE2[i] = ListE2[j];
+                ListE2[j] = iswap;
+
+                iswap     = ListF[i];
+                ListF[i]  = ListF[j];
+                ListF[j]  = iswap;
             }
         }
 
 // Second
 
-    for (i=0;i<NbEdges-1;i++)
-        for (j=i+1;j<NbEdges;j++)
+    for (i=0; i<NbEdges-1; i++)
+        for (j=i+1; j<NbEdges; j++)
         {
-            if (ListE1[i]==ListE1[j] && ListE2[i]>ListE2[j])
+            if (ListE1[i] == ListE1[j] && ListE2[i] > ListE2[j])
             {
-                iswap=ListE2[i];
-                ListE2[i]=ListE2[j];
-                ListE2[j]=iswap;
-                iswap=ListF[i];
-                ListF[i]=ListF[j];
-                ListF[j]=iswap;
+                iswap     = ListE2[i];
+                ListE2[i] = ListE2[j];
+                ListE2[j] = iswap;
+
+                iswap    = ListF[i];
+                ListF[i] = ListF[j];
+                ListF[j] = iswap;
             }
         }
 
@@ -343,19 +351,22 @@ void CalcTranses::PrepareConnectionList()
 
 // M-M and M-F
 
-    NbConnections=0;
+    NbConnections = 0;
 
-    for (i=0;i<NbPolygons;i++)
+    for (i=0; i<NbPolygons; i++)
     {
-        if (CodePolygon[i]<0)
-        {
-            if (ListV2[i]!=-1) NbConnections++;
-        }
+      if (CodePolygon[i] < 0)
+      {
+        if (ListV2[i] != -1)
+          NbConnections++;
+      }
+      else
+      {
+        if (ListV2[i] == -1)
+          NbConnections++;
         else
-        {
-            if (ListV2[i]==-1) NbConnections++;
-            else	NbConnections+=2;
-        }
+          NbConnections += 2;
+      }
     }
 
 // F-F
@@ -363,222 +374,224 @@ void CalcTranses::PrepareConnectionList()
     i=0;
     while (i<NbEdges-1)
     {
-        j=i+1;
+        j = i + 1;
         while ((j<NbEdges) && (ListE1[i]==ListE1[j]) && (ListE2[i]==ListE2[j])) {
             j++;
         }
-        if ((j-i)>=2) NbConnections++;
-        i=j;
+        if ((j-i) >= 2)
+          NbConnections++;
+        i = j;
     }
 
 }
 /********************************************************************/
 void CalcTranses::ConstructConnectionList()
 {
-    int	i,j,k,n;
+    int i,j,k,n;
 
-    ConType	=	(int*)malloc(NbConnections*(sizeof(int)));
+    ConType = (int*)malloc(NbConnections*(sizeof(int)));
     CheckIt(ConType==NULL);
-    ConN	=	(int*)malloc(NbConnections*(sizeof(int)));
+    ConN  = (int*)malloc(NbConnections*(sizeof(int)));
     CheckIt(ConN==NULL);
-    ConCV	=	(int**)malloc(NbConnections*(sizeof(int*)));
+    ConCV = (int**)malloc(NbConnections*(sizeof(int*)));
     CheckIt(ConCV==NULL);
-    ConTr	=	(double**)malloc(NbConnections*(sizeof(double*)));
+    ConTr = (double**)malloc(NbConnections*(sizeof(double*)));
     CheckIt(ConTr==NULL);
-    ConArea	=	(double**)malloc(NbConnections*(sizeof(double*)));
+    ConArea = (double**)malloc(NbConnections*(sizeof(double*)));
     CheckIt(ConArea==NULL);
 
-    ConGeom	=	(double**)malloc(NbConnections*(sizeof(double*)));
-    ConMult	=	(double**)malloc(NbConnections*(sizeof(double*)));
+    ConGeom = (double**)malloc(NbConnections*(sizeof(double*)));
+    ConMult = (double**)malloc(NbConnections*(sizeof(double*)));
 
-    ConPerm	=	(double**)malloc(NbConnections*(sizeof(double*)));
+    ConPerm = (double**)malloc(NbConnections*(sizeof(double*)));
     CheckIt(ConPerm==NULL);
-    ConP1x	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConP1x  = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConP1x==NULL);
-    ConP1y	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConP1y  = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConP1y==NULL);
-    ConP1z	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConP1z  = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConP1z==NULL);
-    ConP2x	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConP2x  = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConP2x==NULL);
-    ConP2y	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConP2y  = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConP2y==NULL);
-    ConP2z	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConP2z  = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConP2z==NULL);
-    ConIx	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConIx = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConIx==NULL);
-    ConIy	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConIy = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConIy==NULL);
-    ConIz	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConIz = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConIz==NULL);
-    ConVx	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConVx = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConVx==NULL);
-    ConVy	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConVy = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConVy==NULL);
-    ConVz	=	(double*)malloc(NbConnections*(sizeof(double)));
+    ConVz = (double*)malloc(NbConnections*(sizeof(double)));
     CheckIt(ConVz==NULL);
 
-    NbTransmissibility=0;
+    NbTransmissibility = 0;
 
     k=0;
     for (i=0;i<NbPolygons;i++)
     {
-        if (CodePolygon[i]< 0 && ListV2[i]>=0)	// M-M
+        if (CodePolygon[i]< 0 && ListV2[i]>=0)  // M-M
         {
-            ConType[k]=1;
-            ConN[k]=2;
-            ConCV[k]=(int*)malloc(2*(sizeof(int)));
-            CheckIt(ConCV[k]==NULL);
-            ConCV[k][0]=EQV[ListV1[i]];
-            ConCV[k][1]=EQV[ListV2[i]];
+            ConType[k] = 1;
+            ConN[k] = 2;
+            ConCV[k] = (int*)malloc(2*(sizeof(int)));
+            CheckIt(ConCV[k] == NULL);
+            ConCV[k][0] = EQV[ListV1[i]];
+            ConCV[k][1] = EQV[ListV2[i]];
 
-            ConArea[k]=(double*)malloc(2*(sizeof(double)));
-            CheckIt(ConArea[k]==NULL);
-            ConArea[k][0]=ConArea[k][1]=FArea[i];
+            ConArea[k] = (double*)malloc(2*(sizeof(double)));
+            CheckIt(ConArea[k] == NULL);
+            ConArea[k][0] = ConArea[k][1] = FArea[i];
 
-            ConP1x[k]=Fnx[i];
-            ConP1y[k]=Fny[i];
-            ConP1z[k]=Fnz[i];
-            ConP2x[k]=Fnx[i];
-            ConP2y[k]=Fny[i];
-            ConP2z[k]=Fnz[i];
+            ConP1x[k] = Fnx[i];
+            ConP1y[k] = Fny[i];
+            ConP1z[k] = Fnz[i];
+            ConP2x[k] = Fnx[i];
+            ConP2y[k] = Fny[i];
+            ConP2z[k] = Fnz[i];
 
-            ConIx[k]=FXG[i];
-            ConIy[k]=FYG[i];
-            ConIz[k]=FZG[i];
-            ConVx[k]=Fnx[i];
-            ConVy[k]=Fny[i];
-            ConVz[k]=Fnz[i];
+            ConIx[k] = FXG[i];
+            ConIy[k] = FYG[i];
+            ConIz[k] = FZG[i];
+            ConVx[k] = Fnx[i];
+            ConVy[k] = Fny[i];
+            ConVz[k] = Fnz[i];
 
-            ConTr[k]=(double*)malloc(2*(sizeof(double)));
-            CheckIt(ConTr[k]==NULL);
-            ConPerm[k]=(double*)malloc(2*(sizeof(double)));
-            CheckIt(ConPerm[k]==NULL);
+            ConTr[k] = (double*)malloc(2*(sizeof(double)));
+            CheckIt(ConTr[k] == NULL);
+            ConPerm[k] = (double*)malloc(2*(sizeof(double)));
+            CheckIt(ConPerm[k] == NULL);
 
-            ConGeom[k]=(double*)malloc(2*(sizeof(double)));
-            ConMult[k]=(double*)malloc(2*(sizeof(double)));
+            ConGeom[k] = (double*)malloc(2*(sizeof(double)));
+            ConMult[k] = (double*)malloc(2*(sizeof(double)));
 
             k++;
             NbTransmissibility++;
         }
 
-        if (CodePolygon[i]>=0 && ListV2[i]<0)	// M-F
+        if (CodePolygon[i]>=0 && ListV2[i]<0) // M-F
         {
-            ConType[k]=2;
-            ConN[k]=2;
-            ConCV[k]=(int*)malloc(2*(sizeof(int)));
-            ConCV[k][0]=EQV[ListV1[i]];
-            ConCV[k][1]=EQF[i];
+            ConType[k] = 2;
+            ConN[k] = 2;
+            ConCV[k] = (int*)malloc(2*(sizeof(int)));
+            ConCV[k][0] = EQV[ListV1[i]];
+            ConCV[k][1] = EQF[i];
 
-            ConArea[k]=(double*)malloc(2*(sizeof(double)));;
-            ConArea[k][0]=ConArea[k][1]=FArea[i];
+            ConArea[k] = (double*)malloc(2*(sizeof(double)));;
+            ConArea[k][0] = ConArea[k][1] = FArea[i];
 
-            ConP1x[k]=Fnx[i];
-            ConP1y[k]=Fny[i];
-            ConP1z[k]=Fnz[i];
+            ConP1x[k] = Fnx[i];
+            ConP1y[k] = Fny[i];
+            ConP1z[k] = Fnz[i];
 
-            ConIx[k]=FXG[i];
-            ConIy[k]=FYG[i];
-            ConIz[k]=FZG[i];
-            ConVx[k]=Fnx[i];
-            ConVy[k]=Fny[i];
-            ConVz[k]=Fnz[i];
+            ConIx[k] = FXG[i];
+            ConIy[k] = FYG[i];
+            ConIz[k] = FZG[i];
+            ConVx[k] = Fnx[i];
+            ConVy[k] = Fny[i];
+            ConVz[k] = Fnz[i];
 
-            ConTr[k]=(double*)malloc(2*(sizeof(double)));
-            ConPerm[k]=(double*)malloc(2*(sizeof(double)));
+            ConTr[k] = (double*)malloc(2*(sizeof(double)));
+            ConPerm[k] = (double*)malloc(2*(sizeof(double)));
 
-            ConGeom[k]=(double*)malloc(2*(sizeof(double)));
-            ConMult[k]=(double*)malloc(2*(sizeof(double)));
+            ConGeom[k] = (double*)malloc(2*(sizeof(double)));
+            ConMult[k] = (double*)malloc(2*(sizeof(double)));
 
             k++;
             NbTransmissibility++;
         }
 
-        if (CodePolygon[i]>=0 && ListV2[i]>=0)	// M-F and F-M
+        if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M
         {
-            ConType[k]=2;
-            ConN[k]=2;
-            ConCV[k]=(int*)malloc(2*(sizeof(int)));
-            ConCV[k][0]=EQV[ListV1[i]];
-            ConCV[k][1]=EQF[i];
+            ConType[k] = 2;
+            ConN[k] = 2;
+            ConCV[k] = (int*)malloc(2*(sizeof(int)));
+            ConCV[k][0] = EQV[ListV1[i]];
+            ConCV[k][1] = EQF[i];
 
-            ConArea[k]=(double*)malloc(2*(sizeof(double)));;
-            ConArea[k][0]=ConArea[k][1]=FArea[i];
+            ConArea[k] = (double*)malloc(2*(sizeof(double)));;
+            ConArea[k][0] = ConArea[k][1] = FArea[i];
 
-            ConP1x[k]=Fnx[i];
-            ConP1y[k]=Fny[i];
-            ConP1z[k]=Fnz[i];
+            ConP1x[k] = Fnx[i];
+            ConP1y[k] = Fny[i];
+            ConP1z[k] = Fnz[i];
 
-            ConIx[k]=FXG[i];
-            ConIy[k]=FYG[i];
-            ConIz[k]=FZG[i];
-            ConVx[k]=Fnx[i];
-            ConVy[k]=Fny[i];
-            ConVz[k]=Fnz[i];
+            ConIx[k] = FXG[i];
+            ConIy[k] = FYG[i];
+            ConIz[k] = FZG[i];
+            ConVx[k] = Fnx[i];
+            ConVy[k] = Fny[i];
+            ConVz[k] = Fnz[i];
 
-            ConTr[k]=(double*)malloc(2*(sizeof(double)));
-            ConPerm[k]=(double*)malloc(2*(sizeof(double)));
+            ConTr[k]   = (double*)malloc(2*(sizeof(double)));
+            ConPerm[k] = (double*)malloc(2*(sizeof(double)));
 
-            ConGeom[k]=(double*)malloc(2*(sizeof(double)));
-            ConMult[k]=(double*)malloc(2*(sizeof(double)));
+            ConGeom[k] = (double*)malloc(2*(sizeof(double)));
+            ConMult[k] = (double*)malloc(2*(sizeof(double)));
 
             k++;
 
-            ConType[k]=2;
-            ConN[k]=2;
-            ConCV[k]=(int*)malloc(2*(sizeof(int)));
-            ConCV[k][0]=EQV[ListV2[i]];
-            ConCV[k][1]=EQF[i];
+            ConType[k] = 2;
+            ConN[k] = 2;
+            ConCV[k] = (int*)malloc(2*(sizeof(int)));
+            ConCV[k][0] = EQV[ListV2[i]];
+            ConCV[k][1] = EQF[i];
 
-            ConArea[k]=(double*)malloc(2*(sizeof(double)));;
-            ConArea[k][0]=ConArea[k][1]=FArea[i];
+            ConArea[k] = (double*)malloc(2*(sizeof(double)));;
+            ConArea[k][0] = ConArea[k][1] = FArea[i];
 
-            ConP1x[k]=Fnx[i];
-            ConP1y[k]=Fny[i];
-            ConP1z[k]=Fnz[i];
+            ConP1x[k] = Fnx[i];
+            ConP1y[k] = Fny[i];
+            ConP1z[k] = Fnz[i];
 
-            ConIx[k]=FXG[i];
-            ConIy[k]=FYG[i];
-            ConIz[k]=FZG[i];
-            ConVx[k]=Fnx[i];
-            ConVy[k]=Fny[i];
-            ConVz[k]=Fnz[i];
+            ConIx[k] = FXG[i];
+            ConIy[k] = FYG[i];
+            ConIz[k] = FZG[i];
+            ConVx[k] = Fnx[i];
+            ConVy[k] = Fny[i];
+            ConVz[k] = Fnz[i];
 
-            ConTr[k]=(double*)malloc(2*(sizeof(double)));
-            ConPerm[k]=(double*)malloc(2*(sizeof(double)));
+            ConTr[k]   = (double*)malloc(2*(sizeof(double)));
+            ConPerm[k] = (double*)malloc(2*(sizeof(double)));
 
-            ConGeom[k]=(double*)malloc(2*(sizeof(double)));
-            ConMult[k]=(double*)malloc(2*(sizeof(double)));
+            ConGeom[k] = (double*)malloc(2*(sizeof(double)));
+            ConMult[k] = (double*)malloc(2*(sizeof(double)));
             k++;
-            NbTransmissibility+=2;
+            NbTransmissibility += 2;
         }
     }
 
 
   // F-F Connections
   i=0;
-  while ( i<NbEdges-1 )
+  while ( i < NbEdges-1 )
   {
-    j=i+1;
+    j = i+1;
     while ( ( j<NbEdges ) && ( ListE1[i]==ListE1[j] ) && ( ListE2[i]==ListE2[j] ) )
     {
       j++;
     }
-    if ( ( j-i ) >=2 )
+    if ( ( j-i ) >= 2 )
     {
-      ConType[k]=3;
-      ConN[k]= ( j-i );
-      ConCV[k]= ( int* ) malloc ( ( j-i ) * ( sizeof ( int ) ) );
-      for ( n=i; n<j; n++ ) ConCV[k][n-i]=EQF[ListF[n]];
+      ConType[k] = 3;
+      ConN[k] = ( j-i );
+      ConCV[k] = ( int* ) malloc ( ( j-i ) * ( sizeof ( int ) ) );
+      for ( n=i; n<j; n++ )
+        ConCV[k][n-i] = EQF[ListF[n]];
 
-      ConIx[k]=X[ListE1[i]];
-      ConIy[k]=Y[ListE1[i]];
-      ConIz[k]=Z[ListE1[i]];
-      ConVx[k]=X[ListE1[i]]-X[ListE2[i]];
-      ConVy[k]=Y[ListE1[i]]-Y[ListE2[i]];
-      ConVz[k]=Z[ListE1[i]]-Z[ListE2[i]];
+      ConIx[k] = X[ListE1[i]];
+      ConIy[k] = Y[ListE1[i]];
+      ConIz[k] = Z[ListE1[i]];
+      ConVx[k] = X[ListE1[i]] - X[ListE2[i]];
+      ConVy[k] = Y[ListE1[i]] - Y[ListE2[i]];
+      ConVz[k] = Z[ListE1[i]] - Z[ListE2[i]];
 
-      ConArea[k]= ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
+      ConArea[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
 
       for ( n = i; n < j; n++ ) // Double check the formula
       {
@@ -586,13 +599,13 @@ void CalcTranses::ConstructConnectionList()
         // TODO TIMUR (F-F connection)
         ConArea[k][n - i] *= vTimurConnectionFactor[CVZone[ConCV[k][n - i]]];
       }
-      ConTr[k]= ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
-      ConPerm[k]= ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
+      ConTr[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
+      ConPerm[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
 
-      ConGeom[k]= ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
-      ConMult[k]= ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
+      ConGeom[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
+      ConMult[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
 
-      NbTransmissibility+= ( ConN[k]* ( ConN[k]-1 ) ) /2;
+      NbTransmissibility += ( ConN[k]* ( ConN[k]-1 ) ) /2;
       k++;
     }
     i = j;
@@ -600,18 +613,18 @@ void CalcTranses::ConstructConnectionList()
 
 }
 /********************************************************************/
-void CalcTranses::VolumeCorrection()	// Volume should be at least twice bigger...
+void CalcTranses::VolumeCorrection()  // Volume should be at least twice bigger...
 {
-    int	i;
+    int i;
 
-    for (i=0;i<NbPolygons;i++)
+    for (i=0; i<NbPolygons; i++)
     {
-        if (CodePolygon[i]>=0 && ListV2[i]<0)	// M-F /////////////////////////////////
+        if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F ///
         {
             if (CVVolume[EQV[ListV1[i]]]>2*CVVolume[EQF[i]]) CVVolume[EQV[ListV1[i]]]-=CVVolume[EQF[i]];
         }
 
-        if (CodePolygon[i]>=0 && ListV2[i]>=0)	// M-F and F-M /////////////////////////
+        if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M ///
         {
             if (CVVolume[EQV[ListV1[i]]]>2*.5*CVVolume[EQF[i]]) CVVolume[EQV[ListV1[i]]]-=.5*CVVolume[EQF[i]];
             if (CVVolume[EQV[ListV2[i]]]>2*.5*CVVolume[EQF[i]]) CVVolume[EQV[ListV2[i]]]-=.5*CVVolume[EQF[i]];
@@ -622,158 +635,212 @@ void CalcTranses::VolumeCorrection()	// Volume should be at least twice bigger..
 /********************************************************************/
 void CalcTranses::ComputeContinuityNode()
 {
-    int	i,j,k;
-    double	hx,hy,hz,px,py,pz;
+    int i,j,k;
+    double  hx,hy,hz,px,py,pz;
 
-    Conhx	=	(double*)malloc(NbConnections*(sizeof(double)));
-    Conhy	=	(double*)malloc(NbConnections*(sizeof(double)));
-    Conhz	=	(double*)malloc(NbConnections*(sizeof(double)));
+    Conhx = (double*)malloc(NbConnections*(sizeof(double)));
+    Conhy = (double*)malloc(NbConnections*(sizeof(double)));
+    Conhz = (double*)malloc(NbConnections*(sizeof(double)));
 
     for (i=0;i<NbConnections;i++)
     {
-        Conhx[i]=Conhy[i]=Conhz[i]=0;
+        Conhx[i] = Conhy[i] = Conhz[i] = 0;
 
-        if (ConType[i]==1)	// M-M /////////////////////////////////////////////////
+        if (ConType[i] == 1)  // M-M ///
         {
-            px=CVx[ConCV[i][1]]-CVx[ConCV[i][0]];
-            py=CVy[ConCV[i][1]]-CVy[ConCV[i][0]];
-            pz=CVz[ConCV[i][1]]-CVz[ConCV[i][0]];
+            px = CVx[ConCV[i][1]] - CVx[ConCV[i][0]];
+            py = CVy[ConCV[i][1]] - CVy[ConCV[i][0]];
+            pz = CVz[ConCV[i][1]] - CVz[ConCV[i][0]];
 
-            ProjectionA(	CVx[ConCV[i][0]],CVy[ConCV[i][0]],CVz[ConCV[i][0]],
+            ProjectionA(  CVx[ConCV[i][0]],CVy[ConCV[i][0]],CVz[ConCV[i][0]],
                          px,py,pz,
                          ConIx[i],ConIy[i],ConIz[i],
                          ConVx[i],ConVy[i],ConVz[i],
                          &Conhx[i],&Conhy[i],&Conhz[i]);
         }
-        if (ConType[i]==2)	// M-F /////////////////////////////////////////////////
+        if (ConType[i] == 2)  // M-F ///
         {
             Conhx[i]=CVx[ConCV[i][1]];
             Conhy[i]=CVy[ConCV[i][1]];
             Conhz[i]=CVz[ConCV[i][1]];
         }
-        if (ConType[i]==3)	// F-F /////////////////////////////////////////////////
+        if (ConType[i] == 3)  // F-F ///
         {
             for (j=0;j<ConN[i];j++)
             {
-                ProjectionB(	CVx[ConCV[i][j]],CVy[ConCV[i][j]],CVz[ConCV[i][j]],
-                             ConIx[i],ConIy[i],ConIz[i],
-                             ConVx[i],ConVy[i],ConVz[i],
-                             &hx,&hy,&hz);
-                Conhx[i]+=hx;
-                Conhy[i]+=hy;
-                Conhz[i]+=hz;
+                ProjectionB( CVx[ConCV[i][j]], CVy[ConCV[i][j]], CVz[ConCV[i][j]],
+                             ConIx[i], ConIy[i], ConIz[i],
+                             ConVx[i], ConVy[i], ConVz[i],
+                             &hx, &hy, &hz);
+                Conhx[i] += hx;
+                Conhy[i] += hy;
+                Conhz[i] += hz;
             }
-            Conhx[i]=Conhx[i]/ConN[i];
-            Conhy[i]=Conhy[i]/ConN[i];
-            Conhz[i]=Conhz[i]/ConN[i];
+
+            Conhx[i] = Conhx[i] / ConN[i];
+            Conhy[i] = Conhy[i] / ConN[i];
+            Conhz[i] = Conhz[i] / ConN[i];
         }
     }
 }
 /********************************************************************/
 void CalcTranses::ComputeDirectionalPermeability()
 {
-    int	i,j,k;
-    double	fx,fy,fz,fl;
+    int i,j,k;
+    double  fx,fy,fz,fl;
 
     for (i=0;i<NbConnections;i++)
     {
-        if (ConType[i]==1)	// M-M /////////////////////////////////////////////////
+      if (ConType[i]==1)  // M-M /////////////////////////////////////////////////
+      {
+        k = ConCV[i][0];
+        fx = CVx[k]-Conhx[i];
+        fy = CVy[k]-Conhy[i];
+        fz = CVz[k]-Conhz[i];
+        fl = sqrt(fx*fx+fy*fy+fz*fz);
+        fx = fx/fl;
+        fy = fy/fl;
+        fz = fz/fl;
+
+        Kx = ZPermeability[CVZone[k]][0]*fx +
+            ZPermeability[CVZone[k]][3]*fy+
+            ZPermeability[CVZone[k]][4]*fz;
+
+        Ky = ZPermeability[CVZone[k]][3]*fx+
+            ZPermeability[CVZone[k]][1]*fy +
+            ZPermeability[CVZone[k]][5]*fz;
+
+        Kz = ZPermeability[CVZone[k]][4]*fx +
+            ZPermeability[CVZone[k]][5]*fy +
+            ZPermeability[CVZone[k]][2]*fz;
+
+        ConPerm[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
+
+        // @HACK
+        // We dont need a REAL value of conductivity
+        // We just calculate geometric part (@HACK)
+        Kx=1.0; Ky=1.0; Kz=1.0;
+        if(ZConduction[CVZone[k]][0] != 0.0)
         {
-            k=ConCV[i][0];
-            fx=CVx[k]-Conhx[i];
-            fy=CVy[k]-Conhy[i];
-            fz=CVz[k]-Conhz[i];
-            fl=sqrt(fx*fx+fy*fy+fz*fz);
-            fx=fx/fl;
-            fy=fy/fl;
-            fz=fz/fl;
+          Kx = (ZConduction[CVZone[k]][0]*fx +
+                ZConduction[CVZone[k]][3]*fy +
+                ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
 
-            Kx=ZPermeability[CVZone[k]][0]*fx+ZPermeability[CVZone[k]][3]*fy+ZPermeability[CVZone[k]][4]*fz;
-            Ky=ZPermeability[CVZone[k]][3]*fx+ZPermeability[CVZone[k]][1]*fy+ZPermeability[CVZone[k]][5]*fz;
-            Kz=ZPermeability[CVZone[k]][4]*fx+ZPermeability[CVZone[k]][5]*fy+ZPermeability[CVZone[k]][2]*fz;
-            ConPerm[i][0]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
+          Ky = (ZConduction[CVZone[k]][3]*fx +
+                ZConduction[CVZone[k]][1]*fy +
+                ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
 
-            // @HACK
-	    // We dont need a REAL value of conductivity
-	    // We just calculate geometric part (@HACK)
-	    Kx=1.0; Ky=1.0; Kz=1.0;
-            if(ZConduction[CVZone[k]][0] != 0.0)
-	    {
-	      Kx=(ZConduction[CVZone[k]][0]*fx+ZConduction[CVZone[k]][3]*fy+ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
-	      Ky=(ZConduction[CVZone[k]][3]*fx+ZConduction[CVZone[k]][1]*fy+ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
-	      Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
-	    }
-            ConMult[i][0]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
+          Kz = (ZConduction[CVZone[k]][4]*fx +
+                ZConduction[CVZone[k]][5]*fy +
+                ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
+        }
 
-            k=ConCV[i][1];
-            fx=CVx[k]-Conhx[i];
-            fy=CVy[k]-Conhy[i];
-            fz=CVz[k]-Conhz[i];
-            fl=sqrt(fx*fx+fy*fy+fz*fz);
-            fx=fx/fl;
-            fy=fy/fl;
-            fz=fz/fl;
+        ConMult[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
-            Kx=ZPermeability[CVZone[k]][0]*fx+ZPermeability[CVZone[k]][3]*fy+ZPermeability[CVZone[k]][4]*fz;
-            Ky=ZPermeability[CVZone[k]][3]*fx+ZPermeability[CVZone[k]][1]*fy+ZPermeability[CVZone[k]][5]*fz;
-            Kz=ZPermeability[CVZone[k]][4]*fx+ZPermeability[CVZone[k]][5]*fy+ZPermeability[CVZone[k]][2]*fz;
-            ConPerm[i][1]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
+        k = ConCV[i][1];
+        fx = CVx[k] - Conhx[i];
+        fy = CVy[k] - Conhy[i];
+        fz = CVz[k] - Conhz[i];
+        fl = sqrt(fx*fx + fy*fy + fz*fz);
+        fx = fx/fl;
+        fy = fy/fl;
+        fz = fz/fl;
 
-            // @HACK
-	    // We dont need a REAL value of conductivity
-	    // We just calculate geometric part
-	    Kx=1.0; Ky=1.0; Kz=1.0;
-            if(ZConduction[CVZone[k]][0] != 0.0)
-	    {
-	     Kx=(ZConduction[CVZone[k]][0]*fx+ZConduction[CVZone[k]][3]*fy+ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
-             Ky=(ZConduction[CVZone[k]][3]*fx+ZConduction[CVZone[k]][1]*fy+ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
-             Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
-	    }
+        Kx = ZPermeability[CVZone[k]][0]*fx +
+            ZPermeability[CVZone[k]][3]*fy +
+            ZPermeability[CVZone[k]][4]*fz;
+
+        Ky = ZPermeability[CVZone[k]][3]*fx +
+            ZPermeability[CVZone[k]][1]*fy +
+            ZPermeability[CVZone[k]][5]*fz;
+
+        Kz = ZPermeability[CVZone[k]][4]*fx +
+            ZPermeability[CVZone[k]][5]*fy +
+            ZPermeability[CVZone[k]][2]*fz;
+
+        ConPerm[i][1] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
+
+        // @HACK
+        // We dont need a REAL value of conductivity
+        // We just calculate geometric part
+        Kx=1.0; Ky=1.0; Kz=1.0;
+        if(ZConduction[CVZone[k]][0] != 0.0)
+        {
+          Kx = (ZConduction[CVZone[k]][0]*fx +
+                ZConduction[CVZone[k]][3]*fy +
+                ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
+
+          Ky = (ZConduction[CVZone[k]][3]*fx +
+                ZConduction[CVZone[k]][1]*fy +
+                ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
+
+          Kz = (ZConduction[CVZone[k]][4]*fx +
+                ZConduction[CVZone[k]][5]*fy +
+                ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
+        }
             ConMult[i][1]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
         }
-        if (ConType[i]==2)	// M-F /////////////////////////////////////////////////
+        if (ConType[i]==2)  // M-F /////////////////////////////////////////////////
         {
-            k=ConCV[i][0];
-            fx=CVx[k]-Conhx[i];
-            fy=CVy[k]-Conhy[i];
-            fz=CVz[k]-Conhz[i];
-            fl=sqrt(fx*fx+fy*fy+fz*fz);
-            fx=fx/fl;
-            fy=fy/fl;
-            fz=fz/fl;
+          k=ConCV[i][0];
+          fx=CVx[k]-Conhx[i];
+          fy=CVy[k]-Conhy[i];
+          fz=CVz[k]-Conhz[i];
+          fl=sqrt(fx*fx+fy*fy+fz*fz);
+          fx=fx/fl;
+          fy=fy/fl;
+          fz=fz/fl;
 
-            Kx=ZPermeability[CVZone[k]][0]*fx+ZPermeability[CVZone[k]][3]*fy+ZPermeability[CVZone[k]][4]*fz;
-            Ky=ZPermeability[CVZone[k]][3]*fx+ZPermeability[CVZone[k]][1]*fy+ZPermeability[CVZone[k]][5]*fz;
-            Kz=ZPermeability[CVZone[k]][4]*fx+ZPermeability[CVZone[k]][5]*fy+ZPermeability[CVZone[k]][2]*fz;
-            ConPerm[i][0]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
+          Kx = ZPermeability[CVZone[k]][0]*fx +
+              ZPermeability[CVZone[k]][3]*fy +
+              ZPermeability[CVZone[k]][4]*fz;
 
-            k=ConCV[i][1];
-            ConPerm[i][1]=ZPermeability[CVZone[k]][0];		// Kn (0)
+          Ky = ZPermeability[CVZone[k]][3]*fx +
+              ZPermeability[CVZone[k]][1]*fy +
+              ZPermeability[CVZone[k]][5]*fz;
 
-            // @HACK
-	    // We dont need a REAL value of conductivity
-	    // We just calculate geometric part
-	    Kx=1.0; Ky=1.0; Kz=1.0;
-            if(ZConduction[CVZone[k]][0] != 0.0)
-	    {
-	     Kx=(ZConduction[CVZone[k]][0]*fx+ZConduction[CVZone[k]][3]*fy+ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
-             Ky=(ZConduction[CVZone[k]][3]*fx+ZConduction[CVZone[k]][1]*fy+ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
-             Kz=(ZConduction[CVZone[k]][4]*fx+ZConduction[CVZone[k]][5]*fy+ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
-	    }
+          Kz = ZPermeability[CVZone[k]][4]*fx +
+              ZPermeability[CVZone[k]][5]*fy +
+              ZPermeability[CVZone[k]][2]*fz;
+
+          ConPerm[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
+
+          k = ConCV[i][1];
+          ConPerm[i][1] = ZPermeability[CVZone[k]][0];    // Kn (0)
+
+          // @HACK
+          // We dont need a REAL value of conductivity
+          // We just calculate geometric part
+          Kx=1.0; Ky=1.0; Kz=1.0;
+          if(ZConduction[CVZone[k]][0] != 0.0)
+          {
+            Kx = (ZConduction[CVZone[k]][0]*fx +
+                  ZConduction[CVZone[k]][3]*fy +
+                  ZConduction[CVZone[k]][4]*fz) / ZConduction[CVZone[k]][0];
+
+            Ky = (ZConduction[CVZone[k]][3]*fx +
+                  ZConduction[CVZone[k]][1]*fy +
+                  ZConduction[CVZone[k]][5]*fz) / ZConduction[CVZone[k]][0];
+
+            Kz = (ZConduction[CVZone[k]][4]*fx +
+                  ZConduction[CVZone[k]][5]*fy +
+                  ZConduction[CVZone[k]][2]*fz) / ZConduction[CVZone[k]][0];
+          }
+
             ConMult[i][0] = sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
             ConMult[i][1] = 1.0;
         }
-        if (ConType[i]==3)	// F-F /////////////////////////////////////////////////
+        if (ConType[i] == 3)  // F-F /////////////////////////////////////////////////
         {
-            for (j=0;j<ConN[i];j++)
+            for (j=0; j<ConN[i]; j++)
             {
-                k=ConCV[i][j];
-                ConPerm[i][j] = ZPermeability[CVZone[k]][0];	// Kp (1)
+              k = ConCV[i][j];
+              ConPerm[i][j] = ZPermeability[CVZone[k]][0];  // Kp (1)
 
-                // @HACK
-                // for fractures all directions are identiacal
-                // and multiplicator is UNIT
-                ConMult[i][j] = 1.0;
+              // @HACK
+              // for fractures all directions are identiacal
+              // and multiplicator is UNIT
+              ConMult[i][j] = 1.0;
             }
         }
     }
@@ -781,118 +848,119 @@ void CalcTranses::ComputeDirectionalPermeability()
 /********************************************************************/
 void CalcTranses::ComputeTransmissibilityPart()
 {
-    int	i,j,k;
-    double	nx,ny,nz,nl,fx,fy,fz,fl;
+    int i,j,k;
+    double  nx,ny,nz,nl,fx,fy,fz,fl;
 
-    for (i=0;i<NbConnections;i++)
+    for (i=0; i<NbConnections; i++)
     {
-        if (ConType[i]==1)	// M-M /////////////////////////////////////////////////
-        {
-            k=ConCV[i][0];
-            nx=ConP1x[i];
-            ny=ConP1y[i];
-            nz=ConP1z[i];
+      if (ConType[i] == 1)  // M-M ///
+      {
+        k  = ConCV[i][0];
+        nx = ConP1x[i];
+        ny = ConP1y[i];
+        nz = ConP1z[i];
 
-            fx=CVx[k]-Conhx[i];
-            fy=CVy[k]-Conhy[i];
-            fz=CVz[k]-Conhz[i];
-            fl=sqrt(fx*fx+fy*fy+fz*fz);
-            fx=fx/fl;
-            fy=fy/fl;
-            fz=fz/fl;
+        fx = CVx[k] - Conhx[i];
+        fy = CVy[k] - Conhy[i];
+        fz = CVz[k] - Conhz[i];
+        fl = sqrt(fx*fx + fy*fy + fz*fz);
+        fx = fx/fl;
+        fy = fy/fl;
+        fz = fz/fl;
 
-	    //    ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*ABS(nx*fx+ny*fy+nz*fz)/fl;
-            ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*1./fl;
-            ConGeom[i][0]=ConArea[i][0]*ConMult[i][0] *1./fl;
+        //    ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*ABS(nx*fx+ny*fy+nz*fz)/fl;
+        ConTr[i][0]   = ConArea[i][0]*ConPerm[i][0] * 1./fl;
+        ConGeom[i][0] = ConArea[i][0]*ConMult[i][0] * 1./fl;
 
-            k=ConCV[i][1];
-            nx=ConP2x[i];
-            ny=ConP2y[i];
-            nz=ConP2z[i];
+        k  = ConCV[i][1];
+        nx = ConP2x[i];
+        ny = ConP2y[i];
+        nz = ConP2z[i];
 
-            fx=CVx[k]-Conhx[i];
-            fy=CVy[k]-Conhy[i];
-            fz=CVz[k]-Conhz[i];
-            fl=sqrt(fx*fx+fy*fy+fz*fz);
-            fx=fx/fl;
-            fy=fy/fl;
-            fz=fz/fl;
-	    //    ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*ABS(nx*fx+ny*fy+nz*fz)/fl;
-            ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*1./fl;
-	    ConGeom[i][1]=ConArea[i][1]*ConMult[i][1]*1./fl;
+        fx = CVx[k] - Conhx[i];
+        fy = CVy[k] - Conhy[i];
+        fz = CVz[k] - Conhz[i];
+        fl = sqrt(fx*fx + fy*fy + fz*fz);
+        fx = fx/fl;
+        fy = fy/fl;
+        fz = fz/fl;
+
+        //    ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*ABS(nx*fx+ny*fy+nz*fz)/fl;
+        ConTr[i][1]   = ConArea[i][1] * ConPerm[i][1] * 1./fl;
+        ConGeom[i][1] = ConArea[i][1] * ConMult[i][1] * 1./fl;
         }
-        if (ConType[i]==2)	// M-F /////////////////////////////////////////////////
+        if (ConType[i] == 2)  // M-F //
         {
-            k=ConCV[i][0];
-            nx=ConP1x[i];
-            ny=ConP1y[i];
-            nz=ConP1z[i];
+          k = ConCV[i][0];
+          nx = ConP1x[i];
+          ny = ConP1y[i];
+          nz = ConP1z[i];
 
-            fx=CVx[k]-Conhx[i];
-            fy=CVy[k]-Conhy[i];
-            fz=CVz[k]-Conhz[i];
-            fl=sqrt(fx*fx+fy*fy+fz*fz);
-            fx=fx/fl;
-            fy=fy/fl;
-            fz=fz/fl;
+          fx = CVx[k]-Conhx[i];
+          fy = CVy[k]-Conhy[i];
+          fz = CVz[k]-Conhz[i];
+          fl = sqrt(fx*fx + fy*fy + fz*fz);
+          fx = fx/fl;
+          fy = fy/fl;
+          fz = fz/fl;
 
-            ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*1./fl;
-            ConGeom[i][0]=ConArea[i][0]*ConMult[i][0]*1./fl;
+          ConTr[i][0]   = ConArea[i][0] * ConPerm[i][0] * 1./fl;
+          ConGeom[i][0] = ConArea[i][0] * ConMult[i][0] * 1./fl;
 
-            k=ConCV[i][1];
-            ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*1./(.5*ZVolumeFactor[CVZone[k]]);
-            ConGeom[i][1]=ConArea[i][1]*ConMult[i][1]*1./(.5*ZVolumeFactor[CVZone[k]]);
+            k = ConCV[i][1];
+            ConTr[i][1] = ConArea[i][1] * ConPerm[i][1] *
+                1./(.5*ZVolumeFactor[CVZone[k]]);
+            ConGeom[i][1] = ConArea[i][1] * ConMult[i][1] *
+                1./(.5*ZVolumeFactor[CVZone[k]]);
         }
-        if (ConType[i]==3)	// F-F /////////////////////////////////////////////////
+        if (ConType[i] == 3)  // F-F /////////////////////////////////////////////////
         {
-            for (j=0;j<ConN[i];j++)
-            {
-                k  = ConCV[i][j];
-                fx = CVx[k] - Conhx[i];
-                fy = CVy[k] - Conhy[i];
-                fz = CVz[k] - Conhz[i];
-                fl = sqrt(fx*fx + fy*fy + fz*fz);
-                fx = fx/fl;
-                fy = fy/fl;
-                fz = fz/fl;
+          for (j=0; j<ConN[i]; j++)
+          {
+            k  = ConCV[i][j];
+            fx = CVx[k] - Conhx[i];
+            fy = CVy[k] - Conhy[i];
+            fz = CVz[k] - Conhz[i];
+            fl = sqrt(fx*fx + fy*fy + fz*fz);
+            fx = fx/fl;
+            fy = fy/fl;
+            fz = fz/fl;
 
-                ConTr[i][j]=ConArea[i][j]*ConPerm[i][j]*1./fl;
-                ConGeom[i][j]=ConArea[i][j]*ConMult[i][j]*1./fl;
-            }
+            ConTr[i][j] = ConArea[i][j] * ConPerm[i][j] * 1./fl;
+            ConGeom[i][j] = ConArea[i][j] * ConMult[i][j] * 1./fl;
+          }
         }
     }
 }
 /********************************************************************/
 void CalcTranses::ComputeTransmissibilityList()
 {
-    int	i,j,k,n,m;
-    double	SumTr;
+    int i,j,k,n,m;
+    double  SumTr;
     FILE * poutfile;
     FILE * pFile;
 
-    iTr           =	(int*)malloc(NbTransmissibility*(sizeof(int)));
-    jTr           =	(int*)malloc(NbTransmissibility*(sizeof(int)));
-    Tij           =	(double*)malloc(NbTransmissibility*(sizeof(double)));
+    iTr           = (int*)malloc(NbTransmissibility*(sizeof(int)));
+    jTr           = (int*)malloc(NbTransmissibility*(sizeof(int)));
+    Tij           = (double*)malloc(NbTransmissibility*(sizeof(double)));
     TConductionIJ = (double*)malloc(NbTransmissibility*(sizeof(double)));
 
   k=0;
   for ( i=0; i<NbConnections; i++ )
   {
-    if ( ConType[i]==1 || ConType[i]==2 )	// M-M, M-F ////////////////////////////
+    if ( ConType[i]==1 || ConType[i]==2 ) // M-M, M-F ////////////////////////////
     {
-      iTr[k]=ConCV[i][0];
-      jTr[k]=ConCV[i][1];
+      iTr[k] = ConCV[i][0];
+      jTr[k] = ConCV[i][1];
 
-      if ( ConTr[i][0]+ConTr[i][1] != 0.0 )
+      if ( ConTr[i][0] + ConTr[i][1] != 0.0 )
       {
         Tij[k] = ( ConTr[i][0]*ConTr[i][1] ) / ( ConTr[i][0] + ConTr[i][1] );
-        // std::cout << "Tij[j] = " << Tij[k] << std::endl;
-        // std::cout << "ConTr[i][0] = " << ConTr[i][0] << std::endl;
-        // std::cout << "ConTr[i][1] = " << ConTr[i][1] << std::endl;
       }
 
-      if ( ConGeom[i][0]+ConGeom[i][1] != 0.0 )
-        TConductionIJ[k]= ( ConGeom[i][0] * ConGeom[i][1] ) / ( ConGeom[i][0] + ConGeom[i][1] );
+      if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
+        TConductionIJ[k] = ( ConGeom[i][0] * ConGeom[i][1] ) /
+                           ( ConGeom[i][0] + ConGeom[i][1] );
 
       if ( TConductionIJ[k] < 0.0 )
       {
@@ -901,21 +969,24 @@ void CalcTranses::ComputeTransmissibilityList()
       }
       k++;
     }
-    else if ( ConType[i]==3 )	// F-F /////////////////////////////////////////////////
+    else if ( ConType[i] == 3 ) // F-F ///
     {
-      SumTr=0;
-      double SumTr2=0;
-      for ( j=0; j<ConN[i]; j++ ) SumTr+=ConTr[i][j];
-      for ( j=0; j<ConN[i]; j++ ) SumTr2+=ConGeom[i][j];
+      SumTr = 0;
+      double SumTr2 = 0;
+      for ( j=0; j<ConN[i]; j++ )
+        SumTr+=ConTr[i][j];
+
+      for ( j=0; j<ConN[i]; j++ )
+        SumTr2+=ConGeom[i][j];
+
       for ( j=0; j<ConN[i]-1; j++ )
         for ( n=j+1; n<ConN[i]; n++ )
         {
-          iTr[k]=ConCV[i][j];
-          jTr[k]=ConCV[i][n];
-          Tij[k]= ( ConTr[i][j]*ConTr[i][n] ) / SumTr;
-          std::cout << "T_ij[k] = " << Tij[k] << std::endl;
+          iTr[k] = ConCV[i][j];
+          jTr[k] = ConCV[i][n];
+          Tij[k] = ( ConTr[i][j]*ConTr[i][n] ) / SumTr;
 
-          TConductionIJ[k] = ( ConGeom[i][j]*ConGeom[i][n] ) /SumTr2;
+          TConductionIJ[k] = ( ConGeom[i][j]*ConGeom[i][n] ) / SumTr2;
           if ( TConductionIJ[k] < 0.0 )
           {
             cout << "M-M or M-F : Conduction is negative: check values" << endl;
@@ -926,8 +997,8 @@ void CalcTranses::ComputeTransmissibilityList()
     }
     else
     {
-            cout << "Wrong connection type" << endl;
-            exit ( 0 );
+      cout << "Wrong connection type" << endl;
+      exit ( 0 );
     }
 
   }
@@ -938,16 +1009,16 @@ void CalcTranses::ComputeTransmissibilityList()
 void CalcTranses::createKarimiApproximation()
 {
     // pSim->outstream = "adgprs";
-    FILE	*poutfile;
-    int		i,j,k,n,m;
+    FILE  *poutfile;
+    int   i,j,k,n,m;
 
     double m1x,m1y,m1z,p1x,p1y,p1z,m2x,m2y,m2z,p2x,p2y,p2z,ix,iy,iz,inx,iny,inz;
     double mx,my,mz,ux,uy,uz,vx,vy,vz,nx,ny,nz,xi,yi,zi,nl,h,fx,fy,fz,fl;
-    int		iswap;
-    double		areatmp,volumetmp;
-    double		hx,hy,hz;
-    int		NbActivePolygon;
-    int		NbFeatureCode;
+    int   iswap;
+    double    areatmp,volumetmp;
+    double    hx,hy,hz;
+    int   NbActivePolygon;
+    int   NbFeatureCode;
 
     // printf("/*************************************************/\n");
     // printf("/* DISCRETE FEATURE MODEL                        */\n");
@@ -956,81 +1027,83 @@ void CalcTranses::createKarimiApproximation()
     // printf("/*************************************************/\n");
     // printf("\n");
 
-    X		=	(double*)malloc(NbNodes*(sizeof(double)));
-    Y		=	(double*)malloc(NbNodes*(sizeof(double)));
-    Z		=	(double*)malloc(NbNodes*(sizeof(double)));
+    X = (double*)malloc(NbNodes*(sizeof(double)));
+    Y = (double*)malloc(NbNodes*(sizeof(double)));
+    Z = (double*)malloc(NbNodes*(sizeof(double)));
 
     for (i = 0; i < NbNodes; i++)
     {
-        X[i] = vCoordinatesX[i];
-        Y[i] = vCoordinatesY[i];
-        Z[i] = vCoordinatesZ[i];
+      X[i] = vCoordinatesX[i];
+      Y[i] = vCoordinatesY[i];
+      Z[i] = vCoordinatesZ[i];
     }
 
-    NbFNodes    =	(int*)malloc(NbPolygons*(sizeof(int)));
-    FNodes      =	(int**)malloc(NbPolygons*(sizeof(int*)));
-    EQF         =	(int*)malloc(NbPolygons*(sizeof(int)));
-    CodePolygon	=	(int*)malloc(NbPolygons*(sizeof(int)));
+    NbFNodes    = (int*)malloc(NbPolygons*(sizeof(int)));
+    FNodes      = (int**)malloc(NbPolygons*(sizeof(int*)));
+    EQF         = (int*)malloc(NbPolygons*(sizeof(int)));
+    CodePolygon = (int*)malloc(NbPolygons*(sizeof(int)));
 
     NbEdges=0;
     NbCVs=0;
     for (i=0;i<NbPolygons;i++)
     {
-        NbFNodes[i] = vNbFNodes[i];
-        FNodes[i]=(int*)malloc(NbFNodes[i]*(sizeof(int)));
-        for (j=0; j<NbFNodes[i]; j++)
-        {
-            FNodes[i][j] = vvFNodes[i][j];
-        }
+      NbFNodes[i] = vNbFNodes[i];
+      FNodes[i]=(int*)malloc(NbFNodes[i]*(sizeof(int)));
+      for (j=0; j<NbFNodes[i]; j++)
+      {
+        FNodes[i][j] = vvFNodes[i][j];
+      }
 
-        CodePolygon[i] = vCodePolygon[i];
-        if (CodePolygon[i]>=0)
-        {
-            EQF[i]=NbCVs++;
-            NbEdges+=NbFNodes[i];
-        }
-        else EQF[i]=-1;
+      CodePolygon[i] = vCodePolygon[i];
+      if (CodePolygon[i]>=0)
+      {
+        EQF[i] = NbCVs++;
+        NbEdges += NbFNodes[i];
+      }
+      else EQF[i] = -1;
     }
 
     NbActivePolygon=NbCVs;
 
-    NbVFaces	=	(int*)malloc(NbPolyhedra*(sizeof(int)));
-    VFaces	=	(int**)malloc(NbPolyhedra*(sizeof(int*)));
-    EQV		=	(int*)malloc(NbPolyhedra*(sizeof(int)));
-    CodePolyhedron	=	(int*)malloc(NbPolyhedra*(sizeof(int)));
+    NbVFaces       = (int*)malloc(NbPolyhedra*(sizeof(int)));
+    VFaces         = (int**)malloc(NbPolyhedra*(sizeof(int*)));
+    EQV            = (int*)malloc(NbPolyhedra*(sizeof(int)));
+    CodePolyhedron = (int*)malloc(NbPolyhedra*(sizeof(int)));
 
-    for (i=0;i<NbPolyhedra;i++)
+    for (i=0; i<NbPolyhedra; i++)
     {
         NbVFaces[i] = vNbVFaces[i];
-        VFaces[i]=(int*)malloc(NbVFaces[i]*(sizeof(int)));
-        for (j=0;j<NbVFaces[i];j++) VFaces[i][j] = vvVFaces[i][j];
+        VFaces[i] = (int*)malloc(NbVFaces[i]*(sizeof(int)));
+        for (j=0; j<NbVFaces[i]; j++)
+          VFaces[i][j] = vvVFaces[i][j];
 
         CodePolyhedron[i] = vCodePolyhedron[i];
-        if (CodePolyhedron[i]>=0)
+        if (CodePolyhedron[i] >= 0)
         {
-            EQV[i]=NbCVs++;
+            EQV[i] = NbCVs++;
         }
-        else EQV[i]=-1;
+        else EQV[i] = -1;
     }
 
-    ZoneCode	=	(int*)malloc(NbZones*(sizeof(int)));
-    ZVolumeFactor	=	(double*)malloc(NbZones*(sizeof(double)));
-    ZPorosity	=	(double*)malloc(NbZones*(sizeof(double)));
-    ZPermCode	=	(int*)malloc(NbZones*(sizeof(int)));
+    ZoneCode      = (int*)malloc(NbZones*(sizeof(int)));
+    ZVolumeFactor = (double*)malloc(NbZones*(sizeof(double)));
+    ZPorosity     = (double*)malloc(NbZones*(sizeof(double)));
+    ZPermCode     = (int*)malloc(NbZones*(sizeof(int)));
 
-    ZPermeability	=	(double**)malloc(NbZones*(sizeof(double*)));
-    ZConduction	=	(double**)malloc(NbZones*(sizeof(double*)));
+    ZPermeability = (double**)malloc(NbZones*(sizeof(double*)));
+    ZConduction   = (double**)malloc(NbZones*(sizeof(double*)));
 
     for (i=0;i<NbZones;i++)
     {
         ZoneCode[i] = vZoneCode[i];
-        j=ZoneCode[i];
+        j = ZoneCode[i];
         ZVolumeFactor[j] = vZVolumeFactor[j];
 
         ZPorosity[j] = vZPorosity[j];
         ZPermCode[j] = vZPermCode[j];
-        ZPermeability[j]=(double*)malloc(6*(sizeof(double)));
-        ZConduction[j]=(double*)malloc(6*(sizeof(double)));
+
+        ZPermeability[j] = (double*)malloc(6*(sizeof(double)));
+        ZConduction[j]   = (double*)malloc(6*(sizeof(double)));
 
         ZPermeability[j][0] = vZPermeability[j * 3 + 0];
         ZPermeability[j][1] = vZPermeability[j * 3 + 1];
@@ -1054,7 +1127,7 @@ void CalcTranses::createKarimiApproximation()
     PrepareConnectionList();
     ConstructConnectionList();
 
-    if (NbOptions==1) VolumeCorrection();
+    if (NbOptions == 1) VolumeCorrection();
 
     // printf("NbCVs = %d\n",NbCVs);
     // printf("NbTransmissibility = %d\n",NbTransmissibility);
@@ -1069,7 +1142,9 @@ void CalcTranses::createKarimiApproximation()
 //////////////////////////////////
 
     TotalVolume=0;
-    for (i=0;i<NbCVs;i++) TotalVolume+=CVVolume[i];
+    for (i=0; i<NbCVs; i++)
+      TotalVolume+=CVVolume[i];
+
     // printf("TotalVolume=%e\n",TotalVolume);
 
 
@@ -1188,24 +1263,24 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
 int k=0;
 for(i=0;i<NbConnections;i++)
   {
-  if(ConType[i]==1 || ConType[i]==2)	// M-M, M-F ////////////////////////////
+  if(ConType[i]==1 || ConType[i]==2)  // M-M, M-F ////////////////////////////
     {
-	if(ConType[i]==1)		// M-M ////////////////////////////
-	{
+  if(ConType[i]==1)   // M-M ////////////////////////////
+  {
           // Con# ConType i ai j aj -> Tij=ai*aj/(ai+aj)
-	  fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\n", k,
-		  ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1], ConTr[i][1]);
-	}
-	if(ConType[i]==2)		// M-F ////////////////////////////
-	{
+    fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\n", k,
+      ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1], ConTr[i][1]);
+  }
+  if(ConType[i]==2)   // M-F ////////////////////////////
+  {
           //Con# ConType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
-	  fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\t%e\t%e\n", k,
-	          ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1],
-	          2.*ConArea[i][1], ZVolumeFactor[CVZone[ConCV[i][1]]], ConPerm[i][1]);
-	}
+    fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\t%e\t%e\n", k,
+            ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1],
+            2.*ConArea[i][1], ZVolumeFactor[CVZone[ConCV[i][1]]], ConPerm[i][1]);
+  }
     k++;
     }
-  if(ConType[i]==3)	// F-F /////////////////////////////////////////////////
+  if(ConType[i]==3) // F-F /////////////////////////////////////////////////
     {
      //Con# ConType i ci ei ki j cj ej kj N n cn en kn
      //ai=ci*ki*ei aj=cj*kj*ej an=cn*kn*en
@@ -1229,14 +1304,14 @@ for(i=0;i<NbConnections;i++)
       ConPerm[i][n]);
 
       fprintf(poutfile,"%d\t",ConN[i]);
-	for(int m=0;m<ConN[i];m++)
-	fprintf(poutfile,"%d\t%e\t%e\t%e\t",
-	ConCV[i][m],
-	ConTr[i][m]/(ConPerm[i][m]*ZVolumeFactor[CVZone[ConCV[i][m]]]),
-	ZVolumeFactor[CVZone[ConCV[i][m]]],
-	ConPerm[i][m]);
+  for(int m=0;m<ConN[i];m++)
+  fprintf(poutfile,"%d\t%e\t%e\t%e\t",
+  ConCV[i][m],
+  ConTr[i][m]/(ConPerm[i][m]*ZVolumeFactor[CVZone[ConCV[i][m]]]),
+  ZVolumeFactor[CVZone[ConCV[i][m]]],
+  ConPerm[i][m]);
 
-	fprintf(poutfile,"\n");
+  fprintf(poutfile,"\n");
       k++;
       }
     }
