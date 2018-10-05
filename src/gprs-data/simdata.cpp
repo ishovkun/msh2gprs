@@ -682,9 +682,12 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     ecell++;
   }  // end splits loop
-  element_shift += ecell;
+
+
+  CalcTranses etran;
 
   // compute transmissibilities between EDFM segments
+  // for (std::size_t i=0; i<efrac.vIndices.size(); ++i)
   // {
 
   // }
@@ -701,6 +704,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     std::cout << flow_data.volumes[i] << std::endl;
   exit(0);
 
+  element_shift += vEfrac[frac_ind].cells.size();
 }
 
 
