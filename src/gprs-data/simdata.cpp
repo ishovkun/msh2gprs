@@ -654,7 +654,9 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       tran.vTimurConnectionFactor[n] = 1.0;
     }
 
+    std::cout << "approximations split " << ecell << std::endl;
     tran.createKarimiApproximation();
+    std::cout << "done ecell " << ecell << std::endl;
 
     FlowData cell_flow_data;
     tran.extractData(cell_flow_data);
@@ -745,6 +747,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     etran.vTimurConnectionFactor[i] = 1.0;
   }
 
+  std::cout << "frac-frac approximations" << std::endl;
   etran.createKarimiApproximation();
   FlowData frac_flow_data;
   etran.extractData(frac_flow_data);

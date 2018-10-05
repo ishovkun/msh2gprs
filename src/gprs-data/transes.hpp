@@ -78,18 +78,19 @@ public:
   std::vector<int> vZPermCode;
   std::vector<double> vZPermeability;
   std::vector<double> vZConduction;
+
 protected:
   double ABS(double v);
   void CheckIt(int TEST);
   void ProjectionA(double mx,double my,double mz,
-			double px,double py,double pz,
-			double ix,double iy,double iz,
-			double nx,double ny,double nz,
-			double *hx,double *hy,double *hz);
+                   double px,double py,double pz,
+                   double ix,double iy,double iz,
+                   double nx,double ny,double nz,
+                   double *hx,double *hy,double *hz);
   void ProjectionB(double mx,double my,double mz,
-			double ix,double iy,double iz,
-			double ux,double uy,double uz,
-			double *hx,double *hy,double *hz);
+                   double ix,double iy,double iz,
+                   double ux,double uy,double uz,
+                   double *hx,double *hy,double *hz);
   void ComputeBasicGeometry();
   void ComputeControlVolumeList();
   void PrepareConnectionList();
@@ -108,81 +109,82 @@ int		NbTransmissibility,NbMetric;
 int		OptionVC,OptionGO,OptionMC;
 
 ///// Grid information /////
-double		*X,*Y,*Z;
-int		*NbFNodes;
-int		**FNodes;
-int		*NbVFaces;
-int		**VFaces;
+  std::vector<double>	X,Y,Z;
+  std::vector<int>		NbFNodes;
+// int		**FNodes;
+  std::vector<std::vector<int>>		FNodes;
+  std::vector<int>		NbVFaces;
+  std::vector<std::vector<int>>		VFaces;
 
-int		*CodePolygon;
-int		*CodePolyhedron;
+  std::vector<int>		CodePolygon;
+  std::vector<int>		CodePolyhedron;
 
 ///// Control volume numbers /////
 
-int		*EQF;
-int		*EQV;
+  std::vector<int>		EQF;
+  std::vector<int>		EQV;
 
 ///// Additional polygon information /////
 
-double		*FArea;
-double		*FXG,*FYG,*FZG;
-double		*Fnx,*Fny,*Fnz;		// unit vector
+  std::vector<double>		FArea;
+  std::vector<double>		FXG,FYG,FZG;
+  std::vector<double>		Fnx,Fny,Fnz;		// unit vector
 
 ///// Additional polyhedron information /////
 
-double		*VVolume;
-double		*VXG,*VYG,*VZG;
+  std::vector<double>		VVolume;
+  std::vector<double>		VXG,VYG,VZG;
 
 ///// Definition of the control volumes /////
 
-double		Tolerance;
+  double		Tolerance;
 
-int		*CVType;
-int		*CVZone;
-double		*CVx,*CVy,*CVz;
-double		*CVVolume;
+  std::vector<int>		CVType;
+  std::vector<int>		CVZone;
+  std::vector<double>	CVx, CVy, CVz;
+  std::vector<double>		CVVolume;
 
-int		*ZoneCode;
-double		*ZVolumeFactor;
-double		*ZPorosity;
-int		*ZPermCode;
-double		**ZPermeability;
-double		**ZConduction;
-double		K1,K2,K3,K4,K5,K6;
-double		Kx,Ky,Kz;
+  std::vector<int>		ZoneCode;
+  std::vector<double>	ZVolumeFactor;
+  std::vector<double>	ZPorosity;
+  std::vector<int>		ZPermCode;
+  std::vector<std::vector<double>>	ZPermeability;
+  std::vector<std::vector<double>>	ZConduction;
+  double		K1,K2,K3,K4,K5,K6;
+  double		Kx,Ky,Kz;
 
 ///// Definition of the connections /////
 
-int		*ConType;
-int		*ConN;
-int		**ConCV;
-double		**ConTr;
+  std::vector<int>		ConType;
+  std::vector<int>		ConN;
+  std::vector<std::vector<int>>		ConCV;
+  std::vector<std::vector<double>>		ConTr;
 
-double		**ConGeom;
-double		**ConMult;
+  std::vector<std::vector<double>>		ConGeom;
+  std::vector<std::vector<double>>		ConMult;
 
-double		**ConArea;
-double		**ConPerm;
-double		*ConP1x,*ConP1y,*ConP1z;
-double		*ConP2x,*ConP2y,*ConP2z;
-double		*ConIx,*ConIy,*ConIz;
-double		*ConVx,*ConVy,*ConVz;
-double		*Conhx,*Conhy,*Conhz;
+  std::vector<std::vector<double>>	ConArea;
+  std::vector<std::vector<double>>	ConPerm;
+  std::vector<double>		ConP1x, ConP1y, ConP1z;
+  std::vector<double>		ConP2x, ConP2y, ConP2z;
+  std::vector<double>		ConIx, ConIy, ConIz;
+  std::vector<double>		ConVx, ConVy, ConVz;
+  std::vector<double>		Conhx, Conhy, Conhz;
 
 ///// Transmissibility List /////
 
-int		*iTr,*jTr;
-double		*Tij,SumTr, *TConductionIJ;
+  std::vector<int>		iTr, jTr;
+  std::vector<double>	Tij,SumTr, TConductionIJ;
 
-int		NbEdges;	// Actives
-int		*ListV1,*ListV2;
-int		*ListE1,*ListE2,*ListF;
+  int		NbEdges;	// Actives
+  std::vector<int>		ListV1, ListV2;
+  std::vector<int>		ListE1, ListE2, ListF;
 
-double		TotalVolume,FaceArea,delta;
-double		LocalDistance,t,xt,yt,zt;
+  double		TotalVolume,FaceArea,delta;
+  double		LocalDistance,t,xt,yt,zt;
 
-clock_t		t1,t2,t3,t4,t5,t6,t7,t8,t9;
-clock_t		Deb_Computing,Fin_Computing;
+  clock_t		t1,t2,t3,t4,t5,t6,t7,t8,t9;
+  clock_t		Deb_Computing,Fin_Computing;
 
  public:
   double fracporo;
