@@ -524,7 +524,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.fracporo    = 1.0;
     tran.init();
 
-    // --------------- fill data -------------------
+    // --------------- fill geometry -------------------
     // vertices
     for ( std::size_t i = 0; i < split.vertices.size(); i++ )
     {
@@ -548,10 +548,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       if(split.markers[ipoly] == 2)  // fracture polygons
       {
         tran.vCodePolygon.push_back( code_polygon );
-        // std::cout << "askjhfglksjdbhglsdjbglkesdjbg = "<< std::endl;
-        // exit(0);
-
-
         code_polygon++;
         vConductivity.push_back(efrac.conductivity);
         vAperture.push_back(efrac.aperture);
@@ -605,7 +601,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.vCodePolyhedron.push_back( 1 + 0 );
     tran.vCodePolyhedron.push_back( 1 + 1 );
 
-    // Properties
+    // --------------- Properties ------------------------
     tran.vZPermeability.assign(tran.NbZones * 3, 0.0);
     tran.vZConduction.assign( (tran.NbPolyhedra + tran.NbFracs) * 3, 0.0);
 
@@ -656,11 +652,12 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       tran.vTimurConnectionFactor[n] = 1.0;
     }
 
-    tran.createKarimiApproximation();
+    // tran.createKarimiApproximation();
 
-    FlowData cell_flow_data;
-    tran.extractData(cell_flow_data);
-    // std::cout << "tran data" << std::endl;
+    // FlowData cell_flow_data;
+    // tran.extractData(cell_flow_data);
+
+    // std::cout << "split data" << std::endl;
     // for (std::size_t i=0; i<cell_flow_data.trans_ij.size(); ++i)
     //   std::cout << cell_flow_data.ielement[i] << "\t"
     //             << cell_flow_data.jelement[i] << "\t"
@@ -672,13 +669,13 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     //   std::cout << cell_flow_data.volumes[i] << std::endl;
 
     // fill global flow data
-    flow_data.volumes.push_back(cell_flow_data.volumes[efrac_zone]);
-    flow_data.poro.push_back(cell_flow_data.poro[efrac_zone]);
-    flow_data.depth.push_back(cell_flow_data.depth[efrac_zone]);
-    flow_data.trans_ij.push_back(cell_flow_data.depth[0] +
-                                 cell_flow_data.depth[1]);
-    flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
-    flow_data.jelement.push_back(icell);  // cell contatining fracture
+    // flow_data.volumes.push_back(cell_flow_data.volumes[efrac_zone]);
+    // flow_data.poro.push_back(cell_flow_data.poro[efrac_zone]);
+    // flow_data.depth.push_back(cell_flow_data.depth[efrac_zone]);
+    // flow_data.trans_ij.push_back(cell_flow_data.depth[0] +
+    //                              cell_flow_data.depth[1]);
+    // flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
+    // flow_data.jelement.push_back(icell);  // cell contatining fracture
 
     ecell++;
   }  // end splits loop
@@ -686,22 +683,94 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
   CalcTranses etran;
 
+  etran.NbNodes     = efrac.vVertices.size();
+  etran.NbPolyhedra = 0;
+  etran.NbPolygons  = efrac.vIndices.size();
+  // std::cout << "etran.NbPolygons = " << etran.NbPolygons << std::endl;
+  // etran.NbFracs     = 1;  -- this parameter is not used in karimi code
+  etran.NbZones     = etran.NbPolygons;  // 2 block + 1 frac
+  etran.NbOptions   = 1;  // when 2 runs volume correction procedure
+  etran.fracporo    = 1.0;
+  etran.init();
+
+  // -------------------- geometry -----------------------
   // compute transmissibilities between EDFM segments
-  // for (std::size_t i=0; i<efrac.vIndices.size(); ++i)
-  // {
+  for (std::size_t i=0; i<efrac.vVertices.size(); ++i)
+  {
+    etran.vCoordinatesX[i] = efrac.vVertices[i][0];
+    etran.vCoordinatesY[i] = efrac.vVertices[i][1];
+    etran.vCoordinatesZ[i] = efrac.vVertices[i][2];
+  }
 
-  // }
+  // polygons (2d elements)
+  int code_polygon = 0;
+  etran.vNbFNodes.clear();
+  etran.vvFNodes.clear();
+  etran.vCodePolygon.clear();
+  vector<double> vConductivity, vAperture;
 
+  for(int ipoly = 0; ipoly < efrac.vIndices.size(); ipoly++)
+  {
+    etran.vvFNodes.push_back( efrac.vIndices[ipoly] );
+    etran.vNbFNodes.push_back( efrac.vIndices[ipoly].size() );
+
+    etran.vCodePolygon.push_back( code_polygon );
+    code_polygon++;
+    vConductivity.push_back(efrac.conductivity);
+    vAperture.push_back(efrac.aperture);
+  }
+
+  // --------------- Properties ------------------------
+  etran.vZPermeability.assign(etran.NbZones * 3, 0.0);
+  etran.vZConduction.assign( etran.NbPolygons * 3, 0.0);
+
+  for ( int i = 0; i < efrac.cells.size(); i++ )
+  {
+    etran.vZoneCode[i] = i;
+    etran.vZVolumeFactor[i] = vAperture[i];
+    etran.vZPorosity[i] = 1.0;
+    etran.vZPermCode[i] = 1;
+
+    //@HACK default permeability for all fractures
+    const double w = efrac.aperture;
+    etran.vZPermeability[i*3+0] = w*w*w/12;
+    etran.vZPermeability[i*3+1] = etran.vZPermeability[i*3+0];
+    etran.vZPermeability[i*3+2] = etran.vZPermeability[i*3+0];
+
+    etran.vZConduction[i*3+0] = 1;
+    etran.vZConduction[i*3+1] = 1;
+    etran.vZConduction[i*3+2] = 1;
+    etran.vTimurConnectionFactor[i] = 1.0;
+  }
+
+  etran.createKarimiApproximation();
+  FlowData frac_flow_data;
+  etran.extractData(frac_flow_data);
+
+  // @DEBUG output
   std::cout << "tran data" << std::endl;
-  for (std::size_t i=0; i<flow_data.trans_ij.size(); ++i)
-    std::cout << flow_data.ielement[i] << "\t"
-              << flow_data.jelement[i] << "\t"
-              << flow_data.trans_ij[i] << "\t"
+  for (std::size_t i=0; i<frac_flow_data.trans_ij.size(); ++i)
+    std::cout << frac_flow_data.ielement[i] << "\t"
+              << frac_flow_data.jelement[i] << "\t"
+              << frac_flow_data.trans_ij[i] << "\t"
               << std::endl;
 
-  std::cout << "volumes" << std::endl;
-  for (std::size_t i=0; i<flow_data.volumes.size(); ++i)
-    std::cout << flow_data.volumes[i] << std::endl;
+  // std::cout << "volumes" << std::endl;
+  // for (std::size_t i=0; i<flow_data.volumes.size(); ++i)
+  //   std::cout << flow_data.volumes[i] << std::endl;
+  // --------------- END trans between efrac elements -----------------------
+
+  // @DEBUG output
+  // std::cout << "final tran data" << std::endl;
+  // for (std::size_t i=0; i<flow_data.trans_ij.size(); ++i)
+  //   std::cout << flow_data.ielement[i] << "\t"
+  //             << flow_data.jelement[i] << "\t"
+  //             << flow_data.trans_ij[i] << "\t"
+  //             << std::endl;
+
+  // std::cout << "volumes" << std::endl;
+  // for (std::size_t i=0; i<flow_data.volumes.size(); ++i)
+  //   std::cout << flow_data.volumes[i] << std::endl;
   exit(0);
 
   element_shift += vEfrac[frac_ind].cells.size();

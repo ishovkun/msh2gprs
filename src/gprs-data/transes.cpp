@@ -17,7 +17,6 @@ void CalcTranses::init()
   //faces
   vNbVFaces.resize(NbPolyhedra);
   vvVFaces.resize(NbPolyhedra);
-  // vCodePolygon;
   //elements
   vNbFNodes.resize(NbPolygons, 3);
   vvFNodes.resize(NbPolygons);
@@ -52,122 +51,7 @@ CalcTranses::~CalcTranses()
 }
 
 void CalcTranses::createKarimiData()
-{
-
-  // cout << "\t create karimi coordinates" << endl;
-  //@HACK
-  // for ( int i = 0; i < NbNodes; i++ )
-  // {
-  //   vCoordinatesX[i] = pSim->vvVrtxCoords[i][0];
-  //   vCoordinatesY[i] = pSim->vvVrtxCoords[i][1];
-  //   vCoordinatesZ[i] = pSim->vvVrtxCoords[i][2];
-  // }
-
-  // cout << "\t create karimi 2D elements" << endl;
-  // int code_polygon = 0;
-  // vNbFNodes.clear();
-  // vvFNodes.clear();
-  // vCodePolygon.clear();
-  // vector<double> vConductivity, vAperture;
-
-  // // internal boundaries
-  // for(int ipoly = 0; ipoly < NbPolygons; ipoly++)
-  // {
-  //   if(pSim->vsFaceCustom[ipoly].nMarker > 0)
-  //   {
-  //     vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
-  //     vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
-  //     vCodePolygon.push_back( code_polygon );
-  //     code_polygon++;
-  //     vConductivity.push_back(pSim->vsFaceCustom[ipoly].conductivity);
-  //     vAperture.push_back(pSim->vsFaceCustom[ipoly].aperture);
-  //   }
-  //   else
-  //   {
-  //     vvFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices);
-  //     vNbFNodes.push_back( pSim->vsFaceCustom[ipoly].vVertices.size() );
-  //     vCodePolygon.push_back( -1 );
-  //   }
-  // }
-
-  // cout << "\t create karimi 3D elements\n";
-  // set<int>::iterator itintset;
-  // vNbVFaces.clear();
-  // vvVFaces.resize(NbPolyhedra);
-  // vCodePolyhedron.clear();
-  // for(int ipoly = 0; ipoly < NbPolyhedra; ipoly++)
-  // {
-  //   int n = pSim->vsetPolyhedronPolygon[ipoly].size();
-  //   itintset = pSim->vsetPolyhedronPolygon[ipoly].begin();
-  //   for(int i = 0; i < n; i++)
-  //   {
-  //     vvVFaces[ipoly].push_back( *itintset );
-  //     itintset++;
-  //   }
-  //   vNbVFaces.push_back( n );
-  //   vCodePolyhedron.push_back( NbFracs + ipoly);
-  // }
-
-  //create karimi properties
-  // cout << "create karimi properties\n";
-  // vZPermeability.assign(NbZones * 3, 0.0);
-  // vZConduction.assign( (NbPolyhedra + NbFracs) * 3, 0.0);
-  // // std::cout << "NbZones = "<< NbZones << std::endl;
-  // // std::cout << "NbPolyhedra = "<< NbPolyhedra << std::endl;
-
-  // for ( int i = 0; i < NbFracs; i++ )
-  // {
-  //   vZoneCode[i] = i;
-  //   vZVolumeFactor[i] = vAperture[i];
-  //   vZPorosity[i] = 1.0;
-  //   vZPermCode[i] = 1;
-
-  //   //@HACK default permeability for all fractures
-  //   vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
-  //   vZPermeability[i*3+1] = vZPermeability[i*3+0];
-  //   vZPermeability[i*3+2] = vZPermeability[i*3+0];
-
-  //   vZConduction[i*3+0] = 1;
-  //   vZConduction[i*3+1] = 1;
-  //   vZConduction[i*3+2] = 1;
-  //   vTimurConnectionFactor[i] = 1.0;
-  // }
-  // std::cout << "done with faces" << std::endl;
-
-
-  // for ( std::size_t i = 0; i < NbPolyhedra; i++ )
-  // {
-  //   const std::size_t n = i + NbFracs;
-  //   vZoneCode[n] = vCodePolyhedron[i];
-
-  //   vZPorosity[n] = pSim->get_property(i, "PORO");
-  //   vZPermCode[n] = 1;
-
-  //   const angem::Point<3,double> perm = pSim->get_permeability(i);
-  //   vZPermeability[n*3+0] = perm[0];
-  //   vZPermeability[n*3+1] = perm[1];
-  //   vZPermeability[n*3+2] = perm[2];
-
-  //   double thc = 0;
-  //   try
-  //   {
-  //     thc = pSim->get_property(i, "THCROCK");
-  //   }
-  //   catch (const std::out_of_range& e)
-  //   {
-  //     vZConduction[n*3+0] = thc;
-  //     vZConduction[n*3+1] = thc;
-  //     vZConduction[n*3+2] = thc;
-  //   }
-
-
-  //   vZVolumeFactor[n] = 1;
-  //   vTimurConnectionFactor[n] = 1.0;
-
-  // }
-
-  // std::cout << "end Karimi data" << std::endl;
-}
+{}
 
 double CalcTranses::ABS(double v)
 {
@@ -962,14 +846,14 @@ void CalcTranses::ComputeTransmissibilityPart()
         {
             for (j=0;j<ConN[i];j++)
             {
-                k=ConCV[i][j];
-                fx=CVx[k]-Conhx[i];
-                fy=CVy[k]-Conhy[i];
-                fz=CVz[k]-Conhz[i];
-                fl=sqrt(fx*fx+fy*fy+fz*fz);
-                fx=fx/fl;
-                fy=fy/fl;
-                fz=fz/fl;
+                k  = ConCV[i][j];
+                fx = CVx[k] - Conhx[i];
+                fy = CVy[k] - Conhy[i];
+                fz = CVz[k] - Conhz[i];
+                fl = sqrt(fx*fx + fy*fy + fz*fz);
+                fx = fx/fl;
+                fy = fy/fl;
+                fz = fz/fl;
 
                 ConTr[i][j]=ConArea[i][j]*ConPerm[i][j]*1./fl;
                 ConGeom[i][j]=ConArea[i][j]*ConMult[i][j]*1./fl;
@@ -985,11 +869,10 @@ void CalcTranses::ComputeTransmissibilityList()
     FILE * poutfile;
     FILE * pFile;
 
-
-    iTr	=	(int*)malloc(NbTransmissibility*(sizeof(int)));
-    jTr	=	(int*)malloc(NbTransmissibility*(sizeof(int)));
-    Tij	=	(double*)malloc(NbTransmissibility*(sizeof(double)));
-    TConductionIJ =   (double*)malloc(NbTransmissibility*(sizeof(double)));
+    iTr           =	(int*)malloc(NbTransmissibility*(sizeof(int)));
+    jTr           =	(int*)malloc(NbTransmissibility*(sizeof(int)));
+    Tij           =	(double*)malloc(NbTransmissibility*(sizeof(double)));
+    TConductionIJ = (double*)malloc(NbTransmissibility*(sizeof(double)));
 
   k=0;
   for ( i=0; i<NbConnections; i++ )
@@ -1000,7 +883,12 @@ void CalcTranses::ComputeTransmissibilityList()
       jTr[k]=ConCV[i][1];
 
       if ( ConTr[i][0]+ConTr[i][1] != 0.0 )
-        Tij[k]= ( ConTr[i][0]*ConTr[i][1] ) / ( ConTr[i][0]+ConTr[i][1] );
+      {
+        Tij[k] = ( ConTr[i][0]*ConTr[i][1] ) / ( ConTr[i][0] + ConTr[i][1] );
+        // std::cout << "Tij[j] = " << Tij[k] << std::endl;
+        // std::cout << "ConTr[i][0] = " << ConTr[i][0] << std::endl;
+        // std::cout << "ConTr[i][1] = " << ConTr[i][1] << std::endl;
+      }
 
       if ( ConGeom[i][0]+ConGeom[i][1] != 0.0 )
         TConductionIJ[k]= ( ConGeom[i][0] * ConGeom[i][1] ) / ( ConGeom[i][0] + ConGeom[i][1] );
@@ -1023,9 +911,10 @@ void CalcTranses::ComputeTransmissibilityList()
         {
           iTr[k]=ConCV[i][j];
           jTr[k]=ConCV[i][n];
-          Tij[k]= ( ConTr[i][j]*ConTr[i][n] ) /SumTr;
+          Tij[k]= ( ConTr[i][j]*ConTr[i][n] ) / SumTr;
+          std::cout << "T_ij[k] = " << Tij[k] << std::endl;
 
-          TConductionIJ[k]= ( ConGeom[i][j]*ConGeom[i][n] ) /SumTr2;
+          TConductionIJ[k] = ( ConGeom[i][j]*ConGeom[i][n] ) /SumTr2;
           if ( TConductionIJ[k] < 0.0 )
           {
             cout << "M-M or M-F : Conduction is negative: check values" << endl;
@@ -1039,6 +928,7 @@ void CalcTranses::ComputeTransmissibilityList()
             cout << "Wrong connection type" << endl;
             exit ( 0 );
     }
+
   }
 
 }
@@ -1076,9 +966,9 @@ void CalcTranses::createKarimiApproximation()
         Z[i] = vCoordinatesZ[i];
     }
 
-    NbFNodes	=	(int*)malloc(NbPolygons*(sizeof(int)));
-    FNodes		=	(int**)malloc(NbPolygons*(sizeof(int*)));
-    EQF		=	(int*)malloc(NbPolygons*(sizeof(int)));
+    NbFNodes    =	(int*)malloc(NbPolygons*(sizeof(int)));
+    FNodes      =	(int**)malloc(NbPolygons*(sizeof(int*)));
+    EQF         =	(int*)malloc(NbPolygons*(sizeof(int)));
     CodePolygon	=	(int*)malloc(NbPolygons*(sizeof(int)));
 
     NbEdges=0;
@@ -1165,8 +1055,8 @@ void CalcTranses::createKarimiApproximation()
 
     if (NbOptions==1) VolumeCorrection();
 
-    printf("NbCVs = %d\n",NbCVs);
-    printf("NbTransmissibility = %d\n",NbTransmissibility);
+    // printf("NbCVs = %d\n",NbCVs);
+    // printf("NbTransmissibility = %d\n",NbTransmissibility);
 
     ComputeContinuityNode();
     ComputeDirectionalPermeability();
@@ -1179,13 +1069,13 @@ void CalcTranses::createKarimiApproximation()
 
     TotalVolume=0;
     for (i=0;i<NbCVs;i++) TotalVolume+=CVVolume[i];
-    printf("TotalVolume=%e\n",TotalVolume);
+    // printf("TotalVolume=%e\n",TotalVolume);
 
 
 /* OUTPUT MAPPING FOR GEOMECHANICS  */
 
 // ASSUMING FIRST THE FEATURE CODES ARE NUMBERED
-  printf("Prepare reservoir-geomechanical mapping...\n");
+  // printf("Prepare reservoir-geomechanical mapping...\n");
   NbFeatureCode = 0;
   for ( i = 0; i < NbPolygons; i++ )
   {
@@ -1364,12 +1254,9 @@ void CalcTranses::extractData(FlowData & data) const
   data.depth.resize(NbCVs);
   for (std::size_t i=0; i<NbCVs; i++ )
   {
-    // std::cout << "volume" << i << "\t" << CVVolume[i] << std::endl;
-    // std::cout << "poro" << i << "\t" << ZPorosity[CVZone[i]] << std::endl;
     data.volumes[i] = CVVolume[i];
     data.poro[i]    = ZPorosity[CVZone[i]];
     data.depth[i]   = -CVz[i];
-    // std::cout << std::endl;
   }
 
   // Transmissibility
