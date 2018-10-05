@@ -1,9 +1,8 @@
-#ifndef __OUTDATA
-#define __OUTDATA
+#pragma once
+
 #include "simdata.hpp"
 #include "transes.hpp"
-class SimData;
-class CalcTranses;
+
 
 class OutputData
 {
@@ -16,4 +15,3 @@ public:
 protected:
   SimData * pSim;
 };
-#endif

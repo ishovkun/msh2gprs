@@ -7,11 +7,11 @@
 namespace filesystem = std::experimental::filesystem;
 using Path = filesystem::path;
 
-class SimData;
-class CalcTranses;
-class OutputData;
-class tetgenio;
-class tetrahedralize;
+// class SimData;
+// class CalcTranses;
+// class OutputData;
+// class tetgenio;
+// class tetrahedralize;
 
 int main(int argc, char *argv[])
 {
@@ -87,25 +87,22 @@ int main(int argc, char *argv[])
   cout << "Compute cell clipping and EDFM transmissibilities" << endl;
   pSimData->computeCellClipping();
 
-  // CalcTranses * pTranses;
-  // pTranses = new CalcTranses(pSimData);
-  // pTranses->createKarimiData();
-  // cout << "Extract  transes from FVM mesh" << endl;
-  // pTranses->createKarimiApproximation();
-
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
 
-  // cout << "Split FEM mesh on internal surfaces" << endl;
-  // pSimData->splitInternalFaces();
+  cout << "Split FEM mesh on internal surfaces" << endl;
+  pSimData->splitInternalFaces();
 
-  // cout << "Write FEM mesh data\n";
+  cout << "Write FEM mesh data\n";
   // OutputData * pOut;
   // pOut = new OutputData(pSimData);
+  OutputData output_data(pSimData);
 
-  // const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
-  // std::cout << "output directory: " << output_dir << std::endl;
-  // pOut->writeGeomechDataNewKeywords(output_dir);
+  const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
+  std::cout << "output directory: " << output_dir << std::endl;
+  output_data.writeGeomechDataNewKeywords(output_dir);
   // pTranses->outputKarimi(output_dir);
+
+  delete pSimData;
   return 0;
 }

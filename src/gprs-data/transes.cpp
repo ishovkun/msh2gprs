@@ -1049,7 +1049,7 @@ void CalcTranses::ComputeTransmissibilityList()
 }
 
 /********************************************************************/
-void CalcTranses::createKarimiApproximation()
+void CalcTranses::compute_flow_data()
 {
     double m1x, m1y, m1z,
         p1x, p1y, p1z,
@@ -1394,6 +1394,53 @@ void CalcTranses::extractData(FlowData & data) const
   {
     data.connection_type[i] = ConType[i];
   }
+}
 
+
+void CalcTranses::save_output(const FlowData    & data,
+                              const std::string & output_dir)
+{
+  const std::string fname_cell_data = "fl_cell_data.txt";
+  const std::string fname_face_data = "fl_face_data.txt";
+
+  {  // Write cell data
+    ofstream out;
+    out.open((output_dir + fname_cell_data).c_str());
+
+    ///// OUTPUT Volumes /////
+    out << "VOLUME" << std::endl;
+    for (const auto & v : data.volumes)
+      out << v << std::endl;
+    out << "/" << std::endl << std::endl;
+
+    ///// OUTPUT Porosity /////
+    out << "PORO" << std::endl;
+    for (const auto & v : data.poro)
+      out << v << std::endl;
+    out << "/" << std::endl << std::endl;
+
+    ///// OUTPUT Depth  /////
+    out << "DEPTH" << std::endl;
+    for (const auto & v : data.depth)
+      out << v << std::endl;
+    out << "/" << std::endl << std::endl;
+
+    out.close();
+  }
+
+  { // Face data
+
+    ofstream out;
+    out.open((output_dir + fname_face_data).c_str());
+
+    /* OUTPUT Transmissibility */
+    out << "TPFACONNS" << std::endl;
+    out << data.trans_ij.size() << std::endl;
+    // for (const auto & v : data.depth)
+    //   out << v << std::endl;
+    // out << "/" << std::endl << std::endl;
+
+    out.close();
+  }
 
 }

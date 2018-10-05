@@ -480,8 +480,7 @@ void SimData::computeReservoirTransmissibilities()
   }
 
   FlowData matrix_flow_data;
-  tran.createKarimiApproximation();
-  // exit(0);
+  tran.compute_flow_data();
   tran.extractData(matrix_flow_data);
 
   // std::cout << "matrix-matrix" << std::endl;
@@ -661,7 +660,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       tran.vTimurConnectionFactor[n] = 1.0;
     }
 
-    tran.createKarimiApproximation();
+    tran.compute_flow_data();
 
     FlowData matrix_fracture_flow_data;
     tran.extractData(matrix_fracture_flow_data);
@@ -743,10 +742,11 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
   std::cout << "n_vertices = " << efrac.vVertices.size() << std::endl;
   std::cout << "frac-frac approximations" << std::endl;
-  etran.createKarimiApproximation();
+  etran.compute_flow_data();
   FlowData frac_flow_data;
   etran.extractData(frac_flow_data);
 
+  // fill global data
   for (std::size_t i=0; i<efrac.cells.size(); ++i)
   {
     flow_data.volumes.push_back(frac_flow_data.volumes[i]);
@@ -761,13 +761,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     flow_data.jelement.push_back(element_shift + frac_flow_data.jelement[i]);
   }
 
-
-  // std::cout << "volumes" << std::endl;
-  // for (std::size_t i=0; i<flow_data.volumes.size(); ++i)
-  //   std::cout << flow_data.volumes[i] << std::endl;
-
-  // fill global data
-
   // --------------- END trans between efrac elements -----------------------
 
   // @DEBUG output
@@ -777,11 +770,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
               << flow_data.jelement[i] << "\t"
               << flow_data.trans_ij[i] << "\t"
               << std::endl;
-
-  // std::cout << "volumes" << std::endl;
-  // for (std::size_t i=0; i<flow_data.volumes.size(); ++i)
-  //   std::cout << flow_data.volumes[i] << std::endl;
-  // exit(0);
 
   element_shift += vEfrac[frac_ind].cells.size();
 }

@@ -23,8 +23,6 @@
 #include <set>
 #include <time.h>
 
-// #include "simdata.hpp"
-
 
 struct FlowData
 {
@@ -43,7 +41,9 @@ class CalcTranses
 public:
    CalcTranses();
   ~CalcTranses();
-  void createKarimiApproximation();
+  void compute_flow_data();
+  static void save_output(const FlowData    & data,
+                          const std::string & output_dir);
   // this guy writes text output in a series of files
   void writeOutputFiles(const std::string & output_path) const;
   void extractData(FlowData & data) const;
