@@ -4,6 +4,7 @@
 
 ADD_LIBRARY(angem
   Point.hpp
+  PointSet.hpp
   Basis.hpp
   Plane.hpp
   Shape.hpp

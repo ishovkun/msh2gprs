@@ -129,7 +129,7 @@ void split(const Polygon<Scalar> & poly,
     bool above = false;
     for (const auto & p : poly.get_points())
     {
-      const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
+      const std::size_t ind = result.vertices.insert(p);
       indices.push_back(ind);
 
       if (plane.above(p))  // technically need to check only one
@@ -151,7 +151,7 @@ void split(const Polygon<Scalar> & poly,
 
   for (const auto p : poly.get_points())
   {
-    const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
+    const std::size_t ind = result.vertices.insert(p);
     if (plane.above(p))
       above.push_back(ind);
     else
@@ -161,7 +161,8 @@ void split(const Polygon<Scalar> & poly,
 
   for (Point<3,Scalar> & p : section)
   {
-    const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
+    // const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
+    const std::size_t ind = result.vertices.insert(p);
     above.push_back(ind);
     below.push_back(ind);
   }

@@ -3,6 +3,7 @@
 
 #include "Point.hpp"
 #include "Rectangle.hpp"
+#include "PointSet.hpp"
 #include "CollisionGJK.hpp"
 #include <Collisions.hpp>
 #include <utils.hpp>
@@ -224,7 +225,8 @@ void SimData::computeCellClipping()
           angem::PolyGroup<double> split;
           angem::split(poly_face, frac_plane, split,
                        MARKER_BELOW_FRAC, MARKER_ABOVE_FRAC);
-          angem::Polygon<double>::reorder_indices(split.vertices, split.polygons[0]);
+          angem::Polygon<double>::reorder_indices(split.vertices.points,
+                                                  split.polygons[0]);
           for (const auto & ineighbor : v_neighbors)
             splits[ineighbor].add(split);
           continue;
@@ -239,8 +241,10 @@ void SimData::computeCellClipping()
         angem::PolyGroup<double> split;
         angem::split(poly_face, frac_plane, split,
                      MARKER_BELOW_FRAC, MARKER_ABOVE_FRAC);
-        angem::Polygon<double>::reorder_indices(split.vertices, split.polygons[0]);
-        angem::Polygon<double>::reorder_indices(split.vertices, split.polygons[1]);
+        angem::Polygon<double>::reorder_indices(split.vertices.points,
+                                                split.polygons[0]);
+        angem::Polygon<double>::reorder_indices(split.vertices.points,
+                                                split.polygons[1]);
 
         // std::cout << "split 1" << std::endl;
         // std::cout << "vertices \n " << split.vertices << std::endl;
@@ -263,7 +267,8 @@ void SimData::computeCellClipping()
       }  // end if has ef cells neighbors
     }    // end face loop
 
-    std::unordered_set<Point> setVert;
+    // std::unordered_set<Point> setVert;
+    angem::PointSet<3,double> setVert(1e-6);
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
       // loop through sda cells
@@ -324,13 +329,13 @@ void SimData::computeCellClipping()
     // get indices of frac vertices
     std::cout << "computing indices of frac vertices" << std::endl;
     vEfrac[ifrac].vIndices.resize(vvSection.size());
-    const auto it_begin = setVert.begin();
     std::size_t icell = 0;
     for (const auto & cell_section : vvSection)
     {
       for (const Point & p : cell_section)
       {
-        const std::size_t ind = std::distance(it_begin, setVert.find(p));
+        // const std::size_t ind = std::distance(it_begin, setVert.find(p));
+        const std::size_t ind = setVert.find(p);
         vEfrac[ifrac].vIndices[icell].push_back(ind);
       }
       icell++;
@@ -652,10 +657,10 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       tran.vTimurConnectionFactor[n] = 1.0;
     }
 
-    // tran.createKarimiApproximation();
+    tran.createKarimiApproximation();
 
-    // FlowData cell_flow_data;
-    // tran.extractData(cell_flow_data);
+    FlowData cell_flow_data;
+    tran.extractData(cell_flow_data);
 
     // std::cout << "split data" << std::endl;
     // for (std::size_t i=0; i<cell_flow_data.trans_ij.size(); ++i)
@@ -669,13 +674,13 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     //   std::cout << cell_flow_data.volumes[i] << std::endl;
 
     // fill global flow data
-    // flow_data.volumes.push_back(cell_flow_data.volumes[efrac_zone]);
-    // flow_data.poro.push_back(cell_flow_data.poro[efrac_zone]);
-    // flow_data.depth.push_back(cell_flow_data.depth[efrac_zone]);
-    // flow_data.trans_ij.push_back(cell_flow_data.depth[0] +
-    //                              cell_flow_data.depth[1]);
-    // flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
-    // flow_data.jelement.push_back(icell);  // cell contatining fracture
+    flow_data.volumes.push_back(cell_flow_data.volumes[efrac_zone]);
+    flow_data.poro.push_back(cell_flow_data.poro[efrac_zone]);
+    flow_data.depth.push_back(cell_flow_data.depth[efrac_zone]);
+    flow_data.trans_ij.push_back(cell_flow_data.depth[0] +
+                                 cell_flow_data.depth[1]);
+    flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
+    flow_data.jelement.push_back(icell);  // cell contatining fracture
 
     ecell++;
   }  // end splits loop
@@ -748,6 +753,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   etran.extractData(frac_flow_data);
 
   // @DEBUG output
+  std::cout << "n_vertices = " << efrac.vVertices.size() << std::endl;
   std::cout << "tran data" << std::endl;
   for (std::size_t i=0; i<frac_flow_data.trans_ij.size(); ++i)
     std::cout << frac_flow_data.ielement[i] << "\t"
@@ -761,12 +767,12 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   // --------------- END trans between efrac elements -----------------------
 
   // @DEBUG output
-  // std::cout << "final tran data" << std::endl;
-  // for (std::size_t i=0; i<flow_data.trans_ij.size(); ++i)
-  //   std::cout << flow_data.ielement[i] << "\t"
-  //             << flow_data.jelement[i] << "\t"
-  //             << flow_data.trans_ij[i] << "\t"
-  //             << std::endl;
+  std::cout << "final tran data" << std::endl;
+  for (std::size_t i=0; i<flow_data.trans_ij.size(); ++i)
+    std::cout << flow_data.ielement[i] << "\t"
+              << flow_data.jelement[i] << "\t"
+              << flow_data.trans_ij[i] << "\t"
+              << std::endl;
 
   // std::cout << "volumes" << std::endl;
   // for (std::size_t i=0; i<flow_data.volumes.size(); ++i)

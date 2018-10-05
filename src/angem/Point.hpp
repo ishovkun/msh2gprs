@@ -563,6 +563,7 @@ std::ostream &operator<<(std::ostream                         & os,
 
 
 template<int dim, typename Scalar>
+inline
 std::size_t
 find(const Point<dim,Scalar>              & p,
      const std::vector<Point<dim,Scalar>> & points,
@@ -579,9 +580,8 @@ find(const Point<dim,Scalar>              & p,
 }
 
 
-
-
 template<int dim, typename Scalar>
+inline
 std::size_t insert(const Point<dim,Scalar>        & point,
                    std::vector<Point<dim,Scalar>> & points,
                    const Scalar                     tol = 1e-6)

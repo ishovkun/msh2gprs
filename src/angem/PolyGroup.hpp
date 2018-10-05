@@ -1,5 +1,6 @@
 #include <Point.hpp>
 #include <Polygon.hpp>
+#include <PointSet.hpp>
 
 namespace angem
 {
@@ -7,7 +8,8 @@ namespace angem
 template <typename Scalar>
 struct PolyGroup
 {
-  std::vector<Point<3,Scalar>>          vertices;
+  // std::vector<Point<3,Scalar>>          vertices;
+  PointSet<3,Scalar>                    vertices;
   std::vector<std::vector<std::size_t>> polygons;  // indices
   std::vector<int>                      markers;
 
@@ -26,7 +28,7 @@ void PolyGroup<Scalar>::add(const PolyGroup<Scalar> & other)
   std::vector<std::size_t> indices;
   for (const auto & p : other.vertices)
   {
-    const std::size_t ind = insert(p, vertices, 1e-6);
+    const std::size_t ind = vertices.insert(p);
     indices.push_back(ind);
   }
 
@@ -51,7 +53,7 @@ void PolyGroup<Scalar>::add(const Polygon<Scalar> & poly,
   std::vector<std::size_t> indices;
   for (const auto & p : poly.get_points())
   {
-    const std::size_t ind = insert(p, vertices, 1e-6);
+    const std::size_t ind = vertices.insert(p);
     indices.push_back(ind);
   }
   polygons.push_back(indices);
