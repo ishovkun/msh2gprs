@@ -43,7 +43,6 @@ class CalcTranses
 public:
    CalcTranses();
   ~CalcTranses();
-  void createKarimiData();
   void createKarimiApproximation();
   // this guy writes text output in a series of files
   void writeOutputFiles(const std::string & output_path) const;
@@ -110,7 +109,7 @@ int		OptionVC,OptionGO,OptionMC;
 
 ///// Grid information /////
   std::vector<double>	X,Y,Z;
-  std::vector<int>		NbFNodes;
+  // std::vector<int>		NbFNodes;
 // int		**FNodes;
   std::vector<std::vector<int>>		FNodes;
   std::vector<int>		NbVFaces;

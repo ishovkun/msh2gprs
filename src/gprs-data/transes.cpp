@@ -14,6 +14,11 @@ void CalcTranses::init()
   vCoordinatesX.resize(NbNodes);
   vCoordinatesY.resize(NbNodes);
   vCoordinatesZ.resize(NbNodes);
+
+  X.resize(NbNodes);
+  Y.resize(NbNodes);
+  Z.resize(NbNodes);
+
   //faces
   vNbVFaces.resize(NbPolyhedra);
   vvVFaces.resize(NbPolyhedra);
@@ -49,10 +54,6 @@ CalcTranses::~CalcTranses()
   // free(NbVFaces);
   // free (VFaces);
 }
-
-void CalcTranses::createKarimiData()
-{}
-
 /********************************************************************/
 double CalcTranses::ABS(double v)
 {
@@ -77,7 +78,7 @@ void CalcTranses::ProjectionA( double mx,double my,double mz,
 {
   double  t;
 
-  t=((ix-mx)*nx+(iy-my)*ny+(iz-mz)*nz)/(px*nx+py*ny+pz*nz);
+  t = ((ix-mx)*nx + (iy-my)*ny + (iz-mz)*nz) / (px*nx + py*ny + pz*nz);
   *hx = mx + t*px;
   *hy = my + t*py;
   *hz = mz + t*pz;
@@ -111,13 +112,6 @@ void CalcTranses::ComputeBasicGeometry()
 ///// Polygon Area, Center of Mass, and Normal (Unit vector) /////
 //////////////////////////////////////////////////////////////////
 
-    // FArea = (double*)malloc(NbPolygons*(sizeof(double)));
-    // FXG   = (double*)malloc(NbPolygons*(sizeof(double)));
-    // FYG   = (double*)malloc(NbPolygons*(sizeof(double)));
-    // FZG   = (double*)malloc(NbPolygons*(sizeof(double)));
-    // Fnx   = (double*)malloc(NbPolygons*(sizeof(double)));
-    // Fny   = (double*)malloc(NbPolygons*(sizeof(double)));
-    // Fnz   = (double*)malloc(NbPolygons*(sizeof(double)));
     FArea.resize(NbPolygons);
     FXG.resize(NbPolygons);
     FYG.resize(NbPolygons);
@@ -129,7 +123,7 @@ void CalcTranses::ComputeBasicGeometry()
     for (std::size_t i=0; i<NbPolygons; i++)
     {
       FArea[i] = FXG[i] = FYG[i] = FZG[i] = Fnx[i] = Fny[i] = Fnz[i] = 0;
-      for (std::size_t j=1; j<NbFNodes[i]-1; j++)
+      for (std::size_t j=1; j<vNbFNodes[i]-1; j++)
       {
         ux = X[FNodes[i][j]] - X[FNodes[i][0]];
         uy = Y[FNodes[i][j]] - Y[FNodes[i][0]];
@@ -170,11 +164,6 @@ void CalcTranses::ComputeBasicGeometry()
 ////////////////////////////////////////////////
 ///// Polyhedron Volume and Center of Mass /////
 ////////////////////////////////////////////////
-
-    // VVolume = (double*)malloc(NbPolyhedra*(sizeof(double)));
-    // VXG     = (double*)malloc(NbPolyhedra*(sizeof(double)));
-    // VYG     = (double*)malloc(NbPolyhedra*(sizeof(double)));
-    // VZG     = (double*)malloc(NbPolyhedra*(sizeof(double)));
 
     VVolume.resize(NbPolyhedra);
     VXG.resize(NbPolyhedra);
@@ -222,13 +211,6 @@ void CalcTranses::ComputeControlVolumeList()
 {
   // int j;
 
-  // CVType   =  (int*)malloc(NbCVs*(sizeof(int)));
-  // CVZone   =  (int*)malloc(NbCVs*(sizeof(int)));
-  // CVVolume =  (double*)malloc(NbCVs*(sizeof(double)));
-  // CVx      =  (double*)malloc(NbCVs*(sizeof(double)));
-  // CVy      =  (double*)malloc(NbCVs*(sizeof(double)));
-  // CVz      =  (double*)malloc(NbCVs*(sizeof(double)));
-
   CVType.resize(NbCVs);
   CVZone.resize(NbCVs);
   CVVolume.resize(NbCVs);
@@ -270,9 +252,6 @@ void CalcTranses::PrepareConnectionList()
 
 ///// Direct construction of M-M and M-F connections /////
 
-    // ListV1 = (int*)malloc(NbPolygons*(sizeof(int)));
-    // ListV2 = (int*)malloc(NbPolygons*(sizeof(int)));
-
     ListV1.resize(NbPolygons);
     ListV2.resize(NbPolygons);
 
@@ -288,22 +267,17 @@ void CalcTranses::PrepareConnectionList()
           ListV2[VFaces[i][j]] = i;
       }
 
-///// Construction of F-F needs sorting... less efficient /////
-
-    // ListE1 = (int*)malloc(NbEdges*(sizeof(int)));
-    // ListE2 = (int*)malloc(NbEdges*(sizeof(int)));
-    // ListF  = (int*)malloc(NbEdges*(sizeof(int)));
+    ///// Construction of F-F needs sorting... less efficient /////
 
     ListE1.resize(NbEdges);
     ListE2.resize(NbEdges);
     ListF.resize(NbEdges);
 
-    std::size_t k=0;
+    std::size_t k = 0;
     for (std::size_t i=0; i<NbPolygons; i++)
-    {
       if (CodePolygon[i] >= 0)
       {
-        for (std::size_t j=0; j<NbFNodes[i]-1; j++)
+        for (std::size_t j=0; j<vNbFNodes[i]-1; j++)
         {
           if (FNodes[i][j] < FNodes[i][j+1])
           {
@@ -319,27 +293,32 @@ void CalcTranses::PrepareConnectionList()
           }
           k++;
         }
-        if (FNodes[i][0] < FNodes[i][NbFNodes[i]-1])
+
+        if (FNodes[i][0] < FNodes[i][vNbFNodes[i]-1])
         {
           ListE1[k] = FNodes[i][0];
-          ListE2[k] = FNodes[i][NbFNodes[i]-1];
+          ListE2[k] = FNodes[i][vNbFNodes[i]-1];
           ListF [k] = i;
         }
         else
         {
-          ListE1[k] = FNodes[i][NbFNodes[i]-1];
+          ListE1[k] = FNodes[i][vNbFNodes[i]-1];
           ListE2[k] = FNodes[i][0];
           ListF [k] = i;
         }
+
         k++;
       }
-    }
 
-///// Two step sorting /////
+    ///// Two step sorting /////
 
-// First
+    // First step
 
     for (std::size_t i=0; i<NbEdges-1; i++)
+    {
+      if (NbEdges == 0)
+        break;
+
       for (std::size_t j=i+1; j<NbEdges; j++)
       {
         if (ListE1[i] > ListE1[j])
@@ -357,10 +336,15 @@ void CalcTranses::PrepareConnectionList()
           ListF[j]  = iswap;
         }
       }
+    }
 
-// Second
+    // Second step
 
     for (std::size_t i=0; i<NbEdges-1; i++)
+    {
+      if (NbEdges == 0)
+        break;
+
       for (std::size_t j=i+1; j<NbEdges; j++)
       {
         if (ListE1[i] == ListE1[j] && ListE2[i] > ListE2[j])
@@ -374,34 +358,44 @@ void CalcTranses::PrepareConnectionList()
           ListF[j] = iswap;
         }
       }
+    }
 
-///// Evaluation of the number of connections /////
+    ///// Evaluation of the number of connections /////
 
-// M-M and M-F
+    // M-M and M-F
 
     NbConnections = 0;
 
     for (std::size_t i=0; i<NbPolygons; i++)
     {
-      if (CodePolygon[i] < 0)
+      // if (CodePolygon[i] < 0)
+      if (ListV1[i] < 0)
       {
         if (ListV2[i] != -1)
+        {
           NbConnections++;
+        }
       }
       else
       {
         if (ListV2[i] == -1)
+        {
           NbConnections++;
+        }
         else
+        {
           NbConnections += 2;
+        }
       }
+
     }
 
-// F-F
+    // F-F
 
     std::size_t i = 0;
-    while (i < NbEdges-1)
+    while (static_cast<int>(i) < NbEdges-1)
     {
+
       std::size_t j = i + 1;
       while ((j < NbEdges) && (ListE1[i] == ListE1[j]) && (ListE2[i] == ListE2[j]))
         j++;
@@ -411,23 +405,14 @@ void CalcTranses::PrepareConnectionList()
 
       i = j;
     }
-
 }
 /********************************************************************/
 void CalcTranses::ConstructConnectionList()
 {
-    int i,j,k,n;
+    int j,k;
 
-    // ConType = (int*)malloc(NbConnections*(sizeof(int)));
-    // CheckIt(ConType==NULL);
-    // ConN  = (int*)malloc(NbConnections*(sizeof(int)));
-    // CheckIt(ConN==NULL);
-    // ConCV = (int**)malloc(NbConnections*(sizeof(int*)));
-    // CheckIt(ConCV==NULL);
-    // ConTr = (double**)malloc(NbConnections*(sizeof(double*)));
-    // CheckIt(ConTr==NULL);
-    // ConArea = (double**)malloc(NbConnections*(sizeof(double*)));
-    // CheckIt(ConArea==NULL);
+    // std::cout << "NbConnections = "<< NbConnections << std::endl;
+
     ConType.resize(NbConnections);
     ConN.resize(NbConnections);
     ConCV.resize(NbConnections);
@@ -458,13 +443,14 @@ void CalcTranses::ConstructConnectionList()
     NbTransmissibility = 0;
 
     k=0;
-    std::cout << "NbPolygons = " << NbPolygons << std::endl;
-    for (i=0; i<NbPolygons; i++)
+    // std::cout << "NbPolygons = " << NbPolygons << std::endl;
+
+    for (std::size_t i=0; i<NbPolygons; i++)
     {
-      std::cout << "polygon " << i << std::endl;
       if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
+      // if (ListV1[i] < 0 && ListV2[i] >= 0)  // M-M
       {
-        std::cout << "M-M" << std::endl;
+        // std::cout << "M-M " << i << std::endl;
         ConType[k] = 1;
         ConN[k] = 2;
 
@@ -472,8 +458,6 @@ void CalcTranses::ConstructConnectionList()
         ConCV[k][0] = EQV[ListV1[i]];
         ConCV[k][1] = EQV[ListV2[i]];
 
-        // ConArea[k] = (double*)malloc(2*(sizeof(double)));
-        // CheckIt(ConArea[k] == NULL);
         ConArea[k].resize(2);
         ConArea[k][0] = ConArea[k][1] = FArea[i];
 
@@ -503,23 +487,23 @@ void CalcTranses::ConstructConnectionList()
         NbTransmissibility++;
       }
 
-      if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
+      // if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
+      if (ListV1[i] >= 0 && ListV2[i] < 0) // M-F
       {
-        std::cout << "M-F" << std::endl;
-        std::cout << "CodePolygon[i] = " << CodePolygon[i] << std::endl;
-        std::cout << "ListV2[i] = " << ListV2[i] << std::endl;
+        // std::cout << "M-F " << i << std::endl;
         ConType[k] = 2;
         ConN[k] = 2;
 
-        std::cout << "pops" << std::endl;
         ConCV[k].resize(2);
-        // std::cout << ListV1[i] << std::endl;
+
         if (ListV1[i] < 0)
         {
-          std::cout << "polygon " << i << std::endl;
+          std::cout << "polygon " << i << "\t";
           std::cout << "wrong ListV2 index " << ListV1[i] << std::endl;
+          std::cout << "aborting" << std::endl;
           exit(0);
         }
+
         ConCV[k][0] = EQV[ListV1[i]];
         ConCV[k][1] = EQF[i];
 
@@ -529,7 +513,6 @@ void CalcTranses::ConstructConnectionList()
         ConP1x[k] = Fnx[i];
         ConP1y[k] = Fny[i];
         ConP1z[k] = Fnz[i];
-        std::cout << "popun" << std::endl;
 
         ConIx[k] = FXG[i];
         ConIy[k] = FYG[i];
@@ -547,133 +530,136 @@ void CalcTranses::ConstructConnectionList()
         k++;
         NbTransmissibility++;
       }
-      std::cout << "wheeps" << std::endl;
 
-        if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M
-        {
-            ConType[k] = 2;
-            ConN[k] = 2;
-            // ConCV[k] = (int*)malloc(2*(sizeof(int)));
-            ConCV[k].resize(2);
-            ConCV[k][0] = EQV[ListV1[i]];
-            ConCV[k][1] = EQF[i];
-
-            ConArea[k].resize(2);
-            ConArea[k][0] = ConArea[k][1] = FArea[i];
-
-            ConP1x[k] = Fnx[i];
-            ConP1y[k] = Fny[i];
-            ConP1z[k] = Fnz[i];
-
-            ConIx[k] = FXG[i];
-            ConIy[k] = FYG[i];
-            ConIz[k] = FZG[i];
-            ConVx[k] = Fnx[i];
-            ConVy[k] = Fny[i];
-            ConVz[k] = Fnz[i];
-
-            ConTr[k] .resize(2);
-            ConPerm[k].resize(2);
-
-            ConGeom[k].resize(2);
-            ConMult[k].resize(2);
-
-            k++;
-
-            ConType[k] = 2;
-            ConN[k] = 2;
-            ConCV[k].resize(2);
-            ConCV[k][0] = EQV[ListV2[i]];
-            ConCV[k][1] = EQF[i];
-
-            ConArea[k].resize(2);
-            ConArea[k][0] = ConArea[k][1] = FArea[i];
-
-            ConP1x[k] = Fnx[i];
-            ConP1y[k] = Fny[i];
-            ConP1z[k] = Fnz[i];
-
-            ConIx[k] = FXG[i];
-            ConIy[k] = FYG[i];
-            ConIz[k] = FZG[i];
-            ConVx[k] = Fnx[i];
-            ConVy[k] = Fny[i];
-            ConVz[k] = Fnz[i];
-
-            ConTr[k] .resize(2);
-            ConPerm[k].resize(2);
-
-            ConGeom[k].resize(2);
-            ConMult[k].resize(2);
-            k++;
-            NbTransmissibility += 2;
-        }
-    }
-
-
-  // F-F Connections
-  i=0;
-  while ( i < NbEdges-1 )
-  {
-    j = i+1;
-    while ( ( j<NbEdges ) && ( ListE1[i]==ListE1[j] ) && ( ListE2[i]==ListE2[j] ) )
-    {
-      j++;
-    }
-    if ( ( j-i ) >= 2 )
-    {
-      ConType[k] = 3;
-      ConN[k] = ( j-i );
-      // ConCV[k] = ( int* ) malloc ( ( j-i ) * ( sizeof ( int ) ) );
-      ConCV[k].resize(j-i);
-      for ( n=i; n<j; n++ )
-        ConCV[k][n-i] = EQF[ListF[n]];
-
-      ConIx[k] = X[ListE1[i]];
-      ConIy[k] = Y[ListE1[i]];
-      ConIz[k] = Z[ListE1[i]];
-      ConVx[k] = X[ListE1[i]] - X[ListE2[i]];
-      ConVy[k] = Y[ListE1[i]] - Y[ListE2[i]];
-      ConVz[k] = Z[ListE1[i]] - Z[ListE2[i]];
-
-      // ConArea[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
-      ConArea[k].resize(j-1);
-
-      for ( n = i; n < j; n++ ) // Double check the formula
+      if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M
+      // if (ListV1[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M
       {
-        ConArea[k][n - i] = ZVolumeFactor[CVZone[ConCV[k][n - i]]] *
-            sqrt ( ConVx[k] * ConVx[k] + ConVy[k] * ConVy[k] + ConVz[k] * ConVz[k] );
-        // TODO TIMUR (F-F connection)
-        ConArea[k][n - i] *= vTimurConnectionFactor[CVZone[ConCV[k][n - i]]];
+        // std::cout << "M-F && F-M " << i << std::endl;
+
+        ConType[k] = 2;
+        ConN[k] = 2;
+
+        ConCV[k].resize(2);
+        ConCV[k][0] = EQV[ListV1[i]];
+        ConCV[k][1] = EQF[i];
+
+        ConArea[k].resize(2);
+        ConArea[k][0] = ConArea[k][1] = FArea[i];
+
+        ConP1x[k] = Fnx[i];
+        ConP1y[k] = Fny[i];
+        ConP1z[k] = Fnz[i];
+
+        ConIx[k] = FXG[i];
+        ConIy[k] = FYG[i];
+        ConIz[k] = FZG[i];
+        ConVx[k] = Fnx[i];
+        ConVy[k] = Fny[i];
+        ConVz[k] = Fnz[i];
+
+        ConTr[k] .resize(2);
+        ConPerm[k].resize(2);
+
+        ConGeom[k].resize(2);
+        ConMult[k].resize(2);
+
+        k++;
+
+        ConType[k] = 2;
+        ConN[k] = 2;
+        ConCV[k].resize(2);
+        ConCV[k][0] = EQV[ListV2[i]];
+        ConCV[k][1] = EQF[i];
+
+        ConArea[k].resize(2);
+        ConArea[k][0] = ConArea[k][1] = FArea[i];
+
+        ConP1x[k] = Fnx[i];
+        ConP1y[k] = Fny[i];
+        ConP1z[k] = Fnz[i];
+
+        ConIx[k] = FXG[i];
+        ConIy[k] = FYG[i];
+        ConIz[k] = FZG[i];
+        ConVx[k] = Fnx[i];
+        ConVy[k] = Fny[i];
+        ConVz[k] = Fnz[i];
+
+        ConTr[k] .resize(2);
+        ConPerm[k].resize(2);
+
+        ConGeom[k].resize(2);
+        ConMult[k].resize(2);
+        k++;
+        NbTransmissibility += 2;
       }
-      // ConTr[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
-      ConTr[k].resize(j-i);
-      ConPerm[k].resize(j-i);
-
-      ConGeom[k].resize(j-i);
-      ConMult[k].resize(j-i);
-
-      NbTransmissibility += ( ConN[k]* ( ConN[k]-1 ) ) /2;
-      k++;
     }
-    i = j;
-  }
+
+
+    // std::cout << "F-F" << std::endl;
+    // F-F Connections
+    std::size_t i=0;
+    while ( static_cast<int>(i) < NbEdges-1 )
+    {
+      j = i+1;
+      while ( ( j<NbEdges ) && ( ListE1[i]==ListE1[j] ) && ( ListE2[i]==ListE2[j] ) )
+      {
+        j++;
+      }
+      if ( ( j-i ) >= 2 )
+      {
+        ConType[k] = 3;
+        ConN[k] = ( j-i );
+
+        ConCV[k].resize(j-i);
+        for ( std::size_t n=i; n<j; n++ )
+          ConCV[k][n-i] = EQF[ListF[n]];
+
+        ConIx[k] = X[ListE1[i]];
+        ConIy[k] = Y[ListE1[i]];
+        ConIz[k] = Z[ListE1[i]];
+        ConVx[k] = X[ListE1[i]] - X[ListE2[i]];
+        ConVy[k] = Y[ListE1[i]] - Y[ListE2[i]];
+        ConVz[k] = Z[ListE1[i]] - Z[ListE2[i]];
+
+        ConArea[k].resize(j-1);
+
+        for ( std::size_t n = i; n < j; n++ ) // Double check the formula
+        {
+          ConArea[k][n - i] = ZVolumeFactor[CVZone[ConCV[k][n - i]]] *
+              sqrt ( ConVx[k] * ConVx[k] + ConVy[k] * ConVy[k] + ConVz[k] * ConVz[k] );
+          // TODO TIMUR (F-F connection)
+          ConArea[k][n - i] *= vTimurConnectionFactor[CVZone[ConCV[k][n - i]]];
+        }
+        // ConTr[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
+        ConTr[k].resize(j-i);
+        ConPerm[k].resize(j-i);
+
+        ConGeom[k].resize(j-i);
+        ConMult[k].resize(j-i);
+
+        NbTransmissibility += ( ConN[k]* ( ConN[k]-1 ) ) /2;
+        k++;
+      }
+      i = j;
+    }
+
 
 }
 /********************************************************************/
 void CalcTranses::VolumeCorrection()  // Volume should be at least twice bigger...
 {
-    int i;
-
-    for (i=0; i<NbPolygons; i++)
+    for (std::size_t i=0; i<NbPolygons; i++)
     {
-      if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F ///
+      // if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F ///
+      if (ListV1[i] >= 0 && ListV2[i] < 0) // M-F ///
       {
         if (CVVolume[EQV[ListV1[i]]] > 2*CVVolume[EQF[i]])
           CVVolume[EQV[ListV1[i]]] -= CVVolume[EQF[i]];
       }
 
-      if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M ///
+      // if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M ///
+      if (ListV1[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M ///
       {
         if (CVVolume[EQV[ListV1[i]]] > 2*.5*CVVolume[EQF[i]])
           CVVolume[EQV[ListV1[i]]] -= .5*CVVolume[EQF[i]];
@@ -687,15 +673,16 @@ void CalcTranses::VolumeCorrection()  // Volume should be at least twice bigger.
 /********************************************************************/
 void CalcTranses::ComputeContinuityNode()
 {
-    int i,j,k;
+    int j, k;
     double  hx,hy,hz,px,py,pz;
 
     Conhx.resize(NbConnections);
     Conhy.resize(NbConnections);
     Conhz.resize(NbConnections);
 
-    for (i=0;i<NbConnections;i++)
+    for (std::size_t i=0; i<NbConnections; i++)
     {
+
       Conhx[i] = Conhy[i] = Conhz[i] = 0;
 
       if (ConType[i] == 1)  // M-M ///
@@ -743,7 +730,7 @@ void CalcTranses::ComputeDirectionalPermeability()
 
     for (std::size_t i=0; i<NbConnections; i++)
     {
-      if (ConType[i]==1)  // M-M /////////////////////////////////////////////////
+      if (ConType[i] == 1)  // M-M //
       {
         k = ConCV[i][0];
         fx = CVx[k] - Conhx[i];
@@ -989,25 +976,23 @@ void CalcTranses::ComputeTransmissibilityPart()
 /********************************************************************/
 void CalcTranses::ComputeTransmissibilityList()
 {
-    // int i,j,k,n,m;
-    double  SumTr;
-    FILE * poutfile;
-    FILE * pFile;
+  // std::cout <<  " calculate transmissibilities"  << std::endl;
 
-    // iTr           = (int*)malloc(NbTransmissibility*(sizeof(int)));
-    // jTr           = (int*)malloc(NbTransmissibility*(sizeof(int)));
-    // Tij           = (double*)malloc(NbTransmissibility*(sizeof(double)));
-    // TConductionIJ = (double*)malloc(NbTransmissibility*(sizeof(double)));
-    iTr.resize(NbTransmissibility);
-    jTr.resize(NbTransmissibility);
-    Tij.resize(NbTransmissibility);
-    TConductionIJ.resize(NbTransmissibility);
+  iTr.resize(NbTransmissibility);
+  jTr.resize(NbTransmissibility);
+  Tij.resize(NbTransmissibility);
+  TConductionIJ.resize(NbTransmissibility);
 
     std::size_t k=0;
     for ( std::size_t i=0; i<NbConnections; i++ )
     {
-      if ( ConType[i]==1 || ConType[i]==2 ) // M-M, M-F ////////////////////////////
+      if ( ConType[i] == 1 || ConType[i] == 2 ) // M-M, M-F //
       {
+        // if (ConType[i] == 1)
+        //   std::cout << k << " M-M " << std::endl;
+        // if (ConType[i] == 2)
+        //   std::cout << k << " M-F " << std::endl;
+
         iTr[k] = ConCV[i][0];
         jTr[k] = ConCV[i][1];
 
@@ -1029,7 +1014,7 @@ void CalcTranses::ComputeTransmissibilityList()
       }
       else if ( ConType[i] == 3 ) // F-F ///
       {
-        SumTr = 0;
+        double SumTr = 0;
         double SumTr2 = 0;
         for ( std::size_t j=0; j<ConN[i]; j++ )
           SumTr+=ConTr[i][j];
@@ -1055,8 +1040,8 @@ void CalcTranses::ComputeTransmissibilityList()
       }
       else
       {
-        cout << "Wrong connection type" << endl;
-        exit ( 0 );
+        // cout << "Wrong connection type " << k << ": "  << ConType[i]  << endl;
+        // exit ( 0 );
       }
 
     }
@@ -1066,31 +1051,19 @@ void CalcTranses::ComputeTransmissibilityList()
 /********************************************************************/
 void CalcTranses::createKarimiApproximation()
 {
-    // pSim->outstream = "adgprs";
-    // FILE  *poutfile;
-    // int   i,j,k,n,m;
+    double m1x, m1y, m1z,
+        p1x, p1y, p1z,
+        m2x, m2y, m2z,
+        p2x, p2y, p2z,
+        ix, iy, iz,
+        inx, iny, inz;
 
-    double m1x,m1y,m1z,p1x,p1y,p1z,m2x,m2y,m2z,p2x,p2y,p2z,ix,iy,iz,inx,iny,inz;
-    double mx,my,mz,ux,uy,uz,vx,vy,vz,nx,ny,nz,xi,yi,zi,nl,h,fx,fy,fz,fl;
+    double mx, my, mz, ux, uy, uz, vx, vy, vz, nx, ny, nz, xi, yi, zi, nl, h, fx, fy, fz, fl;
     int   iswap;
-    double    areatmp,volumetmp;
+    double    areatmp, volumetmp;
     double    hx,hy,hz;
     int   NbActivePolygon;
     int   NbFeatureCode;
-
-    // printf("/*************************************************/\n");
-    // printf("/* DISCRETE FEATURE MODEL                        */\n");
-    // printf("/* by Mohammad Karimi-Fard (karimi@stanford.edu) */\n");
-    // printf("/* March 2007, Stanford, CA.                     */\n");
-    // printf("/*************************************************/\n");
-    // printf("\n");
-
-    // X = (double*)malloc(NbNodes*(sizeof(double)));
-    // Y = (double*)malloc(NbNodes*(sizeof(double)));
-    // Z = (double*)malloc(NbNodes*(sizeof(double)));
-    X.resize(NbNodes);
-    Y.resize(NbNodes);
-    Z.resize(NbNodes);
 
     for (std::size_t i = 0; i < NbNodes; i++)
     {
@@ -1099,34 +1072,32 @@ void CalcTranses::createKarimiApproximation()
       Z[i] = vCoordinatesZ[i];
     }
 
-    std::cout << 1 << std::endl;
-
-    NbFNodes.resize(NbPolygons);
+    // NbFNodes.resize(NbPolygons);
     EQF.resize(NbPolygons);
     CodePolygon.resize(NbPolygons);
-    NbFNodes.resize(NbPolygons);
+    // NbFNodes.resize(NbPolygons);
     FNodes.resize(NbPolygons);
 
     NbEdges = 0;
-    NbCVs = 0;
+    NbCVs = 0;  // number of control volumes?
+
     for (std::size_t i=0; i<NbPolygons; i++)
     {
-      NbFNodes[i] = vNbFNodes[i];
-      FNodes[i].resize(NbFNodes[i]);
+      FNodes[i].resize(vNbFNodes[i]);
 
-      for (std::size_t j=0; j<NbFNodes[i]; j++)
+      // polygon node indices
+      for (std::size_t j=0; j<vNbFNodes[i]; j++)
         FNodes[i][j] = vvFNodes[i][j];
 
       CodePolygon[i] = vCodePolygon[i];
+
       if (CodePolygon[i] >= 0)
       {
         EQF[i] = NbCVs++;
-        NbEdges += NbFNodes[i];
+        NbEdges += vNbFNodes[i];
       }
       else EQF[i] = -1;
     }
-
-    std::cout << 2 << std::endl;
 
     NbActivePolygon = NbCVs;
 
@@ -1150,7 +1121,6 @@ void CalcTranses::createKarimiApproximation()
       else EQV[i] = -1;
     }
 
-    std::cout << 3 << std::endl;
 
     ZoneCode.resize(NbZones);
     ZVolumeFactor.resize(NbZones);
@@ -1188,17 +1158,11 @@ void CalcTranses::createKarimiApproximation()
       ZConduction[j][4] = 0.0;
       ZConduction[j][5] = 0.0;
    }
-    std::cout << 4 << std::endl;
 
     ComputeBasicGeometry();
-    std::cout << 41 << std::endl;
     ComputeControlVolumeList();
-    std::cout << 42 << std::endl;
     PrepareConnectionList();
-    std::cout << 43 << std::endl;
     ConstructConnectionList();
-
-    std::cout << 5 << std::endl;
 
     if (NbOptions == 1) VolumeCorrection();
 
@@ -1210,42 +1174,39 @@ void CalcTranses::createKarimiApproximation()
     ComputeTransmissibilityPart();
     ComputeTransmissibilityList();
 
-    std::cout << 6 << std::endl;
-
-//////////////////////////////////
-///// Computing Total Volume /////
-//////////////////////////////////
+    //////////////////////////////////
+    ///// Computing Total Volume /////
+    //////////////////////////////////
 
     TotalVolume = 0;
     for (std::size_t i=0; i<NbCVs; i++)
       TotalVolume += CVVolume[i];
 
-    // printf("TotalVolume=%e\n",TotalVolume);
-    std::cout << 7 << std::endl;
+    printf("TotalVolume=%e\n", TotalVolume);
 
 
-/* OUTPUT MAPPING FOR GEOMECHANICS  */
+    /* OUTPUT MAPPING FOR GEOMECHANICS  */
 
-// ASSUMING FIRST THE FEATURE CODES ARE NUMBERED
-  // printf("Prepare reservoir-geomechanical mapping...\n");
-  NbFeatureCode = 0;
-  for ( std::size_t i = 0; i < NbPolygons; i++ )
-  {
-    if ( CodePolygon[i] > NbFeatureCode )
+    // ASSUMING FIRST THE FEATURE CODES ARE NUMBERED
+    // printf("Prepare reservoir-geomechanical mapping...\n");
+    NbFeatureCode = 0;
+    for ( std::size_t i = 0; i < NbPolygons; i++ )
     {
-      NbFeatureCode++;
+      if ( CodePolygon[i] > NbFeatureCode )
+      {
+        NbFeatureCode++;
+      }
     }
-  }
 
   // Features
-  vector<int> vPriority; vPriority.resize(NbPolygons);
-  int kk = 1;
-  for (std::size_t i = 0; i < NbPolygons; i++)
-    if(CodePolygon[i] > -1)
-    {
-      vPriority[i] = kk;
+    vector<int> vPriority; vPriority.resize(NbPolygons);
+    int kk = 1;
+    for (std::size_t i = 0; i < NbPolygons; i++)
+      if(CodePolygon[i] > -1)
+      {
+        vPriority[i] = kk;
       kk++;
-    }
+      }
 }
 
 
@@ -1344,19 +1305,19 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
     {
       if(ConType[i]==1 || ConType[i]==2)  // M-M, M-F /
       {
-      if(ConType[i]==1)   // M-M ////////////////////////////
-      {
-        // Con# ConType i ai j aj -> Tij=ai*aj/(ai+aj)
-        fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\n", k,
-                ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1], ConTr[i][1]);
-      }
-      if(ConType[i]==2)   // M-F ////////////////////////////
-      {
-        //Con# ConType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
+        if(ConType[i]==1)   // M-M ////////////////////////////
+        {
+          // Con# ConType i ai j aj -> Tij=ai*aj/(ai+aj)
+          fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\n", k,
+                  ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1], ConTr[i][1]);
+        }
+        if(ConType[i]==2)   // M-F ////////////////////////////
+        {
+          //Con# ConType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
         fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\t%e\t%e\n", k,
                 ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1],
                 2.*ConArea[i][1], ZVolumeFactor[CVZone[ConCV[i][1]]], ConPerm[i][1]);
-      }
+        }
       k++;
       }
       if(ConType[i]==3) // F-F /////////////////////////////////////////////////
@@ -1415,26 +1376,23 @@ void CalcTranses::extractData(FlowData & data) const
   }
 
   // Transmissibility
-  // std::cout << "extracting transes" << std::endl;
-  data.ielement.resize(NbTransmissibility);
-  data.jelement.resize(NbTransmissibility);
-  data.trans_ij.resize(NbTransmissibility);
-  data.conduct_ij.resize(NbTransmissibility);
   for (std::size_t i=0;i<NbTransmissibility; i++)
   {
-    data.ielement[i]   = iTr[i];
-    data.jelement[i]   = jTr[i];
-    data.trans_ij[i]   = Tij[i];
-    data.conduct_ij[i] = TConductionIJ[i];
+    // cout << "(" << iTr[i] << ", " << jTr[i] << ") " << Tij[i] << std::endl;
+    if (iTr[i] < 0 or jTr[i] < 0)
+      continue;
+
+    data.ielement.push_back( iTr[i]);
+    data.jelement.push_back( jTr[i]);
+    data.trans_ij.push_back( Tij[i] * transmissibility_conversion_factor );
+    data.conduct_ij.push_back( TConductionIJ[i]);
   }
 
-  // std::cout << "extracting geomechanics-related stuff" << std::endl;
   // Geomechanics
   data.connection_type.resize(NbConnections);
   for(std::size_t i=0;i<NbConnections;i++)
   {
     data.connection_type[i] = ConType[i];
-    // data.connection_n[i] =
   }
 
 
