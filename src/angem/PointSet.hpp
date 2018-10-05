@@ -101,6 +101,7 @@ typename std::vector<Point<dim,Scalar>>::iterator PointSet<dim,Scalar>::end()
   return points.end();
 }
 
+
 template<int dim, typename Scalar>
 typename std::vector<Point<dim,Scalar>>::const_iterator PointSet<dim,Scalar>::begin() const
 {

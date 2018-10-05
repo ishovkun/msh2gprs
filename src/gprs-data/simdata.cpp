@@ -597,9 +597,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
         abort();
       }
     }
-    // std::cout << "n_above = "<< n_poly_above << "\t";
-    // std::cout << "n_below = "<< n_poly_below << "\t";
-    // std::cout << "out of " << split.polygons.size() << std::endl;
 
     tran.vNbVFaces.push_back( n_poly_below );
     tran.vNbVFaces.push_back( n_poly_above );
@@ -738,13 +735,13 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     //@HACK default permeability for all fractures
     const double w = efrac.aperture;
-    etran.vZPermeability[i*3+0] = w*w*w/12;
-    etran.vZPermeability[i*3+1] = etran.vZPermeability[i*3+0];
-    etran.vZPermeability[i*3+2] = etran.vZPermeability[i*3+0];
+    etran.vZPermeability[i*3 + 0] = w*w*w/12;
+    etran.vZPermeability[i*3 + 1] = etran.vZPermeability[i*3+0];
+    etran.vZPermeability[i*3 + 2] = etran.vZPermeability[i*3+0];
 
-    etran.vZConduction[i*3+0] = 1;
-    etran.vZConduction[i*3+1] = 1;
-    etran.vZConduction[i*3+2] = 1;
+    etran.vZConduction[i*3 + 0] = 1;
+    etran.vZConduction[i*3 + 1] = 1;
+    etran.vZConduction[i*3 + 2] = 1;
     etran.vTimurConnectionFactor[i] = 1.0;
   }
 

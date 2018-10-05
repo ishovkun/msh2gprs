@@ -53,6 +53,7 @@ CalcTranses::~CalcTranses()
 void CalcTranses::createKarimiData()
 {}
 
+/********************************************************************/
 double CalcTranses::ABS(double v)
 {
     if (v>=0.) return(v);
