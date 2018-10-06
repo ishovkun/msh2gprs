@@ -100,8 +100,7 @@ int main(int argc, char *argv[])
 
   const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
   std::cout << "output directory: " << output_dir << std::endl;
-  output_data.writeGeomechDataNewKeywords(output_dir);
-  // pTranses->outputKarimi(output_dir);
+  output_data.write_output(output_dir);
 
   delete pSimData;
   return 0;

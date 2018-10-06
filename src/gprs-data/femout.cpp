@@ -1,5 +1,7 @@
 #include "femout.hpp"
 
+#include <sys/stat.h>
+
 const int n_entries_per_line = 10;
 
 
@@ -13,8 +15,13 @@ OutputData::~OutputData()
 }
 
 
+void OutputData::write_output(const std::string & output_path)
+{
+  writeGeomechDataNewKeywords(output_path);
+  CalcTranses::save_output(pSim->flow_data, output_path);
+}
 
-#include <sys/stat.h>
+
 void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
 {
   stringstream out;

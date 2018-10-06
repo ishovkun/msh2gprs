@@ -10,6 +10,7 @@ public:
    OutputData(SimData * pSimData);
   ~OutputData();
 
+  void write_output(const std::string & output_path);
   void writeGeomechDataNewKeywords(const std::string & output_path);
 
 protected:

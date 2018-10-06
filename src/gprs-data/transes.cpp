@@ -1435,10 +1435,13 @@ void CalcTranses::save_output(const FlowData    & data,
 
     /* OUTPUT Transmissibility */
     out << "TPFACONNS" << std::endl;
-    out << data.trans_ij.size() << std::endl;
-    // for (const auto & v : data.depth)
-    //   out << v << std::endl;
-    // out << "/" << std::endl << std::endl;
+    std::size_t n_connections = data.trans_ij.size();
+    out << n_connections << std::endl;
+    for (std::size_t i=0; i<n_connections; ++i)
+      out << data.ielement[i] << "\t"
+          << data.jelement[i] << "\t"
+          << data.trans_ij[i]  << std::endl;
+    out << "/" << std::endl << std::endl;
 
     out.close();
   }
