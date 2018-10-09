@@ -8,7 +8,6 @@ namespace angem
 template <typename Scalar>
 struct PolyGroup
 {
-  // std::vector<Point<3,Scalar>>          vertices;
   PointSet<3,Scalar>                    vertices;
   std::vector<std::vector<std::size_t>> polygons;  // indices
   std::vector<int>                      markers;

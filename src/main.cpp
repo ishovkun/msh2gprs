@@ -7,12 +7,6 @@
 namespace filesystem = std::experimental::filesystem;
 using Path = filesystem::path;
 
-// class SimData;
-// class CalcTranses;
-// class OutputData;
-// class tetgenio;
-// class tetrahedralize;
-
 int main(int argc, char *argv[])
 {
   if (argc < 2)

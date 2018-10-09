@@ -5,6 +5,7 @@
 ADD_LIBRARY(angem
   Point.hpp
   PointSet.hpp
+  PointSet.cpp
   Basis.hpp
   Plane.hpp
   Shape.hpp

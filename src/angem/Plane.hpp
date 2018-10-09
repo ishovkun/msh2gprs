@@ -131,6 +131,8 @@ void Plane<Scalar>::set_data(const Point<3,Scalar> & p1,
   const Point<3> t1 = p1 - p2;
   const Point<3> t2 = p1 - p3;
   Point<3,Scalar> normal = cross(t1, t2);
+  std::cout << "t1 = " << t1 << std::endl;
+  std::cout << "t2 = " << t2 << std::endl;
   normal.normalize();
 
   compute_basis(normal);

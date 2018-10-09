@@ -176,7 +176,7 @@ void SimData::computeCellClipping()
   // the mesh
 
   // criterion for point residing on the plane
-  const double tol = 1e-10;
+  const double tol = 1e-4;
 
   // too lazy to account for fractures not collided with any cells
   assert(config.fractures.size() == vEfrac.size());
@@ -201,6 +201,7 @@ void SimData::computeCellClipping()
      */
     for(int iface = 0; iface < vsFaceCustom.size(); iface++)
     {
+      std::cout << "iface = " << iface << std::endl;
       // vector of cells containing efrac and neighboring face
       std::vector<std::size_t> v_neighbors;
       for (const std::size_t & ineighbor : vsFaceCustom[iface].vNeighbors)
@@ -245,21 +246,6 @@ void SimData::computeCellClipping()
                                                 split.polygons[0]);
         angem::Polygon<double>::reorder_indices(split.vertices.points,
                                                 split.polygons[1]);
-
-        // std::cout << "split 1" << std::endl;
-        // std::cout << "vertices \n " << split.vertices << std::endl;
-        // std::cout << "polygons" << std::endl;
-        // for (std::size_t p=0; p<split.polygons.size(); ++p)
-        // {
-        //   auto & poly = split.polygons[p];
-        //   for (auto & i : poly)
-        //     std::cout <<  split.vertices[i] << "\t|\t";
-        //     // std::cout <<  i << "\t|\t";
-        //   // std::cout << "marker" <<  split.markers[p] << std::endl;
-        //   std::cout << std::endl;
-        // }
-
-        // exit(0);
         // add split to neighbor cess splits
         for (const auto & ineighbor : v_neighbors)
           splits[ineighbor].add(split);
@@ -267,8 +253,7 @@ void SimData::computeCellClipping()
       }  // end if has ef cells neighbors
     }    // end face loop
 
-    // std::unordered_set<Point> setVert;
-    angem::PointSet<3,double> setVert(1e-6);
+    angem::PointSet<3,double> setVert(tol);
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
       // loop through sda cells
