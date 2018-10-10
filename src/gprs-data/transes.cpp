@@ -1182,7 +1182,7 @@ void CalcTranses::compute_flow_data()
     for (std::size_t i=0; i<NbCVs; i++)
       TotalVolume += CVVolume[i];
 
-    printf("TotalVolume=%e\n", TotalVolume);
+    // printf("TotalVolume=%e\n", TotalVolume);
 
 
     /* OUTPUT MAPPING FOR GEOMECHANICS  */
@@ -1406,6 +1406,14 @@ void CalcTranses::save_output(const FlowData    & data,
   {  // Write cell data
     ofstream out;
     out.open((output_dir + fname_cell_data).c_str());
+
+    ///// OUTPUT Dimensions /////
+    out << "DIMENS" << std::endl;
+    // geomechfile << pSim->nDFMFracs + pSim->nCells << "\t" << 1 << "\t" << 1 << " /" << endl;
+    out << data.volumes.size() << "\t"
+        << 1 << "\t" << 1 << "\t"
+        << std::endl;
+    out << "/" << std::endl << std::endl;
 
     ///// OUTPUT Volumes /////
     out << "VOLUME" << std::endl;

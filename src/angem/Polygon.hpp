@@ -65,10 +65,6 @@ Polygon<Scalar>::set_data(const std::vector<Point<3,Scalar>> & point_list)
   // TODO: i don't check whether all points aren't on one line
   assert(point_list.size() >= 3);
 
-  // std::cout << "making poly" << std::endl;
-  // for (const auto & p : point_list)
-  //   std::cout << p << std::endl;
-
   this->points = point_list;
   reorder(this->points);
   Point<3, Scalar> cm = compute_center_mass(point_list);
@@ -107,12 +103,7 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
   if (n_points == 3)
     return;
 
-  std::cout << "making plane" << std::endl;
-  std::cout << "p1 = " << points[0] << std::endl;
-  std::cout << "p2 = " << points[1] << std::endl;
-  std::cout << "p3 = " << points[2] << std::endl;
   Plane<Scalar> plane(points[0], points[1], points[2]);
-  std::cout << "done plane" << std::endl;
   Point<3,Scalar> normal = plane.normal();
 
   std::vector<Point<3, Scalar> > v_points;
@@ -178,8 +169,6 @@ Polygon<Scalar>::reorder_indices(const std::vector<Point<3, Scalar>> &verts,
   for (std::size_t i=0; i<indices.size(); ++i)
     points[i] = verts[indices[i]];
 
-  for (const auto & p : points)
-    std::cout << p << std::endl;
   reorder(points);
 
   for (std::size_t i=0; i<points.size(); ++i)

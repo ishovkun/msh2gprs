@@ -38,13 +38,13 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   string outstring;
 
   ofstream geomechfile;
-  outstring =   output_path + "fl_dimens.txt";
-  std::cout << "writing file: " << outstring  << std::endl;
-  geomechfile.open(outstring.c_str());
+  // outstring =   output_path + "fl_dimens.txt";
+  // std::cout << "writing file: " << outstring  << std::endl;
+  // geomechfile.open(outstring.c_str());
 
-  geomechfile << "DIMENS" << endl;
-  geomechfile << pSim->nDFMFracs + pSim->nCells << "\t" << 1 << "\t" << 1 << " /" << endl;
-  geomechfile.close();
+  // geomechfile << "DIMENS" << endl;
+  // geomechfile << pSim->nDFMFracs + pSim->nCells << "\t" << 1 << "\t" << 1 << " /" << endl;
+  // geomechfile.close();
 
 
   outstring = output_path + "gm_depth.txt";

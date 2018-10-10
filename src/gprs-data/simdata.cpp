@@ -176,7 +176,7 @@ void SimData::computeCellClipping()
   // the mesh
 
   // criterion for point residing on the plane
-  const double tol = 1e-4;
+  const double tol = 1e-8;
 
   // too lazy to account for fractures not collided with any cells
   assert(config.fractures.size() == vEfrac.size());
@@ -201,7 +201,6 @@ void SimData::computeCellClipping()
      */
     for(int iface = 0; iface < vsFaceCustom.size(); iface++)
     {
-      std::cout << "iface = " << iface << std::endl;
       // vector of cells containing efrac and neighboring face
       std::vector<std::size_t> v_neighbors;
       for (const std::size_t & ineighbor : vsFaceCustom[iface].vNeighbors)
@@ -335,6 +334,7 @@ void SimData::computeCellClipping()
       ivert++;
     }
 
+    // std::cout << "computing edfm transes" << std::endl;
     computeEDFMTransmissibilities(splits, ifrac, flow_element_shift);
 
     // // @DEBUG: print polygons
@@ -503,6 +503,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   const auto & efrac = vEfrac[frac_ind];
   // compute transmissibilities between one embedded fracture and cells
   // run karimi class once per cell
+  std::cout << "computing frac-matrix transes" << std::endl;
   std::size_t ecell = 0; // index of cell in efrac cell array
   for (const auto & split : splits)  // loop split edfm cells
   {
@@ -550,7 +551,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       }
       else  // cell polygons (faces)
       {
-        // std::cout << "code_polygon = "<< code_polygon << std::endl;
         tran.vCodePolygon.push_back( -1 );
       }
     }
@@ -651,9 +651,12 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.extractData(matrix_fracture_flow_data);
 
     // fill global flow data
-    flow_data.volumes.push_back(matrix_fracture_flow_data.volumes[efrac_zone]);
-    flow_data.poro.push_back(matrix_fracture_flow_data.poro[efrac_zone]);
-    flow_data.depth.push_back(matrix_fracture_flow_data.depth[efrac_zone]);
+    // don't need cell data here:
+    // we write it when computing transes between edfm segments
+    // flow_data.volumes.push_back(matrix_fracture_flow_data.volumes[efrac_zone]);
+    // flow_data.poro.push_back(matrix_fracture_flow_data.poro[efrac_zone]);
+    // flow_data.depth.push_back(matrix_fracture_flow_data.depth[efrac_zone]);
+
     flow_data.trans_ij.push_back(matrix_fracture_flow_data.trans_ij[0] +
                                  matrix_fracture_flow_data.trans_ij[1]);
     flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
@@ -662,6 +665,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     ecell++;
   }  // end splits loop
 
+  std::cout << "computing frac-frac transes" << std::endl;
 
   CalcTranses etran;
 
