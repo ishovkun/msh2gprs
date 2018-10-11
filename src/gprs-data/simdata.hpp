@@ -17,6 +17,7 @@
 #include "element.hpp"
 #include "renum.hpp"
 #include "transes.hpp"
+#include "GElement.hpp"
 
 #include "Point.hpp"
 #include "PolyGroup.hpp"
@@ -70,28 +71,6 @@ struct RockProps
   vector<double> stress;
 };
 
-struct Gelement
-{
-  int nMarker;
-  int nVertices;
-  int nNeighbors;
-
-  int vtkIndex, formIndex;
-  int fluidElement;
-
-  vector<std::size_t> vVertices;
-  vector<std::size_t> vVerticesSorted;
-  vector<int> vVerticesNewnum;
-
-  vector<std::size_t> vNeighbors;
-
-  double thickness, center_distance;
-  // vector<double> vCenter;
-  // vector<double> vNormal;
-  angem::Point<3,double> center;
-  angem::Point<3,double> normal;
-  double aperture, conductivity;
-};
 
 struct PhysicalFace
 {
