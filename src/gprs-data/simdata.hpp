@@ -145,6 +145,8 @@ public:
   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
                                      const int   frac_ind,
                                      std::size_t element_shift);
+  void computeInterEDFMTransmissibilities();
+
 
   void createSimpleWells();
 

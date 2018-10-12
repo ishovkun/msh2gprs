@@ -82,6 +82,8 @@ Polygon<Scalar>::set_data(const std::vector<Point<3,Scalar>> & point_list)
   else
     plane.set_data(cm, point_list[0], point_list[2]);
 
+  reorder(this->points);
+
 }
 
 
@@ -124,7 +126,7 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
       // make plane object that we use to check on which side of the plane
       // any point is
       Scalar len = (copy[i] - v_points.back()).norm();
-      Point<3, Scalar> p_perp = v_points.back() + normal * len;
+      Point<3,Scalar> p_perp = v_points.back() + normal * len;
       Plane<Scalar> pln(v_points.back(), p_perp, copy[i]);
 
       bool all_above = true;

@@ -75,6 +75,7 @@ bool collision(const Polygon<Scalar>        & poly,
 }
 
 
+// intersection of a segment with plane
 // intersection is appended to!
 template <typename Scalar>
 bool collision(const Point<3,Scalar>        & l0,
@@ -161,7 +162,6 @@ void split(const Polygon<Scalar> & poly,
 
   for (Point<3,Scalar> & p : section)
   {
-    // const std::size_t ind = angem::insert(p, result.vertices, 1e-6);
     const std::size_t ind = result.vertices.insert(p);
     above.push_back(ind);
     below.push_back(ind);
@@ -181,5 +181,70 @@ void split(const Polygon<Scalar> & poly,
 }
 
 
+// throws std::runtime_error
+template <typename Scalar>
+bool collision(const Line<3,Scalar> & line,
+               const Plane<Scalar>  & plane,
+               Point<3,Scalar>      & intersection)
+{
+  // Plane : (p - p0) · n = 0
+  // line p = d l + l0
+  // intersection: d = (p0 - l0) · n / (l · n)
+  // Note: if (l · n) == 0 then line is parallel to the plane
+  if (line.direction.dot(plane.normal()) < 1e-16)
+  {
+    if (plane.distance(line.point) < 1e-16)
+      throw std::runtime_error("line and plane coinside."
+                               " currently not supported by angem"
+                               "Please feel free to add the code, it's simple."
+                               "I'm just drunk.");
+    return false;
+  }
+
+  const Scalar d = (plane.point - line.point).dot(plane.normal()) /
+      line.direction.dot(plane.normal());
+  intersection = line.point + d*line.direction;
+  return true;
+}
+
+
+// section is a vector cause line can reside on polygon
+// appends to vector intersection
+// note: polygon should have sorted points
+template <typename Scalar>
+bool collision(const Line<3,Scalar>         & line,
+               const Polygon<Scalar>        & poly,
+               std::vector<Point<3,Scalar>> & intersection)
+{
+  // find intersection between polygon plane and line
+  Point<3,Scalar> p;
+  const bool colinear = collision(line, poly.plane, p);
+
+  // check that intersection point is within the polygon
+  // algorithm: if section point is on the same side of the faces as the
+  // mass center, then the point is inside of the polygon
+  const auto & poly_verts = poly.get_points();
+  Point<3,Scalar> cm = compute_center_mass(poly_verts);
+  const auto & normal = poly.plane.normal();
+
+  bool inside = true;
+  for (std::size_t i=0; i<poly_verts.size(); ++i)
+  {
+    const Point<3,Scalar> & v1 = poly_verts[i];
+    Point<3,Scalar> v2;
+    if (i < poly_verts.size() - 1)
+      v2 = poly_verts[i+1];
+    else
+      v2 = poly_verts[0];
+
+    Point<3,Scalar> p_perp = v1 + normal * (v2 - v1).norm();
+    Plane<Scalar> side(v1, v2, p_perp);
+    if (side.above(p) != side.above(cm))
+      return false;
+  }
+
+  intersection.push_back(p);
+  return true;
+}
 
 }  // end namespace

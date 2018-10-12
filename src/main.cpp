@@ -81,6 +81,9 @@ int main(int argc, char *argv[])
   cout << "Compute cell clipping and EDFM transmissibilities" << endl;
   pSimData->computeCellClipping();
 
+  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  pSimData->computeInterEDFMTransmissibilities();
+
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
 

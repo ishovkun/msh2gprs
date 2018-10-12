@@ -127,7 +127,8 @@ void SimData::defineEmbeddedFractureProperties()
           const auto vc = vsCellCustom[icell].center - vert;
           if ( fabs(frac_conf.body->plane.distance(vert)/vc.norm()) < 1e-6 )
           {
-            const auto shift = 1e-5 * frac_conf.body->plane.normal();
+            // shift in the direction perpendicular to fracture
+            const Point shift = 1e-5 * frac_conf.body->plane.normal();
             total_shift += shift;
             std::cout << "shifting fracture: " << shift ;
             std::cout << " due to collision with vertex: " << ivertex;
@@ -138,6 +139,7 @@ void SimData::defineEmbeddedFractureProperties()
         }  // end adjusting fracture
       }  // end collision processing
     }    // end cell loop
+
     std::cout << "Total shift = " << total_shift << std::endl;
     const std::size_t n_efrac_cells = frac.cells.size();
     std::cout << "fracture " << ef_ind
@@ -496,6 +498,75 @@ void SimData::computeReservoirTransmissibilities()
 }
 
 
+void SimData::computeInterEDFMTransmissibilities()
+{
+  // first determine if two shapes collide
+  // then check whether efracs reside in any common cells
+  // then compute intersection shapes
+  // finally compute transmissibilities between efracs
+  for (int ifrac=0; ifrac<vEfrac.size(); ++ifrac)
+    if (vEfrac[ifrac].cells.size() > 0)
+      for (int jfrac=ifrac+1; jfrac<vEfrac.size(); ++jfrac)
+        if (vEfrac[jfrac].cells.size() > 0)
+        {
+          angem::CollisionGJK<double> collision;
+          // first determine if two shapes collide
+          const auto & iShape = config.fractures[ifrac].body;
+          const auto & jShape = config.fractures[jfrac].body;
+          if (collision.check(*iShape, *jShape))
+          {
+            // determine intersection cells
+            // need sorted arrays to determine intersection
+            std::vector<std::size_t>
+                cells_i = vEfrac[ifrac].cells,
+                cells_j = vEfrac[jfrac].cells;
+            std::sort(cells_i.begin(), cells_i.end());
+            std::sort(cells_j.begin(), cells_j.end());
+            std::vector<std::size_t> cells_intersection;
+
+            std::set_intersection(cells_i.begin(), cells_i.end(),
+                                  cells_j.begin(), cells_j.end(),
+                                  std::back_inserter(cells_intersection));
+
+            if (cells_intersection.size() > 0)
+              for (auto & cell : cells_intersection)
+              {
+                // determine section line
+                const std::size_t ind_i = find(cell, cells_i);
+                const std::size_t ind_j = find(cell, cells_j);
+
+                const angem::Plane<double> plane_i(vEfrac[ifrac].points[ind_i],
+                                                   vEfrac[ifrac].dip[ind_i],
+                                                   vEfrac[ifrac].strike[ind_i]);
+                const angem::Plane<double> plane_j(vEfrac[jfrac].points[ind_j],
+                                                   vEfrac[jfrac].dip[ind_j],
+                                                   vEfrac[jfrac].strike[ind_j]);
+                angem::Line<3,double> line_section;
+                angem::collision(plane_i, plane_j, line_section);
+
+                // if section line intersects cell (any of cell faces)
+                std::vector<angem::Point<3,double>> points_section;
+                for(int iface = 0; iface < vsFaceCustom.size(); iface++)
+                  if (find(cell, vsFaceCustom[iface].vNeighbors) !=
+                      vsFaceCustom[iface].vNeighbors.size())
+                  {
+                    angem::Polygon<double> poly_face(vvVrtxCoords,
+                                                     vsFaceCustom[iface].vVertices);
+                    angem::collision(line_section, poly_face, points_section);
+                  }
+
+                std::cout << "efrac intersection result" << std::endl;
+                for (auto & p : points_section)
+                  std::cout << p << std::endl;
+                exit(0);
+              }
+          }
+        }
+
+
+}
+
+
 void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
                                             const int frac_ind,
                                             std::size_t element_shift)
@@ -753,12 +824,12 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   // --------------- END trans between efrac elements -----------------------
 
   // @DEBUG output
-  std::cout << "final tran data" << std::endl;
-  for (std::size_t i=0; i<flow_data.trans_ij.size(); ++i)
-    std::cout << flow_data.ielement[i] << "\t"
-              << flow_data.jelement[i] << "\t"
-              << flow_data.trans_ij[i] << "\t"
-              << std::endl;
+  // std::cout << "final tran data" << std::endl;
+  // for (std::size_t i=0; i<flow_data.trans_ij.size(); ++i)
+  //   std::cout << flow_data.ielement[i] << "\t"
+  //             << flow_data.jelement[i] << "\t"
+  //             << flow_data.trans_ij[i] << "\t"
+  //             << std::endl;
 
   element_shift += vEfrac[frac_ind].cells.size();
 }
