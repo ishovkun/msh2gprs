@@ -52,10 +52,13 @@ bool collision(const Plane<Scalar> & pl1,
 }
 
 
+// collision of a polygon with a plane
+// can be 1 points, two points, or zero points
 template <typename Scalar>
 bool collision(const Polygon<Scalar>        & poly,
                const Plane<Scalar>          & plane,
-               std::vector<Point<3,Scalar>> & intersection)
+               std::vector<Point<3,Scalar>> & intersection,
+               const double                   tol = 1e-10)
 {
   // call collision of all edges
   bool result = false;
@@ -64,9 +67,9 @@ bool collision(const Polygon<Scalar>        & poly,
   {
     bool loc_collision = false;
     if (i < pts.size() - 1)
-      loc_collision = collision(pts[i], pts[i+1], plane, intersection);
+      loc_collision = collision(pts[i], pts[i+1], plane, intersection, tol);
     else
-      loc_collision = collision(pts[i], pts[0], plane, intersection);
+      loc_collision = collision(pts[i], pts[0], plane, intersection, tol);
     if (loc_collision)
       result = true;
   }

@@ -108,9 +108,8 @@ struct EmbeddedFracture
   // cells -> points
   // these two entries represent mesh within the frac
   std::vector<angem::Point<3,double>>  vVertices;
-  // cells -> vertex indiced
+  // cells -> vertex indiced (fracture polygons)
   std::vector<std::vector<std::size_t>> vIndices;
-  // std::vector<angem::PolyGroup<double>> vSplits;
   double                               aperture = 1e-3;     // m
   double                               conductivity = 100;  // md-m
 };
@@ -166,6 +165,19 @@ protected:
 
    void methodRandomRockProperties();
    double createLognormalDistribution(double E, double S);
+
+  void handle_edfm_face_intersection(const std::size_t ifrac,
+                                     const std::size_t jfrac,
+                                     const std::vector<std::size_t> & icells,
+                                     const std::vector<std::size_t> & jcells);
+
+  void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
+                                              const std::vector<std::vector<std::size_t>> & polys,
+                                              const std::vector<std::size_t>              & markers,
+                                              FlowData                                    & flow_data) const;
+  std::size_t get_flow_element_index(const std::size_t ifrac,
+                                     const std::size_t ielement) const;
+
 
    int checkReservedBoundaryName(int nmarker)
    {
@@ -255,11 +267,6 @@ public:
 protected:
   StandardElements * pStdElement;
   void computePropertyMaps();
-  void handle_edfm_face_intersection(const std::size_t ifrac,
-                                     const std::size_t jfrac,
-                                     const std::vector<std::size_t> & icells,
-                                     const std::vector<std::size_t> & jcells);
-
   struct tokens: std::ctype<char>
   {
     tokens(): std::ctype<char>(get_table()) {}
