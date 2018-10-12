@@ -607,9 +607,9 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     //@HACK default permeability for all fractures
     const double w = efrac.aperture;
-    tran.vZPermeability[0] = w*w*w/12;
-    tran.vZPermeability[1] = w*w*w/12;
-    tran.vZPermeability[2] = w*w*w/12;
+    tran.vZPermeability[0] = efrac.conductivity / w;
+    tran.vZPermeability[1] = efrac.conductivity / w;
+    tran.vZPermeability[2] = efrac.conductivity / w;
 
     tran.vZConduction[0] = 1;
     tran.vZConduction[1] = 1;
@@ -719,7 +719,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     //@HACK default permeability for all fractures
     const double w = efrac.aperture;
-    etran.vZPermeability[i*3 + 0] = w*w*w/12;
+    etran.vZPermeability[i*3 + 0] = efrac.conductivity / w;
     etran.vZPermeability[i*3 + 1] = etran.vZPermeability[i*3+0];
     etran.vZPermeability[i*3 + 2] = etran.vZPermeability[i*3+0];
 

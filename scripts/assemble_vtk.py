@@ -1,8 +1,10 @@
+import os
 import numpy as np
 
-res_mesh_file = "/home/ishovkun/sim/edfm-10x10x1/reservoir_mesh.vtk"
-frac_mesh_file = "/home/ishovkun/sim/edfm-10x10x1/efrac.vtk"
-results_file = "/home/ishovkun/sim/edfm-10x10x1/OUTPUT.vars.txt"
+res_mesh_file = "/home/production/sim/edfm-10x10x1/reservoir_mesh.vtk"
+frac_mesh_file = "/home/production/sim/edfm-10x10x1/efrac.vtk"
+results_file = "/home/production/sim/edfm-10x10x1/OUTPUT.vars.txt"
+output_dir = "/home/production/sim/edfm-10x10x1/field"
 
 n_cells = 0
 with open(res_mesh_file, "r") as f:
@@ -58,11 +60,13 @@ with open(results_file, "r") as f:
             if (len(split) == 0):
                 continue
 
-            # print(split)
-            for i in range(1, n_cols):
+            for i in range(1, n_cols+1):
                 data[row, i-1] = float(split[i])
+                # print(split[i])
             row += 1
 
+        # print(data)
+        # exit(0)
         all_data.append(data)
         line = f.readline().rstrip()
 
@@ -78,8 +82,12 @@ with open(res_mesh_file, "r") as f:
 
 
 # save efrac vtk
-output_dir = "/home/ishovkun/sim/edfm-10x10x1/field"
-import os
+import shutil
+try:
+    shutil.rmtree(output_dir)
+except:
+    pass
+
 try:
     os.mkdir(output_dir)
 except FileExistsError:
