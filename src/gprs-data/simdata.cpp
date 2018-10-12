@@ -338,11 +338,6 @@ void SimData::computeCellClipping()
 
     // std::cout << "computing edfm transes" << std::endl;
     computeEDFMTransmissibilities(splits, ifrac, flow_element_shift);
-
-    // // @DEBUG: print polygons
-    // std::cout << "exiting" << std::endl;
-    // exit(0);
-
   }  // end efrac loop
 
 }
@@ -492,9 +487,6 @@ void SimData::computeReservoirTransmissibilities()
     flow_data.jelement.push_back(matrix_flow_data.jelement[i]);
   }
 
-  // exit(0);
-
-
 }
 
 
@@ -552,7 +544,12 @@ void SimData::computeInterEDFMTransmissibilities()
                   {
                     angem::Polygon<double> poly_face(vvVrtxCoords,
                                                      vsFaceCustom[iface].vVertices);
-                    angem::collision(line_section, poly_face, points_section);
+                    try {
+                      angem::collision(line_section, poly_face, points_section);
+                    }
+                    catch (std::runtime_error & e) {
+                      exit(0);
+                    }
                   }
 
                 std::cout << "efrac intersection result" << std::endl;
@@ -562,9 +559,17 @@ void SimData::computeInterEDFMTransmissibilities()
               }
           }
         }
-
-
 }
+
+
+void SimData::handle_edfm_face_intersection(const std::size_t ifrac,
+                                            const std::size_t jfrac,
+                                            const std::vector<std::size_t> & icells,
+                                            const std::vector<std::size_t> & jcells)
+{
+  exit(0);
+}
+
 
 
 void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,

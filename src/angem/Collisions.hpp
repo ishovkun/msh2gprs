@@ -194,10 +194,7 @@ bool collision(const Line<3,Scalar> & line,
   if (line.direction.dot(plane.normal()) < 1e-16)
   {
     if (plane.distance(line.point) < 1e-16)
-      throw std::runtime_error("line and plane coinside."
-                               " currently not supported by angem"
-                               "Please feel free to add the code, it's simple."
-                               "I'm just drunk.");
+      throw std::runtime_error("line and plane coinside.");
     return false;
   }
 
@@ -219,6 +216,8 @@ bool collision(const Line<3,Scalar>         & line,
   // find intersection between polygon plane and line
   Point<3,Scalar> p;
   const bool colinear = collision(line, poly.plane, p);
+  if (colinear)
+    return false;
 
   // check that intersection point is within the polygon
   // algorithm: if section point is on the same side of the faces as the

@@ -255,6 +255,10 @@ public:
 protected:
   StandardElements * pStdElement;
   void computePropertyMaps();
+  void handle_edfm_face_intersection(const std::size_t ifrac,
+                                     const std::size_t jfrac,
+                                     const std::vector<std::size_t> & icells,
+                                     const std::vector<std::size_t> & jcells);
 
   struct tokens: std::ctype<char>
   {
