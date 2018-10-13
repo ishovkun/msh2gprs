@@ -644,36 +644,34 @@ void SimData::computeInterEDFMTransmissibilities()
               else  // // case when two fracs intersect within an element
                 for (auto & cell : cells_intersection)
                 {
-                  std::cout << "i'm here" << std::endl;
-                  abort();
+                  std::cout << "checking fracs cross in cell " << cell << std::endl;
                   // determine section line
                   const std::size_t ind_i = find(cell, cells_i);
                   const std::size_t ind_j = find(cell, cells_j);
 
-                  // const angem::Plane<double> plane_i(vEfrac[ifrac].points[ind_i],
-                  //                                    vEfrac[ifrac].dip[ind_i],
-                  //                                    vEfrac[ifrac].strike[ind_i]);
-                  const angem::Plane<double> plane_j(vEfrac[jfrac].points[ind_j],
-                                                     vEfrac[jfrac].dip[ind_j],
-                                                     vEfrac[jfrac].strike[ind_j]);
                   const angem::Polygon<double> poly_i(vEfrac[ifrac].vVertices,
                                                       vEfrac[ifrac].vIndices[ind_i]);
                   const angem::Polygon<double> poly_j(vEfrac[jfrac].vVertices,
                                                       vEfrac[jfrac].vIndices[ind_j]);
+
                   std::cout << "poly i" << std::endl;
                   std::cout << poly_i << std::endl;
                   std::cout << "poly j" << std::endl;
                   std::cout << poly_j << std::endl;
                   std::cout << std::endl;
+
                   std::vector<Point> section;
-                  angem::collision(poly_i, plane_j, section, 1e-3);
-                  // if (section.empty())
-                  //   continue;
+                  angem::collision(poly_i, poly_j.plane, section, 1e-6);
+
+                  if (cell != 55 )
+                    if (section.empty())
+                      continue;
 
 
-                  // std::cout << "efrac intersection result" << std::endl;
-                  // for (auto & p : points_section)
-                  //   std::cout << p << std::endl;
+                  std::cout << "efrac intersection result" << std::endl;
+                  for (auto & p : section)
+                    std::cout << p << std::endl;
+                  abort();
                 }
             }
             // exit(0);
