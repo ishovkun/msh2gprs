@@ -12,10 +12,19 @@ struct PolyGroup
   std::vector<std::vector<std::size_t>> polygons;  // indices
   std::vector<int>                      markers;
 
+  PolyGroup(const double tol = 1e-6);
+  bool empty() const {return vertices.size() == 0;}
   void add(const PolyGroup<Scalar> & other);
   void add(const Polygon<Scalar> & poly,
            const int marker = 0);
 };
+
+
+template <typename Scalar>
+PolyGroup<Scalar>::PolyGroup(const double tol)
+    :
+    vertices(tol)
+{}
 
 
 template <typename Scalar>

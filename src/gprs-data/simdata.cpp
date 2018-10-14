@@ -573,7 +573,7 @@ void SimData::computeInterEDFMTransmissibilities()
                 // feed it to transes code
                 std::vector<std::vector<std::size_t>> polys;  // vertex indices
                 std::size_t counter = 0;
-                std::vector<std::size_t> markers;
+                std::vector<int> markers;
                 std::unordered_map<std::size_t, std::size_t> local_to_global;
                 for (auto & cell : cells_intersection)
                 {
@@ -641,7 +641,8 @@ void SimData::computeInterEDFMTransmissibilities()
                   }
               }  // end case when fracs intersect on mesh face
 
-              else  // // case when two fracs intersect within an element
+              else  // case when two fracs intersect within an element
+              {
                 for (auto & cell : cells_intersection)
                 {
                   std::cout << "checking fracs cross in cell " << cell << std::endl;
@@ -654,40 +655,46 @@ void SimData::computeInterEDFMTransmissibilities()
                   const angem::Polygon<double> poly_j(vEfrac[jfrac].vVertices,
                                                       vEfrac[jfrac].vIndices[ind_j]);
 
-                  std::cout << "poly i" << std::endl;
-                  std::cout << poly_i << std::endl;
-                  std::cout << "poly j" << std::endl;
-                  std::cout << poly_j << std::endl;
-                  std::cout << std::endl;
-
+                  angem::PolyGroup<double> splits(1e-8);
                   std::vector<Point> section;
                   angem::collision(poly_i, poly_j.plane, section, 1e-6);
+                    if (!section.empty())
+                    {
+                      angem::split(poly_i, poly_j.plane, splits, ifrac, ifrac);
+                      angem::split(poly_j, poly_i.plane, splits, jfrac, jfrac);
 
-                  if (cell != 55 )
-                    if (section.empty())
-                      continue;
+                      FlowData frac_frac_flow_data;
+                      compute_frac_frac_intersection_transes(splits.vertices.points,
+                                                             splits.polygons,
+                                                             splits.markers,
+                                                             frac_frac_flow_data);
 
+                      std::cout << "frac-frac intersection tran data" << std::endl;
+                      double trans = 0;
+                      for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
+                        if (splits.markers[frac_frac_flow_data.ielement[i]] !=
+                            splits.markers[frac_frac_flow_data.jelement[i]])
+                        {
+                          // std::cout << frac_frac_flow_data.ielement[i] << "\t"
+                          //           << frac_frac_flow_data.jelement[i] << "\t"
+                          //           << frac_frac_flow_data.trans_ij[i] << "\t\t"
+                          //           << splits.markers[frac_frac_flow_data.ielement[i]] << "\t"
+                          //           << splits.markers[frac_frac_flow_data.jelement[i]] << "\t"
+                          //           << std::endl;
+                          trans += frac_frac_flow_data.trans_ij[i];
+                        }
 
-                  std::cout << "efrac intersection result" << std::endl;
-                  for (auto & p : section)
-                    std::cout << p << std::endl;
-                  abort();
+                      flow_data.trans_ij.push_back(trans);
+                      flow_data.ielement.push_back(get_flow_element_index(ifrac, ind_i));
+                      flow_data.jelement.push_back(get_flow_element_index(jfrac, ind_j));
+                    }
+
                 }
-            }
-            // exit(0);
-          }
-        }
+              }  // end case when two fracs intersect within an element
+            }  // end if have common cells
+          }  // end if shapes collide
+        }  // end efrac ij loop
 }
-
-
-void SimData::handle_edfm_face_intersection(const std::size_t ifrac,
-                                            const std::size_t jfrac,
-                                            const std::vector<std::size_t> & icells,
-                                            const std::vector<std::size_t> & jcells)
-{
-  exit(0);
-}
-
 
 
 void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
@@ -965,7 +972,7 @@ std::size_t SimData::n_default_vars()
 void SimData::
 compute_frac_frac_intersection_transes(const std::vector<Point>                    & verts,
                                        const std::vector<std::vector<std::size_t>> & polys,
-                                       const std::vector<std::size_t>              & markers,
+                                       const std::vector<int>                      & markers,
                                        FlowData                                    & flow_data) const
 {
   CalcTranses tran;

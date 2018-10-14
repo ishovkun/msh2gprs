@@ -173,7 +173,7 @@ protected:
 
   void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
                                               const std::vector<std::vector<std::size_t>> & polys,
-                                              const std::vector<std::size_t>              & markers,
+                                              const std::vector<int>                      & markers,
                                               FlowData                                    & flow_data) const;
   std::size_t get_flow_element_index(const std::size_t ifrac,
                                      const std::size_t ielement) const;
