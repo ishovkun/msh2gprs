@@ -110,8 +110,8 @@ struct EmbeddedFracture
   std::vector<angem::Point<3,double>>  vVertices;
   // cells -> vertex indiced (fracture polygons)
   std::vector<std::vector<std::size_t>> vIndices;
-  double                               aperture = 1e-3;     // m
-  double                               conductivity = 100;  // md-m
+  double                               aperture;     // m
+  double                               conductivity;  // md-m
 };
 
 

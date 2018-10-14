@@ -36,6 +36,8 @@ struct EmbeddedFractureConfig
   double cohesion = 0;
   double friction_angle = 30;
   double dilation_angle = 0;
+  double aperture = 1e-3;
+  double conductivity = 10;
 };
 
 

@@ -309,6 +309,8 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
   angem::Point<3,double> center = {0, 0, 0};
   double friction_angle = 30;
   double dilation_angle = 0;
+  double aperture = 1e-3;
+  double conductivity = 1e-3;
 
   for (; it != end; ++it)
   {
@@ -335,6 +337,10 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
       friction_angle = (*it).get<double>();
     else if (key == "dilation angle")
       dilation_angle = (*it).get<double>();
+    else if (key == "aperture")
+      aperture = (*it).get<double>();
+    else if (key == "conductivity")
+      conductivity = (*it).get<double>();
     else if (key == "center")
       center = (*it).get<std::vector<double>>();
     else
@@ -349,6 +355,8 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
   conf.cohesion = cohesion;
   conf.friction_angle = friction_angle;
   conf.dilation_angle = dilation_angle;
+  conf.aperture = aperture;
+  conf.conductivity = conductivity;
 }
 
 }  // end namespace

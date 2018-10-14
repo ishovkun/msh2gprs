@@ -167,6 +167,8 @@ void SimData::defineEmbeddedFractureProperties()
     vEfrac[ef_ind].cohesion = frac_conf.cohesion;
     vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
     vEfrac[ef_ind].dilation_angle = frac_conf.dilation_angle;
+    vEfrac[ef_ind].aperture = frac_conf.aperture;
+    vEfrac[ef_ind].conductivity = frac_conf.conductivity;
 
     ef_ind++;
   }  // end efracs loop
