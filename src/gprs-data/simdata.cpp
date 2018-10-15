@@ -164,11 +164,11 @@ void SimData::defineEmbeddedFractureProperties()
     vEfrac[ef_ind].strike.assign(n_efrac_cells,
                                  frac_conf.body->plane.strike_angle());
 
-    vEfrac[ef_ind].cohesion = frac_conf.cohesion;
+    vEfrac[ef_ind].cohesion       = frac_conf.cohesion;
     vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
     vEfrac[ef_ind].dilation_angle = frac_conf.dilation_angle;
-    vEfrac[ef_ind].aperture = frac_conf.aperture;
-    vEfrac[ef_ind].conductivity = frac_conf.conductivity;
+    vEfrac[ef_ind].aperture       = frac_conf.aperture;
+    vEfrac[ef_ind].conductivity   = frac_conf.conductivity;
 
     ef_ind++;
   }  // end efracs loop
@@ -186,9 +186,6 @@ void SimData::computeCellClipping()
 
   // too lazy to account for fractures not collided with any cells
   assert(config.fractures.size() == vEfrac.size());
-
-  // edfm element indexing starts from nCells
-  std::size_t flow_element_shift = nCells;
 
   for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
   {
@@ -341,7 +338,7 @@ void SimData::computeCellClipping()
     }
 
     // std::cout << "computing edfm transes" << std::endl;
-    computeEDFMTransmissibilities(splits, ifrac, flow_element_shift);
+    computeEDFMTransmissibilities(splits, ifrac);
   }  // end efrac loop
 
 }
@@ -689,8 +686,6 @@ void SimData::computeInterEDFMTransmissibilities()
                       flow_data.trans_ij.push_back(trans);
                       flow_data.ielement.push_back(get_flow_element_index(ifrac, ind_i));
                       flow_data.jelement.push_back(get_flow_element_index(jfrac, ind_j));
-                      std::cout << get_flow_element_index(ifrac, ind_i) << std::endl;
-                      std::cout << get_flow_element_index(jfrac, ind_j) << std::endl;
                     }
 
                 }
@@ -702,8 +697,7 @@ void SimData::computeInterEDFMTransmissibilities()
 
 
 void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
-                                            const int frac_ind,
-                                            std::size_t element_shift)
+                                            const int frac_ind)
 {
   const auto & efrac = vEfrac[frac_ind];
   // compute transmissibilities between one embedded fracture and cells
@@ -864,7 +858,8 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     flow_data.trans_ij.push_back(matrix_fracture_flow_data.trans_ij[0] +
                                  matrix_fracture_flow_data.trans_ij[1]);
-    flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
+    // flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
+    flow_data.ielement.push_back(get_flow_element_index(frac_ind, ecell));  // efrac element index
     flow_data.jelement.push_back(icell);  // cell contatining fracture
 
     ecell++;
@@ -948,8 +943,8 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   for (std::size_t i=0; i<frac_flow_data.trans_ij.size(); ++i)
   {
     flow_data.trans_ij.push_back(frac_flow_data.trans_ij[i]);
-    flow_data.ielement.push_back(element_shift + frac_flow_data.ielement[i]);
-    flow_data.jelement.push_back(element_shift + frac_flow_data.jelement[i]);
+    flow_data.ielement.push_back(get_flow_element_index(frac_ind, frac_flow_data.ielement[i]));
+    flow_data.jelement.push_back(get_flow_element_index(frac_ind, frac_flow_data.jelement[i]));
   }
 
   // --------------- END trans between efrac elements -----------------------
@@ -962,7 +957,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   //             << flow_data.trans_ij[i] << "\t"
   //             << std::endl;
 
-  element_shift += vEfrac[frac_ind].cells.size();
 }
 
 

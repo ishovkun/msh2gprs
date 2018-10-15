@@ -1,10 +1,14 @@
 import os
 import numpy as np
 
-res_mesh_file = "/home/production/sim/edfm-10x10x1/reservoir_mesh.vtk"
-frac_mesh_file = "/home/production/sim/edfm-10x10x1/efrac.vtk"
-results_file = "/home/production/sim/edfm-10x10x1/OUTPUT.vars.txt"
-output_dir = "/home/production/sim/edfm-10x10x1/field"
+# res_mesh_file = "/home/production/sim/edfm-10x10x1/reservoir_mesh.vtk"
+# frac_mesh_file = "/home/production/sim/edfm-10x10x1/efrac.vtk"
+# results_file = "/home/production/sim/edfm-10x10x1/OUTPUT.vars.txt"
+# output_dir = "/home/production/sim/edfm-10x10x1/field"
+res_mesh_file = "/home/ishovkun/sim/edfm-2frac/reservoir_mesh.vtk"
+frac_mesh_file = "/home/ishovkun/sim/edfm-2frac/efrac.vtk"
+results_file = "/home/ishovkun/sim/edfm-2frac/OUTPUT.vars.txt"
+output_dir = "/home/ishovkun/sim/edfm-2frac/field"
 
 n_cells = 0
 with open(res_mesh_file, "r") as f:

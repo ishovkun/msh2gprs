@@ -142,8 +142,7 @@ public:
   void handleConnections();
   void computeReservoirTransmissibilities();
   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
-                                     const int   frac_ind,
-                                     std::size_t element_shift);
+                                     const int   frac_ind);
   void computeInterEDFMTransmissibilities();
 
 
