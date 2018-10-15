@@ -628,28 +628,30 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   // geomechfile.close();
 
 
-  cout << "write all wells\n";
-  if ( pSim->nWells > 0 )
-  {
-    outstring =   output_path + "fl_wells.txt";
-    geomechfile.open ( outstring.c_str() );
-    geomechfile <<  "WELSPECS\n";
+  // cout << "write all wells\n";
+  // if ( pSim->nWells > 0 )
+  // {
+  //   outstring =   output_path + "fl_wells.txt";
+  //   geomechfile.open ( outstring.c_str() );
+  //   geomechfile <<  "WELSPECS\n";
 
-    for ( int iw = 0; iw < pSim->nWells; iw++ )
-    {
-      if(pSim->vsWell[iw].vID.size() > 0)
-	geomechfile <<  "W" << iw << " 1* " << pSim->vsWell[iw].vID[0]+1 << " 1 " <<  pSim->vsWell[iw].datum << " WATER /" << endl;
-    }
+  //   for ( int iw = 0; iw < pSim->nWells; iw++ )
+  //   {
+  //     if(pSim->vsWell[iw].vID.size() > 0)
+  //       geomechfile <<  "W" << iw
+  //                   << " 1* " << pSim->vsWell[iw].vID[0]+1
+  //                   << " 1 " <<  pSim->vsWell[iw].datum << " WATER /" << endl;
+  //   }
 
-    geomechfile << "/\n\n";
+  //   geomechfile << "/\n\n";
 
-    geomechfile <<  "COMPDAT\n";
-    for ( int iw = 0; iw < pSim->nWells; iw++ )
-    {
-      for ( int i = 0; i < pSim->vsWell[iw].vID.size(); ++i )
-        geomechfile <<  "W" << iw << "\t" << pSim->vsWell[iw].vID[i]+1 <<" 1 1 1 OPEN 1* " << pSim->vsWell[iw].vWi[i] << " 4* Z/" << endl;
-    }
-    geomechfile << "/\n\n";
-    geomechfile.close();
-  }
+  //   geomechfile <<  "COMPDAT\n";
+  //   for ( int iw = 0; iw < pSim->nWells; iw++ )
+  //   {
+  //     for ( int i = 0; i < pSim->vsWell[iw].vID.size(); ++i )
+  //       geomechfile <<  "W" << iw << "\t" << pSim->vsWell[iw].vID[i]+1 <<" 1 1 1 OPEN 1* " << pSim->vsWell[iw].vWi[i] << " 4* Z/" << endl;
+  //   }
+  //   geomechfile << "/\n\n";
+  //   geomechfile.close();
+  // }
 }

@@ -689,6 +689,8 @@ void SimData::computeInterEDFMTransmissibilities()
                       flow_data.trans_ij.push_back(trans);
                       flow_data.ielement.push_back(get_flow_element_index(ifrac, ind_i));
                       flow_data.jelement.push_back(get_flow_element_index(jfrac, ind_j));
+                      std::cout << get_flow_element_index(ifrac, ind_i) << std::endl;
+                      std::cout << get_flow_element_index(jfrac, ind_j) << std::endl;
                     }
 
                 }
