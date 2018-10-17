@@ -485,8 +485,18 @@ void SimData::computeReservoirTransmissibilities()
     flow_data.ielement.push_back(matrix_flow_data.ielement[i]);
     flow_data.jelement.push_back(matrix_flow_data.jelement[i]);
   }
-  // save custom cell data
+
+
+  // save custom user-defined cell data for flow output
   const std::size_t n_vars = rockPropNames.size();
+
+  // save flow variable names
+  flow_data.custom_names.clear();
+  for (std::size_t j=0; j<n_vars; ++j)
+    if (config.expression_type[j] == 0)
+      flow_data.custom_names.push_back(rockPropNames[j]);
+
+  // save values
   for (std::size_t i=0; i<nCells; ++i)
   {
     flow_data.custom_data.emplace_back();
@@ -956,14 +966,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
   // save custom cell data
   const std::size_t n_vars = rockPropNames.size();
-
-  // save flow variable names
-  flow_data.custom_names.clear();
-  for (std::size_t j=0; j<n_vars; ++j)
-    if (config.expression_type[j] == 0)
-      flow_data.custom_names.push_back(rockPropNames[j]);
-
-  // save values
   for (std::size_t i=0; i<efrac.cells.size(); ++i)
   {
     flow_data.custom_data.emplace_back();
