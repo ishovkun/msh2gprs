@@ -47,14 +47,22 @@ struct SimdataConfig
   std::vector<DomainConfig> domains;
   std::vector<BCConfig> bc_faces;
   std::vector <BCNodeConfig> bc_nodes;
+
   // all variables used for function parsing
   std::vector<std::string> all_vars = {"x", "y", "z"};
+  std::vector<int>         expression_type;  // (0 - flow, 1 - mechanics, -1 -no output)
+  std::vector<std::string> special_keywords =
+  {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
+  static constexpr double default_permeability = 1;
+  static constexpr double default_volume_factor = 1;
+
   // output file names
   std::string mesh_file;
   std::string domain_file = "domain.txt";
   std::string efrac_file = "efrac.txt";
   std::string bcond_file = "bcond.txt";
-
+  // special keywords needed for computing fluid data
+  // (they are not outputted)
   static constexpr double nan = -999.999;
   double node_search_tolerance = 1e-10;
 };

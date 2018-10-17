@@ -33,6 +33,10 @@ struct FlowData
   // connections
   std::vector<int> connection_type;
   std::vector<int> connection_n;
+
+  // user-defined cell data
+  std::vector<std::vector<double>> custom_data;
+  std::vector<std::string>         custom_names;
 };
 
 

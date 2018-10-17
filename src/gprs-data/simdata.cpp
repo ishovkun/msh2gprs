@@ -456,10 +456,8 @@ void SimData::computeReservoirTransmissibilities()
       tran.vZConduction[n*3+2] = thc;
     }
 
-
-    tran.vZVolumeFactor[n] = 1;
+    tran.vZVolumeFactor[n] = get_volume_factor(i);
     tran.vTimurConnectionFactor[n] = 1.0;
-
   }
 
   FlowData matrix_flow_data;
@@ -486,6 +484,15 @@ void SimData::computeReservoirTransmissibilities()
     flow_data.trans_ij.push_back(matrix_flow_data.trans_ij[i]);
     flow_data.ielement.push_back(matrix_flow_data.ielement[i]);
     flow_data.jelement.push_back(matrix_flow_data.jelement[i]);
+  }
+  // save custom cell data
+  const std::size_t n_vars = rockPropNames.size();
+  for (std::size_t i=0; i<nCells; ++i)
+  {
+    flow_data.custom_data.emplace_back();
+    for (std::size_t j=0; j<n_vars; ++j)
+      if (config.expression_type[j] == 0)
+        flow_data.custom_data.back().push_back( vsCellRockProps[i].v_props[j] );
   }
 
 }
@@ -947,6 +954,23 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     flow_data.jelement.push_back(get_flow_element_index(frac_ind, frac_flow_data.jelement[i]));
   }
 
+  // save custom cell data
+  const std::size_t n_vars = rockPropNames.size();
+
+  // save flow variable names
+  flow_data.custom_names.clear();
+  for (std::size_t j=0; j<n_vars; ++j)
+    if (config.expression_type[j] == 0)
+      flow_data.custom_names.push_back(rockPropNames[j]);
+
+  // save values
+  for (std::size_t i=0; i<efrac.cells.size(); ++i)
+  {
+    flow_data.custom_data.emplace_back();
+    for (std::size_t j=0; j<n_vars; ++j)
+      if (config.expression_type[j] == 0)
+        flow_data.custom_data.back().push_back( vsCellRockProps[efrac.cells[i]].v_props[j] );
+  }
   // --------------- END trans between efrac elements -----------------------
 
   // @DEBUG output
@@ -960,7 +984,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 }
 
 
-std::size_t SimData::n_default_vars()
+std::size_t SimData::n_default_vars() const
 {
   SimdataConfig dummy;
   return dummy.all_vars.size();
@@ -1058,6 +1082,11 @@ void SimData::defineRockProperties()
   const std::size_t n_variables = config.all_vars.size();
   std::vector<double> vars(n_variables);
 
+  // save variables name for output
+  rockPropNames.resize(n_variables - shift);
+  for (std::size_t i=shift; i<config.all_vars.size(); ++i)
+    rockPropNames[i - shift] = config.all_vars[i];
+
   // loop various domain configs:
   // they may have different number of variables and expressions
   for (const auto & conf: config.domains)
@@ -1096,7 +1125,7 @@ void SimData::defineRockProperties()
 
     // loop cells and evaluate expressions
     for ( int icell = 0; icell < nCells; icell++ )
-      if ( vsCellCustom[icell].nMarker == conf.label ) // Regular cells
+      if ( vsCellCustom[icell].nMarker == conf.label ) // cells
       {
         std::fill(vars.begin(), vars.end(), 0);
         vars[0] = vsCellCustom[icell].center(0);  // x
@@ -1108,17 +1137,17 @@ void SimData::defineRockProperties()
           vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
 
         // copy vars to cell properties
-        vsCellRockProps[icell].v_props.resize(n_variables-shift);
+        vsCellRockProps[icell].v_props.resize(n_variables - shift);
         // start from 3 to skip x,y,z
         for (std::size_t j=shift; j<n_variables; ++j)
         {
           try
           {
-            vsCellRockProps[icell].v_props[j-shift] = vars[j];
+            vsCellRockProps[icell].v_props[j - shift] = vars[j];
           }
           catch (std::out_of_range & e)
           {
-            vsCellRockProps[icell].v_props[j-shift] = 0;
+            vsCellRockProps[icell].v_props[j - shift] = 0;
           }
         }
       }  // cell loop
@@ -2340,44 +2369,8 @@ void SimData::definePhysicalFacets()
   }
 
   nPhysicalFacets = n_facets;
-
 }
 
-void SimData::defineStressAndDispOnBoundary()
-{
-  // PhysicalFace pfFace;
-  // int inputBC = vvsBCIn.size();
-
-  // vvsBCOut.resize( inputBC );
-  // for(int ibnd = 0; ibnd < inputBC; ibnd++)
-  // {
-  //   int nfacets = -1;
-  //   for ( int iface = 0; iface < nFaces; iface++ )
-  //   {
-  //     if ( vsFaceCustom[iface].nMarker != 0 ) nfacets++;
-
-  //     if ( vsFaceCustom[iface].nMarker < 0 )
-  //     {
-  //       for(int i = 0; i < vvsBCIn[ibnd].size(); i++ )
-  //       {
-  //         if( vsFaceCustom[iface].nMarker == vvsBCIn[ibnd][i].nmark )
-  //         {
-  //           pfFace.nface = nfacets;
-  //           pfFace.ntype = vvsBCIn[ibnd][i].ntype;
-  //           pfFace.nmark = vvsBCIn[ibnd][i].nmark;
-  //           pfFace.nfluid = -1;
-  //           pfFace.axle = vvsBCIn[ibnd][i].axle;
-
-  //           pfFace.condition.clear();
-  //           pfFace.vCondition.push_back( vvsBCIn[ibnd][i].vCondition[0] );
-  //           // pfFace.condition[i] =;
-  //           vvsBCOut[ibnd].push_back( pfFace );
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-}
 
 void SimData::createSimpleWells()
 {
@@ -2395,7 +2388,8 @@ void SimData::createSimpleWells()
 
       if ( vsFaceCustom[iface].nMarker > 0 )
       {
-	if ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk && abs ( center[1] - vsWell[iwell].vWellCoordinate[1] ) < vsWell[iwell].radius_poisk )
+        if ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk &&
+             abs ( center[1] - vsWell[iwell].vWellCoordinate[1] ) < vsWell[iwell].radius_poisk )
         {
           if(center[0] < -250 || center[0] > 250)
 	  {
@@ -2494,22 +2488,21 @@ void SimData::createSimpleWells()
 double SimData::get_property(const std::size_t cell,
                              const std::string & key) const
 {
-  // get index in all_var array
-  const std::size_t ikey = find(key, config.all_vars);
-  // get domain index
-  int i_domain = 0;
-  for (int i=0; i<config.domains.size(); ++i)
-    if ( vsCellCustom[cell].nMarker == config.domains[i].label ) // Regular cells
-      i_domain = i;
+  // // query property by key
+  // if (ikey == config.all_vars.size())
+  //   throw std::out_of_range(key);
+  // else
+  //   return vsCellRockProps[cell].
+  //       v_props[config.domains[i_domain].global_to_local_vars.at(ikey)];
 
-  // query property by key
-  if (ikey == config.all_vars.size())
-    throw std::out_of_range(key);
-  else
-    return vsCellRockProps[cell].
-        v_props[config.domains[i_domain].global_to_local_vars.at(ikey)];
+  // const std::size_t shift = n_default_vars();
+  // const std::size_t ikey = find(key, config.all_vars) - shift;
+  const std::size_t ikey = find(key, rockPropNames);
 
-  return 0;
+  if (ikey == rockPropNames.size())
+      throw std::out_of_range(key);
+
+  return vsCellRockProps[cell].v_props[ikey];
 }
 
 
@@ -2517,18 +2510,39 @@ angem::Point<3,double> SimData::get_permeability(const std::size_t cell) const
 {
   try
   {
-    const double perm = get_property(cell, "PERM");
-    return angem::Point<3,double>(perm, perm, perm);
-
-  }
-  catch (const std::out_of_range& e)
-  {
     const double permx = get_property(cell, "PERMX");
     const double permy = get_property(cell, "PERMY");
     const double permz = get_property(cell, "PERMZ");
     return angem::Point<3,double>(permx, permy, permz);
   }
-  // vector<RockProps> vsCellRockProps;
-  // std::vector<double> v_props;
+  catch (const std::out_of_range& e)
+  {
+    try
+    {
+      const double perm = get_property(cell, "PERM");
+      return angem::Point<3,double>(perm, perm, perm);
+    }
+    catch (const std::out_of_range& e)
+    {
+      return angem::Point<3,double>(config.default_permeability,
+                                    config.default_permeability,
+                                    config.default_permeability);
+    }
+  }
+}
 
+
+double SimData::get_volume_factor(const std::size_t cell) const
+{
+  try
+  {
+    const double vf = get_property(cell, "VFACTOR");
+    if (vf < 1e-16)
+      return config.default_volume_factor;
+    return vf;
+  }
+  catch (const std::out_of_range& e)
+  {
+    return config.default_volume_factor;
+  }
 }

@@ -149,13 +149,14 @@ public:
   void createSimpleWells();
 
   void extractInternalFaces();
-  std::size_t n_default_vars();
+  std::size_t n_default_vars() const;
 
   // get property from cell->v_props by key
   double get_property(const std::size_t cell,
                       const std::string & key) const;
 
   angem::Point<3,double> get_permeability(const std::size_t cell) const;
+  double get_volume_factor(const std::size_t cell) const;
 
 protected:
    void methodElementCenter(int nelem, vector<Gelement> &vsElement);
@@ -219,7 +220,9 @@ public:
 
   int nCells;
   vector<Gelement> vsCellCustom;
-  vector<RockProps> vsCellRockProps;
+  std::vector<RockProps> vsCellRockProps;
+  std::vector<std::string> rockPropNames;
+
   vector<EmbeddedFracture> vEfrac;
   FlowData flow_data;
 

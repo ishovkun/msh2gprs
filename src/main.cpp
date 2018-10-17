@@ -27,6 +27,13 @@ int main(int argc, char *argv[])
   }
 
   const std::string fname_config = argv[1];  // config file
+  const Path path_config(fname_config);
+  if (!filesystem::exists(path_config))
+  {
+    std::cout << "config json file does not exist:" << std::endl;
+    std::cout << filesystem::absolute(path_config) << std::endl;
+    return 0;
+  }
 
   Parsers::Parser parser;
   std::cout << "parsing " << fname_config << std::endl;
@@ -34,7 +41,6 @@ int main(int argc, char *argv[])
   const SimdataConfig config = parser.get_config();
 
   // get path of the config file -- mesh is searched for in relative path
-  const Path path_config(fname_config);
   const Path config_dir_path = path_config.parent_path();
   Path path_gmsh = config_dir_path / config.mesh_file;
 
@@ -69,9 +75,6 @@ int main(int argc, char *argv[])
   cout << " ( bnd & frac faces )" << endl;
   pSimData->definePhysicalFacets();
 
-  cout << "Create bc stress & disp" << endl;
-  pSimData->defineStressAndDispOnBoundary();
-
   cout << endl << "Convert FEM mesh into FVM mesh" << endl;
   pSimData->handleConnections();
 
@@ -87,12 +90,10 @@ int main(int argc, char *argv[])
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
 
-  cout << "Split FEM mesh on internal surfaces" << endl;
-  pSimData->splitInternalFaces();
+  // cout << "Split FEM mesh on internal surfaces" << endl;
+  // pSimData->splitInternalFaces();
 
   cout << "Write FEM mesh data\n";
-  // OutputData * pOut;
-  // pOut = new OutputData(pSimData);
   OutputData output_data(pSimData);
 
   const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";

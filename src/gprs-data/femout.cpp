@@ -177,14 +177,16 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     outstring =   output_path + pSim->config.domain_file;
     geomechfile.open(outstring.c_str());
 
-    const std::size_t shift = pSim->n_default_vars();
-    for (std::size_t ivar=0; ivar<pSim->config.all_vars.size() - shift; ++ivar)
+    for (std::size_t ivar=0; ivar<pSim->rockPropNames.size(); ++ivar)
     {
-      geomechfile << pSim->config.all_vars[shift+ivar] << std::endl;
+      if ( pSim->config.expression_type[ivar] != 1 )  // only mechanics kwds
+        continue;
+
+      geomechfile << pSim->rockPropNames[ivar] << std::endl;
       for (std::size_t icell=0; icell<pSim->nCells; ++icell)
       {
         geomechfile << pSim->vsCellRockProps[icell].v_props[ivar] << "\t";
-        if ((icell+1)%n_entries_per_line == 0)
+        if ((icell + 1) % n_entries_per_line == 0)
           geomechfile << std::endl;
       }
       geomechfile << std::endl << "/" << std::endl << std::endl;

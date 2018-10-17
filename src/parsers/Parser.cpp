@@ -44,10 +44,12 @@ Parser::parse_json(const std::string & fname)
   for (nlohmann::json::iterator section_it = jparser.begin();
        section_it != jparser.end(); ++section_it)
   {
-      std::cout << "Entering section " << section_it.key() << '\n';
+    std::cout << "Entering section " << section_it.key() << '\n';
 
-    if (section_it.key() == "Domain Properties")
-      domain_props_json(section_it);
+    if (section_it.key() == "Domain Flow Properties")
+      domain_props_json(section_it, 0);
+    else if (section_it.key() == "Domain Mechanics Properties")
+      domain_props_json(section_it, 1);
     else if (section_it.key() == "Embedded Fractures")
       embedded_fracs_json(section_it);
     else if (section_it.key() == "Boundary conditions")
@@ -61,7 +63,8 @@ Parser::parse_json(const std::string & fname)
 
 
 void
-Parser::domain_props_json(const nlohmann::json::iterator & section_it)
+Parser::domain_props_json(const nlohmann::json::iterator & section_it,
+                          const int                        var_type)
 {
   nlohmann::json::iterator
       domain_it = (*section_it).begin(),
@@ -78,19 +81,37 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it)
       continue;
     }
 
-    // define local config
-    config.domains.emplace_back();
-    auto & conf = config.domains.back();
+    // check whether the label has been used already
+    const int label = std::atoi(domain_it.key().c_str());
+    int counter = 0;
+    for (const auto & domain : config.domains)
+    {
+      if (label == domain.label)
+        break;
+      else
+        counter++;
+    }
+
+    DomainConfig * p_conf;
+    if (counter == config.domains.size())
+    {
+      config.domains.emplace_back();
+      p_conf = &config.domains.back();
+    }
+    else
+      p_conf = &(config.domains[counter]);
+
+    DomainConfig & conf = *p_conf;
 
     // set props
-    conf.label             = std::atoi(domain_it.key().c_str());
+    conf.label = label;
     std::cout << "Reading domain " << conf.label << std::endl;
 
     nlohmann::json::iterator
         attrib_it = (*domain_it).begin(),
         attrib_end = (*domain_it).end();
 
-    std::size_t exp_counter = 0;
+    std::size_t exp_counter = conf.expressions.size();
     for (;attrib_it != attrib_end; ++attrib_it)
     {
       const std::pair<std::string, std::string> key_value =
@@ -107,10 +128,18 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it)
         // check if in global list and append if so
         const std::size_t ind = find(key_value.first, config.all_vars);
         if (ind == config.all_vars.size())
+        {
           config.all_vars.push_back(key_value.first);
+          // special case - service variable (not outputted)
+          if ( find(key_value.first, config.special_keywords) <
+               config.special_keywords.size())
+            config.expression_type.push_back(-1);
+          else
+            config.expression_type.push_back(var_type);
+        }
         // save positions in the global list
         conf.local_to_global_vars[exp_counter] = ind;
-        conf.global_to_local_vars[ind] = exp_counter;
+        conf.global_to_local_vars[ind]         = exp_counter;
         exp_counter++;
       }
 

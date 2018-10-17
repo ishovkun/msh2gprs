@@ -17,7 +17,8 @@ class Parser
  private:
   // JSON
   void parse_json(const std::string & fname);
-  void domain_props_json(const nlohmann::json::iterator & section_it);
+  void domain_props_json(const nlohmann::json::iterator & section_it,
+                         const int                        var_type);
   void embedded_fracs_json(const nlohmann::json::iterator & section_it);
   void boundary_conditions_json(const nlohmann::json::iterator & section_it);
   void boundary_conditions_faces(nlohmann::json::iterator it,

@@ -2,7 +2,7 @@
 #include "transes.hpp"
 #include "simdata.hpp"
 #include <random>
-class SimData;
+// class SimData;
 
 CalcTranses::CalcTranses()
 {}
@@ -1432,6 +1432,18 @@ void CalcTranses::save_output(const FlowData    & data,
     for (const auto & v : data.depth)
       out << v << std::endl;
     out << "/" << std::endl << std::endl;
+
+    // additional data (if any)
+    for (std::size_t i=0; i<data.custom_names.size(); ++i)
+    {
+      out << data.custom_names[i] << std::endl;
+      for (const auto & values : data.custom_data)
+      {
+        assert(values.size() == data.custom_names.size());
+        out << values[i] << std::endl;
+      }
+      out << "/" << std::endl << std::endl;
+    }
 
     out.close();
   }
