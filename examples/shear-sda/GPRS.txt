@@ -1,0 +1,110 @@
+VERBOSE
+ALL DEBUG /
+
+--------------------------------------------  PROBLEM DESCRIPTION  --+
+FLUID
+DEADOIL
+/
+
+-- COUPLING
+-- FIM(FLOW{NATURAL},WELLS)[SUPERLU]
+-- /
+
+COUPLING
+SEQ(FLOW{NATURAL}[SUPERLU 1e-8 150] , GEOMECHANICS[SUPERLU 1e-12 150] , 30) /
+/
+
+
+#DEBUG
+#MINMAX /
+
+NONLINEAR
+FLOW 1e-4 30 0 APPL /
+/
+
+TUNING
+0.01 30 0 2.0 10.0 1* 0.2 0.1 /
+
+OUTPUT
+ASCII TIME OUTPUT /
+
+-------------------------------------------  FLOW DATA ----------+
+-- description on volume data (pressure, volume, saturation, etc)
+INCLUDE
+./fl_cell_data.txt /
+
+-- description of face data (transes)
+INCLUDE
+./fl_face_data.txt /
+
+-------------------------------------------  MECHANICS DATA ------+
+-- FEM geometry
+INCLUDE
+./gm_geometry.txt /
+
+-- geomechanics depth
+INCLUDE
+./gm_depth.txt /
+
+-- GM (mechanics keywords)
+INCLUDE
+./domain.txt /
+
+-- SDA
+INCLUDE
+./gm_SDA.txt /
+
+-- Boundary conditions
+INCLUDE
+./gm_bcond.txt /
+
+-------------------------------------------  WELLS DESCRIPTION  --+
+
+-- WELSPECS
+-- I1 INJ 1 1 * /
+-- P1 PROD 1 1 * /
+-- P2 PROD 1 1 * /
+-- /
+
+-- COMPDAT
+-- I1  1     1  1  1  OPEN  1*  10.0  4*  Z/
+-- P1  10000  1  1  1  OPEN  1*  10.0  4*  Z/
+-- P2  9901  1  1  1  OPEN  1*  10.0  4*  Z/
+-- /
+
+-- WCONINJE
+-- I1 WATER OPEN BHP 2* 150 /
+-- /
+
+-- WCONPROD
+-- P1  OPEN  BHP  5*  50  /
+-- P2  OPEN  BHP  5*  50  /
+-- /
+
+-- WELLSTRE
+-- I1 .00 1.0 /
+-- /
+
+------------------------------------------------  FLUID DESCRIPTION  --+
+
+PVDO
+1     1.00   1.0
+1000  0.99   1.0 /
+
+PVTW
+1  1.00  1e-5 1 0.0 /
+
+SCOND
+1.0135 288.89 0.0 /
+
+SWOF
+0 0 1 0
+1 1 0 0 /
+
+----------------------------------------------------  TIME STEPPING  --+
+
+TSTEP
+1*1e-2
+/
+
+END

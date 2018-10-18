@@ -1,0 +1,105 @@
+{
+    "Mesh file" : "cartesian.msh",
+
+    "Embedded Fractures" :
+    {
+        "file" : "efrac.txt",
+		    "0":
+        {
+            "type": "Rectangle",
+            "center" : [0,  0,  0],
+            "length":  3.99,
+            "height":  1,
+            "dip":     90,
+            "strike":  45,
+            "cohesion": 0,
+            "friction angle": 30,
+            "dilation angle": 1e-6,
+            "aperture": 1e-4,
+            "conductivity": 2
+        }
+    }
+    , "Domain Flow Properties" :
+    {
+        "_comment_" : "sort is the order of evaluation!",
+        "_comment_" : "fluid properties are also assigned to edfm fracs",
+        "file" : "domain.txt",
+        "9999992": [
+            {"_comment_"                     : "SDA" },
+            {"PORO"                          : "0.2" },
+            {"PERM"                          : "1"   },
+            {"SWAT"                          : "1"   },
+            {"PRESSURE"                      : "1" }
+        ]
+    }
+    , "Domain Mechanics Properties" :
+    {
+        "_comment_" : "sort is the order of evaluation!",
+        "_comment_" : "mechanical properties are only assigned to reservoir cells",
+        "file" : "domain.txt",
+        "9999992": [
+            {"_comment_"                     : "SDA"},
+            {"GMCELL_MODEL"                  : "3"},
+            {"GMCELL_DENSITY"                : "1000"},
+            {"GMCELL_BIOT"                   : "1"},
+            {"GMREF_TEMPERATURE"             : "343.15"},
+            {"GMCELL_HEAT_CAPACITY"          : "2626.0605"},
+            {"GMCELL_THERMAL_EXPANSION"      : "0"},
+            {"GMCELL_PORE_THERMAL_EXPANSION" : "0"},
+            {"GMCELL_POISSON"                : "0.25"},
+            {"GMCELL_YOUNG"                  : "1"},
+            {"GMREF_PRESSURE"                : "1"}
+        ]
+    }
+    , "Boundary conditions" :
+    {
+        "file" : "bcond.txt",
+        "Faces" :
+        {
+            "-1111111" : {
+                "_comment_": "left",
+                "type" : 2,
+                "value": ["-100", "0", "0"]
+            }
+            , "-1111112" : {
+                "_comment_": "right",
+                "type" : 2,
+                "value": ["100", "0", "0"]
+            }
+            , "-3333331" : {
+                "_comment_": "Bottom",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+            , "-3333332" : {
+                "_comment_": "Top",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+        }
+        , "Dirichlet nodes" : {
+            "_comment_" : "assign specific points to be fixed",
+            "search tolerance" : 1e-4,
+            "0" :
+            {
+                "coord" : [-30, 0, -0.5],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "1" :
+            {
+                "coord" : [30, 0, -0.5],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "2" :
+            {
+                "coord" : [0, 30, -0.5],
+                "value" : ["0", "nan" , "nan"]
+            }
+            , "3" :
+            {
+                "coord" : [0, -30, -0.5],
+                "value" : ["0", "nan" , "nan"]
+            }
+        }
+    }
+}
