@@ -868,14 +868,25 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     // fill global flow data
     // don't need cell data here:
-    // we write it when computing transes between edfm segments
-    // flow_data.volumes.push_back(matrix_fracture_flow_data.volumes[efrac_zone]);
-    // flow_data.poro.push_back(matrix_fracture_flow_data.poro[efrac_zone]);
-    // flow_data.depth.push_back(matrix_fracture_flow_data.depth[efrac_zone]);
 
-    flow_data.trans_ij.push_back(matrix_fracture_flow_data.trans_ij[0] +
-                                 matrix_fracture_flow_data.trans_ij[1]);
-    // flow_data.ielement.push_back(element_shift + ecell);  // efrac element index
+    // @DEBUG output
+    // std::cout << "tran data" << std::endl;
+    // for (std::size_t i=0; i<matrix_fracture_flow_data.trans_ij.size(); ++i)
+    //   std::cout << matrix_fracture_flow_data.ielement[i] << "\t"
+    //             << matrix_fracture_flow_data.jelement[i] << "\t"
+    //             << matrix_fracture_flow_data.trans_ij[i] << "\t"
+    //             << std::endl;
+
+    double f_m_tran = 0;
+    { // compute frac-matrix trans as a sum of two frac-block trances weighted by volume
+      const double t1 = matrix_fracture_flow_data.trans_ij[0];
+      const double t2 = matrix_fracture_flow_data.trans_ij[1];
+      const double v1 = matrix_fracture_flow_data.volumes[1];
+      const double v2 = matrix_fracture_flow_data.volumes[2];
+      f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);
+    }
+
+    flow_data.trans_ij.push_back(f_m_tran);
     flow_data.ielement.push_back(get_flow_element_index(frac_ind, ecell));  // efrac element index
     flow_data.jelement.push_back(icell);  // cell contatining fracture
 
