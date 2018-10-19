@@ -13,6 +13,8 @@ ADD_LIBRARY(angem
   Collisions.hpp
   CollisionGJK.hpp
   Line.hpp
+  PolyGroup.hpp
+  SurfaceMesh.hpp
 )
 
 SET_TARGET_PROPERTIES (

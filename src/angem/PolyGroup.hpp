@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Point.hpp>
 #include <Polygon.hpp>
 #include <PointSet.hpp>

@@ -18,13 +18,13 @@ class Polygon: public Shape<Scalar>
   Polygon(const std::vector<Point<3,Scalar>> & all_mesh_vertices,
           const std::vector<std::size_t>     & indices);
 
+  Scalar area() const;
   // shift all points in direction p
   virtual void set_data(const std::vector<Point<3,Scalar>> & point_list) override;
   virtual void move(const Point<3,Scalar> & p) override;
   static  void reorder(std::vector<Point<3,Scalar>> & points);
   static  void reorder_indices(const std::vector<Point<3, Scalar>> &verts,
                                std::vector<std::size_t>            &indices);
-
 
   // Attributes
   Plane<Scalar> plane;
@@ -67,7 +67,7 @@ Polygon<Scalar>::set_data(const std::vector<Point<3,Scalar>> & point_list)
 
   this->points = point_list;
   reorder(this->points);
-  Point<3, Scalar> cm = compute_center_mass(point_list);
+  const Point<3, Scalar> cm = compute_center_mass(point_list);
   /* i'd like the plane support point (first argument) to be
      the center of the poly
      to create the plane I need to pass three points that are not
@@ -181,6 +181,40 @@ Polygon<Scalar>::reorder_indices(const std::vector<Point<3, Scalar>> &verts,
 
 }
 
+
+// compute triangle area
+template<typename Scalar>
+Scalar area(const Point<3,Scalar> & p1,
+            const Point<3,Scalar> & p2,
+            const Point<3,Scalar> & p3)
+{
+  return 0;
+}
+
+
+template<typename Scalar>
+Scalar Polygon<Scalar>::area() const
+{
+  const Point<3, Scalar> cm = compute_center_mass(this->points);
+  Scalar total_area = 0;
+  for (std::size_t i=0; i<this->points.size(); ++i)
+  {
+    if (i < this->points.size() - 1)
+    {
+      const Point<3,Scalar> v1 = this->points[i];
+      const Point<3,Scalar> v2 = this->points[i + 1];
+      total_area += triangle_area(v1, v2, cm);
+    }
+    else
+    {
+      const Point<3,Scalar> v1 = this->points[i];
+      const Point<3,Scalar> v2 = this->points[0];
+      total_area += triangle_area(v1, v2, cm);
+    }
+  }
+
+  return total_area;
+}
 
 
 }

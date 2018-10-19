@@ -48,4 +48,13 @@ remove_duplicates(const std::vector<Point<dim,Scalar>> & points,
       result.push_back(p);
 }
 
+
+template<int dim, typename Scalar>
+Scalar triangle_area(const Point<dim,Scalar> & p1,
+                     const Point<dim,Scalar> & p2,
+                     const Point<dim,Scalar> & p3)
+{
+  return static_cast<Scalar>(0.5) * (cross( p2 - p1, p3 - p1 )).norm();
+}
+
 }

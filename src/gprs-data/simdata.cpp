@@ -1,9 +1,9 @@
 ﻿#include "simdata.hpp"
 
-
-#include "Point.hpp"
-#include "Rectangle.hpp"
-#include "PointSet.hpp"
+#include <Point.hpp>
+#include <Rectangle.hpp>
+#include <PointSet.hpp>
+#include <SurfaceMesh.hpp>
 #include "CollisionGJK.hpp"
 #include <Collisions.hpp>
 #include <utils.hpp>
@@ -256,6 +256,7 @@ void SimData::computeCellClipping()
     }    // end face loop
 
     angem::PointSet<3,double> setVert(tol);
+    angem::SurfaceMesh<double> frac_msh;
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
       // loop through sda cells
@@ -268,11 +269,13 @@ void SimData::computeCellClipping()
       angem::remove_duplicates(section_points, set_points, tol);
 
       // correct ordering for quads
-      if (set_points.size() > 3)
-      {
-        angem::Polygon<double>::reorder(set_points);
-      }
-      vvSection[i] = set_points;
+      // if (set_points.size() > 3)
+      // {
+      //   angem::Polygon<double>::reorder(set_points);
+      // }
+      angem::Polygon<double> poly_section(set_points);
+      vvSection[i] = poly_section.get_points();
+      frac_msh.insert(poly_section);
 
       // remove cell if number of points < 3 <=> area = 0
       if (set_points.size() < 3)
@@ -313,6 +316,24 @@ void SimData::computeCellClipping()
 
     }
 
+    // compute average frac element area
+    double avg_frac_element_area =
+        config.fractures[ifrac].body->area() / vEfrac[ifrac].cells.size();
+    std::cout << "avg_frac_element_area = " << avg_frac_element_area << std::endl;
+
+    // merge tiny cells
+    std::cout << "merge tiny frac vertices" << std::endl;
+    for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
+    {
+      angem::Polygon<double> poly(frac_msh.vertices.points,
+                                  frac_msh.polygons[i]);
+      // std::cout << "poly.area() = " << poly.area() << std::endl;
+      std::cout << "factor = " << poly.area() / avg_frac_element_area << std::endl;
+    }
+
+
+    exit(0);
+
     // get indices of frac vertices
     std::cout << "computing indices of frac vertices" << std::endl;
     vEfrac[ifrac].vIndices.resize(vvSection.size());
@@ -321,7 +342,6 @@ void SimData::computeCellClipping()
     {
       for (const Point & p : cell_section)
       {
-        // const std::size_t ind = std::distance(it_begin, setVert.find(p));
         const std::size_t ind = setVert.find(p);
         vEfrac[ifrac].vIndices[icell].push_back(ind);
       }
