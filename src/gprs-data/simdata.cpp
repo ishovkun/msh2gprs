@@ -821,7 +821,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.vZPorosity[efrac_zone] = 1.0;
     tran.vZPermCode[efrac_zone] = 1;
 
-    //@HACK default permeability for all fractures
     const double w = efrac.aperture;
     tran.vZPermeability[0] = efrac.conductivity / w;
     tran.vZPermeability[1] = efrac.conductivity / w;
@@ -833,15 +832,15 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.vTimurConnectionFactor[0] = 1.0;
 
     // properties of polyhedra in cell
+    const angem::Point<3,double> perm = get_permeability(icell);
     for ( std::size_t i = 0; i < tran.NbPolyhedra; i++ )
     {
       const std::size_t n = i + tran.NbFracs;
       tran.vZoneCode[n] = tran.vCodePolyhedron[i];
       tran.vZPorosity[n] = get_property(icell, "PORO");
       assert(tran.vZPorosity[n] > 1e-16);
-      tran.vZPermCode[n] = 1;
+      tran.vZPermCode[n] = n;
 
-      const angem::Point<3,double> perm = get_permeability(icell);
       tran.vZPermeability[n*3+0] = perm[0];
       tran.vZPermeability[n*3+1] = perm[1];
       tran.vZPermeability[n*3+2] = perm[2];
@@ -867,7 +866,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     tran.extractData(matrix_fracture_flow_data);
 
     // fill global flow data
-    // don't need cell data here:
 
     // @DEBUG output
     // std::cout << "tran data" << std::endl;
@@ -876,6 +874,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     //             << matrix_fracture_flow_data.jelement[i] << "\t"
     //             << matrix_fracture_flow_data.trans_ij[i] << "\t"
     //             << std::endl;
+    // abort();
 
     double f_m_tran = 0;
     { // compute frac-matrix trans as a sum of two frac-block trances weighted by volume
