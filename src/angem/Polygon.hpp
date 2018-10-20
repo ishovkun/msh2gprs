@@ -113,9 +113,12 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
   v_points.push_back(copy.front());
   copy.erase(copy.begin());
 
+  std::size_t safety_counter = 0, counter_max = 2 * copy.size();
   while (!copy.empty())
   {
-    // std::cout << "copy.size() = " << copy.size() << std::endl;
+    if (safety_counter >= counter_max)
+      throw std::runtime_error("polygon is not convex");
+
     if (copy.size() == 1)
     {
       v_points.push_back(copy[0]);
@@ -157,6 +160,7 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
       }
 
     }
+    safety_counter++;
   }
 
   points = v_points;
