@@ -18,6 +18,9 @@ class SurfaceMesh // : PolyGroup<Scalar>
   void insert(const Polygon<Scalar> & poly);
   bool empty() const;
 
+  // merge polygon with its larger neighbor
+  void merge_element(const std::size_t element);
+
   PointSet<3,Scalar>                    vertices;
   std::vector<std::vector<std::size_t>> polygons;  // indices
   // std::vector<std::size_t> neighbors;
@@ -94,6 +97,44 @@ void SurfaceMesh<Scalar>::insert(const Polygon<Scalar> & poly)
       map_edge_neighbors.insert({ {hash, {polygons.size()}} });
   }
 
+}
+
+
+template <typename Scalar>
+void SurfaceMesh<Scalar>::merge_element( const std::size_t element )
+{
+  // make iterator for faces, i'm sick of this code
+  // for (std::size_t i=0; i<points.size(); ++i)
+  //   if (i < points.size() - 1)
+  //   else
+
+  Polygon<Scalar> poly(vertices, polygons(element));
+  std::vector<Point<3,Scalar>> &points = poly.get_points();
+  // find first neighbor
+  for (std::size_t i=0; i<points.size(); ++i)
+  {
+    std::size_t i1, i2;
+    if (i < points.size() - 1)
+    {
+      i1 = vertices.find(points[i]);
+      i2 = vertices.find(points[i+1]);
+    }
+    else
+    {
+      i1 = vertices.find(points[i]);
+      i2 = vertices.find(points[0]);
+    }
+
+    std::size_t hash = hash_value(i1, i2);
+    auto iter = map_edge_neighbors.find(hash);
+    if (iter != map_edge_neighbors.end())  // found!!!
+    {
+
+    }
+    else
+      continue;
+
+  }
 }
 
 }

@@ -1,8 +1,8 @@
 import os
 import numpy as np
 
-# case_path = "/home/production/sim/edfm-2frac/"
-case_path = "/home/production/sim/aquifer/"
+case_path = "/home/ishovkun/sim/edfm-2frac/"
+# case_path = "$HOME/sim/aquifer/"
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 frac_mesh_file = case_path + "efrac.vtk"
 results_file = case_path + "OUTPUT.vars.txt"
@@ -25,7 +25,6 @@ with open(res_mesh_file, "r") as f:
         if (len(data) > 0):
             if (data[0] == "CELL_TYPES"):
                 print(data)
-                # n_cells = int(data[1])
                 n_elements = int(data[1])
                 for i in range(n_elements):
                     line = f.readline().rstrip()

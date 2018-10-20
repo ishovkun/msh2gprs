@@ -22,6 +22,7 @@
 #include "Point.hpp"
 #include "PolyGroup.hpp"
 #include "Collisions.hpp"
+#include <SurfaceMesh.hpp>
 #include <SimdataConfig.hpp>
 
 struct GmConstraint
@@ -107,6 +108,7 @@ struct EmbeddedFracture
   double                              dilation_angle;
   // cells -> points
   // these two entries represent mesh within the frac
+  angem::SurfaceMesh<double>          mesh;
   std::vector<angem::Point<3,double>>  vVertices;
   // cells -> vertex indiced (fracture polygons)
   std::vector<std::vector<std::size_t>> vIndices;
@@ -134,6 +136,7 @@ public:
   void defineRockProperties();
   void defineEmbeddedFractureProperties();
   void computeCellClipping();
+  void mergeSmallFracCells();
   void definePhysicalFacets();
   void defineStressAndDispOnBoundary();
 

@@ -65,6 +65,7 @@ struct SimdataConfig
   // (they are not outputted)
   static constexpr double nan = -999.999;
   double node_search_tolerance = 1e-10;
+  double frac_cell_elinination_factor = 0.1;
 };
 
 

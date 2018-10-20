@@ -3,7 +3,6 @@
 #include <Point.hpp>
 #include <Rectangle.hpp>
 #include <PointSet.hpp>
-#include <SurfaceMesh.hpp>
 #include "CollisionGJK.hpp"
 #include <Collisions.hpp>
 #include <utils.hpp>
@@ -316,6 +315,44 @@ void SimData::computeCellClipping()
 
     }
 
+    vEfrac[ifrac].mesh = std::move(frac_msh);
+
+    // // get indices of frac vertices
+    // std::cout << "computing indices of frac vertices" << std::endl;
+    // vEfrac[ifrac].vIndices.resize(vvSection.size());
+    // std::size_t icell = 0;
+    // for (const auto & cell_section : vvSection)
+    // {
+    //   for (const Point & p : cell_section)
+    //   {
+    //     const std::size_t ind = setVert.find(p);
+    //     vEfrac[ifrac].vIndices[icell].push_back(ind);
+    //   }
+    //   icell++;
+    // }
+
+    // // convert set of vertices to std::vector
+    // vEfrac[ifrac].vVertices.resize(setVert.size());
+    // std::size_t ivert = 0;
+    // for (const Point & p : setVert)
+    // {
+    //   vEfrac[ifrac].vVertices[ivert] = p;
+    //   ivert++;
+    // }
+
+    // // std::cout << "computing edfm transes" << std::endl;
+    // computeEDFMTransmissibilities(splits, ifrac);
+  }  // end efrac loop
+
+}
+
+
+void SimData::mergeSmallFracCells()
+{
+  for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
+  {
+    auto & msh = vEfrac[ifrac].mesh;
+
     // compute average frac element area
     double avg_frac_element_area =
         config.fractures[ifrac].body->area() / vEfrac[ifrac].cells.size();
@@ -323,44 +360,22 @@ void SimData::computeCellClipping()
 
     // merge tiny cells
     std::cout << "merge tiny frac vertices" << std::endl;
-    for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
+    for (std::size_t ielement=0; ielement<vEfrac[ifrac].cells.size(); ++ielement)
     {
-      angem::Polygon<double> poly(frac_msh.vertices.points,
-                                  frac_msh.polygons[i]);
-      // std::cout << "poly.area() = " << poly.area() << std::endl;
-      std::cout << "factor = " << poly.area() / avg_frac_element_area << std::endl;
-    }
+      angem::Polygon<double> poly(msh.vertices.points,
+                                  msh.polygons[ielement]);
+      const double area_factor = poly.area() / avg_frac_element_area;
 
-
-    exit(0);
-
-    // get indices of frac vertices
-    std::cout << "computing indices of frac vertices" << std::endl;
-    vEfrac[ifrac].vIndices.resize(vvSection.size());
-    std::size_t icell = 0;
-    for (const auto & cell_section : vvSection)
-    {
-      for (const Point & p : cell_section)
+      if (area_factor < config.frac_cell_elinination_factor)
       {
-        const std::size_t ind = setVert.find(p);
-        vEfrac[ifrac].vIndices[icell].push_back(ind);
+
+        std::cout << "gotcha" << std::endl;
+        msh.merge_element(ielement);
+        exit(0);
       }
-      icell++;
     }
 
-    // convert set of vertices to std::vector
-    vEfrac[ifrac].vVertices.resize(setVert.size());
-    std::size_t ivert = 0;
-    for (const Point & p : setVert)
-    {
-      vEfrac[ifrac].vVertices[ivert] = p;
-      ivert++;
-    }
-
-    // std::cout << "computing edfm transes" << std::endl;
-    computeEDFMTransmissibilities(splits, ifrac);
-  }  // end efrac loop
-
+  }
 }
 
 

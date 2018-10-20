@@ -84,22 +84,25 @@ int main(int argc, char *argv[])
   cout << "Compute cell clipping and EDFM transmissibilities" << endl;
   pSimData->computeCellClipping();
 
-  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  pSimData->computeInterEDFMTransmissibilities();
+  cout << "Merge small edfm cells" << endl;
+  pSimData->mergeSmallFracCells();
 
-  // cout << "Create simple wells" << endl;
-  // pSimData->createSimpleWells();
+  // std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  // pSimData->computeInterEDFMTransmissibilities();
 
-  // cout << "Split FEM mesh on internal surfaces" << endl;
-  // pSimData->splitInternalFaces();
+  // // cout << "Create simple wells" << endl;
+  // // pSimData->createSimpleWells();
 
-  cout << "Write FEM mesh data\n";
-  OutputData output_data(pSimData);
+  // // cout << "Split FEM mesh on internal surfaces" << endl;
+  // // pSimData->splitInternalFaces();
 
-  const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
-  std::cout << "output directory: " << output_dir << std::endl;
-  output_data.write_output(output_dir);
+  // cout << "Write FEM mesh data\n";
+  // OutputData output_data(pSimData);
 
-  delete pSimData;
+  // const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
+  // std::cout << "output directory: " << output_dir << std::endl;
+  // output_data.write_output(output_dir);
+
+  // delete pSimData;
   return 0;
 }
