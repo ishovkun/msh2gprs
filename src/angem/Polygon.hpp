@@ -115,6 +115,7 @@ Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
 
   while (!copy.empty())
   {
+    // std::cout << "copy.size() = " << copy.size() << std::endl;
     if (copy.size() == 1)
     {
       v_points.push_back(copy[0]);

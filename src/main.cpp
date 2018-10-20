@@ -87,21 +87,21 @@ int main(int argc, char *argv[])
   cout << "Merge small edfm cells" << endl;
   pSimData->mergeSmallFracCells();
 
-  // std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  // pSimData->computeInterEDFMTransmissibilities();
+  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  pSimData->computeInterEDFMTransmissibilities();
 
-  // // cout << "Create simple wells" << endl;
-  // // pSimData->createSimpleWells();
+  // cout << "Create simple wells" << endl;
+  // pSimData->createSimpleWells();
 
-  // // cout << "Split FEM mesh on internal surfaces" << endl;
-  // // pSimData->splitInternalFaces();
+  // cout << "Split FEM mesh on internal surfaces" << endl;
+  // pSimData->splitInternalFaces();
 
-  // cout << "Write FEM mesh data\n";
-  // OutputData output_data(pSimData);
+  cout << "Write FEM mesh data\n";
+  OutputData output_data(pSimData);
 
-  // const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
-  // std::cout << "output directory: " << output_dir << std::endl;
-  // output_data.write_output(output_dir);
+  const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
+  std::cout << "output directory: " << output_dir << std::endl;
+  output_data.write_output(output_dir);
 
   // delete pSimData;
   return 0;

@@ -5,6 +5,8 @@
 #include <PointSet.hpp>
 // #include <PolyGroup.hpp>
 
+#include <unordered_set>
+
 
 namespace angem
 {
@@ -29,10 +31,14 @@ class SurfaceMesh // : PolyGroup<Scalar>
   std::vector<std::size_t> get_neighbors( const Edge & edge ) const;
   // get vector of index pairs representing edges
   std::vector<Edge> get_edges( const std::size_t ielement ) const;
+  //
+  void delete_element(const std::size_t ielement);
 
 
   // merge polygon with its largest neighbor
-  void merge_element(const std::size_t element);
+  // complexity linear to number of faces (edges)
+  // does not remove vertices when no connected neighbors
+  std::size_t merge_element(const std::size_t element);
 
   PointSet<3,Scalar>                    vertices;
   std::vector<std::vector<std::size_t>> polygons;  // indices
@@ -46,6 +52,8 @@ class SurfaceMesh // : PolyGroup<Scalar>
   // merge two elements haaving a comon edge
   // the edge is vertex indices
   // private cause no check if they are neighbors
+  // jelement is the element to be merged into ielement
+  // does not remove vertices when no connected neighbors
   void merge_elements(const std::size_t ielement,
                       const std::size_t jelement,
                       const Edge      & edge);
@@ -140,7 +148,7 @@ SurfaceMesh<Scalar>::get_neighbors( const std::size_t ielement ) const
 
 
 template <typename Scalar>
-void SurfaceMesh<Scalar>::merge_element( const std::size_t ielement )
+std::size_t SurfaceMesh<Scalar>::merge_element( const std::size_t ielement )
 {
 
   // const std::vector<std::size_t> neighbors = get_neighbors(element);
@@ -168,7 +176,31 @@ void SurfaceMesh<Scalar>::merge_element( const std::size_t ielement )
     counter++;
   }
 
-  merge_elements(ielement, max_neighbor, edges[max_iedge]);
+  merge_elements(max_neighbor, ielement, edges[max_iedge]);
+  return max_neighbor;
+}
+
+
+template <typename Scalar>
+void SurfaceMesh<Scalar>::delete_element(const std::size_t element)
+{
+  // delete polygon and reduce all polygons
+  // in map_edge_neighbors with higher indices by 1
+  polygons.erase(polygons.begin() + element);
+  for (auto iter = map_edge_neighbors.begin();
+       iter != map_edge_neighbors.end(); ++iter)
+  {
+    std::size_t counter = 0;
+    for (std::size_t i=0; i<iter->second.size(); ++i)
+    {
+      std::size_t ielement = iter->second[i];
+      if (ielement == element)
+        iter->second.erase(iter->second.begin() + i);
+      else if (ielement < element)
+        iter->second[i]--;
+    }
+  }
+
 }
 
 
@@ -177,7 +209,26 @@ void SurfaceMesh<Scalar>::merge_elements(const std::size_t ielement,
                                          const std::size_t jelement,
                                          const Edge      & edge)
 {
+  std::cout << "doing merge" << std::endl;
+  // create set of vertex indices of element vertices
+  std::unordered_set<std::size_t> set_vertices;
+  for (auto & ivertex : polygons[ielement])
+    set_vertices.insert(ivertex);
+  for (auto & jvertex : polygons[jelement])
+    set_vertices.insert(jvertex);
+  // convert it into a vector
+  std::vector<std::size_t> v_vertices;
+  for (const auto & vertex : set_vertices)
+    v_vertices.push_back(vertex);
+  std::cout << "reorder" << std::endl;
+  std::cout << "v_vertices.size() = " << v_vertices.size() << std::endl;
 
+  Polygon<Scalar>::reorder_indices(vertices.points, v_vertices);
+  std::cout << "copy" << std::endl;
+  polygons[ielement] = v_vertices;
+  std::cout << "done merge" << std::endl;
+  delete_element(jelement);
+  std::cout << "deleted" << std::endl;
 }
 
 
@@ -216,7 +267,7 @@ SurfaceMesh<Scalar>::get_neighbors( const Edge & edge ) const
   std::vector<std::size_t> v_neighbors;
   const std::size_t hash = hash_value(edge.first, edge.second);
   const auto iter = map_edge_neighbors.find(hash);
-  if (iter != map_edge_neighbors.end())
+  if (iter == map_edge_neighbors.end())
     throw std::out_of_range("edge does not exist");
 
   return iter->second;

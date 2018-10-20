@@ -304,6 +304,10 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       const std::string vtk_file = output_path + "efrac.vtk";
       IO::VTKWriter::write_vtk(efrac_verts, efrac_cells, vtk_file);
 
+      const std::string vtk_file2 = output_path + "ababa.vtk";
+      IO::VTKWriter::write_vtk(pSim->vEfrac[0].mesh.vertices.points,
+                               pSim->vEfrac[0].mesh.polygons,
+                               vtk_file2);
     }
     // outstring =   output_path + "efrac.vtk";
     // geomechfile.open(outstring.c_str());

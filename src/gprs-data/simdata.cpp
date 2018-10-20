@@ -293,21 +293,6 @@ void SimData::computeCellClipping()
       // @TODO: add marker to consider this an active poly
       splits[i].add(angem::Polygon<double>(set_points), MARKER_FRAC);
 
-      // @DEBUG print split
-      // std::cout << "vertices \n " << split.vertices << std::endl;
-      // std::cout << "polygons" << std::endl;
-      // for (auto & split : splits)
-      //   for (std::size_t p=0; p<split.polygons.size(); ++p)
-      //   {
-      //     auto & poly = split.polygons[p];
-      //     for (auto & i : poly)
-      //       std::cout <<  i << "\t";
-      //       // std::cout <<  split.vertices[i] << "\t|\t";
-      //     // std::cout << "marker" <<  split.markers[p] << std::endl;
-      //     std::cout << std::endl;
-      //   }
-      // exit(0);
-
       // write points into a global set so we have an ordered set
       // of vertices and we can retreive indices
       for (const Point & p : set_points)
@@ -317,31 +302,31 @@ void SimData::computeCellClipping()
 
     vEfrac[ifrac].mesh = std::move(frac_msh);
 
-    // // get indices of frac vertices
-    // std::cout << "computing indices of frac vertices" << std::endl;
-    // vEfrac[ifrac].vIndices.resize(vvSection.size());
-    // std::size_t icell = 0;
-    // for (const auto & cell_section : vvSection)
-    // {
-    //   for (const Point & p : cell_section)
-    //   {
-    //     const std::size_t ind = setVert.find(p);
-    //     vEfrac[ifrac].vIndices[icell].push_back(ind);
-    //   }
-    //   icell++;
-    // }
+    // get indices of frac vertices
+    std::cout << "computing indices of frac vertices" << std::endl;
+    vEfrac[ifrac].vIndices.resize(vvSection.size());
+    std::size_t icell = 0;
+    for (const auto & cell_section : vvSection)
+    {
+      for (const Point & p : cell_section)
+      {
+        const std::size_t ind = setVert.find(p);
+        vEfrac[ifrac].vIndices[icell].push_back(ind);
+      }
+      icell++;
+    }
 
-    // // convert set of vertices to std::vector
-    // vEfrac[ifrac].vVertices.resize(setVert.size());
-    // std::size_t ivert = 0;
-    // for (const Point & p : setVert)
-    // {
-    //   vEfrac[ifrac].vVertices[ivert] = p;
-    //   ivert++;
-    // }
+    // convert set of vertices to std::vector
+    vEfrac[ifrac].vVertices.resize(setVert.size());
+    std::size_t ivert = 0;
+    for (const Point & p : setVert)
+    {
+      vEfrac[ifrac].vVertices[ivert] = p;
+      ivert++;
+    }
 
-    // // std::cout << "computing edfm transes" << std::endl;
-    // computeEDFMTransmissibilities(splits, ifrac);
+    // std::cout << "computing edfm transes" << std::endl;
+    computeEDFMTransmissibilities(splits, ifrac);
   }  // end efrac loop
 
 }
@@ -369,7 +354,7 @@ void SimData::mergeSmallFracCells()
       if (area_factor < config.frac_cell_elinination_factor)
       {
 
-        std::cout << "gotcha" << std::endl;
+        std::cout << "merging element " << ielement << std::endl;
         msh.merge_element(ielement);
         exit(0);
       }
