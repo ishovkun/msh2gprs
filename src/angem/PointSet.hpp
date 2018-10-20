@@ -25,7 +25,7 @@ class PointSet
   // returns point index in set
   std::size_t insert(const Point<dim,Scalar> &p);
   // wrapper around find(const Point &p, std::vector<Point> &vPoints)
-  std::size_t find(const Point<dim,Scalar> &p);
+  std::size_t find(const Point<dim,Scalar> &p) const;
 
   // getters
   Point<dim,Scalar> & operator[](std::size_t i);
@@ -56,10 +56,10 @@ class PointSet
 
 
 template<int dim, typename Scalar>
-std::size_t PointSet<dim,Scalar>::find(const Point<dim,Scalar> &p)
+std::size_t PointSet<dim,Scalar>::find(const Point<dim,Scalar> &p) const
 {
   const __int128 ha = hash_value(p);
-  const std::unordered_map<__int128,std::size_t>::iterator it = index_map.find(ha);
+  const std::unordered_map<__int128,std::size_t>::const_iterator it = index_map.find(ha);
 
   if (it == index_map.end())
     return size();
@@ -72,7 +72,7 @@ template<int dim, typename Scalar>
 std::size_t PointSet<dim,Scalar>::insert(const Point<dim,Scalar> &p)
 {
   const __int128 ha = hash_value(p);
-  const std::unordered_map<__int128,std::size_t>::iterator it = index_map.find(ha);
+  const std::unordered_map<__int128,std::size_t>::const_iterator it = index_map.find(ha);
   if (it == index_map.end())
   {
     const std::size_t ind = size();
