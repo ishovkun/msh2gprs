@@ -1,5 +1,7 @@
 #include <FlowData.hpp>
 
+#include <iostream>  // debug
+
 
 FlowData::FlowData(const std::size_t max_connections)
     :
@@ -39,10 +41,11 @@ void FlowData::merge_elements(const std::size_t updated_element,
 
   for (const std::size_t neighbor : neighbors)
   {
+    const std::size_t dead_conn = connection_index(d, neighbor);
     if (neighbor != u)
     {
-      std::size_t conn = insert_connection(u, neighbor);
-      trans_ij[conn] += trans_ij[connection_index(d, neighbor)];
+      std::size_t new_conn = insert_connection(u, neighbor);
+      trans_ij.push_back(trans_ij[dead_conn]);
     }
     clear_connection(d, neighbor);
   }
@@ -77,7 +80,19 @@ void FlowData::clear_connection(const std::size_t ielement,
 
   // clear other container
   const std::size_t hash = hash_value(ielement, jelement);
-  map_connection.erase(map_connection.find(hash));
+  auto it_con = map_connection.find(hash);
+  std::size_t dead_conn = it_con->second;
+  map_connection.erase(it_con);
+  trans_ij.erase(trans_ij.begin() + dead_conn);
+
+  // shift connection indices
+  for (auto iter = map_connection.begin();
+       iter != map_connection.end(); ++iter)
+  {
+    const std::size_t iconn = iter->second;
+    if (iconn > dead_conn)
+      iter->second--;
+  }
 }
 
 

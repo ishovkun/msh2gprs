@@ -205,7 +205,6 @@ void SurfaceMesh<Scalar>::delete_element(const std::size_t element)
   for (auto iter = map_edge_neighbors.begin();
        iter != map_edge_neighbors.end(); ++iter)
   {
-    std::size_t counter = 0;
     for (std::size_t i=0; i<iter->second.size(); ++i)
     {
       std::size_t ielement = iter->second[i];

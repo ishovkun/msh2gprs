@@ -1463,6 +1463,7 @@ void CalcTranses::save_output(const FlowData    & data,
           << element_pair.second << "\t"
           << data.trans_ij[iconn]  << std::endl;
     }
+    out << "/" << std::endl;
 
     out.close();
   }
