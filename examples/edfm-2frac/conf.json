@@ -4,7 +4,8 @@
     "Embedded Fractures" :
     {
         "file" : "efrac.txt",
-		    "0":
+        "Aggregation threshold" : 0.3,
+		    "_comment_":
         {
             "type": "Rectangle",
             "center" : [0,  0,  0],

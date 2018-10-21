@@ -350,6 +350,7 @@ void SimData::mergeSmallFracCells()
     // merge tiny cells
     std::size_t ielement = 0;
     std::size_t n_frac_elements = msh.polygons.size();
+
     // loop is with variable upper limit since elements can be
     // merged and deleted
     while (ielement < n_frac_elements)
@@ -362,7 +363,8 @@ void SimData::mergeSmallFracCells()
       {
         const std::size_t new_element = msh.merge_element(ielement);
         // update flow data
-        flow_data.merge_elements(new_element, ielement);
+        flow_data.merge_elements(get_flow_element_index(ifrac, new_element),
+                                 get_flow_element_index(ifrac, ielement));
 
         n_frac_elements = msh.polygons.size();
         if (ielement >= n_frac_elements)
@@ -496,13 +498,6 @@ void SimData::computeReservoirTransmissibilities()
   tran.compute_flow_data();
   tran.extractData(matrix_flow_data);
 
-  // std::cout << "matrix-matrix" << std::endl;
-  // for (std::size_t i=0; i<matrix_flow_data.trans_ij.size(); ++i)
-  //   std::cout << matrix_flow_data.ielement[i] << "\t"
-  //             << matrix_flow_data.jelement[i] << "\t"
-  //             << matrix_flow_data.trans_ij[i] << "\t"
-  //             << std::endl;
-
   // copy to global
   for (std::size_t i=0; i<matrix_flow_data.volumes.size(); ++i)
   {
@@ -510,13 +505,6 @@ void SimData::computeReservoirTransmissibilities()
     flow_data.poro.push_back(matrix_flow_data.poro[i]);
     flow_data.depth.push_back(matrix_flow_data.depth[i]);
   }
-
-  // for (std::size_t i=0; i<matrix_flow_data.trans_ij.size(); ++i)
-  // {
-  //   flow_data.trans_ij.push_back(matrix_flow_data.trans_ij[i]);
-  //   flow_data.ielement.push_back(matrix_flow_data.ielement[i]);
-  //   flow_data.jelement.push_back(matrix_flow_data.jelement[i]);
-  // }
 
   for (const auto & conn : matrix_flow_data.map_connection)
   {
@@ -553,7 +541,8 @@ std::size_t SimData::get_flow_element_index(const std::size_t ifrac,
 {
   std::size_t result = nCells;
   for (std::size_t i=0; i<ifrac; ++i)
-    result += vEfrac[i].cells.size();
+    result += vEfrac[i].mesh.polygons.size();
+    // result += vEfrac[i].cells.size();
   result += ielement;
   return result;
 }
@@ -693,6 +682,7 @@ void SimData::computeInterEDFMTransmissibilities()
                   const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
                   if (markers[element_pair.first] != markers[element_pair.second])
                   {
+                    std::cout << "ij: " << element_pair.first << " " << element_pair.second << std::endl;
                     flow_data.insert_connection(local_to_global[element_pair.first],
                                                 local_to_global[element_pair.second]);
                     flow_data.trans_ij.push_back(frac_frac_flow_data.trans_ij[iconn]);
@@ -745,7 +735,6 @@ void SimData::computeInterEDFMTransmissibilities()
                         const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
                         if (splits.markers[element_pair.first] != splits.markers[element_pair.second])
                           trans += frac_frac_flow_data.trans_ij[iconn];
-
                       }
 
                       // for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
@@ -1019,8 +1008,8 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     etran.vTimurConnectionFactor[i] = 1.0;
   }
 
-  std::cout << "n_vertices = " << efrac.vVertices.size() << std::endl;
-  std::cout << "frac-frac approximations" << std::endl;
+  // std::cout << "n_vertices = " << efrac.vVertices.size() << std::endl;
+  std::cout << "frac-frac whithin one frac approximations" << std::endl;
   etran.compute_flow_data();
   FlowData frac_flow_data;
   etran.extractData(frac_flow_data);
@@ -1062,15 +1051,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
         flow_data.custom_data.back().push_back( vsCellRockProps[efrac.cells[i]].v_props[j] );
   }
   // --------------- END trans between efrac elements -----------------------
-
-  // @DEBUG output
-  // std::cout << "final tran data" << std::endl;
-  // for (std::size_t i=0; i<flow_data.trans_ij.size(); ++i)
-  //   std::cout << flow_data.ielement[i] << "\t"
-  //             << flow_data.jelement[i] << "\t"
-  //             << flow_data.trans_ij[i] << "\t"
-  //             << std::endl;
-
 }
 
 

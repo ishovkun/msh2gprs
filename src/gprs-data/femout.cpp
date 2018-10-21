@@ -265,11 +265,14 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       std::size_t n_efrac_vertices = 0;
       // make up a vector of all sda vertices
       for (const auto & efrac : pSim->vEfrac)
-        n_efrac_vertices += efrac.vVertices.size();
+        n_efrac_vertices += efrac.mesh.vertices.size();
+        // n_efrac_vertices += efrac.vVertices.size();
+
       std::vector<angem::Point<3,double>> efrac_verts(n_efrac_vertices);
       std::size_t ivertex = 0;
       for (const auto & efrac : pSim->vEfrac)
-        for (const auto & p : efrac.vVertices)
+        // for (const auto & p : efrac.vVertices)
+        for (const auto & p : efrac.mesh.vertices)
         {
           efrac_verts[ivertex] = p;
           ivertex++;
@@ -280,9 +283,12 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
 
       for (const auto & efrac : pSim->vEfrac)
       {
-        n_efrac_elements += efrac.vIndices.size();
-        for (const auto & vec : efrac.vIndices)
-          vind_size_total += vec.size();
+        // n_efrac_elements += efrac.vIndices.size();
+        // for (const auto & vec : efrac.vIndices)
+        //   vind_size_total += vec.size();
+        n_efrac_elements += efrac.mesh.polygons.size();
+        for (const auto & poly : efrac.mesh.polygons)
+          vind_size_total += poly.size();
       }
 
       std::vector<std::vector<std::size_t>> efrac_cells(n_efrac_elements);
@@ -290,7 +296,8 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       std::size_t shift = 0;
       for (const auto & efrac : pSim->vEfrac)
       {
-        for (const auto & cell : efrac.vIndices)
+        // for (const auto & cell : efrac.vIndices)
+        for (const auto & cell : efrac.mesh.polygons)
         {
           efrac_cells[ielement].resize(cell.size());
           for (short v=0; v<cell.size(); ++v)
@@ -298,16 +305,17 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
 
           ielement++;
         }
-        shift += efrac.vVertices.size();
+        // shift += efrac.vVertices.size();
+        shift += efrac.mesh.polygons.size();
       }
 
       const std::string vtk_file = output_path + "efrac.vtk";
       IO::VTKWriter::write_vtk(efrac_verts, efrac_cells, vtk_file);
 
-      const std::string vtk_file2 = output_path + "ababa.vtk";
-      IO::VTKWriter::write_vtk(pSim->vEfrac[0].mesh.vertices.points,
-                               pSim->vEfrac[0].mesh.polygons,
-                               vtk_file2);
+      // const std::string vtk_file2 = output_path + "ababa.vtk";
+      // IO::VTKWriter::write_vtk(pSim->vEfrac[0].mesh.vertices.points,
+      //                          pSim->vEfrac[0].mesh.polygons,
+      //                          vtk_file2);
     }
     // outstring =   output_path + "efrac.vtk";
     // geomechfile.open(outstring.c_str());

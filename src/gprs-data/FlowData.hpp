@@ -3,11 +3,13 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+// #include <iostream>  // debug
 
 class FlowData
 {
  public:
   FlowData(const std::size_t max_connections = 1e10);
+  // returns the connection index
   std::size_t insert_connection(const std::size_t ielement,
                                 const std::size_t jelement);
   std::size_t connection_index(const std::size_t ielement,
@@ -58,26 +60,20 @@ std::size_t FlowData::insert_connection(const std::size_t ielement,
     throw std::runtime_error("connection exists");
   map_connection.insert({hash, map_connection.size()});
 
-  // element connections
+  // element->neighbors connections
   // ielement
   auto it = element_connection.find(ielement);
   if (it != element_connection.end())
     it->second.push_back(jelement);
   else
-  {
-    std::vector<std::size_t> new_connection_vector = {jelement};
-    element_connection.insert({ielement, new_connection_vector});
-  }
+    element_connection.insert({ielement, {jelement}});
 
   // jelement
   it = element_connection.find(jelement);
   if (it != element_connection.end())
     it->second.push_back(ielement);
   else
-  {
-    std::vector<std::size_t> new_connection_vector = {ielement};
-    element_connection.insert({jelement, new_connection_vector});
-  }
+    element_connection.insert({jelement, {ielement}});
 
   return map_connection.size() - 1;
 }
@@ -99,8 +95,9 @@ std::pair<std::size_t,std::size_t>
 FlowData::invert_hash(const std::size_t hash) const
 {
   std::pair<std::size_t,std::size_t> pair;
-  pair.first = hash % max_connections;
-  pair.second = hash - pair.first;
+  pair.first = (hash - hash % max_connections) / max_connections;
+  pair.second = hash % max_connections;
+  // pair.second = hash - pair.first*max_connections;
 
   if (map_connection.find(hash) == map_connection.end())
     throw std::runtime_error("element does not exist");

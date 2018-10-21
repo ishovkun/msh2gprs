@@ -1382,8 +1382,6 @@ void CalcTranses::extractData(FlowData & data) const
     if (iTr[i] < 0 or jTr[i] < 0)
       continue;
 
-    // data.ielement.push_back( iTr[i]);
-    // data.jelement.push_back( jTr[i]);
     data.insert_connection(iTr[i], jTr[i]);
     data.trans_ij.push_back( Tij[i] * transmissibility_conversion_factor );
     data.conduct_ij.push_back( TConductionIJ[i]);
@@ -1410,7 +1408,6 @@ void CalcTranses::save_output(const FlowData    & data,
 
     ///// OUTPUT Dimensions /////
     out << "DIMENS" << std::endl;
-    // geomechfile << pSim->nDFMFracs + pSim->nCells << "\t" << 1 << "\t" << 1 << " /" << endl;
     out << data.volumes.size() << "\t"
         << 1 << "\t" << 1 << "\t"
         << std::endl;
@@ -1466,12 +1463,6 @@ void CalcTranses::save_output(const FlowData    & data,
           << element_pair.second << "\t"
           << data.trans_ij[iconn]  << std::endl;
     }
-
-    // for (std::size_t i=0; i<n_connections; ++i)
-    //   out << data.ielement[i] << "\t"
-    //       << data.jelement[i] << "\t"
-    //       << data.trans_ij[i]  << std::endl;
-    // out << "/" << std::endl << std::endl;
 
     out.close();
   }
