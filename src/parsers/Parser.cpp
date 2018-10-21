@@ -171,6 +171,11 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
       config.efrac_file = (*frac_it).get<std::string>();
       continue;
     }
+    else if (frac_it.key() == "merge factor")
+    {
+      config.frac_cell_elinination_factor = (*frac_it).get<double>();
+      continue;
+    }
     else
     {
       config.fractures.emplace_back();

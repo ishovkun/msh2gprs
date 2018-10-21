@@ -189,6 +189,7 @@ std::size_t SurfaceMesh<Scalar>::merge_element( const std::size_t ielement )
     counter++;
   }
 
+  // @TODO: eliminate vertices if adjacent edges are parallel
   merge_elements(max_neighbor, ielement, edges[max_iedge]);
   return max_neighbor;
 }
