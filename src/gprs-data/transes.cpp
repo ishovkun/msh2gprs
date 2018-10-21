@@ -1390,11 +1390,11 @@ void CalcTranses::extractData(FlowData & data) const
   }
 
   // Geomechanics
-  data.connection_type.resize(NbConnections);
-  for(std::size_t i=0;i<NbConnections;i++)
-  {
-    data.connection_type[i] = ConType[i];
-  }
+  // data.connection_type.resize(NbConnections);
+  // for(std::size_t i=0;i<NbConnections;i++)
+  // {
+  //   // data.connection_type[i] = ConType[i];
+  // }
 }
 
 

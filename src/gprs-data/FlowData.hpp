@@ -15,6 +15,8 @@ class FlowData
   // get two elements from hash value
   std::pair<std::size_t,std::size_t>
   invert_hash(const std::size_t hash) const;
+  void merge_elements(const std::size_t updated_element,
+                      const std::size_t merged_element);
 
 
  private:
@@ -29,8 +31,8 @@ class FlowData
 
   std::vector<double>      trans_ij, conduct_ij;
   // connections
-  std::vector<int> connection_type;
-  std::vector<int> connection_n;
+  // std::vector<int> connection_type;
+  // std::vector<int> connection_n;
 
   // user-defined cell data
   std::vector<std::vector<double>> custom_data;
@@ -70,5 +72,9 @@ FlowData::invert_hash(const std::size_t hash) const
   std::pair<std::size_t,std::size_t> pair;
   pair.first = hash % max_connections;
   pair.second = hash - pair.first;
+
+  if (map_connection.find(hash) == map_connection.end())
+    throw std::runtime_error("element does not exist");
+
   return std::move(pair);
 }
