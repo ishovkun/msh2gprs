@@ -353,8 +353,6 @@ void SimData::mergeSmallFracCells()
     // merged and deleted
     while (ielement < n_frac_elements)
     {
-      // std::cout << "checking ielement = " << ielement << std::endl;
-      // std::cout << "out of " << msh.polygons.size() << std::endl;
       angem::Polygon<double> poly(msh.vertices.points,
                                   msh.polygons[ielement]);
       const double area_factor = poly.area() / max_area;

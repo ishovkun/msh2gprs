@@ -294,96 +294,33 @@ void SurfaceMesh<Scalar>::merge_elements(const std::size_t ielement,
                                          const std::size_t jelement,
                                          const Edge      & edge)
 {
+  // connect edges in a ordered fashion and delete jelement
   // the resulting polygon might be non-convex
   // that's why we don't use default polygon renumbering
   // and do it manually
-  std::cout << "merging " << jelement << " into " << ielement << std::endl;
   std::vector<std::size_t> new_element;
-  std::cout << "removing edge" << "\t";
-  std::cout << edge.first << "-" << edge.second << std::endl;
   const std::vector<Edge> iedges = remove_edge(ielement, edge);
   const std::vector<Edge> jedges = remove_edge(jelement, edge);
-  // const std::vector<std::size_t> iverts = get_vertices(iedges);
-  // const std::vector<std::size_t> jverts = get_vertices(jedges);
 
-  // if (iedges.front().first == jedges.back().second)
-
-  std::cout << "iedges" << ":\t";
-  for (auto & e : iedges)
-    std::cout << e.first << "-" << e.second << " ";
-  std::cout << std::endl;
-  std::cout << "jedges" << ":\t";
-  for (auto & e : jedges)
-    std::cout << e.first << "-" << e.second << " ";
-  std::cout << std::endl;
-  std::vector<Edge> should_be;
   if (iedges.front().first == jedges.back().second)
   {
-    std::cout << "case 1" << std::endl;
     for (const Edge & jedge : jedges)
-    {
       new_element.push_back(jedge.first);
-      should_be.push_back(jedge);
-    }
     for (const Edge & iedge : iedges)
-    {
       new_element.push_back(iedge.first);
-      should_be.push_back(iedge);
-    }
   }
   else if (iedges.front().first == jedges.front().first)
   {
-    std::cout << "case 2" << std::endl;
     for (auto it = jedges.rbegin(); it != jedges.rend(); ++it)
-    {
       new_element.push_back( (*it).second );
-      should_be.push_back({(*it).second, (*it).first});
-    }
     for (const Edge & iedge : iedges)
-    {
       new_element.push_back(iedge.first);
-      should_be.push_back(iedge);
-    }
   }
   else
-  {
-    std::cout << "i front = "
-              << iedges.front().first << "\t"
-              << iedges.front().second << "\t"
-              << std::endl;
-    std::cout << "i back = "
-              << iedges.back().first << "\t"
-              << iedges.back().second << "\t"
-              << std::endl;
-    std::cout << "j front = "
-              << jedges.front().first << "\t"
-              << jedges.front().second << "\t"
-              << std::endl;
-    std::cout << "j back = "
-              << jedges.back().first << "\t"
-              << jedges.back().second << "\t"
-              << std::endl;
     throw NotImplemented("can this even happen?");
-  }
 
   polygons[ielement] = new_element;
-
-  std::cout << "new element " << ielement << " = ";
-  for (auto & v : new_element)
-    std::cout << v << " ";
-  std::cout << std::endl;
-
   delete_replace_connections(jelement, ielement);
-
-  std::cout << "all " << ielement << " edges" << ":\t";
-  for (auto & e : get_edges(ielement-1))
-    std::cout << e.first << "-" << e.second << " ";
-  std::cout << std::endl;
-  std::cout << "should be" << ":\t";
-  for (auto & e : should_be)
-    std::cout << e.first << "-" << e.second << " ";
-  std::cout << std::endl;
-
 }
 
 
