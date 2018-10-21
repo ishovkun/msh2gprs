@@ -28,15 +28,17 @@ void FlowData::merge_elements(const std::size_t updated_element,
     custom_data[u][i] = (v0*custom_data[u][i] + v1*custom_data[d][i]) / (v0 + v1);
 
   // update face data
-  // update connections and transes with other elements
+  // connections and transes with other elements
   auto it = element_connection.find(d);
   if (it == element_connection.end())
-    throw std::runtime_error("connection does not exist");
+    throw std::runtime_error("connection apparently does not exist");
   const std::vector<std::size_t> neighbors = it->second;
 
   for (const std::size_t neighbor : neighbors)
   {
+    std::cout << "checking dead" << std::endl;
     const std::size_t dead_conn = connection_index(d, neighbor);
+    std::cout << "dead done" << std::endl;
     if (neighbor != u)
     {
       std::size_t new_conn = insert_connection(u, neighbor);
@@ -120,11 +122,34 @@ void FlowData::delete_element(const std::size_t element)
       map_connection.erase(key);
       map_connection.insert({ new_hash, conn });
     }
-    else if (elements.first == element and elements.second == element)
+    else if (elements.first == element or elements.second == element)
     {
       map_connection.erase(key);
     }
+  }
 
+  // update neighbor map
+  keys.clear();
+  keys.reserve(element_connection.size());
+  for (auto it : element_connection)
+    keys.push_back(it.first);
+  std::sort(keys.begin(), keys.end());
+
+  for (const auto & key : keys)
+  {
+    if (key == element)
+    {
+      // const auto neighbors = element_connection[key];
+      element_connection.erase(key);
+    }
+    else
+    {
+      for (auto & ielement : element_connection[key])
+      {
+        if (ielement > element)
+          ielement--;
+      }
+    }
   }
 
   // delete cell data
