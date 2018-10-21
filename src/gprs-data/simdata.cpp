@@ -255,7 +255,7 @@ void SimData::computeCellClipping()
     }    // end face loop
 
     angem::PointSet<3,double> setVert(tol);
-    angem::SurfaceMesh<double> frac_msh;
+    angem::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ nCells);
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
       // loop through sda cells
@@ -348,7 +348,7 @@ void SimData::mergeSmallFracCells()
 
     // merge tiny cells
     std::size_t ielement = 0;
-    std::size_t n_frac_elements = vEfrac[ifrac].cells.size();
+    std::size_t n_frac_elements = msh.polygons.size();
     // loop is with variable upper limit since elements can be
     // merged and deleted
     while (ielement < n_frac_elements)
