@@ -79,7 +79,7 @@ std::size_t FlowData::insert_connection(const std::size_t ielement,
     element_connection.insert({jelement, new_connection_vector});
   }
 
-  return map_connection.size();
+  return map_connection.size() - 1;
 }
 
 

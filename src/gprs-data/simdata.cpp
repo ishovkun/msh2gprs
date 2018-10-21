@@ -18,6 +18,7 @@ const int MARKER_BELOW_FRAC = 0;
 const int MARKER_ABOVE_FRAC = 1;
 const int MARKER_FRAC = 2;
 
+
 SimData::SimData(const string & inputstream, const SimdataConfig & config)
     :
     config(config)

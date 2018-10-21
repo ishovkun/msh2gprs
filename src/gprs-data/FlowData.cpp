@@ -1,5 +1,7 @@
 #include <FlowData.hpp>
 
+#include <iostream>  // debug
+
 
 FlowData::FlowData(const std::size_t max_connections)
     :
@@ -30,6 +32,7 @@ void FlowData::merge_elements(const std::size_t updated_element,
   depth.erase(depth.begin() + d);
   custom_data.erase(custom_data.begin() + d);
 
+  std::cout << "here" << std::endl;
   // update face data
   // update connections and transes with other elements
   std::vector<std::size_t> neighbors = element_connection.find(d)->second;
@@ -37,11 +40,10 @@ void FlowData::merge_elements(const std::size_t updated_element,
   {
     if (neighbor != u)
     {
-      insert_connection(u, neighbor);
-      std::size_t conn = connection_index(d, neighbor);
-      trans_ij[conn] += trans_ij[connection_index(u, neighbor)];
+      std::size_t conn = insert_connection(u, neighbor);
+      trans_ij[conn] += trans_ij[connection_index(d, neighbor)];
     }
-    clear_connection(u, neighbor);
+    clear_connection(d, neighbor);
   }
 
 }
