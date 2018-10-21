@@ -220,23 +220,25 @@ template <typename Scalar>
 void SurfaceMesh<Scalar>::delete_replace_connections(const std::size_t deleted_element,
                                                      const std::size_t replacement_element)
 {
+  assert(deleted_element != replacement_element);
   // delete polygon and reduce all polygons
   // in map_edge_neighbors with higher indices by 1
   std::size_t repl = replacement_element;
   if (repl > deleted_element)
     repl--;
+
   polygons.erase(polygons.begin() + deleted_element);
+
   for (auto iter = map_edge_neighbors.begin();
        iter != map_edge_neighbors.end(); ++iter)
   {
-    std::size_t counter = 0;
     for (std::size_t i=0; i<iter->second.size(); ++i)
     {
-      std::size_t ielement = iter->second[i];
+      std::size_t & ielement = iter->second[i];
       if (ielement == deleted_element)
-        iter->second[i] = repl;
+        ielement = repl;
       else if (ielement > deleted_element)
-        iter->second[i]--;
+        ielement--;
     }
   }
 
@@ -390,8 +392,11 @@ std::vector<Edge>
 SurfaceMesh<Scalar>::get_edges( const std::size_t ielement ) const
 {
   std::vector<Edge> edges;
-  const Polygon<Scalar> poly(vertices.points, polygons[ielement]);
-  const std::vector<Point<3,Scalar>> &points = poly.get_points();
+
+  std::vector<Point<3,Scalar>> points;
+  for (const auto & vertex : polygons[ielement])
+    points.push_back(vertices.points[vertex]);
+
   for (std::size_t i=0; i<points.size(); ++i)
   {
     std::size_t i1, i2;
