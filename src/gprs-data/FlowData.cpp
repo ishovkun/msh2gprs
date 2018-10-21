@@ -1,5 +1,6 @@
 #include <FlowData.hpp>
 
+#include <algorithm> // std::sort
 #include <iostream>  // debug
 
 
@@ -26,12 +27,6 @@ void FlowData::merge_elements(const std::size_t updated_element,
   for (std::size_t i=0; i<custom_data[u].size(); ++i)
     custom_data[u][i] = (v0*custom_data[u][i] + v1*custom_data[d][i]) / (v0 + v1);
 
-  // delete merged cell data
-  volumes.erase(volumes.begin() + d);
-  poro.erase(poro.begin() + d);
-  depth.erase(depth.begin() + d);
-  custom_data.erase(custom_data.begin() + d);
-
   // update face data
   // update connections and transes with other elements
   auto it = element_connection.find(d);
@@ -50,6 +45,7 @@ void FlowData::merge_elements(const std::size_t updated_element,
     clear_connection(d, neighbor);
   }
 
+  delete_element(d);
 }
 
 
@@ -80,19 +76,63 @@ void FlowData::clear_connection(const std::size_t ielement,
 
   // clear other container
   const std::size_t hash = hash_value(ielement, jelement);
-  auto it_con = map_connection.find(hash);
-  std::size_t dead_conn = it_con->second;
-  map_connection.erase(it_con);
+  auto it_dead_conn = map_connection.find(hash);
+  std::size_t dead_conn = it_dead_conn->second;
+  map_connection.erase(it_dead_conn);
   trans_ij.erase(trans_ij.begin() + dead_conn);
 
   // shift connection indices
   for (auto iter = map_connection.begin();
        iter != map_connection.end(); ++iter)
-  {
-    const std::size_t iconn = iter->second;
-    if (iconn > dead_conn)
+    if (iter->second > dead_conn)
       iter->second--;
+}
+
+
+void FlowData::delete_element(const std::size_t element)
+{
+  // rebuild keys (expensive)
+  std::vector<std::size_t> keys;
+  keys.reserve(map_connection.size());
+  for (auto it : map_connection)
+    keys.push_back(it.first);
+  std::sort(keys.begin(), keys.end());
+
+  for (const auto & key : keys)
+  {
+    std::size_t conn = map_connection[key];
+    std::pair<std::size_t,std::size_t> elements = invert_hash(key);
+    if (elements.first > element and elements.second < element)
+    {
+      std::size_t new_hash = hash_value(elements.first-1, elements.second);
+      map_connection.erase(key);
+      map_connection.insert({ new_hash, conn });
+    }
+    else if (elements.first < element and elements.second > element)
+    {
+      std::size_t new_hash = hash_value(elements.first, elements.second-1);
+      map_connection.erase(key);
+      map_connection.insert({ new_hash, conn });
+    }
+    else if (elements.first > element and elements.second > element)
+    {
+      std::size_t new_hash = hash_value(elements.first-1, elements.second-1);
+      map_connection.erase(key);
+      map_connection.insert({ new_hash, conn });
+    }
+    else if (elements.first == element and elements.second == element)
+    {
+      map_connection.erase(key);
+    }
+
   }
+
+  // delete cell data
+  volumes.erase(volumes.begin() + element);
+  poro.erase(poro.begin() + element);
+  depth.erase(depth.begin() + element);
+  custom_data.erase(custom_data.begin() + element);
+
 }
 
 

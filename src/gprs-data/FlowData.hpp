@@ -23,7 +23,7 @@ class FlowData
                       const std::size_t merged_element);
   void clear_connection(const std::size_t ielement,
                         const std::size_t jelement);
-
+  void delete_element(const std::size_t element);
 
 
  private:

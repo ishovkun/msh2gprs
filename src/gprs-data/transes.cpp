@@ -1453,7 +1453,7 @@ void CalcTranses::save_output(const FlowData    & data,
 
     /* OUTPUT Transmissibility */
     out << "TPFACONNS" << std::endl;
-    std::size_t n_connections = data.trans_ij.size();
+    std::size_t n_connections = data.map_connection.size();
     out << n_connections << std::endl;
     for (const auto & conn : data.map_connection)
     {

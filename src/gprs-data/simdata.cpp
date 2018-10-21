@@ -361,10 +361,11 @@ void SimData::mergeSmallFracCells()
 
       if (area_factor < config.frac_cell_elinination_factor)
       {
+        const std::size_t global_ielement = get_flow_element_index(ifrac, ielement);
         const std::size_t new_element = msh.merge_element(ielement);
         // update flow data
         flow_data.merge_elements(get_flow_element_index(ifrac, new_element),
-                                 get_flow_element_index(ifrac, ielement));
+                                 global_ielement);
 
         n_frac_elements = msh.polygons.size();
         if (ielement >= n_frac_elements)
