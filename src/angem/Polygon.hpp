@@ -8,6 +8,8 @@
 namespace angem
 {
 
+using Edge = std::pair<std::size_t, std::size_t>;
+
 template<typename Scalar>
 class Polygon: public Shape<Scalar>
 {
@@ -19,6 +21,8 @@ class Polygon: public Shape<Scalar>
           const std::vector<std::size_t>     & indices);
 
   Scalar area() const;
+  std::vector<Edge> get_edges() const;
+
   // shift all points in direction p
   virtual void set_data(const std::vector<Point<3,Scalar>> & point_list) override;
   virtual void move(const Point<3,Scalar> & p) override;
@@ -219,6 +223,31 @@ Scalar Polygon<Scalar>::area() const
   }
 
   return total_area;
+}
+
+
+template<typename Scalar>
+std::vector<Edge> Polygon<Scalar>::get_edges() const
+{
+  std::vector<Edge> edges;
+  for (std::size_t i=0; i<this->points.size(); ++i)
+  {
+    std::size_t i1, i2;
+    if (i < this->points.size() - 1)
+    {
+      i1 = i;
+      i2 = i + 1;
+    }
+    else
+    {
+      i1 = i;
+      i2 = 0;
+    }
+
+    edges.push_back({i1, i2});
+  }
+
+  return edges;
 }
 
 

@@ -4,14 +4,13 @@
 #include <Polygon.hpp>
 #include <PointSet.hpp>
 // #include <PolyGroup.hpp>
+#include <NotImplemented.hpp>
 
 #include <unordered_set>
 
 
 namespace angem
 {
-
-using Edge = std::pair<std::size_t, std::size_t>;
 
 template <typename Scalar>
 class SurfaceMesh // : PolyGroup<Scalar>
@@ -33,8 +32,6 @@ class SurfaceMesh // : PolyGroup<Scalar>
   std::vector<Edge> get_edges( const std::size_t ielement ) const;
   //
   void delete_element(const std::size_t ielement);
-
-
   // merge polygon with its largest neighbor
   // complexity linear to number of faces (edges)
   // does not remove vertices when no connected neighbors
@@ -45,7 +42,7 @@ class SurfaceMesh // : PolyGroup<Scalar>
   // std::vector<std::size_t> neighbors;
 
   // hash of two vert indices -> vector polygons
-  // essentially edge -> neighbors
+  // essentially edge -> neighbor elements
   std::unordered_map<std::size_t, std::vector<std::size_t>> map_edge_neighbors;
 
  private:
@@ -57,7 +54,20 @@ class SurfaceMesh // : PolyGroup<Scalar>
   void merge_elements(const std::size_t ielement,
                       const std::size_t jelement,
                       const Edge      & edge);
+  // delete and replace neighbors with the new element -- useful for merging
+  void delete_replace_connections(const std::size_t deleted_element,
+                                  const std::size_t replacement_element);
 
+
+  // used for joining two polygons
+  // returns vector of contingent edges without the removed edge
+  // the result is a continuous curve
+  std::vector<Edge> remove_edge(const std::size_t ielement,
+                                const Edge      & edge) const;
+  // get vertex indices from vector of contingent edges
+  static std::vector<std::size_t> get_vertices(const std::vector<Edge> & edges);
+
+  inline
   std::size_t hash_value(const std::size_t ind1,
                          const std::size_t ind2) const
   {
@@ -65,6 +75,11 @@ class SurfaceMesh // : PolyGroup<Scalar>
       return max_edges*ind1 + ind2;
     else
       return max_edges*ind2 + ind1;
+  }
+
+  std::size_t hash_value(const Edge &edge) const
+  {
+    return hash_value(edge.first, edge.second);
   }
 
 
@@ -150,8 +165,6 @@ SurfaceMesh<Scalar>::get_neighbors( const std::size_t ielement ) const
 template <typename Scalar>
 std::size_t SurfaceMesh<Scalar>::merge_element( const std::size_t ielement )
 {
-
-  // const std::vector<std::size_t> neighbors = get_neighbors(element);
   const std::vector<Edge> edges = get_edges(ielement);
 
   std::size_t max_iedge = 0;
@@ -196,7 +209,33 @@ void SurfaceMesh<Scalar>::delete_element(const std::size_t element)
       std::size_t ielement = iter->second[i];
       if (ielement == element)
         iter->second.erase(iter->second.begin() + i);
-      else if (ielement < element)
+      else if (ielement > element)
+        iter->second[i]--;
+    }
+  }
+
+}
+
+template <typename Scalar>
+void SurfaceMesh<Scalar>::delete_replace_connections(const std::size_t deleted_element,
+                                                     const std::size_t replacement_element)
+{
+  // delete polygon and reduce all polygons
+  // in map_edge_neighbors with higher indices by 1
+  std::size_t repl = replacement_element;
+  if (repl > deleted_element)
+    repl--;
+  polygons.erase(polygons.begin() + deleted_element);
+  for (auto iter = map_edge_neighbors.begin();
+       iter != map_edge_neighbors.end(); ++iter)
+  {
+    std::size_t counter = 0;
+    for (std::size_t i=0; i<iter->second.size(); ++i)
+    {
+      std::size_t ielement = iter->second[i];
+      if (ielement == deleted_element)
+        iter->second[i] = repl;
+      else if (ielement > deleted_element)
         iter->second[i]--;
     }
   }
@@ -205,30 +244,144 @@ void SurfaceMesh<Scalar>::delete_element(const std::size_t element)
 
 
 template <typename Scalar>
+std::vector<Edge> SurfaceMesh<Scalar>::remove_edge(const std::size_t element,
+                                                   const Edge      & edge) const
+{
+  std::vector<Edge> result;
+  // compose two vectors before and after the removed edge
+  std::vector<Edge> edges_before, edges_after;
+  bool before_switch = true;
+  for (const auto & iedge : get_edges(element))
+  {
+    if ( hash_value(iedge) == hash_value(edge) )
+      before_switch = false;
+    else
+    {
+      if (before_switch)
+        edges_before.push_back(iedge);
+      else
+        edges_after.push_back(iedge);
+    }
+  }
+  // join two vectors
+  for (const auto & iedge : edges_after)
+    result.push_back(iedge);
+  for (const auto & iedge : edges_before)
+    result.push_back(iedge);
+
+  return result;
+}
+
+
+// edges is an array of contingent edges
+template <typename Scalar>
+std::vector<std::size_t>
+SurfaceMesh<Scalar>::get_vertices(const std::vector<Edge> & edges)
+{
+  std::vector<std::size_t> v_vertices;
+  for (const Edge & edge : edges)
+    v_vertices.push_back(edge.first);
+  if (edges.back().second != edges.front().first)
+    v_vertices.push_back(edges.back().second);
+  return std::move(v_vertices);
+}
+
+
+template <typename Scalar>
 void SurfaceMesh<Scalar>::merge_elements(const std::size_t ielement,
                                          const std::size_t jelement,
                                          const Edge      & edge)
 {
-  std::cout << "doing merge" << std::endl;
-  // create set of vertex indices of element vertices
-  std::unordered_set<std::size_t> set_vertices;
-  for (auto & ivertex : polygons[ielement])
-    set_vertices.insert(ivertex);
-  for (auto & jvertex : polygons[jelement])
-    set_vertices.insert(jvertex);
-  // convert it into a vector
-  std::vector<std::size_t> v_vertices;
-  for (const auto & vertex : set_vertices)
-    v_vertices.push_back(vertex);
-  std::cout << "reorder" << std::endl;
-  std::cout << "v_vertices.size() = " << v_vertices.size() << std::endl;
+  // the resulting polygon might be non-convex
+  // that's why we don't use default polygon renumbering
+  // and do it manually
+  std::cout << "merging " << jelement << " into " << ielement << std::endl;
+  std::vector<std::size_t> new_element;
+  std::cout << "removing edge" << "\t";
+  std::cout << edge.first << "-" << edge.second << std::endl;
+  const std::vector<Edge> iedges = remove_edge(ielement, edge);
+  const std::vector<Edge> jedges = remove_edge(jelement, edge);
+  // const std::vector<std::size_t> iverts = get_vertices(iedges);
+  // const std::vector<std::size_t> jverts = get_vertices(jedges);
 
-  Polygon<Scalar>::reorder_indices(vertices.points, v_vertices);
-  std::cout << "copy" << std::endl;
-  polygons[ielement] = v_vertices;
-  std::cout << "done merge" << std::endl;
-  delete_element(jelement);
-  std::cout << "deleted" << std::endl;
+  // if (iedges.front().first == jedges.back().second)
+
+  std::cout << "iedges" << ":\t";
+  for (auto & e : iedges)
+    std::cout << e.first << "-" << e.second << " ";
+  std::cout << std::endl;
+  std::cout << "jedges" << ":\t";
+  for (auto & e : jedges)
+    std::cout << e.first << "-" << e.second << " ";
+  std::cout << std::endl;
+  std::vector<Edge> should_be;
+  if (iedges.front().first == jedges.back().second)
+  {
+    std::cout << "case 1" << std::endl;
+    for (const Edge & jedge : jedges)
+    {
+      new_element.push_back(jedge.first);
+      should_be.push_back(jedge);
+    }
+    for (const Edge & iedge : iedges)
+    {
+      new_element.push_back(iedge.first);
+      should_be.push_back(iedge);
+    }
+  }
+  else if (iedges.front().first == jedges.front().first)
+  {
+    std::cout << "case 2" << std::endl;
+    for (auto it = jedges.rbegin(); it != jedges.rend(); ++it)
+    {
+      new_element.push_back( (*it).second );
+      should_be.push_back({(*it).second, (*it).first});
+    }
+    for (const Edge & iedge : iedges)
+    {
+      new_element.push_back(iedge.first);
+      should_be.push_back(iedge);
+    }
+  }
+  else
+  {
+    std::cout << "i front = "
+              << iedges.front().first << "\t"
+              << iedges.front().second << "\t"
+              << std::endl;
+    std::cout << "i back = "
+              << iedges.back().first << "\t"
+              << iedges.back().second << "\t"
+              << std::endl;
+    std::cout << "j front = "
+              << jedges.front().first << "\t"
+              << jedges.front().second << "\t"
+              << std::endl;
+    std::cout << "j back = "
+              << jedges.back().first << "\t"
+              << jedges.back().second << "\t"
+              << std::endl;
+    throw NotImplemented("can this even happen?");
+  }
+
+  polygons[ielement] = new_element;
+
+  std::cout << "new element " << ielement << " = ";
+  for (auto & v : new_element)
+    std::cout << v << " ";
+  std::cout << std::endl;
+
+  delete_replace_connections(jelement, ielement);
+
+  std::cout << "all " << ielement << " edges" << ":\t";
+  for (auto & e : get_edges(ielement-1))
+    std::cout << e.first << "-" << e.second << " ";
+  std::cout << std::endl;
+  std::cout << "should be" << ":\t";
+  for (auto & e : should_be)
+    std::cout << e.first << "-" << e.second << " ";
+  std::cout << std::endl;
+
 }
 
 

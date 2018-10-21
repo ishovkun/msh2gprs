@@ -339,25 +339,31 @@ void SimData::mergeSmallFracCells()
     auto & msh = vEfrac[ifrac].mesh;
 
     // compute average frac element area
-    double avg_frac_element_area =
+    const double avg_frac_element_area =
         config.fractures[ifrac].body->area() / vEfrac[ifrac].cells.size();
-    std::cout << "avg_frac_element_area = " << avg_frac_element_area << std::endl;
 
     // merge tiny cells
-    std::cout << "merge tiny frac vertices" << std::endl;
-    for (std::size_t ielement=0; ielement<vEfrac[ifrac].cells.size(); ++ielement)
+    std::size_t ielement = 0;
+    std::size_t n_frac_elements = vEfrac[ifrac].cells.size();
+    // loop is with variable upper limit since elements can be
+    // merged and deleted
+    while (ielement < n_frac_elements)
     {
+      // std::cout << "checking ielement = " << ielement << std::endl;
+      // std::cout << "out of " << msh.polygons.size() << std::endl;
       angem::Polygon<double> poly(msh.vertices.points,
                                   msh.polygons[ielement]);
       const double area_factor = poly.area() / avg_frac_element_area;
 
       if (area_factor < config.frac_cell_elinination_factor)
       {
-
-        std::cout << "merging element " << ielement << std::endl;
         msh.merge_element(ielement);
-        exit(0);
+        n_frac_elements = msh.polygons.size();
+        if (ielement >= n_frac_elements)
+          break;
+        continue;
       }
+      ielement++;
     }
 
   }

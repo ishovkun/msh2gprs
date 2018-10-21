@@ -54,13 +54,15 @@ void VTKWriter::write_vtk(const std::vector<Point>                    & vertices
       out << 9 << std::endl;
     else if (cell.size() == 3)  // triangle
       out << 5 << std::endl;
-    else if (cell.size() == 5 || cell.size() == 6)  // polygon
-      out << 7 << std::endl;
     else
-    {
-      std::cout << "unknown cell type : " << cell.size() << " vertices" << std::endl;
-      exit(-1);
-    }
+      out << 7 << std::endl;
+    // else if (cell.size() == 5 || cell.size() == 6)  // polygon
+    //   out << 7 << std::endl;
+    // else
+    // {
+    //   std::cout << "unknown cell type : " << cell.size() << " vertices" << std::endl;
+    //   exit(-1);
+    // }
   }
 
   out.close();
