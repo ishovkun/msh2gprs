@@ -507,11 +507,19 @@ void SimData::computeReservoirTransmissibilities()
     flow_data.depth.push_back(matrix_flow_data.depth[i]);
   }
 
-  for (std::size_t i=0; i<matrix_flow_data.trans_ij.size(); ++i)
+  // for (std::size_t i=0; i<matrix_flow_data.trans_ij.size(); ++i)
+  // {
+  //   flow_data.trans_ij.push_back(matrix_flow_data.trans_ij[i]);
+  //   flow_data.ielement.push_back(matrix_flow_data.ielement[i]);
+  //   flow_data.jelement.push_back(matrix_flow_data.jelement[i]);
+  // }
+
+  for (const auto & conn : matrix_flow_data.map_connection)
   {
-    flow_data.trans_ij.push_back(matrix_flow_data.trans_ij[i]);
-    flow_data.ielement.push_back(matrix_flow_data.ielement[i]);
-    flow_data.jelement.push_back(matrix_flow_data.jelement[i]);
+    const std::size_t iconn = conn.second;
+    const auto element_pair = matrix_flow_data.invert_hash(conn.first);
+    flow_data.insert_connection(element_pair.first, element_pair.second);
+    flow_data.trans_ij.push_back(matrix_flow_data.trans_ij[iconn]);
   }
 
 
@@ -675,14 +683,26 @@ void SimData::computeInterEDFMTransmissibilities()
                 //             << std::endl;
 
                 // fill global data
-                for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
-                  if (markers[frac_frac_flow_data.ielement[i]] !=
-                      markers[frac_frac_flow_data.jelement[i]])
+                for (const auto & conn : frac_frac_flow_data.map_connection)
+                {
+                  const std::size_t iconn = conn.second;
+                  const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
+                  if (markers[element_pair.first] != markers[element_pair.second])
                   {
-                    flow_data.trans_ij.push_back(frac_frac_flow_data.trans_ij[i]);
-                    flow_data.ielement.push_back(local_to_global[frac_frac_flow_data.ielement[i]]);
-                    flow_data.jelement.push_back(local_to_global[frac_frac_flow_data.jelement[i]]);
+                    flow_data.insert_connection(local_to_global[element_pair.first],
+                                                local_to_global[element_pair.second]);
+                    flow_data.trans_ij.push_back(frac_frac_flow_data.trans_ij[iconn]);
                   }
+                }
+
+                // for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
+                //   if (markers[frac_frac_flow_data.ielement[i]] !=
+                //       markers[frac_frac_flow_data.jelement[i]])
+                //   {
+                //     flow_data.trans_ij.push_back(frac_frac_flow_data.trans_ij[i]);
+                //     // flow_data.ielement.push_back(local_to_global[frac_frac_flow_data.ielement[i]]);
+                //     // flow_data.jelement.push_back(local_to_global[frac_frac_flow_data.jelement[i]]);
+                //   }
               }  // end case when fracs intersect on mesh face
 
               else  // case when two fracs intersect within an element
@@ -715,22 +735,34 @@ void SimData::computeInterEDFMTransmissibilities()
 
                       std::cout << "frac-frac intersection tran data" << std::endl;
                       double trans = 0;
-                      for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
-                        if (splits.markers[frac_frac_flow_data.ielement[i]] !=
-                            splits.markers[frac_frac_flow_data.jelement[i]])
-                        {
-                          // std::cout << frac_frac_flow_data.ielement[i] << "\t"
-                          //           << frac_frac_flow_data.jelement[i] << "\t"
-                          //           << frac_frac_flow_data.trans_ij[i] << "\t\t"
-                          //           << splits.markers[frac_frac_flow_data.ielement[i]] << "\t"
-                          //           << splits.markers[frac_frac_flow_data.jelement[i]] << "\t"
-                          //           << std::endl;
-                          trans += frac_frac_flow_data.trans_ij[i];
-                        }
+                      for (const auto & conn : frac_frac_flow_data.map_connection)
+                      {
+                        const std::size_t iconn = conn.second;
+                        const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
+                        if (splits.markers[element_pair.first] != splits.markers[element_pair.second])
+                          trans += frac_frac_flow_data.trans_ij[iconn];
+
+                      }
+
+                      // for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
+                      //   if (splits.markers[frac_frac_flow_data.ielement[i]] !=
+                      //       splits.markers[frac_frac_flow_data.jelement[i]])
+                      //   {
+                      //     // std::cout << frac_frac_flow_data.ielement[i] << "\t"
+                      //     //           << frac_frac_flow_data.jelement[i] << "\t"
+                      //     //           << frac_frac_flow_data.trans_ij[i] << "\t\t"
+                      //     //           << splits.markers[frac_frac_flow_data.ielement[i]] << "\t"
+                      //     //           << splits.markers[frac_frac_flow_data.jelement[i]] << "\t"
+                      //     //           << std::endl;
+                      //     trans += frac_frac_flow_data.trans_ij[i];
+                      //   }
+
+                      // flow_data.ielement.push_back(get_flow_element_index(ifrac, ind_i));
+                      // flow_data.jelement.push_back(get_flow_element_index(jfrac, ind_j));
 
                       flow_data.trans_ij.push_back(trans);
-                      flow_data.ielement.push_back(get_flow_element_index(ifrac, ind_i));
-                      flow_data.jelement.push_back(get_flow_element_index(jfrac, ind_j));
+                      flow_data.insert_connection(get_flow_element_index(ifrac, ind_i),
+                                                  get_flow_element_index(jfrac, ind_j));
                     }
 
                 }
@@ -914,8 +946,10 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     }
 
     flow_data.trans_ij.push_back(f_m_tran);
-    flow_data.ielement.push_back(get_flow_element_index(frac_ind, ecell));  // efrac element index
-    flow_data.jelement.push_back(icell);  // cell contatining fracture
+    flow_data.insert_connection(get_flow_element_index(frac_ind, ecell),
+                                icell);
+    // flow_data.ielement.push_back(get_flow_element_index(frac_ind, ecell));  // efrac element index
+    // flow_data.jelement.push_back(icell);  // cell contatining fracture
 
     ecell++;
   }  // end splits loop
@@ -995,12 +1029,24 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     flow_data.depth.push_back(frac_flow_data.depth[i]);
   }
 
-  for (std::size_t i=0; i<frac_flow_data.trans_ij.size(); ++i)
+
+  for (const auto & conn : frac_flow_data.map_connection)
   {
-    flow_data.trans_ij.push_back(frac_flow_data.trans_ij[i]);
-    flow_data.ielement.push_back(get_flow_element_index(frac_ind, frac_flow_data.ielement[i]));
-    flow_data.jelement.push_back(get_flow_element_index(frac_ind, frac_flow_data.jelement[i]));
+    const std::size_t iconn = conn.second;
+    const auto element_pair = frac_flow_data.invert_hash(conn.first);
+    flow_data.insert_connection(get_flow_element_index(frac_ind, element_pair.first),
+                                get_flow_element_index(frac_ind, element_pair.second));
+    flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
   }
+
+  // for (std::size_t i=0; i<frac_flow_data.trans_ij.size(); ++i)
+  // {
+  //   flow_data.trans_ij.push_back(frac_flow_data.trans_ij[i]);
+  //   flow_data.insert_connection(get_flow_element_index(frac_ind, frac_flow_data.ielement[i]),
+  //                               get_flow_element_index(frac_ind, frac_flow_data.jelement[i]));
+  //   // flow_data.ielement.push_back(get_flow_element_index(frac_ind, frac_flow_data.ielement[i]));
+  //   // flow_data.jelement.push_back(get_flow_element_index(frac_ind, frac_flow_data.jelement[i]));
+  // }
 
   // save custom cell data
   const std::size_t n_vars = rockPropNames.size();

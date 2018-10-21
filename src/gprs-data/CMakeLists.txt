@@ -9,12 +9,14 @@ ADD_LIBRARY(gprs_data
   simdata.hpp
   utils.hpp
   SimdataConfig.hpp
+  FlowData.hpp
   VTKWriter.hpp
   # IMPLEMENTATION
   element.cpp
   femout.cpp
   renum.cpp
   simdata.cpp
+  FlowData.cpp
   transes.cpp
   VTKWriter.cpp
 )

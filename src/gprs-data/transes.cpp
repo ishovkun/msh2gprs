@@ -1382,8 +1382,9 @@ void CalcTranses::extractData(FlowData & data) const
     if (iTr[i] < 0 or jTr[i] < 0)
       continue;
 
-    data.ielement.push_back( iTr[i]);
-    data.jelement.push_back( jTr[i]);
+    // data.ielement.push_back( iTr[i]);
+    // data.jelement.push_back( jTr[i]);
+    data.insert_connection(iTr[i], jTr[i]);
     data.trans_ij.push_back( Tij[i] * transmissibility_conversion_factor );
     data.conduct_ij.push_back( TConductionIJ[i]);
   }
@@ -1457,11 +1458,20 @@ void CalcTranses::save_output(const FlowData    & data,
     out << "TPFACONNS" << std::endl;
     std::size_t n_connections = data.trans_ij.size();
     out << n_connections << std::endl;
-    for (std::size_t i=0; i<n_connections; ++i)
-      out << data.ielement[i] << "\t"
-          << data.jelement[i] << "\t"
-          << data.trans_ij[i]  << std::endl;
-    out << "/" << std::endl << std::endl;
+    for (const auto & conn : data.map_connection)
+    {
+      const std::size_t iconn = conn.second;
+      const auto element_pair = data.invert_hash(conn.first);
+      out << element_pair.first << "\t"
+          << element_pair.second << "\t"
+          << data.trans_ij[iconn]  << std::endl;
+    }
+
+    // for (std::size_t i=0; i<n_connections; ++i)
+    //   out << data.ielement[i] << "\t"
+    //       << data.jelement[i] << "\t"
+    //       << data.trans_ij[i]  << std::endl;
+    // out << "/" << std::endl << std::endl;
 
     out.close();
   }

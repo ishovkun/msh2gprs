@@ -8,6 +8,8 @@
 /************************************************************************/
 #pragma once
 
+#include <FlowData.hpp>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,20 +26,20 @@
 #include <time.h>
 
 
-struct FlowData
-{
-  std::vector<double> volumes, poro, depth;
-  // regular transmissibilities
-  std::vector<std::size_t> ielement, jelement;
-  std::vector<double>      trans_ij, conduct_ij;
-  // connections
-  std::vector<int> connection_type;
-  std::vector<int> connection_n;
+// struct FlowData
+// {
+//   std::vector<double> volumes, poro, depth;
+//   // regular transmissibilities
+//   std::vector<std::size_t> ielement, jelement;
+//   std::vector<double>      trans_ij, conduct_ij;
+//   // connections
+//   std::vector<int> connection_type;
+//   std::vector<int> connection_n;
 
-  // user-defined cell data
-  std::vector<std::vector<double>> custom_data;
-  std::vector<std::string>         custom_names;
-};
+//   // user-defined cell data
+//   std::vector<std::vector<double>> custom_data;
+//   std::vector<std::string>         custom_names;
+// };
 
 
 class CalcTranses
