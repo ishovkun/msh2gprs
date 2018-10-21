@@ -31,9 +31,59 @@ void FlowData::merge_elements(const std::size_t updated_element,
   custom_data.erase(custom_data.begin() + d);
 
   // update face data
-  // delete merged-updated connection
-  const std::size_t hash = hash_value(u, d);
-  map_connection.erase(map_connection.find(hash));
-  // update connection with other elements
+  // update connections and transes with other elements
+  std::vector<std::size_t> neighbors = element_connection.find(d)->second;
+  for (const auto & neighbor : neighbors)
+  {
+    if (neighbor != u)
+    {
+      insert_connection(u, neighbor);
+      std::size_t conn = connection_index(d, neighbor);
+      trans_ij[conn] += trans_ij[connection_index(u, neighbor)];
+    }
+    clear_connection(u, neighbor);
+  }
 
+}
+
+
+void FlowData::clear_connection(const std::size_t ielement,
+                                const std::size_t jelement)
+{
+  auto it = element_connection.find(ielement);
+  std::size_t counter = 0;
+  for (auto e : it->second)
+  {
+    if (e == jelement)
+      it->second.erase(it->second.begin() + counter);
+    counter++;
+  }
+  if (it->second.size() == 0)
+    element_connection.erase(it);
+
+  it = element_connection.find(jelement);
+  counter = 0;
+  for (auto e : it->second)
+  {
+    if (e == ielement)
+      it->second.erase(it->second.begin() + counter);
+    counter++;
+  }
+  if (it->second.size() == 0)
+    element_connection.erase(it);
+
+  // clear other container
+  const std::size_t hash = hash_value(ielement, jelement);
+  map_connection.erase(map_connection.find(hash));
+}
+
+
+std::size_t FlowData::connection_index(const std::size_t ielement,
+                                       const std::size_t jelement) const
+{
+  const std::size_t hash = hash_value(ielement, jelement);
+  auto it = map_connection.find(hash);
+  if (it == map_connection.end())
+    throw std::runtime_error("connection does not exist");
+  return it->second;
 }

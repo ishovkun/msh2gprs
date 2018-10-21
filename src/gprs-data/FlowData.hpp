@@ -8,8 +8,10 @@ class FlowData
 {
  public:
   FlowData(const std::size_t max_connections = 1e10);
-  void insert_connection(const std::size_t ielement,
-                         const std::size_t jelement);
+  std::size_t insert_connection(const std::size_t ielement,
+                                const std::size_t jelement);
+  std::size_t connection_index(const std::size_t ielement,
+                               const std::size_t jelement) const;
   // get connection index
   // std::size_t connection()
   // get two elements from hash value
@@ -17,6 +19,9 @@ class FlowData
   invert_hash(const std::size_t hash) const;
   void merge_elements(const std::size_t updated_element,
                       const std::size_t merged_element);
+  void clear_connection(const std::size_t ielement,
+                        const std::size_t jelement);
+
 
 
  private:
@@ -28,6 +33,7 @@ class FlowData
   // regular transmissibilities
   // std::vector<std::size_t> ielement, jelement;
   std::unordered_map<std::size_t, std::size_t> map_connection;
+  std::unordered_map<std::size_t, std::vector<std::size_t>> element_connection;
 
   std::vector<double>      trans_ij, conduct_ij;
   // connections
@@ -44,13 +50,36 @@ class FlowData
 
 
 inline
-void FlowData::insert_connection(const std::size_t ielement,
-                                 const std::size_t jelement)
+std::size_t FlowData::insert_connection(const std::size_t ielement,
+                                        const std::size_t jelement)
 {
   const std::size_t hash = hash_value(ielement, jelement);
   if (map_connection.find(hash) != map_connection.end())
     throw std::runtime_error("connection exists");
   map_connection.insert({hash, map_connection.size()});
+
+  // element connections
+  // ielement
+  auto it = element_connection.find(ielement);
+  if (it != element_connection.end())
+    it->second.push_back(jelement);
+  else
+  {
+    std::vector<std::size_t> new_connection_vector = {jelement};
+    element_connection.insert({ielement, new_connection_vector});
+  }
+
+  // jelement
+  it = element_connection.find(jelement);
+  if (it != element_connection.end())
+    it->second.push_back(ielement);
+  else
+  {
+    std::vector<std::size_t> new_connection_vector = {ielement};
+    element_connection.insert({jelement, new_connection_vector});
+  }
+
+  return map_connection.size();
 }
 
 
