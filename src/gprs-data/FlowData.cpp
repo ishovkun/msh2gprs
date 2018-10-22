@@ -55,9 +55,7 @@ void FlowData::merge_elements(const std::size_t updated_element,
 
   for (const std::size_t neighbor : neighbors)
   {
-    std::cout << "checking dead" << std::endl;
     const std::size_t dead_conn = connection_index(d, neighbor);
-    std::cout << "dead done" << std::endl;
     if (neighbor != u)
     {
       std::size_t new_conn = insert_connection(u, neighbor);
