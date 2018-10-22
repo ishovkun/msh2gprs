@@ -3,12 +3,14 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-// #include <iostream>  // debug
+#include <iostream>  // debug
 
 class FlowData
 {
  public:
   FlowData(const std::size_t max_connections = 1e10);
+  void reserve_extra(const std::size_t n_elements,
+                     const std::size_t n_connections);
   // returns the connection index
   std::size_t insert_connection(const std::size_t ielement,
                                 const std::size_t jelement);
@@ -35,7 +37,8 @@ class FlowData
   // regular transmissibilities
   // std::vector<std::size_t> ielement, jelement;
   std::unordered_map<std::size_t, std::size_t> map_connection;
-  std::unordered_map<std::size_t, std::vector<std::size_t>> element_connection;
+  // std::unordered_map<std::size_t, std::vector<std::size_t>> element_connection;
+  std::vector<std::vector<std::size_t>> v_neighbors;
 
   std::vector<double>      trans_ij, conduct_ij;
   // connections
@@ -56,26 +59,18 @@ std::size_t FlowData::insert_connection(const std::size_t ielement,
                                         const std::size_t jelement)
 {
   const std::size_t hash = hash_value(ielement, jelement);
+  const std::size_t conn = map_connection.size();
   if (map_connection.find(hash) != map_connection.end())
     throw std::runtime_error("connection exists");
-  map_connection.insert({hash, map_connection.size()});
+  map_connection.insert({hash, conn});
 
-  // element->neighbors connections
-  // ielement
-  auto it = element_connection.find(ielement);
-  if (it != element_connection.end())
-    it->second.push_back(jelement);
-  else
-    element_connection.insert({ielement, {jelement}});
+  if (std::max(ielement, jelement) >= v_neighbors.size())
+    v_neighbors.resize(std::max(ielement, jelement) * 2);
 
-  // jelement
-  it = element_connection.find(jelement);
-  if (it != element_connection.end())
-    it->second.push_back(ielement);
-  else
-    element_connection.insert({jelement, {ielement}});
+  v_neighbors[ielement].push_back(jelement);
+  v_neighbors[jelement].push_back(ielement);
 
-  return map_connection.size() - 1;
+  return conn;
 }
 
 
@@ -97,7 +92,6 @@ FlowData::invert_hash(const std::size_t hash) const
   std::pair<std::size_t,std::size_t> pair;
   pair.first = (hash - hash % max_connections) / max_connections;
   pair.second = hash % max_connections;
-  // pair.second = hash - pair.first*max_connections;
 
   if (map_connection.find(hash) == map_connection.end())
     throw std::runtime_error("element does not exist");

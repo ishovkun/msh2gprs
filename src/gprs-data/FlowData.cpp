@@ -10,6 +10,20 @@ FlowData::FlowData(const std::size_t max_connections)
 {}
 
 
+// void FlowData::reserve_extra(const std::size_t n_elements,
+//                              const std::size_t n_connections)
+// {
+//   const std::size_t old_size = volumes.size();
+
+//   v_neighbors.resize(old_size + n_elements);
+//   volumes.resize(old_size + n_elements);
+//   poro.resize(old_size + n_elements);
+//   depth.resize(old_size + n_elements);
+
+// }
+
+
+
 void FlowData::merge_elements(const std::size_t updated_element,
                               const std::size_t merged_element)
 {
@@ -29,10 +43,15 @@ void FlowData::merge_elements(const std::size_t updated_element,
 
   // update face data
   // connections and transes with other elements
-  auto it = element_connection.find(d);
-  if (it == element_connection.end())
+  // auto it = element_connection.find(d);
+  // if (it == element_connection.end())
+  //   throw std::runtime_error("connection apparently does not exist");
+  // const std::vector<std::size_t> neighbors = it->second;
+
+  // auto it = element_connection.find(d);
+  if (d > v_neighbors.size())
     throw std::runtime_error("connection apparently does not exist");
-  const std::vector<std::size_t> neighbors = it->second;
+  const std::vector<std::size_t> neighbors = v_neighbors[d];
 
   for (const std::size_t neighbor : neighbors)
   {
@@ -54,27 +73,28 @@ void FlowData::merge_elements(const std::size_t updated_element,
 void FlowData::clear_connection(const std::size_t ielement,
                                 const std::size_t jelement)
 {
-  auto it = element_connection.find(ielement);
-  std::size_t counter = 0;
-  for (auto e : it->second)
-  {
-    if (e == jelement)
-      it->second.erase(it->second.begin() + counter);
-    counter++;
-  }
-  if (it->second.size() == 0)
-    element_connection.erase(it);
+  // update neighbors vector
+  if (ielement >= v_neighbors.size())
+    throw std::out_of_range("element does not exist: " + std::to_string(ielement));
+  if (jelement >= v_neighbors.size())
+    throw std::out_of_range("element does not exist: " + std::to_string(jelement));
 
-  it = element_connection.find(jelement);
-  counter = 0;
-  for (auto e : it->second)
+  for (std::size_t i=0; i<v_neighbors[ielement].size(); ++i)
   {
-    if (e == ielement)
-      it->second.erase(it->second.begin() + counter);
-    counter++;
+    if (v_neighbors[ielement][i] == jelement)
+    {
+      v_neighbors[ielement].erase(v_neighbors[ielement].begin() + i);
+      break;
+    }
   }
-  if (it->second.size() == 0)
-    element_connection.erase(it);
+  for (std::size_t i=0; i<v_neighbors[jelement].size(); ++i)
+  {
+    if (v_neighbors[jelement][i] == ielement)
+    {
+      v_neighbors[jelement].erase(v_neighbors[jelement].begin() + i);
+      break;
+    }
+  }
 
   // clear other container
   const std::size_t hash = hash_value(ielement, jelement);
@@ -93,13 +113,29 @@ void FlowData::clear_connection(const std::size_t ielement,
 
 void FlowData::delete_element(const std::size_t element)
 {
-  // rebuild keys (expensive)
+  // remove connections from v_neighbors
+  if (element >= v_neighbors.size())
+    throw std::out_of_range("element does not exist: " + std::to_string(element));
+
+  std::vector<std::size_t> neighbors = v_neighbors[element];
+  for (const std::size_t neighbor : neighbors)
+    clear_connection(neighbor, element);
+
+  v_neighbors.erase(v_neighbors.begin() + element);
+
+  // shift indices
+  // in v_neighbors
+  for (auto & neighbors : v_neighbors)
+    for (std::size_t i=0; i<neighbors.size(); ++i)
+      if (neighbors[i] > element)
+        neighbors[i]--;
+
+  // rebuild hash in map_connection
   std::vector<std::size_t> keys;
   keys.reserve(map_connection.size());
   for (auto it : map_connection)
     keys.push_back(it.first);
   std::sort(keys.begin(), keys.end());
-
   for (const auto & key : keys)
   {
     std::size_t conn = map_connection[key];
@@ -124,31 +160,8 @@ void FlowData::delete_element(const std::size_t element)
     }
     else if (elements.first == element or elements.second == element)
     {
+      throw std::runtime_error("DEBUG: this should be already deleted");
       map_connection.erase(key);
-    }
-  }
-
-  // update neighbor map
-  keys.clear();
-  keys.reserve(element_connection.size());
-  for (auto it : element_connection)
-    keys.push_back(it.first);
-  std::sort(keys.begin(), keys.end());
-
-  for (const auto & key : keys)
-  {
-    if (key == element)
-    {
-      // const auto neighbors = element_connection[key];
-      element_connection.erase(key);
-    }
-    else
-    {
-      for (auto & ielement : element_connection[key])
-      {
-        if (ielement > element)
-          ielement--;
-      }
     }
   }
 
