@@ -986,13 +986,8 @@ void CalcTranses::ComputeTransmissibilityList()
     std::size_t k=0;
     for ( std::size_t i=0; i<NbConnections; i++ )
     {
-      if ( ConType[i] == 1 || ConType[i] == 2 ) // M-M, M-F //
+      if ( ConType[i] == 1 ) // M-M //
       {
-        // if (ConType[i] == 1)
-        //   std::cout << k << " M-M " << std::endl;
-        // if (ConType[i] == 2)
-        //   std::cout << k << " M-F " << std::endl;
-
         iTr[k] = ConCV[i][0];
         jTr[k] = ConCV[i][1];
 
@@ -1004,6 +999,29 @@ void CalcTranses::ComputeTransmissibilityList()
         if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
           TConductionIJ[k] = ( ConGeom[i][0] * ConGeom[i][1] ) /
                              ( ConGeom[i][0] + ConGeom[i][1] );
+
+        if ( TConductionIJ[k] < 0.0 )
+        {
+          cout << "M-M or M-F : Conduction is negative: check values" << endl;
+          exit ( 0 );
+        }
+        k++;
+      }
+      if ( ConType[i] == 2 ) // M-F //
+      {
+        iTr[k] = ConCV[i][0];
+        jTr[k] = ConCV[i][1];
+
+        if ( ConTr[i][0] + ConTr[i][1] != 0.0 )
+        {
+          Tij[k] = ( ConTr[i][0]*ConTr[i][1] ) / ( ConTr[i][0] + ConTr[i][1] );
+        }
+
+        // if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
+        //   TConductionIJ[k] = ( ConGeom[i][0] * ConGeom[i][1] ) /
+        //                      ( ConGeom[i][0] + ConGeom[i][1] );
+        if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
+          TConductionIJ[k] = std::min( ConGeom[i][0], ConGeom[i][1] );
 
         if ( TConductionIJ[k] < 0.0 )
         {
