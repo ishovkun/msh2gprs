@@ -44,7 +44,7 @@ void FlowData::merge_elements(const std::size_t updated_element,
       std::size_t new_conn = insert_connection(u, neighbor);
       trans_ij.push_back(trans_ij[dead_conn]);
     }
-    clear_connection(d, neighbor);
+    // clear_connection(d, neighbor);
   }
 
   delete_element(d);
