@@ -214,7 +214,6 @@ void SurfaceMesh<Scalar>::delete_element(const std::size_t element)
         iter->second[i]--;
     }
   }
-
 }
 
 template <typename Scalar>
@@ -319,6 +318,18 @@ void SurfaceMesh<Scalar>::merge_elements(const std::size_t ielement,
   }
   else
     throw NotImplemented("can this even happen?");
+
+  // remove joint point if lies on a flat edge
+  for (std::size_t i=0; i<new_element.size(); ++i)
+    if (new_element[i] == edge.first or new_element[i] == edge.second)
+    {
+      Point<3,Scalar> v1 = vertices[new_element[i+1]] - vertices[new_element[i]];
+      Point<3,Scalar> v2 = vertices[new_element[i]] - vertices[new_element[i-1]];
+      if ( (v1.cross(v2)).norm() < 1e-10 )
+      {
+        new_element.erase(new_element.begin() + i);
+      }
+    }
 
   polygons[ielement] = new_element;
   delete_replace_connections(jelement, ielement);
