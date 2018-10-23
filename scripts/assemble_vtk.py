@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 case_path = "/home/ishovkun/sim/edfm-2frac/"
-# case_path = "$HOME/sim/aquifer/"
+# case_path = "/home/ishovkun/sim/aquifer/"
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 frac_mesh_file = case_path + "efrac.vtk"
 results_file = case_path + "OUTPUT.vars.txt"

@@ -14,8 +14,11 @@ class FlowData
   // returns the connection index
   std::size_t insert_connection(const std::size_t ielement,
                                 const std::size_t jelement);
+  // throws std::out_of_range if connection does not exist
   std::size_t connection_index(const std::size_t ielement,
                                const std::size_t jelement) const;
+  bool connection_exists(const std::size_t ielement,
+                         const std::size_t jelement) const;
   // get connection index
   // std::size_t connection()
   // get two elements from hash value

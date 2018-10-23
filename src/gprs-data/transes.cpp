@@ -1017,11 +1017,11 @@ void CalcTranses::ComputeTransmissibilityList()
           Tij[k] = ( ConTr[i][0]*ConTr[i][1] ) / ( ConTr[i][0] + ConTr[i][1] );
         }
 
-        // if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
-        //   TConductionIJ[k] = ( ConGeom[i][0] * ConGeom[i][1] ) /
-        //                      ( ConGeom[i][0] + ConGeom[i][1] );
         if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
-          TConductionIJ[k] = std::min( ConGeom[i][0], ConGeom[i][1] );
+          TConductionIJ[k] = ( ConGeom[i][0] * ConGeom[i][1] ) /
+                             ( ConGeom[i][0] + ConGeom[i][1] );
+        // if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
+        //   TConductionIJ[k] = std::min( ConGeom[i][0], ConGeom[i][1] );
 
         if ( TConductionIJ[k] < 0.0 )
         {

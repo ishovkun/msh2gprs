@@ -330,6 +330,60 @@ void SimData::computeCellClipping()
     computeEDFMTransmissibilities(splits, ifrac);
   }  // end efrac loop
 
+
+  // clear cell connections
+  // for (std::size_t f=0; f<vEfrac.size(); ++f)
+  // {
+  //   const auto & efrac = vEfrac[f];
+  //   for (std::size_t i=0; i<efrac.cells.size(); ++i)
+  //     for (std::size_t j=i; j<efrac.cells.size(); ++j)
+  //       if (flow_data.connection_exists(efrac.cells[i], efrac.cells[j]))
+  //       {
+  //         const std::size_t dead_conn = flow_data.connection_index(efrac.cells[i], efrac.cells[j]);
+  //         // const double T_ij = flow_data.trans_ij[dead_conn];
+  //         flow_data.clear_connection(efrac.cells[i], efrac.cells[j]);
+  //         const std::size_t con_fi =
+  //             flow_data.connection_index(efrac.cells[i],
+  //                                        get_flow_element_index(f, i) );
+  //         const double T_fi = flow_data.trans_ij[con_fi];
+
+  //         flow_data.insert_connection(get_flow_element_index(f, i),
+  //                                     efrac.cells[j]);
+  //         flow_data.trans_ij.push_back(T_fi);
+
+  //         const std::size_t con_fj =
+  //             flow_data.connection_index(efrac.cells[j],
+  //                                        get_flow_element_index(f, j) );
+  //         const double T_fj = flow_data.trans_ij[con_fj];
+
+  //         flow_data.insert_connection(get_flow_element_index(f, j),
+  //                                     efrac.cells[i]);
+  //         flow_data.trans_ij.push_back(T_fj);
+  //       }
+  // }
+
+  // for (std::size_t f=0; f<vEfrac.size(); ++f)
+  // {
+  //   const auto & efrac = vEfrac[f];
+  //   for (std::size_t i=0; i<efrac.cells.size(); ++i)
+  //   {
+  //     // const auto neighbors = flow_data.v_neighbors[get_flow_element_index( f, efrac.cells[i] )];
+  //     const auto neighbors = flow_data.v_neighbors[efrac.cells[i]];
+  //     for (const auto & neighbor : neighbors)
+  //     {
+  //       if (neighbor < nCells)
+  //       {
+  //         const std::size_t dead_conn = flow_data.connection_index(neighbor, efrac.cells[i]);
+  //         const double T_ij = flow_data.trans_ij[dead_conn];
+  //         flow_data.clear_connection(neighbor, efrac.cells[i]);
+  //         flow_data.insert_connection(neighbor, get_flow_element_index(f, i));
+  //         flow_data.trans_ij.push_back(T_ij);
+
+  //       }
+  //     }
+  //   }
+  // }
+
 }
 
 
@@ -533,7 +587,6 @@ void SimData::computeReservoirTransmissibilities()
       if (config.expression_type[j] == 0)
         flow_data.custom_data.back().push_back( vsCellRockProps[i].v_props[j] );
   }
-
 }
 
 
@@ -936,7 +989,9 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       const double t2 = matrix_fracture_flow_data.trans_ij[1];
       const double v1 = matrix_fracture_flow_data.volumes[1];
       const double v2 = matrix_fracture_flow_data.volumes[2];
-      f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);
+      // f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);
+      // f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);
+      f_m_tran = (v1 + v2) / (v1/t1 + v2/t2);
     }
 
     flow_data.trans_ij.push_back(f_m_tran);
@@ -1032,15 +1087,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
                                 get_flow_element_index(frac_ind, element_pair.second));
     flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
   }
-
-  // for (std::size_t i=0; i<frac_flow_data.trans_ij.size(); ++i)
-  // {
-  //   flow_data.trans_ij.push_back(frac_flow_data.trans_ij[i]);
-  //   flow_data.insert_connection(get_flow_element_index(frac_ind, frac_flow_data.ielement[i]),
-  //                               get_flow_element_index(frac_ind, frac_flow_data.jelement[i]));
-  //   // flow_data.ielement.push_back(get_flow_element_index(frac_ind, frac_flow_data.ielement[i]));
-  //   // flow_data.jelement.push_back(get_flow_element_index(frac_ind, frac_flow_data.jelement[i]));
-  // }
 
   // save custom cell data
   const std::size_t n_vars = rockPropNames.size();

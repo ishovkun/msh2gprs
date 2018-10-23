@@ -58,10 +58,17 @@ void FlowData::merge_elements(const std::size_t updated_element,
     const std::size_t dead_conn = connection_index(d, neighbor);
     if (neighbor != u)
     {
-      std::size_t new_conn = insert_connection(u, neighbor);
-      trans_ij.push_back(trans_ij[dead_conn]);
+      if (!connection_exists(u, neighbor))
+      {
+        std::size_t new_conn = insert_connection(u, neighbor);
+        trans_ij.push_back(trans_ij[dead_conn]);
+      }
+      else
+      {
+        const std::size_t conn = connection_index(u, neighbor);
+        trans_ij[conn] += trans_ij[dead_conn];
+      }
     }
-    // clear_connection(d, neighbor);
   }
 
   delete_element(d);
@@ -180,4 +187,16 @@ std::size_t FlowData::connection_index(const std::size_t ielement,
   if (it == map_connection.end())
     throw std::runtime_error("connection does not exist");
   return it->second;
+}
+
+
+bool FlowData::connection_exists(const std::size_t ielement,
+                                 const std::size_t jelement) const
+{
+  const std::size_t hash = hash_value(ielement, jelement);
+  auto it = map_connection.find(hash);
+  if (it == map_connection.end())
+    return false;
+  else
+    return true;
 }
