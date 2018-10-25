@@ -812,40 +812,40 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
     etran.vCoordinatesY[i] = mesh.vertices[i][1];
     etran.vCoordinatesZ[i] = mesh.vertices[i][2];
   }
+
   // polygons (2d elements)
-  etran.vNbFNodes.clear();
-  etran.vvFNodes.clear();
-  etran.vCodePolygon.clear();
-  vector<double> vConductivity, vAperture;
+  const std::size_t n_poly = mesh.polygons.size();
+  etran.vNbFNodes.resize(n_poly);
+  etran.vvFNodes.resize(n_poly);
+  etran.vCodePolygon.resize(n_poly);
+  // std::vector<double> vConductivity(n_poly), vAperture(n_poly);
 
   int code_polygon = 0;
-  for(int ipoly = 0; ipoly < mesh.polygons.size(); ipoly++)
+  for(std::size_t ipoly = 0; ipoly < n_poly; ++ipoly)
   {
-    etran.vvFNodes.push_back( mesh.polygons[ipoly] );
-    etran.vNbFNodes.push_back( mesh.polygons[ipoly].size() );
-
-    etran.vCodePolygon.push_back( code_polygon );
+    etran.vvFNodes[ipoly] = mesh.polygons[ipoly];
+    etran.vNbFNodes[ipoly] = mesh.polygons[ipoly].size();
+    etran.vCodePolygon[ipoly] = code_polygon;
     code_polygon++;
-    vConductivity.push_back(efrac.conductivity);
-    vAperture.push_back(efrac.aperture);
+    // vConductivity[ipoly] = efrac.conductivity;
+    // vAperture[ipoly] = efrac.aperture;
   }
 
   // --------------- Properties ------------------------
   etran.vZPermeability.assign(etran.NbZones * 3, 0.0);
   etran.vZConduction.assign( etran.NbPolygons * 3, 0.0);
 
-  for ( int i = 0; i < mesh.polygons.size(); i++ )
+  for ( std::size_t i = 0; i < n_poly; i++ )
   {
     etran.vZoneCode[i] = i;
-    etran.vZVolumeFactor[i] = vAperture[i];
+    etran.vZVolumeFactor[i] = efrac.aperture;
     etran.vZPorosity[i] = 1.0;
     etran.vZPermCode[i] = 1;
 
-    //@HACK default permeability for all fractures
     const double w = efrac.aperture;
     etran.vZPermeability[i*3 + 0] = efrac.conductivity / w;
-    etran.vZPermeability[i*3 + 1] = etran.vZPermeability[i*3+0];
-    etran.vZPermeability[i*3 + 2] = etran.vZPermeability[i*3+0];
+    etran.vZPermeability[i*3 + 1] = efrac.conductivity / w;
+    etran.vZPermeability[i*3 + 2] = efrac.conductivity / w;
 
     etran.vZConduction[i*3 + 0] = 1;
     etran.vZConduction[i*3 + 1] = 1;
@@ -853,7 +853,7 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
     etran.vTimurConnectionFactor[i] = 1.0;
   }
 
-  std::cout << 2 << std::endl;
+  std::cout << "tracer 2" << std::endl;
   etran.compute_flow_data();
   std::cout << 3 << std::endl;
   etran.extractData(frac_flow_data);
@@ -1070,17 +1070,20 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   etran.vNbFNodes.clear();
   etran.vvFNodes.clear();
   etran.vCodePolygon.clear();
-  vector<double> vConductivity, vAperture;
+  std::size_t n_poly = efrac.vIndices.size();
+  std::vector<double> vConductivity(n_poly), vAperture(n_poly);
 
-  for(int ipoly = 0; ipoly < efrac.vIndices.size(); ipoly++)
+  for(std::size_t ipoly = 0; ipoly < efrac.vIndices.size(); ipoly++)
   {
     etran.vvFNodes.push_back( efrac.vIndices[ipoly] );
     etran.vNbFNodes.push_back( efrac.vIndices[ipoly].size() );
 
     etran.vCodePolygon.push_back( code_polygon );
     code_polygon++;
-    vConductivity.push_back(efrac.conductivity);
-    vAperture.push_back(efrac.aperture);
+    // vConductivity.push_back(efrac.conductivity);
+    // vAperture.push_back(efrac.aperture);
+    // vConductivity[ipoly] = efrac.conductivity;
+    vAperture[ipoly] = efrac.aperture;
   }
 
   // --------------- Properties ------------------------
@@ -2707,7 +2710,7 @@ double SimData::get_volume_factor(const std::size_t cell) const
 }
 
 
-// #include "VTKWriter.hpp"
+#include "VTKWriter.hpp"
 void SimData::meshFractures()
 {
   const std::size_t f = 0;
@@ -2728,10 +2731,10 @@ void SimData::meshFractures()
   mesh::SurfaceMesh<double> new_frac_mesh =
       mesh::make_surface_mesh(t1, t2, points[0], n1, n2);
 
-  // const std::string vtk_file2 = "./ababa.vtk";
-  // IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
-  //                          new_frac_mesh.polygons,
-  //                          vtk_file2);
+  const std::string vtk_file2 = "./ababa.vtk";
+  IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
+                           new_frac_mesh.polygons,
+                           vtk_file2);
 
   // const double tol = length * width / n1 /n2 / 10;
   const double tol = std::min( length*length/n1/n2, width*width/n1/n2 ) / 10;
@@ -2773,8 +2776,14 @@ void SimData::meshFractures()
       }
     }
 
-  std::cout << "done" << std::endl;
   FlowData frac_flow_data;
+  std::cout << "npoly: "<< new_frac_mesh.polygons.size() << std::endl;
+  for (const auto & p : new_frac_mesh.polygons)
+  {
+    for (const auto & n : p)
+      std::cout << n << "\t";
+    std::cout << std::endl;
+  }
   computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
-  // exit(0);
+  exit(0);
 }
