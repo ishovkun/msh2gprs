@@ -57,24 +57,7 @@ class FlowData
 };
 
 
-inline
-std::size_t FlowData::insert_connection(const std::size_t ielement,
-                                        const std::size_t jelement)
-{
-  const std::size_t hash = hash_value(ielement, jelement);
-  const std::size_t conn = map_connection.size();
-  if (map_connection.find(hash) != map_connection.end())
-    throw std::runtime_error("connection exists");
-  map_connection.insert({hash, conn});
-
-  if (std::max(ielement, jelement) >= v_neighbors.size())
-    v_neighbors.resize(std::max(ielement, jelement) * 2);
-
-  v_neighbors[ielement].push_back(jelement);
-  v_neighbors[jelement].push_back(ielement);
-
-  return conn;
-}
+// inline
 
 
 inline

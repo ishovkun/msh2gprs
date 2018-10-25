@@ -4,6 +4,7 @@
 #include "Point.hpp"
 #include "Basis.hpp"
 #include "Line.hpp"
+#include "utils.hpp"
 
 #include <math.h>    // M_PI
 #include <algorithm> // clamp
@@ -32,12 +33,14 @@ class Plane
   void set_data(const Point<3,Scalar> & p1,
                 const Point<3,Scalar> & p2,
                 const Point<3,Scalar> & p3);
+  void set_basis(const Basis<3,Scalar> & basis);
 
   // shift support in direction p
   void move(const Point<3,Scalar> & p);
 
   const Point<3,Scalar> & normal() const {return basis(2);}
   Basis<3,Scalar> & get_basis() {return basis;}
+  const Basis<3,Scalar> & get_basis() const {return basis;}
 
   // compute strike angle (degrees) from normal
   Scalar strike_angle() const;
@@ -136,6 +139,15 @@ void Plane<Scalar>::set_data(const Point<3,Scalar> & p1,
   compute_basis(normal);
   compute_algebraic_coeff();
 }
+
+
+template <typename Scalar>
+void Plane<Scalar>::set_basis(const Basis<3,Scalar> & basis)
+{
+  this->basis = basis;
+  compute_algebraic_coeff();
+}
+
 
 
 template <typename Scalar>
@@ -300,20 +312,24 @@ Plane<Scalar>::strike_angle() const
   Scalar strike;
   if (rstrike_from_sin >= 0 and rstrike_from_cos >= 0)
   {
-    strike = 180. * rstrike_from_cos / M_PI;
+    // strike = 180. * rstrike_from_cos / M_PI;
+    strike = degrees(rstrike_from_cos);
   }
   else if (rstrike_from_sin < 0 and rstrike_from_cos > 0)
   {
-    strike = - 180. * rstrike_from_cos / M_PI;
+    // strike = - 180. * rstrike_from_cos / M_PI;
+    strike = - degrees(rstrike_from_cos);
   }
   else if (rstrike_from_sin > 0 and rstrike_from_cos < 0)
   {
-    strike = 180. * rstrike_from_cos / M_PI;
+    // strike = 180. * rstrike_from_cos / M_PI;
+    strike = degrees(rstrike_from_cos);
     strike = fabs(strike);
   }
   else // if (rstrike_from_sin < 0 and rstrike_from_cos < 0)
   {
-    strike = 180. * rstrike_from_cos / M_PI;
+    // strike = 180. * rstrike_from_cos / M_PI;
+    strike = degrees(rstrike_from_cos);
     strike = fabs(strike);
   }
 

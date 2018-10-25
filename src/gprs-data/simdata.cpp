@@ -1,12 +1,13 @@
 ﻿#include "simdata.hpp"
 
-#include <Point.hpp>
-#include <Rectangle.hpp>
-#include <PointSet.hpp>
-#include "CollisionGJK.hpp"
-#include <Collisions.hpp>
-#include <utils.hpp>
-#include <muParser.h>
+#include <angem/Point.hpp>
+#include <angem/Rectangle.hpp>
+#include <angem/PointSet.hpp>
+#include "angem/CollisionGJK.hpp"
+#include <angem/Collisions.hpp>
+#include <muparser/muParser.h>
+#include <angem/utils.hpp>
+#include <mesh/utils.hpp>
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -256,7 +257,7 @@ void SimData::computeCellClipping()
     }    // end face loop
 
     angem::PointSet<3,double> setVert(tol);
-    angem::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ nCells);
+    mesh::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ nCells);
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
       // loop through sda cells
@@ -587,6 +588,8 @@ void SimData::computeReservoirTransmissibilities()
       if (config.expression_type[j] == 0)
         flow_data.custom_data.back().push_back( vsCellRockProps[i].v_props[j] );
   }
+
+  new_flow_data = flow_data;
 }
 
 
@@ -721,14 +724,6 @@ void SimData::computeInterEDFMTransmissibilities()
                 compute_frac_frac_intersection_transes(set_vert_all.points,
                                                        polys, markers,
                                                        frac_frac_flow_data);
-                // @DEBUG output
-                // std::cout << "frac-frac intersection tran data" << std::endl;
-                // for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
-                //   std::cout << frac_frac_flow_data.ielement[i] << "\t"
-                //             << frac_frac_flow_data.jelement[i] << "\t"
-                //             << frac_frac_flow_data.trans_ij[i] << "\t"
-                //             << std::endl;
-
                 // fill global data
                 for (const auto & conn : frac_frac_flow_data.map_connection)
                 {
@@ -743,14 +738,6 @@ void SimData::computeInterEDFMTransmissibilities()
                   }
                 }
 
-                // for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
-                //   if (markers[frac_frac_flow_data.ielement[i]] !=
-                //       markers[frac_frac_flow_data.jelement[i]])
-                //   {
-                //     flow_data.trans_ij.push_back(frac_frac_flow_data.trans_ij[i]);
-                //     // flow_data.ielement.push_back(local_to_global[frac_frac_flow_data.ielement[i]]);
-                //     // flow_data.jelement.push_back(local_to_global[frac_frac_flow_data.jelement[i]]);
-                //   }
               }  // end case when fracs intersect on mesh face
 
               else  // case when two fracs intersect within an element
@@ -791,22 +778,6 @@ void SimData::computeInterEDFMTransmissibilities()
                           trans += frac_frac_flow_data.trans_ij[iconn];
                       }
 
-                      // for (std::size_t i=0; i<frac_frac_flow_data.trans_ij.size(); ++i)
-                      //   if (splits.markers[frac_frac_flow_data.ielement[i]] !=
-                      //       splits.markers[frac_frac_flow_data.jelement[i]])
-                      //   {
-                      //     // std::cout << frac_frac_flow_data.ielement[i] << "\t"
-                      //     //           << frac_frac_flow_data.jelement[i] << "\t"
-                      //     //           << frac_frac_flow_data.trans_ij[i] << "\t\t"
-                      //     //           << splits.markers[frac_frac_flow_data.ielement[i]] << "\t"
-                      //     //           << splits.markers[frac_frac_flow_data.jelement[i]] << "\t"
-                      //     //           << std::endl;
-                      //     trans += frac_frac_flow_data.trans_ij[i];
-                      //   }
-
-                      // flow_data.ielement.push_back(get_flow_element_index(ifrac, ind_i));
-                      // flow_data.jelement.push_back(get_flow_element_index(jfrac, ind_j));
-
                       flow_data.trans_ij.push_back(trans);
                       flow_data.insert_connection(get_flow_element_index(ifrac, ind_i),
                                                   get_flow_element_index(jfrac, ind_j));
@@ -817,6 +788,77 @@ void SimData::computeInterEDFMTransmissibilities()
             }  // end if have common cells
           }  // end if shapes collide
         }  // end efrac ij loop
+}
+
+
+void SimData::computeFracFracTran(const std::size_t                 frac,
+                                  const EmbeddedFracture          & efrac,
+                                  const mesh::SurfaceMesh<double> & mesh,
+                                  FlowData                        & frac_flow_data)
+{
+  CalcTranses etran;
+
+  etran.NbNodes     = mesh.vertices.size();
+  etran.NbPolyhedra = 0;
+  etran.NbPolygons  = mesh.polygons.size();
+  etran.NbZones     = etran.NbPolygons;  // 2 block + 1 frac
+  etran.NbOptions   = 1;  // when 2 runs volume correction procedure
+  etran.fracporo    = 1.0;
+  etran.init();
+  // -------------------- geometry -----------------------
+  for (std::size_t i=0; i<efrac.vVertices.size(); ++i)
+  {
+    etran.vCoordinatesX[i] = mesh.vertices[i][0];
+    etran.vCoordinatesY[i] = mesh.vertices[i][1];
+    etran.vCoordinatesZ[i] = mesh.vertices[i][2];
+  }
+  // polygons (2d elements)
+  etran.vNbFNodes.clear();
+  etran.vvFNodes.clear();
+  etran.vCodePolygon.clear();
+  vector<double> vConductivity, vAperture;
+
+  int code_polygon = 0;
+  for(int ipoly = 0; ipoly < mesh.polygons.size(); ipoly++)
+  {
+    etran.vvFNodes.push_back( mesh.polygons[ipoly] );
+    etran.vNbFNodes.push_back( mesh.polygons[ipoly].size() );
+
+    etran.vCodePolygon.push_back( code_polygon );
+    code_polygon++;
+    vConductivity.push_back(efrac.conductivity);
+    vAperture.push_back(efrac.aperture);
+  }
+
+  // --------------- Properties ------------------------
+  etran.vZPermeability.assign(etran.NbZones * 3, 0.0);
+  etran.vZConduction.assign( etran.NbPolygons * 3, 0.0);
+
+  for ( int i = 0; i < mesh.polygons.size(); i++ )
+  {
+    etran.vZoneCode[i] = i;
+    etran.vZVolumeFactor[i] = vAperture[i];
+    etran.vZPorosity[i] = 1.0;
+    etran.vZPermCode[i] = 1;
+
+    //@HACK default permeability for all fractures
+    const double w = efrac.aperture;
+    etran.vZPermeability[i*3 + 0] = efrac.conductivity / w;
+    etran.vZPermeability[i*3 + 1] = etran.vZPermeability[i*3+0];
+    etran.vZPermeability[i*3 + 2] = etran.vZPermeability[i*3+0];
+
+    etran.vZConduction[i*3 + 0] = 1;
+    etran.vZConduction[i*3 + 1] = 1;
+    etran.vZConduction[i*3 + 2] = 1;
+    etran.vTimurConnectionFactor[i] = 1.0;
+  }
+
+  std::cout << 2 << std::endl;
+  etran.compute_flow_data();
+  std::cout << 3 << std::endl;
+  etran.extractData(frac_flow_data);
+
+  std::cout << frac_flow_data.volumes[0] << std::endl;
 }
 
 
@@ -2662,4 +2704,77 @@ double SimData::get_volume_factor(const std::size_t cell) const
   {
     return config.default_volume_factor;
   }
+}
+
+
+// #include "VTKWriter.hpp"
+void SimData::meshFractures()
+{
+  const std::size_t f = 0;
+  auto & efrac = vEfrac[f];
+  const auto & frac_rect = *(config.fractures[f].body);
+  const angem::Basis<3,double> frac_basis = frac_rect.plane.get_basis();
+  Point t1 = frac_basis(0);
+  Point t2 = frac_basis(1);
+
+  const auto & points = frac_rect.get_points();
+  const double length = (points[1] - points[0]).norm();
+  const double width = (points[2] - points[1]).norm();
+
+  t1 *= length;
+  t2 *= width;
+
+  const std::size_t n1 = 1, n2 = 10;
+  mesh::SurfaceMesh<double> new_frac_mesh =
+      mesh::make_surface_mesh(t1, t2, points[0], n1, n2);
+
+  // const std::string vtk_file2 = "./ababa.vtk";
+  // IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
+  //                          new_frac_mesh.polygons,
+  //                          vtk_file2);
+
+  // const double tol = length * width / n1 /n2 / 10;
+  const double tol = std::min( length*length/n1/n2, width*width/n1/n2 ) / 10;
+
+  for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+    for (std::size_t j=0; j<efrac.mesh.polygons.size(); ++j)
+    {
+      angem::Polygon<double> poly_i(new_frac_mesh.vertices,
+                                    new_frac_mesh.polygons[i]);
+      angem::Polygon<double> poly_j(efrac.mesh.vertices,
+                                    efrac.mesh.polygons[j]);
+      std::vector<Point> section;
+      if (angem::collision(poly_i, poly_j, section, tol))
+      {
+        // std::cout << "poly1" << poly_i.get_points() << std::endl;
+        // std::cout << "poly2" << poly_j.get_points() << std::endl;
+        // std::cout << "found collision" << std::endl;
+        // std::cout << section << std::endl;
+        // exit(0);
+        angem::Polygon<double> poly_section(section);
+
+        const std::size_t old_element = get_flow_element_index(f, efrac.cells[i] );
+        const auto neighbors = flow_data.v_neighbors[old_element];
+        for (const auto & neighbor : neighbors)
+        {
+          if (neighbor < nCells)
+          {
+            const std::size_t new_conn = new_flow_data.insert_connection(nCells + i, neighbor);
+            const std::size_t old_conn = flow_data.connection_index(old_element, neighbor);
+            const double factor = poly_section.area() / poly_j.area();
+            const double T_ij = flow_data.trans_ij[old_conn];
+            if (new_conn >= new_flow_data.trans_ij.size())
+              new_flow_data.trans_ij.push_back(T_ij * factor);
+            else
+              new_flow_data.trans_ij[new_conn] += T_ij * factor;
+          }
+        }
+
+      }
+    }
+
+  std::cout << "done" << std::endl;
+  FlowData frac_flow_data;
+  computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
+  // exit(0);
 }

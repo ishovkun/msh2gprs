@@ -200,3 +200,29 @@ bool FlowData::connection_exists(const std::size_t ielement,
   else
     return true;
 }
+
+
+std::size_t FlowData::insert_connection(const std::size_t ielement,
+                                        const std::size_t jelement)
+{
+  const std::size_t hash = hash_value(ielement, jelement);
+  const std::size_t conn = map_connection.size();
+  if (map_connection.find(hash) != map_connection.end())
+    throw std::runtime_error("connection exists");
+  map_connection.insert({hash, conn});
+
+  if (std::max(ielement, jelement) >= v_neighbors.size())
+  {
+    const std::size_t new_size = 2 * std::max(ielement, jelement);
+    std::cout << "old size = " << v_neighbors.size() << std::endl;
+    std::cout << "new_size = " << new_size << std::endl << std::flush;
+    v_neighbors.resize(new_size);
+    std::cout << "resized" << std::endl << std::flush;
+  }
+  std::cout << "size OK" << std::endl << std::flush;
+
+  v_neighbors[ielement].push_back(jelement);
+  v_neighbors[jelement].push_back(ielement);
+
+  return conn;
+}

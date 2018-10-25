@@ -3,7 +3,9 @@
 #include "Point.hpp"
 #include "Plane.hpp"
 #include "Polygon.hpp"
+#include <Exceptions.hpp>
 // #include "PolyGroup.hpp"
+#include <CollisionGJK.hpp>
 
 namespace angem
 {
@@ -75,6 +77,70 @@ bool collision(const Polygon<Scalar>        & poly,
   }
 
   return result;
+}
+
+
+
+// collision of a polygon with a plane
+// can be 1 points, two points, or zero points
+template <typename Scalar>
+bool collision(const Polygon<Scalar>        & poly1,
+               const Polygon<Scalar>        & poly2,
+               std::vector<Point<3,Scalar>> & intersection,
+               const double                   tol = 1e-10)
+{
+  CollisionGJK<double> collision_gjk;
+  if (!collision_gjk.check(poly1, poly2))
+    return false;
+
+  if (poly1.plane.normal().parallel(poly2.plane.normal(), tol))
+  {
+    Point<3,Scalar> cm1 = poly1.center();
+    Point<3,Scalar> cm2 = poly2.center();
+    if ((cm1 - cm2).norm() < tol)
+    {
+      PointSet<3,Scalar> pset(tol);
+      std::vector<Point<3,Scalar>> v_points;
+      // 1. find vertices of each poly inside another
+      // 2. find intersection of edges
+      // 1.
+      const auto & pts1 = poly1.get_points();
+      const auto & pts2 = poly2.get_points();
+      for (const auto & p : pts1)
+        if (poly2.point_inside(p, tol))
+          pset.insert(p);
+      for (const auto & p : pts2)
+        if (poly1.point_inside(p, tol))
+          pset.insert(p);
+
+      // 2.
+      for (const auto & edge1 : poly1.get_edges())
+      {
+        Plane<Scalar> side = poly1.get_side(edge1);
+        for (const auto & edge2 : poly2.get_edges())
+          collision(pts2[edge2.first],
+                    pts2[edge2.second],
+                    side, v_points, tol);
+      }
+
+      for (const auto & p : v_points)
+        pset.insert(p);
+
+      for (const auto & p: pset.points)
+        intersection.push_back(p);
+
+      return true;
+    }
+    else
+      return false;
+  }
+  else
+  {
+    throw NotImplemented("You'll have to do it manually man");
+  }
+
+
+  return true;
 }
 
 
@@ -222,31 +288,27 @@ bool collision(const Line<3,Scalar>         & line,
   if (colinear)
     return false;
 
-  // check that intersection point is within the polygon
-  // algorithm: if section point is on the same side of the faces as the
-  // mass center, then the point is inside of the polygon
-  const auto & poly_verts = poly.get_points();
-  Point<3,Scalar> cm = compute_center_mass(poly_verts);
-  const auto & normal = poly.plane.normal();
+  // // check that intersection point is within the polygon
+  // // algorithm: if section point is on the same side of the faces as the
+  // // mass center, then the point is inside of the polygon
+  // // const auto & poly_verts = poly.get_points();
+  // Point<3,Scalar> cm = poly.center();
+  // const auto & normal = poly.plane.normal();
 
-  bool inside = true;
-  for (std::size_t i=0; i<poly_verts.size(); ++i)
+  // for (const auto & edge : poly.get_edges())
+  // {
+  //   Point<3,Scalar> p_perp = edge.first + normal * (edge.second - edge.first).norm();
+  //   Plane<Scalar> side(edge.first, edge.second, p_perp);
+  //   if (side.above(p) != side.above(cm))
+  //     return false;
+  // }
+  if (poly.point_inside(p), 1e-4)
   {
-    const Point<3,Scalar> & v1 = poly_verts[i];
-    Point<3,Scalar> v2;
-    if (i < poly_verts.size() - 1)
-      v2 = poly_verts[i+1];
-    else
-      v2 = poly_verts[0];
-
-    Point<3,Scalar> p_perp = v1 + normal * (v2 - v1).norm();
-    Plane<Scalar> side(v1, v2, p_perp);
-    if (side.above(p) != side.above(cm))
-      return false;
+    intersection.push_back(p);
+    return true;
   }
-
-  intersection.push_back(p);
-  return true;
+  else
+    return false;
 }
 
 }  // end namespace

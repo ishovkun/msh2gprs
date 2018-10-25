@@ -2,6 +2,8 @@
 
 #include <Shape.hpp>
 #include <Plane.hpp>
+#include <PointSet.hpp>
+
 #include <utils.hpp>
 #include <iostream>
 
@@ -19,6 +21,16 @@ class Polygon: public Shape<Scalar>
   // construct a polygon (face) from some mesh vertices
   Polygon(const std::vector<Point<3,Scalar>> & all_mesh_vertices,
           const std::vector<std::size_t>     & indices);
+  Polygon(const PointSet<3,Scalar>           & all_mesh_vertices,
+          const std::vector<std::size_t>     & indices);
+
+  Plane<Scalar> get_side(const Edge & edge) const;
+
+  // returns true if point is inside a 3D shape formed by
+  // lines going through the poly vertices in the direction of
+  // poly plane normal
+  bool point_inside(const Point<3,Scalar> & p,
+                    const Scalar            tol = 1e-10) const;
 
   Scalar area() const;
   std::vector<Edge> get_edges() const;
@@ -52,6 +64,18 @@ Polygon<Scalar>::Polygon(const std::vector<Point<3,Scalar>> & point_list)
 
 template<typename Scalar>
 Polygon<Scalar>::Polygon(const std::vector<Point<3,Scalar>> & all_mesh_vertices,
+                         const std::vector<std::size_t>     & indices)
+{
+  assert(indices.size() > 2);
+  std::vector<Point<3,Scalar>> point_list;
+  for (const std::size_t & i : indices)
+    point_list.push_back(all_mesh_vertices[i]);
+  set_data(point_list);
+}
+
+
+template<typename Scalar>
+Polygon<Scalar>::Polygon(const PointSet<3,Scalar>           & all_mesh_vertices,
                          const std::vector<std::size_t>     & indices)
 {
   assert(indices.size() > 2);
@@ -250,5 +274,41 @@ std::vector<Edge> Polygon<Scalar>::get_edges() const
   return edges;
 }
 
+
+template<typename Scalar>
+bool Polygon<Scalar>::point_inside(const Point<3, Scalar> & p ,
+                                   const Scalar             tol) const
+{
+  if ( this->plane.distance(p) > tol )
+    return false;
+
+  const auto & points = this->points;
+  const Point<3,Scalar> cm = this->center();
+  const Point<3,Scalar> n = this->plane.normal();
+  for (const auto & edge : get_edges())
+  {
+    // Plane<Scalar> side(points[edge.first], points[edge.second],
+    //                    n * (points[edge.second] - points[edge.first]).norm() );
+    Plane<Scalar> side = get_side(edge);
+    if (side.above(p) != side.above(cm))
+      return false;
+  }
+
+  return true;
+}
+
+
+template<typename Scalar>
+Plane<Scalar> Polygon<Scalar>::get_side(const Edge & edge) const
+{
+  if (edge.first >= this->points.size() or edge.second >= this->points.size())
+    throw std::out_of_range("Edge does not exist");
+
+  Plane<Scalar> side(this->points[edge.first],
+                     this->points[edge.second],
+                     plane.normal() *
+                     (this->points[edge.first] - this->points[edge.second]).norm() );
+  return std::move(side);
+}
 
 }

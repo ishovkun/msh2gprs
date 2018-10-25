@@ -19,10 +19,10 @@
 #include "transes.hpp"
 #include "GElement.hpp"
 
-#include "Point.hpp"
-#include "PolyGroup.hpp"
-#include "Collisions.hpp"
-#include <SurfaceMesh.hpp>
+#include "angem/Point.hpp"
+#include "angem/PolyGroup.hpp"
+#include "angem/Collisions.hpp"
+#include "mesh/SurfaceMesh.hpp"
 #include <SimdataConfig.hpp>
 
 struct GmConstraint
@@ -108,7 +108,7 @@ struct EmbeddedFracture
   double                              dilation_angle;
   // cells -> points
   // these two entries represent mesh within the frac
-  angem::SurfaceMesh<double>          mesh;
+  mesh::SurfaceMesh<double>            mesh;
   std::vector<angem::Point<3,double>>  vVertices;
   // cells -> vertex indiced (fracture polygons)
   std::vector<std::vector<std::size_t>> vIndices;
@@ -144,6 +144,10 @@ public:
 
   void handleConnections();
   void computeReservoirTransmissibilities();
+  void computeFracFracTran(const std::size_t                 frac,
+                           const EmbeddedFracture          & efrac,
+                           const mesh::SurfaceMesh<double> & mesh,
+                           FlowData                        & frac_flow_data);
   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
                                      const int   frac_ind);
   void computeInterEDFMTransmissibilities();
@@ -160,6 +164,7 @@ public:
 
   angem::Point<3,double> get_permeability(const std::size_t cell) const;
   double get_volume_factor(const std::size_t cell) const;
+  void meshFractures();
 
 protected:
    void methodElementCenter(int nelem, vector<Gelement> &vsElement);
@@ -228,6 +233,7 @@ public:
 
   vector<EmbeddedFracture> vEfrac;
   FlowData flow_data;
+  FlowData new_flow_data;
 
   int nAtoms;
   vector<vector<int> > vvAtoms;

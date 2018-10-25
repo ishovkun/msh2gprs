@@ -1,9 +1,10 @@
-#include "simdata.hpp"
-#include "femout.hpp"
-#include "transes.hpp"
-#include <Parser.hpp>
+#include <gprs-data/simdata.hpp>
+#include <gprs-data/femout.hpp>
+// #include <gprs_data/transes.hpp>
+#include <parsers/Parser.hpp>
 
 #include <experimental/filesystem>
+
 namespace filesystem = std::experimental::filesystem;
 using Path = filesystem::path;
 
@@ -84,11 +85,14 @@ int main(int argc, char *argv[])
   cout << "Compute cell clipping and EDFM transmissibilities" << endl;
   pSimData->computeCellClipping();
 
-  cout << "Merge small edfm cells" << endl;
-  pSimData->mergeSmallFracCells();
+  // // cout << "Merge small edfm cells" << endl;
+  // // pSimData->mergeSmallFracCells();
 
-  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  pSimData->computeInterEDFMTransmissibilities();
+  // std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  // pSimData->computeInterEDFMTransmissibilities();
+
+  std::cout << "mesh fractures" << std::endl;
+  pSimData->meshFractures();
 
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
@@ -96,12 +100,12 @@ int main(int argc, char *argv[])
   // cout << "Split FEM mesh on internal surfaces" << endl;
   // pSimData->splitInternalFaces();
 
-  cout << "Write FEM mesh data\n";
-  OutputData output_data(pSimData);
+  // cout << "Write FEM mesh data\n";
+  // OutputData output_data(pSimData);
 
-  const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
-  std::cout << "output directory: " << output_dir << std::endl;
-  output_data.write_output(output_dir);
+  // const std::string output_dir =  std::string(filesystem::absolute(config_dir_path)) + "/";
+  // std::cout << "output directory: " << output_dir << std::endl;
+  // output_data.write_output(output_dir);
 
   // delete pSimData;
   return 0;

@@ -1,16 +1,17 @@
 #pragma once
 
-#include <Point.hpp>
-#include <Polygon.hpp>
-#include <PointSet.hpp>
-// #include <PolyGroup.hpp>
-#include <NotImplemented.hpp>
+#include <angem/Point.hpp>
+#include <angem/Polygon.hpp>
+#include <angem/PointSet.hpp>
+#include <angem/Exceptions.hpp>
 
 #include <unordered_set>
 
 
-namespace angem
+namespace mesh
 {
+
+using namespace angem;
 
 template <typename Scalar>
 class SurfaceMesh // : PolyGroup<Scalar>

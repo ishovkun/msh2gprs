@@ -1383,6 +1383,7 @@ void CalcTranses::extractData(FlowData & data) const
 {
   // std::cout << "extracting volume data" << std::endl;
   // Extract Volumes, porosity, depth
+  std::cout << 31 << std::endl;
   data.volumes.resize(NbCVs);
   data.poro.resize(NbCVs);
   data.depth.resize(NbCVs);
@@ -1392,11 +1393,12 @@ void CalcTranses::extractData(FlowData & data) const
     data.poro[i]    = ZPorosity[CVZone[i]];
     data.depth[i]   = -CVz[i];
   }
+  std::cout << 32 << std::endl;
 
   // Transmissibility
   for (std::size_t i=0;i<NbTransmissibility; i++)
   {
-    // cout << "(" << iTr[i] << ", " << jTr[i] << ") " << Tij[i] << std::endl;
+    cout << "(" << iTr[i] << ", " << jTr[i] << ") " << Tij[i] << std::endl;
     if (iTr[i] < 0 or jTr[i] < 0)
       continue;
 
@@ -1404,6 +1406,7 @@ void CalcTranses::extractData(FlowData & data) const
     data.trans_ij.push_back( Tij[i] * transmissibility_conversion_factor );
     data.conduct_ij.push_back( TConductionIJ[i]);
   }
+  std::cout << 33 << std::endl;
 
   // Geomechanics
   // data.connection_type.resize(NbConnections);

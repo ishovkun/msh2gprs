@@ -79,28 +79,39 @@ class Point
 
   // also this class defines the following external functions
   // point-wise sum
-  // Point<dim, Scalar> operator+(const Point<dim, Scalar> & p1,
-  //                              const Point<dim, Scalar> & p2);
-
+  template <int d, typename S>
+  friend Point<d, S> operator+(const Point<d,S> & p1,
+                               const Point<d,S> & p2);
   // point-wise subtraction
-  // Point<dim, Scalar> operator-(const Point<dim, Scalar> & p1,
-  //                              const Point<dim, Scalar> & p2);
-
+  template <int d, typename S>
+  friend Point<d, S> operator-(const Point<d,S> & p1,
+                               const Point<d,S> & p2);
+  // multiplication by number
+  template <int d, typename S1, typename S2>
+  friend Point<d, S1> operator*(const Point<d,S1> & p1,
+                                const S2          & x);
+  // division by number
+  template <int d, typename S1, typename S2>
+  friend Point<d, S1> operator/(const Point<d,S1> & p1,
+                                const S2          & x);
   // dot product
-  // Scalar operator*(const Point<dim, Scalar> & p1,
-  //                  const Point<dim, Scalar> & p2);
+  template <int d, typename S>
+  friend S operator*(const Point<d,S> & p1,
+                     const Point<d,S> & p2);
 
   // Euclidian distance
-  // Scalar distance(const Point<dim, Scalar> & p1,
-  //                 const Point<dim, Scalar> & p2);
+  template <int d, typename S>
+  friend S distance(const Point<d,S> & p1,
+                    const Point<d,S> & p2);
 
   // Euclidian norm
-  // Scalar norm(const Point<dim, Scalar> & p1);
+  template <int d, typename S>
+  friend S norm(const Point<d,S> & p1);
 
   // printout
-  // template<int dim, typename Scalar>
-  // std::ostream &operator<<(std::ostream            & os,
-  //                          const Point<dim,Scalar> & p)
+  template <int d, typename S>
+  friend std::ostream &operator<<(std::ostream     & os,
+                                  const Point<d,S> & p);
 
 
  protected:
@@ -448,6 +459,28 @@ Point<dim, Scalar> operator-(const Point<dim, Scalar> & p1,
 }
 
 
+template<int dim, typename Scalar1, typename Scalar2>
+Point<dim, Scalar1> operator*(const Point<dim, Scalar1> & p1,
+                              const Scalar2             & x)
+{
+  Point<dim, Scalar1> result;
+  for (int i=0; i<dim; ++i)
+    result[i] = p1.coords[i] * static_cast<Scalar1>(x);
+  return result;
+}
+
+
+template<int dim, typename Scalar1, typename Scalar2>
+Point<dim, Scalar1> operator/(const Point<dim, Scalar1> & p1,
+                              const Scalar2             & x)
+{
+  Point<dim, Scalar1> result;
+  for (int i=0; i<dim; ++i)
+    result[i] = p1.coords[i] / static_cast<Scalar1>(x);
+  return result;
+}
+
+
 template<int dim, typename Scalar>
 Point<dim, Scalar> operator-(const Point<dim, Scalar> & p)
 {
@@ -466,33 +499,11 @@ Scalar operator*(const Point<dim, Scalar> & p1,
 }
 
 
-template<int dim, typename Scalar>
-Point<dim, Scalar> operator*(const Point<dim, Scalar> & p,
-                             const Scalar             & x)
+template<int dim, typename Scalar1, typename Scalar2>
+Point<dim, Scalar1> operator*(const Scalar2             & x,
+                              const Point<dim, Scalar1> & p)
 {
-  Point<dim, Scalar> result;
-  for (int i=0; i<dim; ++i)
-    result[i] = p(i) * x;
-  return result;
-}
-
-
-template<int dim, typename Scalar>
-Point<dim, Scalar> operator*(const Scalar             & x,
-                             const Point<dim, Scalar> & p)
-{
-  return p*x;
-}
-
-
-template<int dim, typename Scalar>
-Point<dim, Scalar> operator/(const Point<dim, Scalar> & p,
-                             const Scalar             & x)
-{
-  Point<dim, Scalar> result;
-  for (int i=0; i<dim; ++i)
-    result[i] = p(i) / x;
-  return result;
+  return p * x;
 }
 
 

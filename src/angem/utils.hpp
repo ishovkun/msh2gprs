@@ -57,4 +57,22 @@ Scalar triangle_area(const Point<dim,Scalar> & p1,
   return static_cast<Scalar>(0.5) * (cross( p2 - p1, p3 - p1 )).norm();
 }
 
+
+// convert radians to degrees
+template<typename Scalar>
+inline
+Scalar degrees(const Scalar angle)
+{
+  return angle / static_cast<Scalar>(M_PI) * static_cast<Scalar>(180.);
+}
+
+
+// convert degrees to degrees
+template<typename Scalar>
+inline
+Scalar radians(const Scalar angle)
+{
+  return angle * static_cast<Scalar>(M_PI) / static_cast<Scalar>(180.);
+}
+
 }
