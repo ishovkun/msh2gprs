@@ -69,10 +69,10 @@ public:
   std::vector<double> vCoordinatesZ;
   //faces
   std::vector<int> vNbVFaces;
-  std::vector<std::vector<int> > vvVFaces;
+  std::vector<std::vector<std::size_t> > vvVFaces;
   std::vector<int> vCodePolygon;
   //elements
-  std::vector<int> vNbFNodes;
+  // std::vector<int> vNbFNodes;
   std::vector<std::vector<std::size_t> > vvFNodes;
   std::vector<int> vCodePolyhedron;
   //properties
@@ -109,17 +109,13 @@ protected:
 protected:
 // SimData * pSim;
 
-int		NbCVs,NbVolumes,NbInterfaces,NbEquations,NbFeatures,NbCF,NbConnections,NbIntersections;
-int		NbTransmissibility,NbMetric;
-int		OptionVC,OptionGO,OptionMC;
+  std::size_t	NbCVs,NbVolumes,NbInterfaces,NbEquations,NbFeatures,NbCF,NbConnections,NbIntersections;
+  std::size_t	NbTransmissibility,NbMetric;
+  int		OptionVC,OptionGO,OptionMC;
 
-///// Grid information /////
+  ///// Grid information /////
   std::vector<double>	X,Y,Z;
-  // std::vector<int>		NbFNodes;
-// int		**FNodes;
-  std::vector<std::vector<int>>		FNodes;
-  std::vector<int>		NbVFaces;
-  std::vector<std::vector<int>>		VFaces;
+  std::vector<std::vector<std::size_t>>		FNodes;
 
   std::vector<int>		CodePolygon;
   std::vector<int>		CodePolyhedron;

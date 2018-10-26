@@ -458,25 +458,24 @@ void SimData::computeReservoirTransmissibilities()
 
   // polygons (2d elements)
   int code_polygon = 0;
-  tran.vNbFNodes.clear();
+  // tran.vNbFNodes.clear();
   tran.vvFNodes.clear();
-  tran.vCodePolygon.clear();
+  // tran.vCodePolygon.clear();
   vector<double> vConductivity, vAperture;
 
   for(int ipoly = 0; ipoly < nFaces; ipoly++)
   {
     tran.vvFNodes.push_back( vsFaceCustom[ipoly].vVertices);
-    tran.vNbFNodes.push_back( vsFaceCustom[ipoly].vVertices.size() );
+    // tran.vNbFNodes.push_back( vsFaceCustom[ipoly].vVertices.size() );
     if(vsFaceCustom[ipoly].nMarker > 0)  // dfm frac
     {
-      tran.vCodePolygon.push_back( code_polygon );
+      tran.vCodePolygon[ipoly] = code_polygon;
       code_polygon++;
       vConductivity.push_back(vsFaceCustom[ipoly].conductivity);
       vAperture.push_back(vsFaceCustom[ipoly].aperture);
     }
     else  // non-frac faces
-      tran.vCodePolygon.push_back( -1 );
-
+      tran.vCodePolygon[ipoly] = -1;
   }
 
   // polyhedra (3d elements)
@@ -486,9 +485,9 @@ void SimData::computeReservoirTransmissibilities()
   tran.vCodePolyhedron.clear();
   for(int ipoly = 0; ipoly < nCells; ipoly++)
   {
-    int n = vsetPolyhedronPolygon[ipoly].size();
+    const std::size_t n = vsetPolyhedronPolygon[ipoly].size();
     itintset = vsetPolyhedronPolygon[ipoly].begin();
-    for(int i = 0; i < n; i++)
+    for(std::size_t i = 0; i < n; i++)
     {
       tran.vvVFaces[ipoly].push_back( *itintset );
       itintset++;
@@ -499,7 +498,7 @@ void SimData::computeReservoirTransmissibilities()
 
   // Properties
   tran.vZPermeability.assign(tran.NbZones * 3, 0.0);
-  tran.vZConduction.assign( (tran.NbPolyhedra + tran.NbFracs) * 3, 0.0);
+  tran.vZConduction.assign( (tran.NbPolyhedra + nDFMFracs) * 3, 0.0);
 
   // DFM fractures
   for ( int i = 0; i < tran.NbFracs; i++ )
@@ -806,7 +805,7 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
   etran.fracporo    = 1.0;
   etran.init();
   // -------------------- geometry -----------------------
-  for (std::size_t i=0; i<efrac.vVertices.size(); ++i)
+  for (std::size_t i=0; i<mesh.vertices.size(); ++i)
   {
     etran.vCoordinatesX[i] = mesh.vertices[i][0];
     etran.vCoordinatesY[i] = mesh.vertices[i][1];
@@ -819,7 +818,6 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
   for(std::size_t ipoly = 0; ipoly < n_poly; ++ipoly)
   {
     etran.vvFNodes[ipoly] = mesh.polygons[ipoly];
-    etran.vNbFNodes[ipoly] = mesh.polygons[ipoly].size();
     etran.vCodePolygon[ipoly] = code_polygon;
     code_polygon++;
   }
@@ -843,12 +841,8 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
     etran.vTimurConnectionFactor[ipoly] = 1.0;
   }
 
-  std::cout << "tracer 2" << std::endl;
   etran.compute_flow_data();
-  std::cout << 3 << std::endl;
   etran.extractData(frac_flow_data);
-
-  std::cout << "volumes = " << frac_flow_data.volumes[0] << std::endl;
 }
 
 
@@ -887,7 +881,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     // polygons (2d elements)
     int code_polygon = 0;
-    tran.vNbFNodes.clear();
+    // tran.vNbFNodes.clear();
     tran.vvFNodes.clear();
     tran.vCodePolygon.clear();
     vector<double> vConductivity, vAperture;
@@ -895,7 +889,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     for(int ipoly = 0; ipoly < split.polygons.size(); ipoly++)
     {
       tran.vvFNodes.push_back( split.polygons[ipoly]);
-      tran.vNbFNodes.push_back( split.polygons[ipoly].size() );
+      // tran.vNbFNodes.push_back( split.polygons[ipoly].size() );
 
       if(split.markers[ipoly] == 2)  // fracture polygons
       {
@@ -974,7 +968,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     const angem::Point<3,double> perm = get_permeability(icell);
     for ( std::size_t i = 0; i < tran.NbPolyhedra; i++ )
     {
-      const std::size_t n = i + tran.NbFracs;
+      const std::size_t n = i + nDFMFracs;
       tran.vZoneCode[n] = tran.vCodePolyhedron[i];
       tran.vZPorosity[n] = get_property(icell, "PORO");
       assert(tran.vZPorosity[n] > 1e-16);
@@ -1029,77 +1023,18 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     flow_data.trans_ij.push_back(f_m_tran);
     flow_data.insert_connection(get_flow_element_index(frac_ind, ecell),
                                 icell);
-    // flow_data.ielement.push_back(get_flow_element_index(frac_ind, ecell));  // efrac element index
-    // flow_data.jelement.push_back(icell);  // cell contatining fracture
 
     ecell++;
   }  // end splits loop
 
   // compute transmissibilities between EDFM segments
-  std::cout << "computing frac-frac transes" << std::endl;
-  CalcTranses etran;
-
-  etran.NbNodes     = efrac.vVertices.size();
-  etran.NbPolyhedra = 0;
-  etran.NbPolygons  = efrac.vIndices.size();
-  etran.NbZones     = etran.NbPolygons;  // 2 block + 1 frac
-  etran.NbOptions   = 1;  // when 2 runs volume correction procedure
-  etran.fracporo    = 1.0;
-  etran.init();
-
-  // -------------------- geometry -----------------------
-  for (std::size_t i=0; i<efrac.vVertices.size(); ++i)
-  {
-    etran.vCoordinatesX[i] = efrac.vVertices[i][0];
-    etran.vCoordinatesY[i] = efrac.vVertices[i][1];
-    etran.vCoordinatesZ[i] = efrac.vVertices[i][2];
-  }
-
-  // polygons (2d elements)
-  int code_polygon = 0;
-  etran.vNbFNodes.clear();
-  etran.vvFNodes.clear();
-  etran.vCodePolygon.clear();
-  std::size_t n_poly = efrac.vIndices.size();
-  std::vector<double> vConductivity(n_poly), vAperture(n_poly);
-
-  for(std::size_t ipoly = 0; ipoly < efrac.vIndices.size(); ipoly++)
-  {
-    etran.vvFNodes.push_back( efrac.vIndices[ipoly] );
-    etran.vNbFNodes.push_back( efrac.vIndices[ipoly].size() );
-
-    etran.vCodePolygon.push_back( code_polygon );
-    code_polygon++;
-  }
-
-  // --------------- Properties ------------------------
-  for ( int i = 0; i < efrac.cells.size(); i++ )
-  {
-    etran.vZoneCode[i] = i;
-    etran.vZVolumeFactor[i] = efrac.aperture;
-    etran.vZPorosity[i] = 1.0;
-    etran.vZPermCode[i] = 1;
-
-    //@HACK default permeability for all fractures
-    const double w = efrac.aperture;
-    etran.vZPermeability[i*3 + 0] = efrac.conductivity / w;
-    etran.vZPermeability[i*3 + 1] = etran.vZPermeability[i*3+0];
-    etran.vZPermeability[i*3 + 2] = etran.vZPermeability[i*3+0];
-
-    etran.vZConduction[i*3 + 0] = 1;
-    etran.vZConduction[i*3 + 1] = 1;
-    etran.vZConduction[i*3 + 2] = 1;
-    etran.vTimurConnectionFactor[i] = 1.0;
-  }
-
-  // std::cout << "n_vertices = " << efrac.vVertices.size() << std::endl;
   std::cout << "frac-frac whithin one frac approximations" << std::endl;
-  etran.compute_flow_data();
   FlowData frac_flow_data;
-  etran.extractData(frac_flow_data);
+  computeFracFracTran(frac_ind, efrac, efrac.mesh, frac_flow_data);
 
   // fill global data
-  for (std::size_t i=0; i<efrac.cells.size(); ++i)
+  // for (std::size_t i=0; i<efrac.cells.size(); ++i)
+  for (std::size_t i=0; i<efrac.mesh.polygons.size(); ++i)
   {
     flow_data.volumes.push_back(frac_flow_data.volumes[i]);
     flow_data.poro.push_back(frac_flow_data.poro[i]);
@@ -1162,14 +1097,14 @@ compute_frac_frac_intersection_transes(const std::vector<Point>                 
 
   // polygons (2d elements)
   int code_polygon = 0;
-  tran.vNbFNodes.clear();
+  // tran.vNbFNodes.clear();
   tran.vvFNodes.clear();
   tran.vCodePolygon.clear();
   vector<double> vConductivity, vAperture;
   for(int ipoly = 0; ipoly < polys.size(); ipoly++)
   {
     tran.vvFNodes.push_back( polys[ipoly] );
-    tran.vNbFNodes.push_back( polys[ipoly].size() );
+    // tran.vNbFNodes.push_back( polys[ipoly].size() );
 
     tran.vCodePolygon.push_back( code_polygon );
     code_polygon++;

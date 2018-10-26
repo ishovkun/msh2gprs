@@ -23,7 +23,7 @@ void CalcTranses::init()
   vNbVFaces.resize(NbPolyhedra);
   vvVFaces.resize(NbPolyhedra);
   //elements
-  vNbFNodes.resize(NbPolygons, 3);
+  // vNbFNodes.resize(NbPolygons, 3);
   vvFNodes.resize(NbPolygons);
   vCodePolyhedron.resize(NbPolyhedra);
   //properties
@@ -44,10 +44,12 @@ void CalcTranses::init()
   vCoordinatesY.resize( NbNodes );
   vCoordinatesZ.resize( NbNodes );
 
-  vNbFNodes.resize(NbPolygons);
+  // vNbFNodes.resize(NbPolygons);
   vvFNodes.resize(NbPolygons);
   vCodePolygon.resize(NbPolygons);
 
+  ListV1.resize(NbPolygons);
+  ListV2.resize(NbPolygons);
 }
 
 CalcTranses::~CalcTranses()
@@ -129,7 +131,7 @@ void CalcTranses::ComputeBasicGeometry()
     for (std::size_t i=0; i<NbPolygons; i++)
     {
       FArea[i] = FXG[i] = FYG[i] = FZG[i] = Fnx[i] = Fny[i] = Fnz[i] = 0;
-      for (std::size_t j=1; j<vNbFNodes[i]-1; j++)
+      for (std::size_t j=1; j<vvFNodes[i].size()-1; j++)
       {
         ux = X[FNodes[i][j]] - X[FNodes[i][0]];
         uy = Y[FNodes[i][j]] - Y[FNodes[i][0]];
@@ -180,20 +182,21 @@ void CalcTranses::ComputeBasicGeometry()
     {
         VVolume[i] = VXG[i] = VYG[i] = VZG[i] = 0;
         xi = yi = zi = 0;
-        for (std::size_t j=0; j<NbVFaces[i]; j++) // Defining a node inside the polyhedron
+        for (std::size_t j=0; j<vvVFaces[i].size(); j++) // Defining a node inside the polyhedron
         {
-            xi += FXG[VFaces[i][j]];
-            yi += FYG[VFaces[i][j]];
-            zi += FZG[VFaces[i][j]];
+            xi += FXG[vvVFaces[i][j]];
+            yi += FYG[vvVFaces[i][j]];
+            zi += FZG[vvVFaces[i][j]];
         }
 
-        xi = xi / NbVFaces[i];
-        yi = yi / NbVFaces[i];
-        zi = zi / NbVFaces[i];
+        const double n_element_nodes = vvVFaces[i].size();
+        xi = xi / n_element_nodes;
+        yi = yi / n_element_nodes;
+        zi = zi / n_element_nodes;
 
-        for (std::size_t j=0; j<NbVFaces[i]; j++)
+        for (std::size_t j=0; j<vvVFaces[i].size(); j++)
         {
-          k = VFaces[i][j];
+          k = vvVFaces[i][j];
           h = Fnx[k]*(FXG[k]-xi) +
               Fny[k]*(FYG[k]-yi) +
               Fnz[k]*(FZG[k]-zi);
@@ -256,22 +259,23 @@ void CalcTranses::PrepareConnectionList()
     // int i,j,k,iswap;
     int iswap;
 
-///// Direct construction of M-M and M-F connections /////
-
-    ListV1.resize(NbPolygons);
-    ListV2.resize(NbPolygons);
-
+    ///// Direct construction of M-M and M-F connections /////
     for (std::size_t i=0; i<NbPolygons; i++)
-      ListV1[i] = ListV2[i] = -1;
+    {
+      ListV1[i] = -1;
+      ListV2[i] = -1;
+    }
 
     for (std::size_t i=0; i<NbPolyhedra; i++)
-      for (std::size_t j=0; j<NbVFaces[i]; j++)
+    {
+      for (std::size_t j=0; j<vvVFaces[i].size(); j++)
       {
-        if (ListV1[VFaces[i][j]] == -1)
-          ListV1[VFaces[i][j]] = i;
+        if (ListV1[vvVFaces[i][j]] == -1)
+          ListV1[vvVFaces[i][j]] = i;
         else
-          ListV2[VFaces[i][j]] = i;
+          ListV2[vvVFaces[i][j]] = i;
       }
+    }
 
     ///// Construction of F-F needs sorting... less efficient /////
 
@@ -283,7 +287,7 @@ void CalcTranses::PrepareConnectionList()
     for (std::size_t i=0; i<NbPolygons; i++)
       if (CodePolygon[i] >= 0)
       {
-        for (std::size_t j=0; j<vNbFNodes[i]-1; j++)
+        for (std::size_t j=0; j<vvFNodes[i].size()-1; j++)
         {
           if (FNodes[i][j] < FNodes[i][j+1])
           {
@@ -300,15 +304,15 @@ void CalcTranses::PrepareConnectionList()
           k++;
         }
 
-        if (FNodes[i][0] < FNodes[i][vNbFNodes[i]-1])
+        if (FNodes[i][0] < FNodes[i][vvFNodes[i].size()-1])
         {
           ListE1[k] = FNodes[i][0];
-          ListE2[k] = FNodes[i][vNbFNodes[i]-1];
+          ListE2[k] = FNodes[i][vvFNodes[i].size()-1];
           ListF [k] = i;
         }
         else
         {
-          ListE1[k] = FNodes[i][vNbFNodes[i]-1];
+          ListE1[k] = FNodes[i][vvFNodes[i].size()-1];
           ListE2[k] = FNodes[i][0];
           ListF [k] = i;
         }
@@ -371,35 +375,28 @@ void CalcTranses::PrepareConnectionList()
     // M-M and M-F
 
     NbConnections = 0;
-
     for (std::size_t i=0; i<NbPolygons; i++)
     {
-      // if (CodePolygon[i] < 0)
-      if (ListV1[i] < 0)
+      // if (ListV1[i] < 0)
+      if (CodePolygon[i] < 0)
       {
         if (ListV2[i] != -1)
-        {
           NbConnections++;
-        }
       }
       else
       {
         if (ListV2[i] == -1)
-        {
           NbConnections++;
-        }
         else
-        {
           NbConnections += 2;
-        }
       }
 
     }
 
     // F-F
 
-    std::size_t i = 0;
-    while (static_cast<int>(i) < NbEdges-1)
+    int i = 0;
+    while (i < NbEdges-1)
     {
 
       std::size_t j = i + 1;
@@ -451,10 +448,15 @@ void CalcTranses::ConstructConnectionList()
     k=0;
     // std::cout << "NbPolygons = " << NbPolygons << std::endl;
 
+    if (NbPolyhedra > 0)
     for (std::size_t i=0; i<NbPolygons; i++)
     {
-      if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
+      // if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
+      // if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
+      // if (CodePolygon[i]>=0 && ListV2[i]>=0)	// M-F and F-M
+
       // if (ListV1[i] < 0 && ListV2[i] >= 0)  // M-M
+      if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
       {
         // std::cout << "M-M " << i << std::endl;
         ConType[k] = 1;
@@ -493,8 +495,8 @@ void CalcTranses::ConstructConnectionList()
         NbTransmissibility++;
       }
 
-      // if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
-      if (ListV1[i] >= 0 && ListV2[i] < 0) // M-F
+      // if (ListV1[i] >= 0 && ListV2[i] < 0) // M-F
+      if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
       {
         // std::cout << "M-F " << i << std::endl;
         ConType[k] = 2;
@@ -537,8 +539,8 @@ void CalcTranses::ConstructConnectionList()
         NbTransmissibility++;
       }
 
-      if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M
       // if (ListV1[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M
+      if (CodePolygon[i] >= 0 && ListV2[i] >= 0)  // M-F and F-M
       {
         // std::cout << "M-F && F-M " << i << std::endl;
 
@@ -600,7 +602,6 @@ void CalcTranses::ConstructConnectionList()
         NbTransmissibility += 2;
       }
     }
-
 
     // std::cout << "F-F" << std::endl;
     // F-F Connections
@@ -739,6 +740,8 @@ void CalcTranses::ComputeDirectionalPermeability()
       if (ConType[i] == 1)  // M-M //
       {
         k = ConCV[i][0];
+        assert(k >= 0);
+
         fx = CVx[k] - Conhx[i];
         fy = CVy[k] - Conhy[i];
         fz = CVz[k] - Conhz[i];
@@ -783,6 +786,8 @@ void CalcTranses::ComputeDirectionalPermeability()
         ConMult[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
         k = ConCV[i][1];
+        assert(k >= 0);
+
         fx = CVx[k] - Conhx[i];
         fy = CVy[k] - Conhy[i];
         fz = CVz[k] - Conhz[i];
@@ -791,24 +796,27 @@ void CalcTranses::ComputeDirectionalPermeability()
         fy = fy/fl;
         fz = fz/fl;
 
-        Kx = ZPermeability[CVZone[k]][0]*fx +
-             ZPermeability[CVZone[k]][3]*fy +
-             ZPermeability[CVZone[k]][4]*fz;
+        Kx = ZPermeability[CVZone[k]][0] * fx +
+             ZPermeability[CVZone[k]][3] * fy +
+             ZPermeability[CVZone[k]][4] * fz;
 
-        Ky = ZPermeability[CVZone[k]][3]*fx +
-             ZPermeability[CVZone[k]][1]*fy +
-             ZPermeability[CVZone[k]][5]*fz;
+        Ky = ZPermeability[CVZone[k]][3] * fx +
+             ZPermeability[CVZone[k]][1] * fy +
+             ZPermeability[CVZone[k]][5] * fz;
 
-        Kz = ZPermeability[CVZone[k]][4]*fx +
-             ZPermeability[CVZone[k]][5]*fy +
-             ZPermeability[CVZone[k]][2]*fz;
+        Kz = ZPermeability[CVZone[k]][4] * fx +
+             ZPermeability[CVZone[k]][5] * fy +
+             ZPermeability[CVZone[k]][2] * fz;
 
         ConPerm[i][1] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
         // @HACK
         // We dont need a REAL value of conductivity
         // We just calculate geometric part
-        Kx=1.0; Ky=1.0; Kz=1.0;
+        Kx = 1.0;
+        Ky = 1.0;
+        Kz = 1.0;
+
         if(ZConduction[CVZone[k]][0] != 0.0)
         {
           Kx = (ZConduction[CVZone[k]][0]*fx +
@@ -825,9 +833,13 @@ void CalcTranses::ComputeDirectionalPermeability()
         }
         ConMult[i][1]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
       }
-      if (ConType[i]==2)  // M-F /////////////////////////////////////////////////
+      if (ConType[i] == 2)  // M-F ////
       {
+        // std::cout << "M-F" << std::endl;
+
         k = ConCV[i][0];
+        assert(k >= 0);
+
         fx = CVx[k] - Conhx[i];
         fy = CVy[k] - Conhy[i];
         fz = CVz[k] - Conhz[i];
@@ -851,6 +863,8 @@ void CalcTranses::ComputeDirectionalPermeability()
         ConPerm[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
         k = ConCV[i][1];
+        assert(k >= 0);
+
         ConPerm[i][1] = ZPermeability[CVZone[k]][0];    // Kn (0)
 
         // @HACK
@@ -877,9 +891,12 @@ void CalcTranses::ComputeDirectionalPermeability()
       }
       if (ConType[i] == 3)  // F-F /////////////////////////////////////////////////
       {
+        // std::cout << "F-F" << std::endl;
         for (std::size_t j=0; j<ConN[i]; j++)
         {
           k = ConCV[i][j];
+          assert(k >= 0);
+
           ConPerm[i][j] = ZPermeability[CVZone[k]][0];  // Kp (1)
 
           // @HACK
@@ -1096,10 +1113,8 @@ void CalcTranses::compute_flow_data()
       Z[i] = vCoordinatesZ[i];
     }
 
-    // NbFNodes.resize(NbPolygons);
     EQF.resize(NbPolygons);
     CodePolygon.resize(NbPolygons);
-    // NbFNodes.resize(NbPolygons);
     FNodes.resize(NbPolygons);
 
     NbEdges = 0;
@@ -1107,10 +1122,10 @@ void CalcTranses::compute_flow_data()
 
     for (std::size_t i=0; i<NbPolygons; i++)
     {
-      FNodes[i].resize(vNbFNodes[i]);
+      FNodes[i].resize(vvFNodes[i].size());
 
       // polygon node indices
-      for (std::size_t j=0; j<vNbFNodes[i]; j++)
+      for (std::size_t j=0; j<vvFNodes[i].size(); j++)
         FNodes[i][j] = vvFNodes[i][j];
 
       CodePolygon[i] = vCodePolygon[i];
@@ -1118,25 +1133,20 @@ void CalcTranses::compute_flow_data()
       if (CodePolygon[i] >= 0)
       {
         EQF[i] = NbCVs++;
-        NbEdges += vNbFNodes[i];
+        NbEdges += vvFNodes[i].size();
       }
       else EQF[i] = -1;
     }
 
     NbActivePolygon = NbCVs;
 
-    NbVFaces.resize(NbPolyhedra);
-    VFaces.resize(NbPolyhedra);
+    // NbVFaces.resize(NbPolyhedra);
+    vvVFaces.resize(NbPolyhedra);
     EQV.resize(NbPolyhedra);
     CodePolyhedron.resize(NbPolyhedra);
 
     for (std::size_t i=0; i<NbPolyhedra; i++)
     {
-      NbVFaces[i] = vNbVFaces[i];
-      VFaces[i].resize(vNbVFaces[i]);
-      for (std::size_t j=0; j<NbVFaces[i]; j++)
-        VFaces[i][j] = vvVFaces[i][j];
-
       CodePolyhedron[i] = vCodePolyhedron[i];
       if (CodePolyhedron[i] >= 0)
       {
@@ -1398,14 +1408,13 @@ void CalcTranses::extractData(FlowData & data) const
   for (std::size_t i=0;i<NbTransmissibility; i++)
   {
     cout << "(" << iTr[i] << ", " << jTr[i] << ") " << Tij[i] << std::endl;
-    if (iTr[i] < 0 or jTr[i] < 0)
-      continue;
+    // if (iTr[i] < 0 or jTr[i] < 0)
+    //   continue;
 
     data.insert_connection(iTr[i], jTr[i]);
     data.trans_ij.push_back( Tij[i] * transmissibility_conversion_factor );
     data.conduct_ij.push_back( TConductionIJ[i]);
   }
-  std::cout << 33 << std::endl;
 
   // Geomechanics
   // data.connection_type.resize(NbConnections);
