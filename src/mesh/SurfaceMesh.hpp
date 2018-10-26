@@ -115,19 +115,13 @@ void SurfaceMesh<Scalar>::insert(const Polygon<Scalar> & poly)
   polygons.push_back(indices);
 
   // now we need to compute edges
-  for (std::size_t i=0; i<points.size(); ++i)
+  for (const auto & edge : poly.get_edges())
   {
-    std::size_t i1, i2;
-    if (i < points.size() - 1)
-    {
-      i1 = vertices.find(points[i]);
-      i2 = vertices.find(points[i+1]);
-    }
-    else
-    {
-      i1 = vertices.find(points[i]);
-      i2 = vertices.find(points[0]);
-    }
+    const std::size_t i1 = vertices.find(points[edge.first]);
+    const std::size_t i2 = vertices.find(points[edge.second]);
+
+    assert(i1 < vertices.size());
+    assert(i2 < vertices.size());
 
     if (i1 == i2)
       throw std::runtime_error("what kind of polygon is that?");

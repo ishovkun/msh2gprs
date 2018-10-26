@@ -815,11 +815,6 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
 
   // polygons (2d elements)
   const std::size_t n_poly = mesh.polygons.size();
-  etran.vNbFNodes.resize(n_poly);
-  etran.vvFNodes.resize(n_poly);
-  etran.vCodePolygon.resize(n_poly);
-  // std::vector<double> vConductivity(n_poly), vAperture(n_poly);
-
   int code_polygon = 0;
   for(std::size_t ipoly = 0; ipoly < n_poly; ++ipoly)
   {
@@ -827,30 +822,25 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
     etran.vNbFNodes[ipoly] = mesh.polygons[ipoly].size();
     etran.vCodePolygon[ipoly] = code_polygon;
     code_polygon++;
-    // vConductivity[ipoly] = efrac.conductivity;
-    // vAperture[ipoly] = efrac.aperture;
   }
 
   // --------------- Properties ------------------------
-  etran.vZPermeability.assign(etran.NbZones * 3, 0.0);
-  etran.vZConduction.assign( etran.NbPolygons * 3, 0.0);
-
-  for ( std::size_t i = 0; i < n_poly; i++ )
+  for ( std::size_t ipoly = 0; ipoly < n_poly; ++ipoly )
   {
-    etran.vZoneCode[i] = i;
-    etran.vZVolumeFactor[i] = efrac.aperture;
-    etran.vZPorosity[i] = 1.0;
-    etran.vZPermCode[i] = 1;
+    etran.vZoneCode[ipoly] = ipoly;
+    etran.vZVolumeFactor[ipoly] = efrac.aperture;
+    etran.vZPorosity[ipoly] = 1.0;
+    etran.vZPermCode[ipoly] = 1;
 
-    const double w = efrac.aperture;
-    etran.vZPermeability[i*3 + 0] = efrac.conductivity / w;
-    etran.vZPermeability[i*3 + 1] = efrac.conductivity / w;
-    etran.vZPermeability[i*3 + 2] = efrac.conductivity / w;
+    const double f_perm = efrac.conductivity / efrac.aperture;
+    etran.vZPermeability[ipoly*3 + 0] = f_perm;
+    etran.vZPermeability[ipoly*3 + 1] = f_perm;
+    etran.vZPermeability[ipoly*3 + 2] = f_perm;
 
-    etran.vZConduction[i*3 + 0] = 1;
-    etran.vZConduction[i*3 + 1] = 1;
-    etran.vZConduction[i*3 + 2] = 1;
-    etran.vTimurConnectionFactor[i] = 1.0;
+    etran.vZConduction[ipoly*3 + 0] = 1;
+    etran.vZConduction[ipoly*3 + 1] = 1;
+    etran.vZConduction[ipoly*3 + 2] = 1;
+    etran.vTimurConnectionFactor[ipoly] = 1.0;
   }
 
   std::cout << "tracer 2" << std::endl;
@@ -858,7 +848,7 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
   std::cout << 3 << std::endl;
   etran.extractData(frac_flow_data);
 
-  std::cout << frac_flow_data.volumes[0] << std::endl;
+  std::cout << "volumes = " << frac_flow_data.volumes[0] << std::endl;
 }
 
 
@@ -1080,20 +1070,13 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     etran.vCodePolygon.push_back( code_polygon );
     code_polygon++;
-    // vConductivity.push_back(efrac.conductivity);
-    // vAperture.push_back(efrac.aperture);
-    // vConductivity[ipoly] = efrac.conductivity;
-    vAperture[ipoly] = efrac.aperture;
   }
 
   // --------------- Properties ------------------------
-  etran.vZPermeability.assign(etran.NbZones * 3, 0.0);
-  etran.vZConduction.assign( etran.NbPolygons * 3, 0.0);
-
   for ( int i = 0; i < efrac.cells.size(); i++ )
   {
     etran.vZoneCode[i] = i;
-    etran.vZVolumeFactor[i] = vAperture[i];
+    etran.vZVolumeFactor[i] = efrac.aperture;
     etran.vZPorosity[i] = 1.0;
     etran.vZPermCode[i] = 1;
 
@@ -2749,11 +2732,6 @@ void SimData::meshFractures()
       std::vector<Point> section;
       if (angem::collision(poly_i, poly_j, section, tol))
       {
-        // std::cout << "poly1" << poly_i.get_points() << std::endl;
-        // std::cout << "poly2" << poly_j.get_points() << std::endl;
-        // std::cout << "found collision" << std::endl;
-        // std::cout << section << std::endl;
-        // exit(0);
         angem::Polygon<double> poly_section(section);
 
         const std::size_t old_element = get_flow_element_index(f, efrac.cells[i] );

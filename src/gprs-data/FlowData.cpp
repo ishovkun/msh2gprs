@@ -214,19 +214,7 @@ std::size_t FlowData::insert_connection(const std::size_t ielement,
   if (std::max(ielement, jelement) >= v_neighbors.size())
   {
     const std::size_t new_size = 2 * std::max(ielement, jelement);
-    std::cout << "old size = " << v_neighbors.size() << std::endl;
-    std::cout << "new_size = " << new_size << std::endl << std::flush;
-    for (const auto & neighbors : v_neighbors)
-    {
-      // std::cout << "bla-bla" << std::endl;
-      std::cout << neighbors.size() << ": ";
-      for (const auto & n : neighbors)
-        std::cout << n << "\t";
-      std::cout << std::endl;
-    }
-
     v_neighbors.resize(new_size);
-    std::cout << "resized" << std::endl << std::flush;
   }
 
   v_neighbors[ielement].push_back(jelement);

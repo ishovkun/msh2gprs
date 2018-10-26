@@ -32,8 +32,8 @@ void CalcTranses::init()
   vTimurConnectionFactor.resize(NbZones);
   vZPorosity.resize(NbZones);
   vZPermCode.resize(NbZones);
-  vZPermeability.resize(NbZones);
-  vZConduction.resize(NbZones);
+  vZPermeability.resize(NbZones * 3, 0.0);
+  vZConduction.resize(NbZones * 3, 0.0);
 
   OptionVC = 0;
   OptionGO = 0;
@@ -43,6 +43,11 @@ void CalcTranses::init()
   vCoordinatesX.resize( NbNodes );
   vCoordinatesY.resize( NbNodes );
   vCoordinatesZ.resize( NbNodes );
+
+  vNbFNodes.resize(NbPolygons);
+  vvFNodes.resize(NbPolygons);
+  vCodePolygon.resize(NbPolygons);
+
 }
 
 CalcTranses::~CalcTranses()
@@ -1100,7 +1105,6 @@ void CalcTranses::compute_flow_data()
     NbEdges = 0;
     NbCVs = 0;  // number of control volumes?
 
-    std::cout << "traser 201" << std::endl;
     for (std::size_t i=0; i<NbPolygons; i++)
     {
       FNodes[i].resize(vNbFNodes[i]);
@@ -1118,8 +1122,6 @@ void CalcTranses::compute_flow_data()
       }
       else EQF[i] = -1;
     }
-
-    std::cout << "traser 202" << std::endl;
 
     NbActivePolygon = NbCVs;
 
@@ -1142,38 +1144,23 @@ void CalcTranses::compute_flow_data()
       }
       else EQV[i] = -1;
     }
-    std::cout << "traser 203" << std::endl;
-
 
     ZoneCode.resize(NbZones);
     ZVolumeFactor.resize(NbZones);
     ZPorosity.resize(NbZones);
     ZPermCode.resize(NbZones);
 
-    std::cout << "NbZones = " << NbZones << std::endl;
     ZPermeability.resize(NbZones, std::vector<double>(6, 0));
     ZConduction.resize(NbZones, std::vector<double>(6, 0));
 
-    std::cout << "NbZones = " << NbZones << std::endl;
     for (std::size_t i=0; i<NbZones; i++)
     {
-      std::cout << "i = " << i << std::endl;
-      std::cout << "vZoneCode[i] = " << vZoneCode[i] << std::endl;
       ZoneCode[i] = vZoneCode[i];
       std::size_t j = ZoneCode[i];
       ZVolumeFactor[j] = vZVolumeFactor[j];
 
       ZPorosity[j] = vZPorosity[j];
       ZPermCode[j] = vZPermCode[j];
-
-
-      // ZPermeability[j].resize(6);
-      // std::cout << "aaa" << std::endl;
-
-      // ZConduction[j].resize(6);
-      // std::cout << "aaaa" << std::endl;
-
-      std::cout << "b" << std::endl;
 
       ZPermeability[j][0] = vZPermeability[j * 3 + 0];
       ZPermeability[j][1] = vZPermeability[j * 3 + 1];
@@ -1183,8 +1170,6 @@ void CalcTranses::compute_flow_data()
       ZPermeability[j][4] = 0.0;
       ZPermeability[j][5] = 0.0;
 
-      std::cout << "c" << std::endl;
-
       ZConduction[j][0] = vZConduction[j * 3 + 0];
       ZConduction[j][1] = vZConduction[j * 3 + 1];
       ZConduction[j][2] = vZConduction[j * 3 + 2];
@@ -1193,8 +1178,6 @@ void CalcTranses::compute_flow_data()
       ZConduction[j][4] = 0.0;
       ZConduction[j][5] = 0.0;
    }
-
-    std::cout << "traser 204" << std::endl;
 
     ComputeBasicGeometry();
     ComputeControlVolumeList();
@@ -1220,8 +1203,6 @@ void CalcTranses::compute_flow_data()
       TotalVolume += CVVolume[i];
 
     // printf("TotalVolume=%e\n", TotalVolume);
-
-    std::cout << 23 << std::endl;
 
     /* OUTPUT MAPPING FOR GEOMECHANICS  */
 
@@ -1403,7 +1384,6 @@ void CalcTranses::extractData(FlowData & data) const
 {
   // std::cout << "extracting volume data" << std::endl;
   // Extract Volumes, porosity, depth
-  std::cout << 31 << std::endl;
   data.volumes.resize(NbCVs);
   data.poro.resize(NbCVs);
   data.depth.resize(NbCVs);
@@ -1413,7 +1393,6 @@ void CalcTranses::extractData(FlowData & data) const
     data.poro[i]    = ZPorosity[CVZone[i]];
     data.depth[i]   = -CVz[i];
   }
-  std::cout << 32 << std::endl;
 
   // Transmissibility
   for (std::size_t i=0;i<NbTransmissibility; i++)
