@@ -34,6 +34,12 @@ TARGET_INCLUDE_DIRECTORIES(msh2gprs PRIVATE
 	${CMAKE_SOURCE_DIR}/src
 )
 
+if (CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(msh2gprs PRIVATE "-Wall")
+endif()
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
 # for profiling memory leaks
 # TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers -lstdc++fs -lasan)
 # last flag for std::filesystem

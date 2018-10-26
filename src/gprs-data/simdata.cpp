@@ -2785,5 +2785,5 @@ void SimData::meshFractures()
     std::cout << std::endl;
   }
   computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
-  exit(0);
+  // exit(0);
 }

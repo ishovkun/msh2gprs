@@ -285,7 +285,7 @@ protected:
     static std::ctype_base::mask const* get_table()
     {
         typedef std::ctype<char> cctype;
-        static const cctype::mask *const_rc= cctype::classic_table();
+        // static const cctype::mask *const_rc= cctype::classic_table();
 
         static cctype::mask rc[cctype::table_size];
 
@@ -303,7 +303,7 @@ protected:
     static std::ctype_base::mask const* get_table()
     {
         typedef std::ctype<char> cctype;
-        static const cctype::mask *const_rc= cctype::classic_table();
+        // static const cctype::mask *const_rc= cctype::classic_table();
 
         static cctype::mask rc[cctype::table_size];
 
