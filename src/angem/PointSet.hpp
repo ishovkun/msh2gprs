@@ -40,6 +40,7 @@ class PointSet
 
   // size methods. returns size of vector points
   std::size_t size() const;
+  bool empty() const {return points.empty();}
 
   // variables
   std::vector<Point<dim,Scalar>> points;

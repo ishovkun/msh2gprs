@@ -68,7 +68,6 @@ public:
   std::vector<double> vCoordinatesY;
   std::vector<double> vCoordinatesZ;
   //faces
-  std::vector<int> vNbVFaces;
   std::vector<std::vector<std::size_t> > vvVFaces;
   std::vector<int> vCodePolygon;
   //elements

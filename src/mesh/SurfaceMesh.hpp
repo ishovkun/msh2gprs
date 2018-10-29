@@ -37,6 +37,7 @@ class SurfaceMesh // : PolyGroup<Scalar>
   // complexity linear to number of faces (edges)
   // does not remove vertices when no connected neighbors
   std::size_t merge_element(const std::size_t element);
+  Scalar minimum_edge_size() const;
 
   PointSet<3,Scalar>                    vertices;
   std::vector<std::vector<std::size_t>> polygons;  // indices
@@ -78,9 +79,19 @@ class SurfaceMesh // : PolyGroup<Scalar>
       return max_edges*ind2 + ind1;
   }
 
+  inline
   std::size_t hash_value(const Edge &edge) const
   {
     return hash_value(edge.first, edge.second);
+  }
+
+  inline
+  std::pair<std::size_t, std::size_t> invert_hash(const std::size_t hash) const
+  {
+    std::pair<std::size_t,std::size_t> pair;
+    pair.first = (hash - hash % max_edges) / max_edges;
+    pair.second = hash % max_edges;
+    return pair;
   }
 
 
@@ -373,6 +384,22 @@ SurfaceMesh<Scalar>::get_neighbors( const Edge & edge ) const
     throw std::out_of_range("edge does not exist");
 
   return iter->second;
+}
+
+
+template <typename Scalar>
+Scalar SurfaceMesh<Scalar>::minimum_edge_size() const
+{
+  Scalar min_size = std::numeric_limits<Scalar>::max();
+  for (const auto & conn : map_edge_neighbors)
+  {
+    const std::pair<std::size_t,std::size_t> verts = invert_hash(conn.first);
+    const Scalar h = (vertices[verts.first] - vertices[verts.second]).norm();
+    if (h < min_size)
+      min_size = h;
+  }
+
+  return min_size;
 }
 
 }

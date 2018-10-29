@@ -287,10 +287,8 @@ bool Polygon<Scalar>::point_inside(const Point<3, Scalar> & p ,
   const Point<3,Scalar> n = this->plane.normal();
   for (const auto & edge : get_edges())
   {
-    // Plane<Scalar> side(points[edge.first], points[edge.second],
-    //                    n * (points[edge.second] - points[edge.first]).norm() );
     Plane<Scalar> side = get_side(edge);
-    if (side.above(p) != side.above(cm))
+    if (side.above(p) != side.above(cm) and side.distance(p) > tol)
       return false;
   }
 

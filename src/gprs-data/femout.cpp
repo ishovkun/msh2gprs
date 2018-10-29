@@ -266,7 +266,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       // make up a vector of all sda vertices
       for (const auto & efrac : pSim->vEfrac)
         n_efrac_vertices += efrac.mesh.vertices.size();
-        // n_efrac_vertices += efrac.vVertices.size();
 
       std::vector<angem::Point<3,double>> efrac_verts(n_efrac_vertices);
       std::size_t ivertex = 0;

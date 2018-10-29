@@ -20,7 +20,6 @@ void CalcTranses::init()
   Z.resize(NbNodes);
 
   //faces
-  vNbVFaces.resize(NbPolyhedra);
   vvVFaces.resize(NbPolyhedra);
   //elements
   // vNbFNodes.resize(NbPolygons, 3);
@@ -1255,8 +1254,8 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
   out << "/";
   string outputPath_ = output_path;// out.str();
  //////////////////////////
-///// OUTPUT Volumes /////
-//////////////////////////
+  ///// OUTPUT Volumes /////
+  //////////////////////////
   int i;
   printf ( "Output Volumes...\n" );
   string outfile = outputPath_ + "fl_vol.txt";
@@ -1407,7 +1406,7 @@ void CalcTranses::extractData(FlowData & data) const
   // Transmissibility
   for (std::size_t i=0;i<NbTransmissibility; i++)
   {
-    cout << "(" << iTr[i] << ", " << jTr[i] << ") " << Tij[i] << std::endl;
+    // cout << "(" << iTr[i] << ", " << jTr[i] << ") " << Tij[i] << std::endl;
     // if (iTr[i] < 0 or jTr[i] < 0)
     //   continue;
 
