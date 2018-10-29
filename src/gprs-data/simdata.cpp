@@ -2612,7 +2612,7 @@ double SimData::get_volume_factor(const std::size_t cell) const
 }
 
 
-#include "VTKWriter.hpp"
+// #include "VTKWriter.hpp"
 void SimData::meshFractures()
 {
   if (vEfrac.size() > 1)
@@ -2632,14 +2632,18 @@ void SimData::meshFractures()
   t1 *= length;
   t2 *= width;
 
-  const std::size_t n1 = 1, n2 = 200;
+  const std::size_t n1 = config.fractures[f].n1;
+  const std::size_t n2 = config.fractures[f].n2;
+  if ( n1 == 0 and n2 == 0)
+    return;
+
   mesh::SurfaceMesh<double> new_frac_mesh =
       mesh::make_surface_mesh(t1, t2, points[0], n1, n2);
 
-  const std::string vtk_file2 = "./ababa.vtk";
-  IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
-                           new_frac_mesh.polygons,
-                           vtk_file2);
+  // const std::string vtk_file2 = "./ababa.vtk";
+  // IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
+  //                          new_frac_mesh.polygons,
+  //                          vtk_file2);
 
   const double tol =
       std::min(new_frac_mesh.minimum_edge_size() / 3,

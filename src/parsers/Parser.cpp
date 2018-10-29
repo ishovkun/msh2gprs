@@ -171,11 +171,6 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
       config.efrac_file = (*frac_it).get<std::string>();
       continue;
     }
-    else if (frac_it.key() == "Aggregation threshold")
-    {
-      config.frac_cell_elinination_factor = (*frac_it).get<double>();
-      continue;
-    }
     else
     {
       config.fractures.emplace_back();
@@ -341,10 +336,12 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
   double strike = 0;
   double cohesion = 0;
   angem::Point<3,double> center = {0, 0, 0};
-  double friction_angle = 30;
-  double dilation_angle = 0;
-  double aperture = 1e-3;
-  double conductivity = 1e-3;
+  double friction_angle = conf.friction_angle;
+  double dilation_angle = conf.dilation_angle;
+  double aperture = conf.aperture;
+  double conductivity = conf.conductivity;
+  std::size_t n1 = conf.n1;
+  std::size_t n2 = conf.n2;
 
   for (; it != end; ++it)
   {
@@ -375,6 +372,18 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
       aperture = (*it).get<double>();
     else if (key == "conductivity")
       conductivity = (*it).get<double>();
+    else if (key == "remesh")
+    {
+      std::vector<std::size_t> remesh_pars = (*it).get<std::vector<std::size_t>>();
+      if (remesh_pars.size() != 2)
+        std::cout << "wrong entry in remesh. Aborting" << std::endl << std::flush;
+
+      n1 = remesh_pars[0];
+      n2 = remesh_pars[1];
+
+      if ((n1 > 0 and n2 == 0)  or (n2 > 0 and n1 == 0))
+        std::cout << "wrong entry in remesh. Aborting" << std::endl << std::flush;
+    }
     else if (key == "center")
       center = (*it).get<std::vector<double>>();
     else
@@ -391,6 +400,7 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
   conf.dilation_angle = dilation_angle;
   conf.aperture = aperture;
   conf.conductivity = conductivity;
+  conf.n1 = n1; conf.n2 = n2;
 }
 
 }  // end namespace

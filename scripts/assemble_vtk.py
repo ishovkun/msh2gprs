@@ -9,10 +9,6 @@ res_mesh_file = case_path + "reservoir_mesh.vtk"
 frac_mesh_file = case_path + "efrac.vtk"
 results_file = case_path + "OUTPUT.vars.txt"
 output_dir = case_path + "field"
-# res_mesh_file = "/home/ishovkun/sim/edfm-2frac/reservoir_mesh.vtk"
-# frac_mesh_file = "/home/ishovkun/sim/edfm-2frac/efrac.vtk"
-# results_file = "/home/ishovkun/sim/edfm-2frac/OUTPUT.vars.txt"
-# output_dir = "/home/ishovkun/sim/edfm-2frac/field"
 
 n_cells = 0
 with open(res_mesh_file, "r") as f:

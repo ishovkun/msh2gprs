@@ -33,6 +33,7 @@ struct BCConfig
 struct EmbeddedFractureConfig
 {
   std::shared_ptr<angem::Polygon<double>> body;  // embedded fractures
+  std::size_t n1 = 0, n2 = 0;                    // remeshing params
   double cohesion = 0;
   double friction_angle = 30;
   double dilation_angle = 0;
