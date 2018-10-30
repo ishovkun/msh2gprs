@@ -1489,7 +1489,9 @@ void CalcTranses::save_output(const FlowData    & data,
       const auto element_pair = data.invert_hash(conn.first);
       out << element_pair.first << "\t"
           << element_pair.second << "\t"
-          << data.trans_ij[iconn]  << std::endl;
+          << std::scientific << data.trans_ij[iconn]
+          << std::defaultfloat << std::endl;
+
     }
     out << "/" << std::endl;
 

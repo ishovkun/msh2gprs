@@ -156,9 +156,18 @@ bool collision(const Polygon<Scalar>        & poly1,
     else
       return false;
   }
-  else
+  else // two polygons in non-parallel planes
   {
-    throw NotImplemented("You'll have to do it manually man");
+    std::vector<Point<3,Scalar>> v_section;
+    angem::collision(poly1, poly2.plane, v_section, tol);
+    bool result = false;
+    for (const auto & p : v_section)
+      if (poly2.point_inside(p, tol) and poly1.point_inside(p, tol))
+      {
+        intersection.push_back(p);
+        result = true;
+      }
+    return result;
   }
 
 

@@ -270,7 +270,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       std::vector<angem::Point<3,double>> efrac_verts(n_efrac_vertices);
       std::size_t ivertex = 0;
       for (const auto & efrac : pSim->vEfrac)
-        // for (const auto & p : efrac.vVertices)
         for (const auto & p : efrac.mesh.vertices)
         {
           efrac_verts[ivertex] = p;
@@ -295,7 +294,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       std::size_t shift = 0;
       for (const auto & efrac : pSim->vEfrac)
       {
-        // for (const auto & cell : efrac.vIndices)
         for (const auto & cell : efrac.mesh.polygons)
         {
           efrac_cells[ielement].resize(cell.size());
@@ -305,7 +303,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
           ielement++;
         }
         // shift += efrac.vVertices.size();
-        shift += efrac.mesh.polygons.size();
+        shift += efrac.mesh.vertices.size();
       }
 
       const std::string vtk_file = output_path + "efrac.vtk";

@@ -21,8 +21,8 @@ class SurfaceMesh // : PolyGroup<Scalar>
               const std::size_t max_edges = 1e8);
   // add new polygon (element) to the mesh. no check for duplicates
   void insert(const Polygon<Scalar> & poly);
-  // true if set vertices is not empty
-  bool empty() const;
+  // true if vector of polygons is empty
+  bool empty() const {return polygons.empty();}
 
   // GETTERS
   // get vector of neighbor indices

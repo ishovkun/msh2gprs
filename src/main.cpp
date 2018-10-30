@@ -88,11 +88,12 @@ int main(int argc, char *argv[])
   // // cout << "Merge small edfm cells" << endl;
   // // pSimData->mergeSmallFracCells();
 
-  // std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  // pSimData->computeInterEDFMTransmissibilities();
-
   std::cout << "mesh fractures" << std::endl;
   pSimData->meshFractures();
+
+  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  // pSimData->computeInterEDFMTransmissibilities();
+  pSimData->computeTransBetweenDifferentEfracs();
 
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();

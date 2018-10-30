@@ -598,7 +598,6 @@ std::size_t SimData::get_flow_element_index(const std::size_t ifrac,
   for (std::size_t i=0; i<ifrac; ++i)
   {
     result += vEfrac[i].mesh.polygons.size();
-    std::cout << "blabla" << std::endl;
   }
 
   result += ielement;
@@ -758,31 +757,31 @@ void SimData::computeInterEDFMTransmissibilities()
                   angem::PolyGroup<double> splits(1e-8);
                   std::vector<Point> section;
                   angem::collision(poly_i, poly_j.plane, section, 1e-6);
-                    if (!section.empty())
+                  if (!section.empty())
+                  {
+                    angem::split(poly_i, poly_j.plane, splits, ifrac, ifrac);
+                    angem::split(poly_j, poly_i.plane, splits, jfrac, jfrac);
+
+                    FlowData frac_frac_flow_data;
+                    compute_frac_frac_intersection_transes(splits.vertices.points,
+                                                           splits.polygons,
+                                                           splits.markers,
+                                                           frac_frac_flow_data);
+
+                    std::cout << "frac-frac intersection tran data" << std::endl;
+                    double trans = 0;
+                    for (const auto & conn : frac_frac_flow_data.map_connection)
                     {
-                      angem::split(poly_i, poly_j.plane, splits, ifrac, ifrac);
-                      angem::split(poly_j, poly_i.plane, splits, jfrac, jfrac);
-
-                      FlowData frac_frac_flow_data;
-                      compute_frac_frac_intersection_transes(splits.vertices.points,
-                                                             splits.polygons,
-                                                             splits.markers,
-                                                             frac_frac_flow_data);
-
-                      std::cout << "frac-frac intersection tran data" << std::endl;
-                      double trans = 0;
-                      for (const auto & conn : frac_frac_flow_data.map_connection)
-                      {
-                        const std::size_t iconn = conn.second;
-                        const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
-                        if (splits.markers[element_pair.first] != splits.markers[element_pair.second])
-                          trans += frac_frac_flow_data.trans_ij[iconn];
-                      }
-
-                      flow_data.trans_ij.push_back(trans);
-                      flow_data.insert_connection(get_flow_element_index(ifrac, ind_i),
-                                                  get_flow_element_index(jfrac, ind_j));
+                      const std::size_t iconn = conn.second;
+                      const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
+                      if (splits.markers[element_pair.first] != splits.markers[element_pair.second])
+                        trans += frac_frac_flow_data.trans_ij[iconn];
                     }
+
+                    flow_data.trans_ij.push_back(trans);
+                    flow_data.insert_connection(get_flow_element_index(ifrac, ind_i),
+                                                get_flow_element_index(jfrac, ind_j));
+                  }
 
                 }
               }  // end case when two fracs intersect within an element
@@ -996,21 +995,16 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       const double t2 = matrix_fracture_flow_data.trans_ij[1];
       const double v1 = matrix_fracture_flow_data.volumes[1];
       const double v2 = matrix_fracture_flow_data.volumes[2];
-      // f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);
-      f_m_tran = (v1 + v2) / (v1/t1 + v2/t2);
+      f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);
+      // f_m_tran = (v1 + v2) / (v1/t1 + v2/t2);
       // f_m_tran = std::min(t1, t2);
     }
 
-    // std::cout << "matrix_fracture_flow_data.trans_ij.size() = "
-    //           << matrix_fracture_flow_data.trans_ij.size() << std::endl;
-    // if (f_m_tran < 0)
-    // std::cout << "f_m_tran = " << f_m_tran << std::endl;
     flow_data.trans_ij.push_back(f_m_tran);
     flow_data.insert_connection(get_flow_element_index(frac_ind, ecell),
                                 icell);
 
     ecell++;
-    // exit(0);
   }  // end splits loop
 
   // compute transmissibilities between EDFM segments
@@ -2612,152 +2606,258 @@ double SimData::get_volume_factor(const std::size_t cell) const
 }
 
 
-// #include "VTKWriter.hpp"
+void SimData::computeTransBetweenDifferentEfracs()
+{
+  for (std::size_t i=0; i<vEfrac.size(); ++i)
+    for (std::size_t j=i+1; j<vEfrac.size(); ++j)
+    {
+      const auto & ifrac = vEfrac[i];
+      const auto & jfrac = vEfrac[j];
+
+      angem::CollisionGJK<double> collision;
+      const auto & iShape = config.fractures[i].body;
+      const auto & jShape = config.fractures[j].body;
+
+      const double tol = std::min(ifrac.mesh.minimum_edge_size() / 3,
+                                  jfrac.mesh.minimum_edge_size() / 3);
+      // fast check
+      if (collision.check(*iShape, *jShape))
+      {
+        for (std::size_t ielement=0; ielement<ifrac.mesh.polygons.size(); ++ielement)
+          for (std::size_t jelement=0; jelement<jfrac.mesh.polygons.size(); ++jelement)
+          {
+            const angem::Polygon<double> poly_i(ifrac.mesh.vertices,
+                                                ifrac.mesh.polygons[ielement]);
+            const angem::Polygon<double> poly_j(jfrac.mesh.vertices,
+                                                jfrac.mesh.polygons[jelement]);
+            std::vector<Point> section;
+            if (angem::collision(poly_i, poly_j, section, tol))
+            {
+              std::cout << "found intersection between edfm fracs" << std::endl;
+              std::cout << section << std::endl;
+              if (!section.empty())
+              {
+                angem::PolyGroup<double> splits(1e-8);
+                angem::split(poly_i, poly_j.plane, splits, i, i);
+                angem::split(poly_j, poly_i.plane, splits, j, j);
+
+                FlowData frac_frac_flow_data;
+                compute_frac_frac_intersection_transes(splits.vertices.points,
+                                                       splits.polygons,
+                                                       splits.markers,
+                                                       frac_frac_flow_data);
+                std::cout << "frac-frac intersection tran data" << std::endl;
+                double trans = 0;
+                for (const auto & conn : frac_frac_flow_data.map_connection)
+                {
+                  const std::size_t iconn = conn.second;
+                  const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
+                  if (splits.markers[element_pair.first] != splits.markers[element_pair.second])
+                    trans += frac_frac_flow_data.trans_ij[iconn];
+                }
+
+                flow_data.trans_ij.push_back(trans);
+                flow_data.insert_connection(get_flow_element_index(i, ielement),
+                                            get_flow_element_index(j, jelement));
+              }
+
+            }
+
+
+          }
+      }
+    }
+}
+
+
 void SimData::meshFractures()
 {
-  if (vEfrac.size() > 1)
-    throw std::runtime_error("remeshing more than 1 frac is not implemented yet");
+  std::vector<mesh::SurfaceMesh<double>> new_frac_meshes(vEfrac.size());
+  std::size_t old_shift = nCells;
+  std::size_t new_shift = nCells;
 
-  const std::size_t f = 0;
-  auto & efrac = vEfrac[f];
-  const auto & frac_rect = *(config.fractures[f].body);
-  const angem::Basis<3,double> frac_basis = frac_rect.plane.get_basis();
-  Point t1 = frac_basis(0);
-  Point t2 = frac_basis(1);
+  for (std::size_t f=0; f<vEfrac.size(); ++f)
+  {
+    auto & efrac = vEfrac[f];
+    const auto & frac_rect = *(config.fractures[f].body);
+    const angem::Basis<3,double> frac_basis = frac_rect.plane.get_basis();
+    Point t1 = frac_basis(0);
+    Point t2 = frac_basis(1);
 
-  const auto & points = frac_rect.get_points();
-  const double length = (points[1] - points[0]).norm();
-  const double width = (points[2] - points[1]).norm();
+    const auto & points = frac_rect.get_points();
+    const double length = (points[1] - points[0]).norm();
+    const double width = (points[2] - points[1]).norm();
 
-  t1 *= length;
-  t2 *= width;
+    t1 *= length;
+    t2 *= width;
 
-  const std::size_t n1 = config.fractures[f].n1;
-  const std::size_t n2 = config.fractures[f].n2;
-  if ( n1 == 0 and n2 == 0)
-    return;
+    const std::size_t n1 = config.fractures[f].n1;
+    const std::size_t n2 = config.fractures[f].n2;
 
-  mesh::SurfaceMesh<double> new_frac_mesh =
-      mesh::make_surface_mesh(t1, t2, points[0], n1, n2);
+    if ( n1 > 0 and n2 > 0)  // do remeshing
+    {
+      mesh::SurfaceMesh<double> new_frac_mesh =
+          mesh::make_surface_mesh(t1, t2, points[0], n1, n2);
+
+      const double tol = std::min(new_frac_mesh.minimum_edge_size() / 3,
+                                  efrac.mesh.minimum_edge_size() / 3);
+
+      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+        for (std::size_t j=0; j<efrac.mesh.polygons.size(); ++j)
+        {
+          const angem::Polygon<double> poly_i(new_frac_mesh.vertices,
+                                              new_frac_mesh.polygons[i]);
+          const angem::Polygon<double> poly_j(efrac.mesh.vertices,
+                                              efrac.mesh.polygons[j]);
+          std::vector<Point> section;
+          if (angem::collision(poly_i, poly_j, section, tol))
+          {
+            if (section.size() == 2) // only touching sides
+              continue;
+
+            std::cout << "collision " << i << " " << j << std::endl;
+            const angem::Polygon<double> poly_section(section);
+
+            // const std::size_t old_element = get_flow_element_index(f, j);
+            const std::size_t old_element = old_shift + j;
+            const auto neighbors = flow_data.v_neighbors[old_element];
+            for (const auto & neighbor : neighbors)
+            {
+              if (neighbor < nDFMFracs + nCells and neighbor > nDFMFracs)
+              {
+                std::size_t new_conn;
+                if (new_flow_data.connection_exists(new_shift + i, neighbor))
+                  new_conn = new_flow_data.connection_index(new_shift + i, neighbor);
+                else
+                  new_conn = new_flow_data.insert_connection(new_shift + i, neighbor);
+
+                const std::size_t old_conn = flow_data.connection_index(old_element, neighbor);
+                const double factor = poly_section.area() / poly_j.area();
+                const double T_ij = flow_data.trans_ij[old_conn];
+                if (new_conn >= new_flow_data.trans_ij.size())
+                  new_flow_data.trans_ij.push_back(T_ij * factor);
+                else
+                  new_flow_data.trans_ij[new_conn] += T_ij * factor;
+              }
+            }
+          }
+          else
+          {
+            // std::cout << "no collision " << i << " " << j << std::endl;
+          }
+        }  // end frac element loop
+
+      FlowData frac_flow_data;
+      computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
+
+      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+      {
+        new_flow_data.volumes.push_back(frac_flow_data.volumes[i]);
+        new_flow_data.poro.push_back(frac_flow_data.poro[i]);
+        new_flow_data.depth.push_back(frac_flow_data.depth[i]);
+      }
+
+      for (const auto & conn : frac_flow_data.map_connection)
+      {
+        const std::size_t iconn = conn.second;
+        const auto element_pair = frac_flow_data.invert_hash(conn.first);
+        const std::size_t i = new_shift + element_pair.first;
+        const std::size_t j = new_shift + element_pair.second;
+        new_flow_data.insert_connection(i, j);
+        new_flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
+      }
+
+      // save custom cell data
+      const std::size_t n_vars = rockPropNames.size();
+      std::size_t n_flow_vars = 0;
+      for (std::size_t j=0; j<n_vars; ++j)
+        if (config.expression_type[j] == 0)
+          n_flow_vars++;
+
+      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+      {
+        std::vector<double> new_custom_data(n_flow_vars);
+        const std::size_t ielement = new_shift + i;
+        const auto & neighbors = new_flow_data.v_neighbors[ielement];
+        std::vector<std::size_t> rock_cell_neighbors;
+        for (const auto & neighbor : neighbors)
+          if (neighbor < nCells)
+            rock_cell_neighbors.push_back(neighbor);
+
+        for (const auto & neighbor : rock_cell_neighbors)
+        {
+          std::size_t counter = 0;
+          for (std::size_t j=0; j<n_vars; ++j)
+            if (config.expression_type[j] == 0)
+            {
+              new_custom_data[counter] += vsCellRockProps[neighbor].v_props[j];
+              counter++;
+            }
+        }
+        // divide by number of neighbors
+        for (double & value : new_custom_data)
+          value /= static_cast<double>(rock_cell_neighbors.size());
+
+        new_flow_data.custom_data.push_back(new_custom_data);
+      }
+
+      new_frac_meshes[f] = std::move(new_frac_mesh);
+    }
+    else  // copy old efrac data
+    {
+      std::pair<std::size_t,std::size_t> range =
+          {old_shift, old_shift + vEfrac[f].mesh.polygons.size()};
+
+      for (const auto & conn : flow_data.map_connection)
+      {
+        const auto elements = flow_data.invert_hash(conn.first);
+        if (elements.second >= range.first and elements.second < range.second)
+        {
+          const double Tij = flow_data.trans_ij[conn.second];
+          std::size_t ielement = elements.first;
+          std::size_t jelement = elements.second;
+          if (ielement >= nCells)
+            ielement = ielement - old_shift + new_shift;
+          if (jelement >= nCells)
+            jelement = jelement - old_shift + new_shift;
+          new_flow_data.insert_connection(ielement, jelement);
+          new_flow_data.trans_ij.push_back(Tij);
+        }
+      }
+
+      for (std::size_t i=0; i<efrac.mesh.polygons.size(); ++i)
+      {
+        new_flow_data.volumes.push_back(flow_data.volumes[old_shift + i]);
+        new_flow_data.poro.push_back(flow_data.poro[old_shift + i]);
+        new_flow_data.depth.push_back(flow_data.depth[old_shift + i]);
+        new_flow_data.custom_data.push_back(flow_data.custom_data[old_shift + i]);
+      }
+    }
+
+    old_shift += vEfrac[f].mesh.polygons.size();
+    if (new_frac_meshes[f].empty())
+      new_shift = old_shift;
+    else
+      new_shift += new_frac_meshes[f].polygons.size();
+  }  // end efrac loop
 
   // const std::string vtk_file2 = "./ababa.vtk";
   // IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
   //                          new_frac_mesh.polygons,
   //                          vtk_file2);
 
-  const double tol =
-      std::min(new_frac_mesh.minimum_edge_size() / 3,
-               efrac.mesh.minimum_edge_size() / 3);
+  std::cout << "saving frac meshes" << std::endl;
 
-  for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
-    for (std::size_t j=0; j<efrac.mesh.polygons.size(); ++j)
+  bool any_new = false;
+  for (std::size_t f=0; f<vEfrac.size(); ++f)
+  {
+    if (!new_frac_meshes[f].empty())
     {
-      const angem::Polygon<double> poly_i(new_frac_mesh.vertices,
-                                          new_frac_mesh.polygons[i]);
-      const angem::Polygon<double> poly_j(efrac.mesh.vertices,
-                                          efrac.mesh.polygons[j]);
-      std::vector<Point> section;
-      if (angem::collision(poly_i, poly_j, section, tol))
-      {
-        if (section.size() == 2) // only touching sides
-          continue;
-        std::cout << "collision " << i << " " << j << std::endl;
-        if (i ==91 and j == 9)
-          std::cout << section << std::endl;
-        const angem::Polygon<double> poly_section(section);
-
-        const std::size_t old_element = get_flow_element_index(f, j);
-        const auto neighbors = flow_data.v_neighbors[old_element];
-        for (const auto & neighbor : neighbors)
-        {
-          if (neighbor < nDFMFracs + nCells and neighbor > nDFMFracs)
-          {
-            std::size_t new_conn;
-            if (new_flow_data.connection_exists(nCells + i, neighbor))
-              new_conn = new_flow_data.connection_index(nCells + i, neighbor);
-            else
-              new_conn = new_flow_data.insert_connection(nCells + i, neighbor);
-
-            const std::size_t old_conn = flow_data.connection_index(old_element, neighbor);
-            const double factor = poly_section.area() / poly_j.area();
-            const double T_ij = flow_data.trans_ij[old_conn];
-            if (new_conn >= new_flow_data.trans_ij.size())
-              new_flow_data.trans_ij.push_back(T_ij * factor);
-            else
-              new_flow_data.trans_ij[new_conn] += T_ij * factor;
-          }
-        }
-      }
-      else
-      {
-        std::cout << "no collision " << i << " " << j << std::endl;
-        // if (i == 8 and j == 16)
-        //   abort();
-      }
+      vEfrac[f].mesh = std::move(new_frac_meshes[f]);
+      any_new = true;
     }
-
-  FlowData frac_flow_data;
-  computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
-
-  for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
-  {
-    new_flow_data.volumes.push_back(frac_flow_data.volumes[i]);
-    new_flow_data.poro.push_back(frac_flow_data.poro[i]);
-    new_flow_data.depth.push_back(frac_flow_data.depth[i]);
   }
 
-  for (const auto & conn : frac_flow_data.map_connection)
-  {
-    const std::size_t iconn = conn.second;
-    const auto element_pair = frac_flow_data.invert_hash(conn.first);
-    const std::size_t i = nCells + element_pair.first;
-    const std::size_t j = nCells + element_pair.second;
-    new_flow_data.insert_connection(i, j);
-    new_flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
-  }
-
-  // save custom cell data
-  const std::size_t n_vars = rockPropNames.size();
-  std::size_t n_flow_vars = 0;
-  for (std::size_t j=0; j<n_vars; ++j)
-    if (config.expression_type[j] == 0)
-      n_flow_vars++;
-  // for (std::size_t i=0; i<efrac.cells.size(); ++i)
-  // {
-  //   new_flow_data.custom_data.emplace_back();
-  //   for (std::size_t j=0; j<n_vars; ++j)
-  //     if (config.expression_type[j] == 0)
-  //       new_flow_data.custom_data.back().push_back( vsCellRockProps[efrac.cells[i]].v_props[j] );
-  // }
-  for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
-  {
-    std::vector<double> new_custom_data(n_flow_vars);
-    const std::size_t ielement = nCells + i;
-    const auto & neighbors = new_flow_data.v_neighbors[ielement];
-    std::vector<std::size_t> rock_cell_neighbors;
-    for (const auto & neighbor : neighbors)
-      if (neighbor < nCells)
-        rock_cell_neighbors.push_back(neighbor);
-
-    for (const auto & neighbor : rock_cell_neighbors)
-    {
-      std::size_t counter = 0;
-      for (std::size_t j=0; j<n_vars; ++j)
-        if (config.expression_type[j] == 0)
-        {
-          new_custom_data[counter] += vsCellRockProps[neighbor].v_props[j];
-          counter++;
-        }
-    }
-    // divide by number of neighbors
-    for (double & value : new_custom_data)
-      value /= static_cast<double>(rock_cell_neighbors.size());
-
-    new_flow_data.custom_data.push_back(new_custom_data);
-  }
-
-
-  vEfrac[f].mesh = new_frac_mesh;
-  flow_data = new_flow_data;
-  // // exit(0);
+  if (any_new)
+    flow_data = std::move(new_flow_data);
 }
