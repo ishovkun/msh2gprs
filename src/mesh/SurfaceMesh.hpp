@@ -5,7 +5,7 @@
 #include <angem/PointSet.hpp>
 #include <angem/Exceptions.hpp>
 
-#include <unordered_set>
+// #include <unordered_set>
 
 
 namespace mesh
@@ -31,7 +31,7 @@ class SurfaceMesh // : PolyGroup<Scalar>
   std::vector<std::size_t> get_neighbors( const Edge & edge ) const;
   // get vector of index pairs representing edges
   std::vector<Edge> get_edges( const std::size_t ielement ) const;
-  //
+  // delete an element from the mesh
   void delete_element(const std::size_t ielement);
   // merge polygon with its largest neighbor
   // complexity linear to number of faces (edges)
