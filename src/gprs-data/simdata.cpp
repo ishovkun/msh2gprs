@@ -2060,317 +2060,325 @@ double SimData::createLognormalDistribution(double E, double S)
 
 void SimData::splitInternalFaces()
 {
-  // int counter_;
-  // cout << endl << "Create set of stick vertices (slow)" << endl;
-  // vector<set<int> > vsetGlueVerticies;
-  // counter_ = 0;
-  // for ( int icell = 0; icell < nCells; icell++ )
-  // {
-  //   counter_ += vsCellCustom[icell].nVertices;
-  // }
-  // vsetGlueVerticies.resize(counter_);
-  // for(int i = 0; i < counter_; i++) vsetGlueVerticies[i].insert(i);
+  int counter_;
+  cout << endl << "Create set of stick vertices (slow)" << endl;
+  vector<set<int> > vsetGlueVerticies;
+  counter_ = 0;
+  for ( int icell = 0; icell < nCells; icell++ )
+  {
+    counter_ += vsCellCustom[icell].nVertices;
+  }
+  vsetGlueVerticies.resize(counter_);
+  for(int i = 0; i < counter_; i++) vsetGlueVerticies[i].insert(i);
 
-  // // TODO
-  // vector<bool> exlude_some_verticies(nNodes,false);
-  // for ( int iface = 0; iface < nFaces; iface++ )
-  // {
-  //     vector<int>::iterator it_face_vrtx;
-  //     for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
-  //     {
-  //       if(vsFaceCustom[ iface ].nMarker == -3333332 || vsFaceCustom[ iface ].nMarker == -3333331)
-  //         exlude_some_verticies[*it_face_vrtx] = true;
-  //     }
-  // }
+  // TODO
+  vector<bool> exlude_some_verticies(nNodes,false);
+  for ( int iface = 0; iface < nFaces; iface++ )
+  {
+      // vector<int>::iterator it_face_vrtx;
+      // for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
+    for (const auto & vert : vsFaceCustom[ iface ].vVertices)
+      {
+        if(vsFaceCustom[ iface ].nMarker == -3333332 || vsFaceCustom[ iface ].nMarker == -3333331)
+          // exlude_some_verticies[*it_face_vrtx] = true;
+          exlude_some_verticies[vert] = true;
+      }
+  }
 
-  // vector<double> vVerticesPair; vVerticesPair.resize(2, 0);
-  // for ( int iface = 0; iface < nFaces; iface++ )
-  // {
-  //   int job_percent = int ( ( 100. * iface ) / ( nFaces ) );
-  //   cout << "\r    " << job_percent << "%";
-  //   /// non phisical face
-  //   if ( vsFaceCustom[ iface ].nMarker == 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
-  //   {
-  //     vector<int>::iterator it_face_vrtx;
+  vector<double> vVerticesPair; vVerticesPair.resize(2, 0);
+  for ( int iface = 0; iface < nFaces; iface++ )
+  {
+    int job_percent = int ( ( 100. * iface ) / ( nFaces ) );
+    cout << "\r    " << job_percent << "%";
+    /// non physical face
+    if ( vsFaceCustom[ iface ].nMarker == 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
+    {
+      /// loop by all face vertices
+      // for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
+      for (const auto & face_vertex : vsFaceCustom[ iface ].vVertices)
+      {
+        /// loop by neighbor cells
+        std::size_t n_polyhedron = 0;
+        // set<int>::iterator it_polyhedron;
+        // for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++)
+        for (const auto & polyhedron : vsetPolygonPolyhedron[iface] )
+        {
+          /// loop by all cell vertices
+          // int ncell = *it_polyhedron;
+          std::size_t ncell = polyhedron;
+          std::size_t ivrtx = 0;
 
-  //     /// loop by all face vertices
-  //     for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
-  //     {
-  //       /// loop by neighbor cells
-  //       int n_polyhedron = 0;
-  //       set<int>::iterator it_polyhedron;
-  //       for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++)
-  //       {
-  //         /// loop by all cell vertices
-  //         int ncell = *it_polyhedron;
-  //         int ivrtx = 0;
+          // vector<int>::iterator it_cell_vrtx;
+          // for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
+          for (const auto & cell_vertex : vsCellCustom[ncell].vVertices)
+          {
+            // if ( *it_cell_vrtx == *it_face_vrtx )
+            if ( cell_vertex == face_vertex )
+              break;
+            ivrtx++;
+          }
+          vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
+          n_polyhedron++;
+        }
+       vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
+       vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
+     }
+    }
+    /*
+    if ( vsFaceCustom[ iface ].nMarker > 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
+    {
+      vector<int>::iterator it_face_vrtx;
 
-  //         vector<int>::iterator it_cell_vrtx;
-  //         for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
-  //         {
-  //           if ( *it_cell_vrtx == *it_face_vrtx )
-  //             break;
-  //         }
-  //         vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
-  //       }
-  //      vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
-  //      vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
-  //    }
-  //   }
-  //   /*
-  //   if ( vsFaceCustom[ iface ].nMarker > 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
-  //   {
-  //     vector<int>::iterator it_face_vrtx;
+      /// loop by all face vertices
+      for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx )
+      {
+        if ( exlude_some_verticies[*it_face_vrtx] == true)
+        {
+          /// loop by neighbor cells
+          int n_polyhedron = 0;
+          set<int>::iterator it_polyhedron;
+          for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++ )
+          {
+            /// loop by all cell vertices
+            int ncell = *it_polyhedron;
+            int ivrtx = 0;
 
-  //     /// loop by all face vertices
-  //     for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx )
-  //     {
-  //       if ( exlude_some_verticies[*it_face_vrtx] == true)
-  //       {
-  //         /// loop by neighbor cells
-  //         int n_polyhedron = 0;
-  //         set<int>::iterator it_polyhedron;
-  //         for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++ )
-  //         {
-  //           /// loop by all cell vertices
-  //           int ncell = *it_polyhedron;
-  //           int ivrtx = 0;
+            vector<int>::iterator it_cell_vrtx;
+            for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
+            {
+              if ( *it_cell_vrtx == *it_face_vrtx )
+                break;
+            }
+            vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
+          }
+          vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
+          vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
+        }
+     }
+    } */
+  }
 
-  //           vector<int>::iterator it_cell_vrtx;
-  //           for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
-  //           {
-  //             if ( *it_cell_vrtx == *it_face_vrtx )
-  //               break;
-  //           }
-  //           vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
-  //         }
-  //         vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
-  //         vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
-  //       }
-  //    }
-  //   } */
-  // }
+  cout << endl << "Distinguish authenic vertices (might be very slow)" << endl;
+  int n_possible_verticies = vsetGlueVerticies.size();
+  vector<int> v_buf_storage;
+  int total_size_old = 0;
+  int total_size_new = 1;
+  int cycle = 0;
+  while ( total_size_old != total_size_new )
+  {
+    total_size_old = total_size_new;
+    total_size_new = 0;
+    cout << endl << "cycle   :" << cycle << "\t \t Hopefully < 10"; cycle++;
 
-  // cout << endl << "Distinguish authenic vertices (might be very slow)" << endl;
-  // int n_possible_verticies = vsetGlueVerticies.size();
-  // vector<int> v_buf_storage;
-  // int total_size_old = 0;
-  // int total_size_new = 1;
-  // int cycle = 0;
-  // while ( total_size_old != total_size_new )
-  // {
-  //   total_size_old = total_size_new;
-  //   total_size_new = 0;
-  //   cout << endl << "cycle   :" << cycle << "\t \t Hopefully < 10"; cycle++;
+    for ( int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++ )
+    {
+      int job_percent = int ( ( 100. * ivrtx ) / ( n_possible_verticies ) );
+      cout << "\r    " << job_percent << "%";
+      v_buf_storage.clear();
+      set<int>::iterator it_set;
 
-  //   for ( int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++ )
-  //   {
-  //     int job_percent = int ( ( 100. * ivrtx ) / ( n_possible_verticies ) );
-  //     cout << "\r    " << job_percent << "%";
-  //     v_buf_storage.clear();
-  //     set<int>::iterator it_set;
+      for ( it_set = vsetGlueVerticies[ivrtx].begin(); it_set != vsetGlueVerticies[ivrtx].end(); ++it_set )
+      {
+        set<int>::iterator it_set_down;
 
-  //     for ( it_set = vsetGlueVerticies[ivrtx].begin(); it_set != vsetGlueVerticies[ivrtx].end(); ++it_set )
-  //     {
-  //       set<int>::iterator it_set_down;
+        for ( it_set_down = vsetGlueVerticies[ *it_set ].begin(); it_set_down != vsetGlueVerticies[ *it_set ].end(); ++it_set_down )
+        {
+          v_buf_storage.push_back ( *it_set_down );
+        }
+      }
 
-  //       for ( it_set_down = vsetGlueVerticies[ *it_set ].begin(); it_set_down != vsetGlueVerticies[ *it_set ].end(); ++it_set_down )
-  //       {
-  //         v_buf_storage.push_back ( *it_set_down );
-  //       }
-  //     }
+      vector<int>::iterator it_vec;
 
-  //     vector<int>::iterator it_vec;
+      for ( it_vec = v_buf_storage.begin(); it_vec != v_buf_storage.end(); it_vec++ )
+      {
+        vsetGlueVerticies[ivrtx].insert ( *it_vec );
+      }
+      total_size_new += vsetGlueVerticies[ivrtx].size();
+    }
+  }
 
-  //     for ( it_vec = v_buf_storage.begin(); it_vec != v_buf_storage.end(); it_vec++ )
-  //     {
-  //       vsetGlueVerticies[ivrtx].insert ( *it_vec );
-  //     }
-  //     total_size_new += vsetGlueVerticies[ivrtx].size();
-  //   }
-  // }
+  cout << endl << "Renumber vector of stick vertices" << endl;
+  vector<int> vRenumVerticies;
+  vRenumVerticies.resize(n_possible_verticies);
 
-  // cout << endl << "Renumber vector of stick vertices" << endl;
-  // vector<int> vRenumVerticies;
-  // vRenumVerticies.resize(n_possible_verticies);
+  /// take first cell
+  for(int ivrtx = 0; ivrtx < vsCellCustom[0].nVertices; ivrtx++)
+  {
+    vRenumVerticies[ivrtx] = ivrtx;
+  }
 
-  // /// take first cell
-  // for(int ivrtx = 0; ivrtx < vsCellCustom[0].nVertices; ivrtx++)
-  // {
-  //   vRenumVerticies[ivrtx] = ivrtx;
-  // }
+  counter_ = vsCellCustom[0].nVertices;
+  for(int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++)
+  {
+    if( *vsetGlueVerticies[ivrtx].begin() == ivrtx )
+    {
+      // this vertex is not stick
+      vRenumVerticies[ivrtx] = counter_;
+      counter_++;
+    }
+    else
+    {
+      // this vertex is stick
+      // set is sorted by c++ defaults, and we take minimum value
+      vRenumVerticies[ivrtx] = vRenumVerticies[ *vsetGlueVerticies[ivrtx].begin() ];
+    }
+  }
 
-  // counter_ = vsCellCustom[0].nVertices;
-  // for(int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++)
-  // {
-  //   if( *vsetGlueVerticies[ivrtx].begin() == ivrtx )
-  //   {
-  //     // this vertex is not stick
-  //     vRenumVerticies[ivrtx] = counter_;
-  //     counter_++;
-  //   }
-  //   else
-  //   {
-  //     // this vertex is stick
-  //     // set is sorted by c++ defaults, and we take minimum value
-  //     vRenumVerticies[ivrtx] = vRenumVerticies[ *vsetGlueVerticies[ivrtx].begin() ];
-  //   }
-  // }
+  for(int icell = 0; icell < nCells; icell++)
+  {
+    for(int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++)
+    {
+      vsCellCustom[icell].vVerticesNewnum[ ivrtx ] = vRenumVerticies[ vsCellCustom[icell].vVerticesNewnum[ ivrtx ] ];
+    }
+  }
+  int nTotalNodes = counter_;
 
-  // for(int icell = 0; icell < nCells; icell++)
-  // {
-  //   for(int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++)
-  //   {
-  //     vsCellCustom[icell].vVerticesNewnum[ ivrtx ] = vRenumVerticies[ vsCellCustom[icell].vVerticesNewnum[ ivrtx ] ];
-  //   }
-  // }
-  // int nTotalNodes = counter_;
+  cout << "\t check renumbering consistency " << endl;
+  vector<double> vStatus;
+  vStatus.resize(counter_, false);
+  for ( int icell = 0; icell < nCells; icell++ )
+  {
+    for ( int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++ )
+      vStatus[ vsCellCustom[icell].vVerticesNewnum[ivrtx] ] = true;
+  }
 
-  // cout << "\t check renumbering consistency " << endl;
-  // vector<double> vStatus;
-  // vStatus.resize(counter_, false);
-  // for ( int icell = 0; icell < nCells; icell++ )
-  // {
-  //   for ( int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++ )
-  //     vStatus[ vsCellCustom[icell].vVerticesNewnum[ivrtx] ] = true;
-  // }
+  cout << "\t change face numbering" << endl;
+  for(int iface = 0; iface < nFaces; iface++)
+  {
+    vsFaceCustom[iface].vVerticesNewnum.resize( vsFaceCustom[iface].nVertices, -1);
+    // we take always [0] - support cell
+    int icell = vsFaceCustom[iface].vNeighbors[0];
+    for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
+    {
+      for(int inode = 0; inode < vsCellCustom[icell].nVertices; inode++)
+      {
+        if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[icell].vVertices[inode] )
+        {
+          vsFaceCustom[iface].vVerticesNewnum[ivrtx] = vsCellCustom[icell].vVerticesNewnum[inode];
+          break;
+        }
+      }
+    }
+  }
 
-  // cout << "\t change face numbering" << endl;
-  // for(int iface = 0; iface < nFaces; iface++)
-  // {
-  //   vsFaceCustom[iface].vVerticesNewnum.resize( vsFaceCustom[iface].nVertices, -1);
-  //   // we take always [0] - support cell
-  //   int icell = vsFaceCustom[iface].vNeighbors[0];
-  //   for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
-  //   {
-  //     for(int inode = 0; inode < vsCellCustom[icell].nVertices; inode++)
-  //     {
-  //       if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[icell].vVertices[inode] )
-  //       {
-  //         vsFaceCustom[iface].vVerticesNewnum[ivrtx] = vsCellCustom[icell].vVerticesNewnum[inode];
-  //         break;
-  //       }
-  //     }
-  //   }
-  // }
+  cout << "\t create atoms list" << endl;
+  set<int>::iterator itintset;
+  vector<int> vTempAtoms;
+  vTempAtoms.resize( nTotalNodes, -999 );
+  for (itintset = setIdenticalInternalMarker.begin(); itintset != setIdenticalInternalMarker.end(); ++itintset)
+  {
+    for(int iface = 0; iface < nFaces; iface++)
+    {
+      int ncell = vsFaceCustom[iface].vNeighbors[1];
+      if( vsFaceCustom[iface].nMarker == *itintset)
+      {
+        for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
+        {
+          for(int inode = 0; inode < vsCellCustom[ncell].nVertices; inode++)
+          {
+            if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[ncell].vVertices[inode] )
+            {
+              vTempAtoms[ vsCellCustom[ncell].vVerticesNewnum[inode] ] = vsFaceCustom[iface].vVerticesNewnum[ivrtx];
+            }
+          }
+        }
+      }
+    }
+  }
 
-  // cout << "\t create atoms list" << endl;
-  // set<int>::iterator itintset;
-  // vector<int> vTempAtoms;
-  // vTempAtoms.resize( nTotalNodes, -999 );
-  // for (itintset = setIdenticalInternalMarker.begin(); itintset != setIdenticalInternalMarker.end(); ++itintset)
-  // {
-  //   for(int iface = 0; iface < nFaces; iface++)
-  //   {
-  //     int ncell = vsFaceCustom[iface].vNeighbors[1];
-  //     if( vsFaceCustom[iface].nMarker == *itintset)
-  //     {
-  //       for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
-  //       {
-  //         for(int inode = 0; inode < vsCellCustom[ncell].nVertices; inode++)
-  //         {
-  //           if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[ncell].vVertices[inode] )
-  //           {
-  //             vTempAtoms[ vsCellCustom[ncell].vVerticesNewnum[inode] ] = vsFaceCustom[iface].vVerticesNewnum[ivrtx];
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
-  // cout << endl << "Change coordanates vector" << endl;
+  cout << endl << "Change coordanates vector" << endl;
   // vector<vector<double> > vvNewCoordinates;
-  // vvNewCoordinates.resize( nTotalNodes, vector<double>(3,0) );
-  // for(int icell = 0; icell < nCells; icell++)
-  // {
-  //   vector<int>::iterator it_old, it_new;
-  //   it_new = vsCellCustom[icell].vVerticesNewnum.begin();
-  //   for(it_old = vsCellCustom[icell].vVertices.begin(); it_old != vsCellCustom[icell].vVertices.end(); ++it_old, ++it_new)
-  //   {
-  //     vvNewCoordinates[ *it_new ] = vvVrtxCoords[ *it_old ];
-  //   }
-  // }
+  vector<Point> vvNewCoordinates;
+  vvNewCoordinates.resize( nTotalNodes, vector<double>(3,0) );
+  for(std::size_t icell = 0; icell < nCells; icell++)
+  {
+    vector<std::size_t>::iterator it_old, it_new;
+    it_new = vsCellCustom[icell].vVerticesNewnum.begin();
+    for(it_old = vsCellCustom[icell].vVertices.begin(); it_old != vsCellCustom[icell].vVertices.end(); ++it_old, ++it_new)
+    {
+      vvNewCoordinates[ *it_new ] = vvVrtxCoords[ *it_old ];
+    }
+  }
 
-  // vvVrtxCoords.resize(nTotalNodes, vector<double>(3,0));
-  // for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-  // {
-  //   vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
-  // }
+  vvVrtxCoords.resize(nTotalNodes, vector<double>(3,0));
+  for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
+  {
+    vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
+  }
 
-  // cout << endl << "Unify previous and splitted data" << endl;
-  // cout << "Verticies : " << nNodes << "\t \t After splitting : " << nTotalNodes << endl;
-  // nNodes = nTotalNodes;
-  // for(int icell = 0; icell < nCells; icell++)
-  // {
-  //   vsCellCustom[icell].vVertices = vsCellCustom[icell].vVerticesNewnum;
-  // }
+  cout << endl << "Unify previous and splitted data" << endl;
+  cout << "Verticies : " << nNodes << "\t \t After splitting : " << nTotalNodes << endl;
+  nNodes = nTotalNodes;
+  for(int icell = 0; icell < nCells; icell++)
+  {
+    vsCellCustom[icell].vVertices = vsCellCustom[icell].vVerticesNewnum;
+  }
 
-  // for(int iface = 0; iface < nFaces; iface++)
-  // {
-  //   vsFaceCustom[iface].vVertices = vsFaceCustom[iface].vVerticesNewnum;
-  // }
+  for(int iface = 0; iface < nFaces; iface++)
+  {
+    vsFaceCustom[iface].vVertices = vsFaceCustom[iface].vVerticesNewnum;
+  }
 
-  // vvAtoms.resize(nNodes, vector<int>(2,0) );
-  // nAtoms = 0;
-  // for(int iatom = 0; iatom < nNodes; iatom++)
-  // {
-  //   if(vTempAtoms[iatom] >= 0)
-  //   {
-  //     vvAtoms[nAtoms][0] = iatom;
-  //     vvAtoms[nAtoms][1] = vTempAtoms[iatom];
-  //     nAtoms++;
-  //   }
-  // }
+  vvAtoms.resize(nNodes, vector<int>(2,0) );
+  nAtoms = 0;
+  for(int iatom = 0; iatom < nNodes; iatom++)
+  {
+    if(vTempAtoms[iatom] >= 0)
+    {
+      vvAtoms[nAtoms][0] = iatom;
+      vvAtoms[nAtoms][1] = vTempAtoms[iatom];
+      nAtoms++;
+    }
+  }
 
-  // return;
-  // cout << endl << "Smart verticies renumbering" << endl;
-  // vector<int> vNodesID;
-  // vector<int> vIA;
-  // vector<int> vJA;
-  // vector<int> vRCM;
+  return;
+  cout << endl << "Smart verticies renumbering" << endl;
+  vector<int> vNodesID;
+  vector<int> vIA;
+  vector<int> vJA;
+  vector<int> vRCM;
 
-  // vIA.push_back(0);
-  // for(int ic = 0; ic < nCells; ++ic)
-  // {
-  //   int n = vsCellCustom[ic].vVertices.size();
-  //   for(int iv = 0; iv < n; ++iv)
-  //   {
-  //     vJA.push_back( vsCellCustom[ic].vVertices[iv] );
-  //   }
-  //   n += vIA[ic];
-  //   vIA.push_back(n);
-  // }
+  vIA.push_back(0);
+  for(int ic = 0; ic < nCells; ++ic)
+  {
+    int n = vsCellCustom[ic].vVertices.size();
+    for(int iv = 0; iv < n; ++iv)
+    {
+      vJA.push_back( vsCellCustom[ic].vVertices[iv] );
+    }
+    n += vIA[ic];
+    vIA.push_back(n);
+  }
 
-  // vRCM.assign(nNodes,-1);
-  // pRenum->convert(nCells, nNodes, vIA, vJA, vRCM);
+  vRCM.assign(nNodes,-1);
+  pRenum->convert(nCells, nNodes, vIA, vJA, vRCM);
 
-  // for(int icell = 0; icell < nCells; icell++)
-  // {
-  //   for(int iv = 0; iv < vsCellCustom[icell].vVertices.size(); iv++)
-  //     vsCellCustom[icell].vVertices[iv] = vRCM[vsCellCustom[icell].vVertices[iv]];
-  // }
+  for(int icell = 0; icell < nCells; icell++)
+  {
+    for(int iv = 0; iv < vsCellCustom[icell].vVertices.size(); iv++)
+      vsCellCustom[icell].vVertices[iv] = vRCM[vsCellCustom[icell].vVertices[iv]];
+  }
 
-  // for(int iface = 0; iface < nFaces; iface++)
-  // {
-  //   for(int iv = 0; iv < vsFaceCustom[iface].vVertices.size(); iv++)
-  //     vsFaceCustom[iface].vVertices[iv] = vRCM[vsFaceCustom[iface].vVertices[iv]];
-  // }
+  for(int iface = 0; iface < nFaces; iface++)
+  {
+    for(int iv = 0; iv < vsFaceCustom[iface].vVertices.size(); iv++)
+      vsFaceCustom[iface].vVertices[iv] = vRCM[vsFaceCustom[iface].vVertices[iv]];
+  }
 
-  // for(int iatom = 0; iatom < nNodes; iatom++)
-  // {
-  //   if(vTempAtoms[iatom] >= 0)
-  //   {
-  //     vvAtoms[nAtoms][0] = vRCM[vvAtoms[nAtoms][0]];
-  //     vvAtoms[nAtoms][1] = vRCM[vvAtoms[nAtoms][1]];
-  //   }
-  // }
+  for(int iatom = 0; iatom < nNodes; iatom++)
+  {
+    if(vTempAtoms[iatom] >= 0)
+    {
+      vvAtoms[nAtoms][0] = vRCM[vvAtoms[nAtoms][0]];
+      vvAtoms[nAtoms][1] = vRCM[vvAtoms[nAtoms][1]];
+    }
+  }
 
-  // for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-  //   vvNewCoordinates[vRCM[ivrtx]] = vvVrtxCoords[ivrtx];
+  for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
+    vvNewCoordinates[vRCM[ivrtx]] = vvVrtxCoords[ivrtx];
 
-  // for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-  //   vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
+  for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
+    vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
 }
 
 

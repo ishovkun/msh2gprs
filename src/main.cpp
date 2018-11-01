@@ -98,8 +98,11 @@ int main(int argc, char *argv[])
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
 
-  // cout << "Split FEM mesh on internal surfaces" << endl;
-  // pSimData->splitInternalFaces();
+  if (pSimData->nDFMFracs > 0)
+  {
+    cout << "Split FEM mesh on internal surfaces" << endl;
+    pSimData->splitInternalFaces();
+  }
 
   cout << "Write FEM mesh data\n";
   OutputData output_data(pSimData);

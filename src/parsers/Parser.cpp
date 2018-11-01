@@ -52,6 +52,8 @@ Parser::parse_json(const std::string & fname)
       domain_props_json(section_it, 1);
     else if (section_it.key() == "Embedded Fractures")
       embedded_fracs_json(section_it);
+    else if (section_it.key() == "Discrete Fractures")
+      discrete_fracs_json(section_it);
     else if (section_it.key() == "Boundary conditions")
       boundary_conditions_json(section_it);
     else if (section_it.key() == "Mesh file")
@@ -346,7 +348,7 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
   for (; it != end; ++it)
   {
     const auto key = it.key();
-    std::cout << "parsing entry " << key << std::endl;
+    std::cout << "\tparsing entry " << key << std::endl;
     if (key == comment)
       continue;
     else if (key == "type")
@@ -401,6 +403,53 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
   conf.aperture = aperture;
   conf.conductivity = conductivity;
   conf.n1 = n1; conf.n2 = n2;
+}
+
+
+void
+Parser::discrete_fracs_json(const nlohmann::json::iterator & section_it)
+{
+  nlohmann::json::iterator
+      frac_it = (*section_it).begin(),
+      frac_end = (*section_it).end();
+
+  for (;frac_it != frac_end; ++frac_it)
+  {
+    if (frac_it.key() == comment)
+      continue;
+    else
+    {
+      const int label = std::atoi(frac_it.key().c_str());
+      if (label == 0)
+        continue;
+
+      std::cout << "parsing fracture " << label << std::endl;
+      config.discrete_fractures.emplace_back();
+      config.discrete_fractures.back().label = label;
+      discrete_fracture((*frac_it).begin(), (*frac_it).end(),
+                        config.discrete_fractures.back());
+    }
+
+  }
+}
+
+
+void Parser::discrete_fracture(nlohmann::json::iterator it,
+                               const nlohmann::json::iterator & end,
+                               DiscreteFractureConfig & conf)
+{
+  for (; it != end; ++it)
+  {
+    const auto key = it.key();
+    std::cout << "\tparsing entry " << key << std::endl;
+    if (key == comment)
+      continue;
+    else if (key == "aperture")
+      conf.aperture = (*it).get<double>();
+    else if (key == "conductivity")
+      conf.conductivity = (*it).get<double>();
+
+  }
 }
 
 }  // end namespace

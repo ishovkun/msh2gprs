@@ -13,7 +13,7 @@ struct Gelement
 
   std::vector<std::size_t> vVertices;
   std::vector<std::size_t> vVerticesSorted;
-  std::vector<int> vVerticesNewnum;
+  std::vector<std::size_t> vVerticesNewnum;
 
   std::vector<std::size_t> vNeighbors;
 

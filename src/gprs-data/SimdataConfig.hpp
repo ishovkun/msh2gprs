@@ -42,9 +42,18 @@ struct EmbeddedFractureConfig
 };
 
 
+struct DiscreteFractureConfig
+{
+  int label;
+  double conductivity = 10;
+  double aperture = 1e-3;
+};
+
+
 struct SimdataConfig
 {
   std::vector<EmbeddedFractureConfig> fractures;  // embedded fractures
+  std::vector<DiscreteFractureConfig> discrete_fractures;
   std::vector<DomainConfig> domains;
   std::vector<BCConfig> bc_faces;
   std::vector <BCNodeConfig> bc_nodes;

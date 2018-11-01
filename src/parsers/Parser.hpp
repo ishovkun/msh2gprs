@@ -34,6 +34,11 @@ class Parser
   void embedded_fracture(nlohmann::json::iterator it,
                          const nlohmann::json::iterator & end,
                          EmbeddedFractureConfig & conf);
+  void discrete_fracs_json(const nlohmann::json::iterator & section_it);
+  void discrete_fracture(nlohmann::json::iterator it,
+                         const nlohmann::json::iterator & end,
+                         DiscreteFractureConfig & conf);
+
 
 
   std::pair<std::string,std::string>
