@@ -17,6 +17,7 @@ class VTKWriter
   static void write_vtk(const std::vector<Point>    & vertices,
                         const std::vector<Gelement> & elements,
                         const std::string           & fname);
+
 };
 
 }  // end namespace

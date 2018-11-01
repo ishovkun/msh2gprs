@@ -491,7 +491,6 @@ void SimData::computeReservoirTransmissibilities()
       tran.vvVFaces[ipoly].push_back( *itintset );
       itintset++;
     }
-    // tran.vNbVFaces.push_back( n );
     tran.vCodePolyhedron.push_back( nDFMFracs + ipoly);
   }
 
@@ -500,7 +499,7 @@ void SimData::computeReservoirTransmissibilities()
   tran.vZConduction.assign( (tran.NbPolyhedra + nDFMFracs) * 3, 0.0);
 
   // DFM fractures
-  for ( int i = 0; i < tran.NbFracs; i++ )
+  for ( std::size_t i = 0; i < tran.NbFracs; i++ )
   {
     tran.vZoneCode[i] = i;
     tran.vZVolumeFactor[i] = vAperture[i];
@@ -521,9 +520,8 @@ void SimData::computeReservoirTransmissibilities()
   // properties regular cells
   for ( std::size_t i = 0; i < tran.NbPolyhedra; i++ )
   {
-    const std::size_t n = i + tran.NbFracs;
+    const std::size_t n = i + nDFMFracs;
     tran.vZoneCode[n] = tran.vCodePolyhedron[i];
-
     tran.vZPorosity[n] = get_property(i, "PORO");
     tran.vZPermCode[n] = 1;
 
@@ -549,7 +547,9 @@ void SimData::computeReservoirTransmissibilities()
   }
 
   FlowData matrix_flow_data;
+  std::cout << "run karimi" << std::endl;
   tran.compute_flow_data();
+  std::cout << "karimi done" << std::endl;
   tran.extractData(matrix_flow_data);
 
   // copy to global
@@ -594,7 +594,7 @@ void SimData::computeReservoirTransmissibilities()
 std::size_t SimData::get_flow_element_index(const std::size_t ifrac,
                                             const std::size_t ielement) const
 {
-  std::size_t result = nCells;
+  std::size_t result = nDFMFracs + nCells;
   for (std::size_t i=0; i<ifrac; ++i)
   {
     result += vEfrac[i].mesh.polygons.size();
@@ -1959,25 +1959,33 @@ void SimData::methodChangeFacesNormalVector()
   nExternalBoundaryFaces = 0;
   nDFMFracs = 0;
 
+  // count external faces and dfm fracs
   for(int iface = 0; iface < nFaces; iface++)
   {
-    if( vsFaceCustom[iface].nMarker < 0)
+    if( vsFaceCustom[iface].nMarker < 0)  // external
     {
       setIdenticalExternalMarker.insert( vsFaceCustom[iface].nMarker );
       nExternalBoundaryFaces++;
+      continue;
     }
 
+    // for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
+    //   if( vsFaceCustom[iface].nMarker == config.discrete_fractures[ifrac].label)
     if( vsFaceCustom[iface].nMarker > 0)
-    {
-      pairIterBool = setIdenticalInternalMarker.insert( vsFaceCustom[iface].nMarker );
-      double a = 1e-3;
-      vIdenticalInternalFacetPerm.push_back ( a*a/12/1e-15 );
-      vIdenticalInternalFacetAperture.push_back ( 0.001 );
-      vIdenticalInternalFacetFFpermMult.push_back ( 1.0 );
+      {
+        pairIterBool = setIdenticalInternalMarker.insert( vsFaceCustom[iface].nMarker );
+        // const double aperture = config.discrete_fractures[ifrac].aperture;
+        // const double conductivity = config.discrete_fractures[ifrac].conductivity;
+        const double conductivity = 500;
+        const double aperture = 5e-3;
+        vIdenticalInternalFacetPerm.push_back (conductivity / aperture);
+        vIdenticalInternalFacetAperture.push_back (aperture);
+        vIdenticalInternalFacetFFpermMult.push_back ( 1.0 );
+        nDFMFracs++;
+      }
 
-      nDFMFracs++;
-    }
   }
+
   set<int>::iterator itintset;
   for (itintset = setIdenticalInternalMarker.begin(); itintset != setIdenticalInternalMarker.end(); ++itintset)
   {
@@ -2416,7 +2424,8 @@ void SimData::definePhysicalFacets()
   vsPhysicalFacet.resize(nFaces);
   for (std::size_t iface = 0; iface < nFaces; iface++)
   {
-    if(vsFaceCustom[iface].nMarker < 0)  // probably external face
+    if(vsFaceCustom[iface].nMarker < 0)  // external face
+    {
       for (const auto & conf : config.bc_faces)
         if( vsFaceCustom[iface].nMarker == conf.label)
         {
@@ -2432,6 +2441,27 @@ void SimData::definePhysicalFacets()
           else
             throw std::invalid_argument("boundary type can be only 1 and 2");
         }
+    }
+    else if(vsFaceCustom[iface].nMarker > 0)  // internal DFM face
+    {
+      bool found_label = false;
+      for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
+        if( vsFaceCustom[iface].nMarker == config.discrete_fractures[ifrac].label)
+        {
+          const double aperture = config.discrete_fractures[ifrac].aperture;
+          const double conductivity = config.discrete_fractures[ifrac].conductivity;
+          found_label = true;
+        }
+      if (!found_label)
+      {
+        std::cout << "No properties for DFM label "
+                  << vsFaceCustom[iface].nMarker
+                  << " found! Setting sealed fault."
+                  << std::endl;
+        vsFaceCustom[iface].aperture = 1; //m
+        vsFaceCustom[iface].conductivity = 0; //mD.m
+      }
+    }
   }
 
   nPhysicalFacets = n_facets;
@@ -2555,18 +2585,16 @@ double SimData::get_property(const std::size_t cell,
                              const std::string & key) const
 {
   // // query property by key
-  // if (ikey == config.all_vars.size())
-  //   throw std::out_of_range(key);
-  // else
-  //   return vsCellRockProps[cell].
-  //       v_props[config.domains[i_domain].global_to_local_vars.at(ikey)];
-
-  // const std::size_t shift = n_default_vars();
-  // const std::size_t ikey = find(key, config.all_vars) - shift;
   const std::size_t ikey = find(key, rockPropNames);
 
   if (ikey == rockPropNames.size())
       throw std::out_of_range(key);
+
+  if (ikey >= vsCellRockProps[cell].v_props.size())
+    throw std::out_of_range("You most probably haven't specified props for this part of domain");
+
+  if (cell >= vsCellRockProps.size())
+    throw std::out_of_range(std::to_string(cell));
 
   return vsCellRockProps[cell].v_props[ikey];
 }
@@ -2680,9 +2708,16 @@ void SimData::computeTransBetweenDifferentEfracs()
 
 void SimData::meshFractures()
 {
+  bool should_do_remeshing = false;
+  for (std::size_t f=0; f<vEfrac.size(); ++f)
+    if (config.fractures[f].n1 > 0)
+      should_do_remeshing = true;
+  if (!should_do_remeshing)
+    return;
+
   std::vector<mesh::SurfaceMesh<double>> new_frac_meshes(vEfrac.size());
-  std::size_t old_shift = nCells;
-  std::size_t new_shift = nCells;
+  std::size_t old_shift = nDFMFracs + nCells;
+  std::size_t new_shift = nDFMFracs +nCells;
 
   for (std::size_t f=0; f<vEfrac.size(); ++f)
   {

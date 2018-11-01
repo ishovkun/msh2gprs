@@ -64,6 +64,22 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
                            pSim->vsCellCustom,
                            vtk_file);
 
+  { // DFM frac geometry
+    mesh::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ 1e10);
+    for(std::size_t iface = 0; iface < pSim->vsFaceCustom.size(); iface++)
+      if(pSim->vsFaceCustom[iface].nMarker > 0)  // dfm frac
+      {
+        angem::Polygon<double> poly_face(pSim->vvVrtxCoords,
+                                         pSim->vsFaceCustom[iface].vVertices);
+        frac_msh.insert(poly_face);
+      }
+
+    const std::string vtk_dfm_file = output_path + "dfm.vtk";
+    IO::VTKWriter::write_vtk(frac_msh.vertices.points, frac_msh.polygons,
+                             vtk_dfm_file);
+
+  }
+
   geomechfile.precision(12);
   cout << "write all coordinates\n";
   geomechfile << "GMNODE_COORDS" << endl;
