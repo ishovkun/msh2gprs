@@ -190,7 +190,6 @@ void SimData::computeCellClipping()
 
   for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
   {
-    std::cout << "looping efracs" << std::endl;
     const auto & frac_cells = vEfrac[ifrac].cells;
     const auto & frac_plane = config.fractures[ifrac].body->plane;
 
@@ -305,7 +304,6 @@ void SimData::computeCellClipping()
     vEfrac[ifrac].mesh = std::move(frac_msh);
 
     // get indices of frac vertices
-    std::cout << "computing indices of frac vertices" << std::endl;
     vEfrac[ifrac].vIndices.resize(vvSection.size());
     std::size_t icell = 0;
     for (const auto & cell_section : vvSection)
@@ -579,6 +577,16 @@ void SimData::computeReservoirTransmissibilities()
       flow_data.custom_names.push_back(rockPropNames[j]);
 
   // save values
+  for(std::size_t ipoly = 0; ipoly < nFaces; ipoly++)
+    if(vsFaceCustom[ipoly].nMarker > 0)  // dfm frac
+    {
+      flow_data.custom_data.emplace_back();
+      const std::size_t icell = vsFaceCustom[ipoly].vNeighbors[0];
+      for (std::size_t j=0; j<n_vars; ++j)
+        if (config.expression_type[j] == 0)
+          flow_data.custom_data.back().push_back( vsCellRockProps[icell].v_props[j] );
+    }
+
   for (std::size_t i=0; i<nCells; ++i)
   {
     flow_data.custom_data.emplace_back();
@@ -1002,7 +1010,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     flow_data.trans_ij.push_back(f_m_tran);
     flow_data.insert_connection(get_flow_element_index(frac_ind, ecell),
-                                icell);
+                                nDFMFracs + icell);
 
     ecell++;
   }  // end splits loop
@@ -2450,6 +2458,8 @@ void SimData::definePhysicalFacets()
         {
           const double aperture = config.discrete_fractures[ifrac].aperture;
           const double conductivity = config.discrete_fractures[ifrac].conductivity;
+          vsFaceCustom[iface].aperture = aperture; //m
+          vsFaceCustom[iface].conductivity = conductivity; //mD.m
           found_label = true;
         }
       if (!found_label)
@@ -2717,7 +2727,7 @@ void SimData::meshFractures()
 
   std::vector<mesh::SurfaceMesh<double>> new_frac_meshes(vEfrac.size());
   std::size_t old_shift = nDFMFracs + nCells;
-  std::size_t new_shift = nDFMFracs +nCells;
+  std::size_t new_shift = nDFMFracs + nCells;
 
   for (std::size_t f=0; f<vEfrac.size(); ++f)
   {

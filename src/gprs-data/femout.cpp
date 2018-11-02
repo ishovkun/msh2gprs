@@ -64,6 +64,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
                            pSim->vsCellCustom,
                            vtk_file);
 
+  if (pSim->nDFMFracs > 0)
   { // DFM frac geometry
     mesh::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ 1e10);
     for(std::size_t iface = 0; iface < pSim->vsFaceCustom.size(); iface++)
@@ -85,7 +86,9 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   geomechfile << "GMNODE_COORDS" << endl;
   for (int i = 0 ; i < pSim->nNodes; i++)
   {
-    geomechfile << pSim->vvVrtxCoords[i][0] << "\t"<< pSim->vvVrtxCoords[i][1] << "\t"<< pSim->vvVrtxCoords[i][2] << "\n";
+    geomechfile << pSim->vvVrtxCoords[i][0] << "\t"
+                << pSim->vvVrtxCoords[i][1] << "\t"
+                << pSim->vvVrtxCoords[i][2] << "\n";
   }
   geomechfile << "/" << endl << endl;
 
@@ -212,7 +215,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   }
 
   // Strong discontinuity
-  if (pSim->vEfrac.size() > 0)
+  if (!pSim->vEfrac.empty())
   {
     std::cout  << "Writing SDA props" << std::endl;
     outstring =   output_path + "gm_SDA.txt";
@@ -330,78 +333,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       //                          pSim->vEfrac[0].mesh.polygons,
       //                          vtk_file2);
     }
-    // outstring =   output_path + "efrac.vtk";
-    // geomechfile.open(outstring.c_str());
-
-    // // const auto & efrac = pSim->vEfrac[0];
-    // geomechfile << "# vtk DataFile Version 2.0 \n";
-    // geomechfile << "3D Fractures \n";
-    // geomechfile << "ASCII \n \n";
-    // geomechfile << "DATASET UNSTRUCTURED_GRID \n";
-
-    // std::size_t n_points = 0;
-    // for (const auto & efrac : pSim->vEfrac)
-    //   n_points += efrac.vVertices.size();
-    // geomechfile << "POINTS" << "\t"
-    //             << n_points << " float"
-    //             << std::endl;
-
-    // for (const auto & efrac : pSim->vEfrac)
-    //   for (const auto & p : efrac.vVertices)
-    //     geomechfile << p << std::endl;
-    // geomechfile << std::endl;
-
-    // // count number of entries in vindices
-    // std::size_t vind_size_total = 0;
-    // std::size_t n_cells = 0;
-    // for (const auto & efrac : pSim->vEfrac)
-    // {
-    //   n_cells += efrac.vIndices.size();
-    //   for (const auto & vec : efrac.vIndices)
-    //     vind_size_total += vec.size();
-    // }
-
-    // geomechfile << "CELLS" << "\t"
-    //             << n_cells << "\t"
-    //             << vind_size_total + n_cells
-    //             << std::endl;
-
-    // std::size_t shift = 0;
-    // for (const auto & efrac : pSim->vEfrac)
-    // {
-    //   for (const auto & cell : efrac.vIndices)
-    //   {
-    //     geomechfile << cell.size() << "\t";
-    //     for (const std::size_t & ivert : cell)
-    //       geomechfile << shift + ivert << "\t";
-    //     geomechfile << std::endl;
-
-    //   }
-    //   shift += efrac.vVertices.size();
-    // }
-
-    // geomechfile << std::endl;
-    // geomechfile << "CELL_TYPES" << "\t" << n_cells << std::endl;
-    // for (const auto & efrac : pSim->vEfrac)
-    //   for (const auto & cell : efrac.vIndices)
-    //   {
-    //     // vtk indices
-    //     if (cell.size() == 4)  // quad
-    //       geomechfile << 9 << std::endl;
-    //     else if (cell.size() == 3)  // triangle
-    //       geomechfile << 5 << std::endl;
-    //     else if (cell.size() == 5 || cell.size() == 6)  // polygon
-    //       geomechfile << 7 << std::endl;
-    //     else
-    //     {
-    //       std::cout << "unknown cell type : " << cell.size() << " vertices" << std::endl;
-    //       exit(-1);
-    //     }
-    //   }
-
-    // geomechfile.close();
   }  // end if efracs exist
-
 
   outstring =   output_path + "gm_bcond.txt";
   geomechfile.open(outstring.c_str());

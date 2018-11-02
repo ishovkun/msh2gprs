@@ -162,4 +162,5 @@ void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
   out.close();
 }
 
+
 }  // end namespace
