@@ -7,6 +7,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
 ADD_SUBDIRECTORY(src/angem)
 
+# 256 bit integer lib (for mesh)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/uint256)
+ADD_SUBDIRECTORY(src/uint256)
+
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
 ADD_SUBDIRECTORY(src/mesh)
@@ -46,4 +50,4 @@ endif()
 # TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers -lstdc++fs -lasan)
 
 # last flag for std::filesystem
-TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers -lstdc++fs)
+TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers uint256 -lstdc++fs)

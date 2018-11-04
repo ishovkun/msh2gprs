@@ -9,6 +9,8 @@ ADD_LIBRARY(angem
   Basis.hpp
   Plane.hpp
   Shape.hpp
+  Polygon.hpp
+  Polyhedron.hpp
   Rectangle.hpp
   Collisions.hpp
   CollisionGJK.hpp

@@ -2,6 +2,7 @@
 #include <gprs-data/femout.hpp>
 // #include <gprs_data/transes.hpp>
 #include <parsers/Parser.hpp>
+#include <uint256/uint256_t.h>
 
 #include <experimental/filesystem>
 
