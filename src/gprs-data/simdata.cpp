@@ -8,6 +8,8 @@
 #include <muparser/muParser.h>
 #include <angem/utils.hpp>
 #include <mesh/utils.hpp>
+#include <mesh/Mesh.hpp>
+
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -1280,26 +1282,8 @@ void SimData::readGmshFile()
       for (int j = 0; j < 3; j++)
         vvVrtxCoords[i][j] = std::atof(vstrings[j+1].c_str());
     }
-    // nNodes = vvVrtxCoords.size();
 
-    maxVrtxCoordsX = -1e10;
-    maxVrtxCoordsY = -1e10;
-    maxVrtxCoordsZ = -1e10;
-    minVrtxCoordsX = 1e10;
-    minVrtxCoordsY = 1e10;
-    minVrtxCoordsZ = 1e10;
-
-    for(std::size_t i = 0; i < nNodes; i++ )
-    {
-      if(vvVrtxCoords[i][0] > maxVrtxCoordsX ) maxVrtxCoordsX = vvVrtxCoords[i][0];
-      if(vvVrtxCoords[i][1] > maxVrtxCoordsY ) maxVrtxCoordsY = vvVrtxCoords[i][1];
-      if(vvVrtxCoords[i][2] > maxVrtxCoordsZ ) maxVrtxCoordsZ = vvVrtxCoords[i][2];
-
-      if(vvVrtxCoords[i][0] < minVrtxCoordsX ) minVrtxCoordsX = vvVrtxCoords[i][0];
-      if(vvVrtxCoords[i][1] < minVrtxCoordsY ) minVrtxCoordsY = vvVrtxCoords[i][1];
-      if(vvVrtxCoords[i][2] < minVrtxCoordsZ ) minVrtxCoordsZ = vvVrtxCoords[i][2];
-    }
-
+    // get number of elemeents
     while(vstrings[0] != "$Elements")
     {
      getline(inputfile, inputline);
@@ -1319,10 +1303,12 @@ void SimData::readGmshFile()
           istream_iterator<string>(),
           back_inserter(vstrings) );
 
-    int n = atoi(vstrings[0].c_str());
+    // int n = atoi(vstrings[0].c_str());
+    std::size_t n = atoi(vstrings[0].c_str());
 
+    mesh::Mesh msh;
     nCells = 0; nFaces = 0;
-    for(int i = 0; i < n; i++ )
+    for(std::size_t i = 0; i < n; i++ )
     {
       getline(inputfile, inputline);
       streamline.clear(); vstrings.clear();
@@ -1330,8 +1316,8 @@ void SimData::readGmshFile()
       streamline.imbue(std::locale(std::locale(), new tokens()));
       copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
 
-      int elem_type = atoi(vstrings[1].c_str());
-      int ntags = atoi(vstrings[2].c_str());
+      const int elem_type = atoi(vstrings[1].c_str());
+      const int ntags = atoi(vstrings[2].c_str());
       int node_list_run = 0;
       int node_list_end = 0;
 
@@ -1353,135 +1339,155 @@ void SimData::readGmshFile()
       Element2D.vVerticesNewnum.clear();
       Element2D.vVerticesSorted.clear();
 
-        switch (elem_type)
-        {
+      std::vector<std::vector<std::size_t>> faces;
+      std::vector<std::size_t> markers;
+
+      switch (elem_type)
+      {
         case 2:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 3;
-            for (int j = node_list_run; j < node_list_end; j++) Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element2D.vtkIndex = 5;
-            Element2D.formIndex = TRGLE3;
-            Element2D.nMarker = atoi(vstrings[3].c_str());
-            Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
-            vsFaceCustom.push_back( Element2D );
-            nFaces++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 3;
+          for (int j = node_list_run; j < node_list_end; j++) Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          // Element2D.vtkIndex = 5;
+          Element2D.formIndex = TRGLE3;
+          Element2D.vtkIndex = ShapeIndexer::get_vtk_index(Element2D.formIndex);
+          Element2D.nMarker = atoi(vstrings[3].c_str());
+          Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
+          vsFaceCustom.push_back( Element2D );
+
+          faces.push_back(Element2D.vVertices);
+          markers.push_back(Element2D.nMarker);
+          nFaces++;
+          break;
 
         case 3:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 4;
-            for (int j = node_list_run; j < node_list_end; j++) Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element2D.vtkIndex = 9;
-            Element2D.formIndex = QUAD4;
-            Element2D.nMarker = atoi(vstrings[3].c_str());
-            Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
-            vsFaceCustom.push_back( Element2D );
-            nFaces++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 4;
+          for (int j = node_list_run; j < node_list_end; j++) Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element2D.vtkIndex = 9;
+          Element2D.formIndex = QUAD4;
+          Element2D.nMarker = atoi(vstrings[3].c_str());
+          Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
+          vsFaceCustom.push_back( Element2D );
+
+          faces.push_back(Element2D.vVertices);
+          markers.push_back(Element2D.nMarker);
+
+          nFaces++;
+          break;
 
         case 4:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 4;
-            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element3D.vtkIndex = 10;
-            Element3D.formIndex = TETRA4;
-            Element3D.nMarker = atoi(vstrings[3].c_str());
-            vsCellCustom.push_back( Element3D );
-            nCells++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 4;
+          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element3D.vtkIndex = 10;
+          Element3D.formIndex = TETRA4;
+          Element3D.nMarker = atoi(vstrings[3].c_str());
+          vsCellCustom.push_back( Element3D );
+          nCells++;
+          break;
 
         case 5:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 8;
-            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element3D.vtkIndex = 12;
-            // @HACK: use elements with one integration point for SDA
-            // if (config.fractures.size() > 0)
-            //   Element3D.vtkIndex = 17;
-            Element3D.formIndex = PRISM8;
-            Element3D.nMarker = atoi(vstrings[3].c_str());
-            vsCellCustom.push_back( Element3D );
-            nCells++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 8;
+          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element3D.vtkIndex = 12;
+          // @HACK: use elements with one integration point for SDA
+          // if (config.fractures.size() > 0)
+          //   Element3D.vtkIndex = 17;
+          Element3D.formIndex = PRISM8;  // this is a hex !!!
+          Element3D.nMarker = atoi(vstrings[3].c_str());
+          vsCellCustom.push_back( Element3D );
+          nCells++;
+          break;
 
         case 6:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 6;
-            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element3D.vtkIndex = 13;
-            Element3D.formIndex = PRISM6;
-            Element3D.nMarker = atoi(vstrings[3].c_str());
-            vsCellCustom.push_back( Element3D );
-            nCells++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 6;
+          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element3D.vtkIndex = 13;
+          Element3D.formIndex = PRISM6;
+          Element3D.nMarker = atoi(vstrings[3].c_str());
+          vsCellCustom.push_back( Element3D );
+          nCells++;
+          break;
 
         case 9:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 6;
-            for (int j = node_list_run; j < node_list_end; j++) Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element2D.vtkIndex = 22;
-            Element2D.formIndex = TRGLE6;
-            Element2D.nMarker = atoi(vstrings[3].c_str());
-            Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
-            vsFaceCustom.push_back( Element2D );
-            nFaces++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 6;
+          for (int j = node_list_run; j < node_list_end; j++)
+            Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element2D.vtkIndex = 22;
+          Element2D.formIndex = TRGLE6;
+          Element2D.nMarker = atoi(vstrings[3].c_str());
+          Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
+          vsFaceCustom.push_back( Element2D );
+
+          faces.push_back(Element2D.vVertices);
+          markers.push_back(Element2D.nMarker);
+
+          nFaces++;
+          break;
 
         case 11:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 10;
-            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 10;
+          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
 
-            // because different numbering (vtk vs gmsh)
-            std::swap(Element3D.vVertices[8], Element3D.vVertices[9]);
+          // because different numbering (vtk vs gmsh)
+          std::swap(Element3D.vVertices[8], Element3D.vVertices[9]);
 
-            Element3D.vtkIndex = 24;
-            Element3D.formIndex = TETRA10;
-            Element3D.nMarker = atoi(vstrings[3].c_str());
-            vsCellCustom.push_back( Element3D );
-            nCells++;
-            break;
+          Element3D.vtkIndex = 24;
+          Element3D.formIndex = TETRA10;
+          Element3D.nMarker = atoi(vstrings[3].c_str());
+          vsCellCustom.push_back( Element3D );
+          nCells++;
+          break;
 
         case 16:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 8;
-            for (int j = node_list_run; j < node_list_end; j++) Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element2D.vtkIndex = 23;
-            Element2D.formIndex = QUAD8;
-            Element2D.nMarker = atoi(vstrings[3].c_str());
-            Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
-            vsFaceCustom.push_back( Element2D );
-            nFaces++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 8;
+          for (int j = node_list_run; j < node_list_end; j++) Element2D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element2D.vtkIndex = 23;
+          Element2D.formIndex = QUAD8;
+          Element2D.nMarker = atoi(vstrings[3].c_str());
+          Element2D.nMarker *= checkReservedBoundaryName(Element2D.nMarker);
+          vsFaceCustom.push_back( Element2D );
+
+          faces.push_back(Element2D.vVertices);
+          markers.push_back(Element2D.nMarker);
+
+          nFaces++;
+          break;
 
         case 17:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 20;
-            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element3D.vtkIndex = 25;
-            Element3D.formIndex = PRISM20;
-            Element3D.nMarker = atoi(vstrings[3].c_str());
-            vsCellCustom.push_back( Element3D );
-            nCells++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 20;
+          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element3D.vtkIndex = 25;
+          Element3D.formIndex = PRISM20;
+          Element3D.nMarker = atoi(vstrings[3].c_str());
+          vsCellCustom.push_back( Element3D );
+          nCells++;
+          break;
 
         case 18:
-        node_list_run = 3 + ntags;
-        node_list_end = node_list_run + 15;
-            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-            Element3D.vtkIndex = 26;
-            Element3D.formIndex = PRISM15;
-            Element3D.nMarker = atoi(vstrings[3].c_str());
-            vsCellCustom.push_back( Element3D );
-            nCells++;
-            break;
+          node_list_run = 3 + ntags;
+          node_list_end = node_list_run + 15;
+          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+          Element3D.vtkIndex = 26;
+          Element3D.formIndex = PRISM15;
+          Element3D.nMarker = atoi(vstrings[3].c_str());
+          vsCellCustom.push_back( Element3D );
+          nCells++;
+          break;
 
         default:
-            cout << "Element type " <<  elem_type << endl;
-            cout << "Wrong element type. Supported: {2, 3, 4, 5, 6, 9, 11, 17, 18}\n";
-            exit(-1);
-            break;
-        }
+          cout << "Element type " <<  elem_type << endl;
+          cout << "Wrong element type. Supported: {2, 3, 4, 5, 6, 9, 11, 17, 18}\n";
+          exit(-1);
+          break;
+      }
     }
     // c++ rule
     for(int icell = 0; icell < nCells; icell++)

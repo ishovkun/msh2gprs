@@ -23,6 +23,7 @@
 #include "angem/PolyGroup.hpp"
 #include "angem/Collisions.hpp"
 #include "mesh/SurfaceMesh.hpp"
+#include "mesh/Mesh.hpp"
 #include <SimdataConfig.hpp>
 
 struct GmConstraint

@@ -4,7 +4,7 @@ namespace mesh
 {
 
 
-std::size_t estimate_max_vertices(const short n_polygon_vertices)
+std::size_t estimate_max_vertices(const int n_polygon_vertices)
 {
   const std::size_t max_vertices =
       static_cast<std::size_t>(
@@ -27,7 +27,7 @@ uint256_t Mesh::hash_value(const Face & face) const
 
   uint256_t mult = 1;
   uint256_t result = 0;
-  for (short i=0; i<max_polygon_size_vertices; ++i)
+  for (int i=0; i<max_polygon_size_vertices; ++i)
   {
     // hashing starts with 1 since
     // (1,2,3) and (0,1,2,3) are different elementes
@@ -38,8 +38,16 @@ uint256_t Mesh::hash_value(const Face & face) const
 }
 
 
-void Mesh::insert(const Polyhedron & poly)
+void Mesh::insert(const Polyhedron & poly,
+                  const int type)
 {
+  if (type == -1)
+  {
+    const int n_verts = poly.get_points().size();
+    // if (n_verts == 4)
+      // shape_ids.push_back();
+  }
+
   std::vector<std::size_t> indices;
   const std::vector<Point> & points = poly.get_points();
   for (const auto & p : points)

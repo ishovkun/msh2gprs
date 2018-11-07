@@ -4,7 +4,9 @@ ADD_LIBRARY(mesh
   SurfaceMesh.hpp
   utils.hpp
   Mesh.hpp
+  ShapeID.hpp
   # implementation
+  ShapeID.cpp
   Mesh.cpp
 )
 

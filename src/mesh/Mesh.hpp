@@ -3,6 +3,7 @@
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
 #include <uint256/uint256_t.h>
+#include <ShapeID.hpp>
 
 #include <algorithm> // std::sort
 
@@ -23,7 +24,9 @@ class Mesh
  public:
   Mesh();
   // this method does not allow duplicates in vertices
-  void insert(const Polyhedron & poly);
+  // infers type by number of vertices
+  void insert(const Polyhedron & poly,
+              const int type = -1);
   bool empty() const {return cells.empty();}
 
   // GETTERS
@@ -45,16 +48,15 @@ class Mesh
   angem::PointSet<3,double>                    vertices;
   std::vector<std::vector<std::size_t>> cells;  // indices
   // map face -> neighbor elements
-  // std::unordered_map<uint256_t, std::vector<std::size_t>> map_faces;
-  std::unordered_map<std::size_t, std::vector<std::size_t>> map_faces;
-  std::vector<int> vtk_indices;
+  std::unordered_map<uint256_t, std::vector<std::size_t>> map_faces;
+  std::vector<int> shape_ids;
 
  private:
   // constant complexity (order of n_vertices)
   // linear complexity (size of face)
   uint256_t hash_value(const Face & face) const;
   const std::size_t max_vertices;
-  static constexpr short max_polygon_size_vertices = 6;
+  static constexpr int max_polygon_size_vertices = 6;
 };
 
 
