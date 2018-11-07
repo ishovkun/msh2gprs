@@ -22,6 +22,7 @@ class Mesh
 {
  public:
   Mesh();
+  // this method does not allow duplicates in vertices
   void insert(const Polyhedron & poly);
   bool empty() const {return cells.empty();}
 
@@ -43,9 +44,10 @@ class Mesh
   // ATTRIBUTES
   angem::PointSet<3,double>                    vertices;
   std::vector<std::vector<std::size_t>> cells;  // indices
-  // hash of two vert indices -> vector polygons
-  // essentially edge -> neighbor elements
+  // map face -> neighbor elements
+  // std::unordered_map<uint256_t, std::vector<std::size_t>> map_faces;
   std::unordered_map<std::size_t, std::vector<std::size_t>> map_faces;
+  std::vector<int> vtk_indices;
 
  private:
   // constant complexity (order of n_vertices)

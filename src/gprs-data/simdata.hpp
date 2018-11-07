@@ -199,7 +199,8 @@ public:
   int corner_cell;
   bool dual_media;
   vector<double> grade_total, temp_total;
-  int nNodes;
+  // int nNodes;
+  std::size_t nNodes;
 
   double dNotNumber;
 

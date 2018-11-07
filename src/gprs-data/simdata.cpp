@@ -1231,7 +1231,7 @@ void SimData::readGmshFile()
   inputfile.open (instream.c_str(), fstream::in);
 
   std::string inputline;
-  getline (inputfile, inputline);
+  getline(inputfile, inputline);
 
   std::stringstream streamline(stringstream::in | stringstream::out);
   streamline << inputline;
@@ -1240,7 +1240,9 @@ void SimData::readGmshFile()
   std::istream_iterator<std::string> end;
   std::vector<std::string> vstrings;
 
-  copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
+  copy( istream_iterator<string>(streamline),
+        istream_iterator<string>(),
+        back_inserter(vstrings) );
 
     while(vstrings[0] != "$Nodes")
     {
@@ -1248,30 +1250,37 @@ void SimData::readGmshFile()
       streamline.clear(); vstrings.clear();
       streamline << inputline;
       streamline.imbue(std::locale(std::locale(), new tokens()));
-      copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
+      copy(istream_iterator<string>(streamline),
+           istream_iterator<string>(),
+           back_inserter(vstrings));
     }
 
     getline(inputfile, inputline);
     streamline.clear(); vstrings.clear();
     streamline << inputline;
     streamline.imbue(std::locale(std::locale(), new tokens()));
-    copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
+    copy(istream_iterator<string>(streamline),
+         istream_iterator<string>(),
+         back_inserter(vstrings));
 
-    nNodes = atoi(vstrings[0].c_str());
+    // nNodes = atoi(vstrings[0].c_str());
+    nNodes = std::stoul(vstrings[0].c_str());
 
     vvVrtxCoords.resize(nNodes);
-    for(int i = 0; i < nNodes; i++ )
+    for(std::size_t i = 0; i < nNodes; i++ )
     {
       getline(inputfile, inputline);
       streamline.clear(); vstrings.clear();
       streamline << inputline;
       streamline.imbue(std::locale(std::locale(), new tokens()));
-      copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
+      copy( istream_iterator<string>(streamline),
+            istream_iterator<string>(),
+            back_inserter(vstrings) );
 
       for (int j = 0; j < 3; j++)
-        vvVrtxCoords[i][j] = atof(vstrings[j+1].c_str());
+        vvVrtxCoords[i][j] = std::atof(vstrings[j+1].c_str());
     }
-    nNodes = vvVrtxCoords.size();
+    // nNodes = vvVrtxCoords.size();
 
     maxVrtxCoordsX = -1e10;
     maxVrtxCoordsY = -1e10;
@@ -1280,7 +1289,7 @@ void SimData::readGmshFile()
     minVrtxCoordsY = 1e10;
     minVrtxCoordsZ = 1e10;
 
-    for(int i = 0; i < nNodes; i++ )
+    for(std::size_t i = 0; i < nNodes; i++ )
     {
       if(vvVrtxCoords[i][0] > maxVrtxCoordsX ) maxVrtxCoordsX = vvVrtxCoords[i][0];
       if(vvVrtxCoords[i][1] > maxVrtxCoordsY ) maxVrtxCoordsY = vvVrtxCoords[i][1];
@@ -1297,14 +1306,18 @@ void SimData::readGmshFile()
      streamline.clear(); vstrings.clear();
      streamline << inputline;
      streamline.imbue(std::locale(std::locale(), new tokens()));
-     copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
+     copy( istream_iterator<string>(streamline),
+           istream_iterator<string>(),
+           back_inserter(vstrings) );
     }
 
     getline(inputfile, inputline);
     streamline.clear(); vstrings.clear();
     streamline << inputline;
     streamline.imbue(std::locale(std::locale(), new tokens()));
-    copy( istream_iterator<string>(streamline), istream_iterator<string>(),back_inserter(vstrings) );
+    copy( istream_iterator<string>(streamline),
+          istream_iterator<string>(),
+          back_inserter(vstrings) );
 
     int n = atoi(vstrings[0].c_str());
 
