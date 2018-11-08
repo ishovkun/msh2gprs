@@ -164,7 +164,7 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
     {
       geomechfile << n_connected_elements << "\t";
       for (const std::size_t ielement : pSim->vsCellCustom[i].flow_elements)
-        geomechfile << ielement << "\t";
+        geomechfile << ielement + 1 << "\t";
       geomechfile << std::endl;
     }
   }
@@ -470,8 +470,6 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
       {
         if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
         {
-          // std::cout << "i = " << i << std::endl;
-          // std::cout << "nmark = " << pSim->vsPhysicalFacet[i].nmark << std::endl;
           geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
           geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
           if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
