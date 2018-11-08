@@ -9,7 +9,8 @@ struct Gelement
   int nNeighbors;
 
   int vtkIndex, formIndex;
-  int fluidElement;
+  // int fluidElement;
+  std::vector<std::size_t> flow_elements;
 
   std::vector<std::size_t> vVertices;
   std::vector<std::size_t> vVerticesSorted;

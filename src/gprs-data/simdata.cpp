@@ -1575,7 +1575,7 @@ void SimData::extractInternalFaces()
       if ( pair_itstring_bool.second == true )
       {
         // extend vFaceCustom
-        temporaryElement.fluidElement = -1;
+        // temporaryElement.fluidElement = -1;
         temporaryElement.nNeighbors = 0;
         temporaryElement.nVertices = vLocalPolygonVertices.size();
         temporaryElement.vVertices.resize ( temporaryElement.nVertices );
@@ -1772,7 +1772,8 @@ void SimData::convertGmsh2Sim()
   {
     set<int>::iterator it_set, it_set_f;
 
-    for ( it_set = vsetPolyhedronPolygon[icell].begin(); it_set != vsetPolyhedronPolygon[icell].end(); ++it_set )
+    for ( it_set = vsetPolyhedronPolygon[icell].begin();
+          it_set != vsetPolyhedronPolygon[icell].end(); ++it_set )
     {
       int nface = *it_set;
 
@@ -2001,8 +2002,6 @@ void SimData::methodChangeFacesNormalVector()
     if( vsFaceCustom[iface].nMarker > 0)
       {
         pairIterBool = setIdenticalInternalMarker.insert( vsFaceCustom[iface].nMarker );
-        // const double aperture = config.discrete_fractures[ifrac].aperture;
-        // const double conductivity = config.discrete_fractures[ifrac].conductivity;
         const double conductivity = 500;
         const double aperture = 5e-3;
         vIdenticalInternalFacetPerm.push_back (conductivity / aperture);
@@ -2014,7 +2013,8 @@ void SimData::methodChangeFacesNormalVector()
   }
 
   set<int>::iterator itintset;
-  for (itintset = setIdenticalInternalMarker.begin(); itintset != setIdenticalInternalMarker.end(); ++itintset)
+  for (itintset = setIdenticalInternalMarker.begin();
+       itintset != setIdenticalInternalMarker.end(); ++itintset)
   {
     // datum normal vector
     for(int iface = 0; iface < nFaces; iface++)
@@ -2031,7 +2031,8 @@ void SimData::methodChangeFacesNormalVector()
       if( vsFaceCustom[iface].nMarker == *itintset)
       {
         double cosa = 0;
-        for(int idx = 0; idx < 3; idx++) cosa += vDatumNormal[idx] * vsFaceCustom[iface].normal[idx];
+        for(int idx = 0; idx < 3; idx++)
+          cosa += vDatumNormal[idx] * vsFaceCustom[iface].normal[idx];
 
         // non collinear vector. change verticies order
         if(cosa < 0.0)
@@ -2043,7 +2044,8 @@ void SimData::methodChangeFacesNormalVector()
           }
           vsFaceCustom[iface].vVertices.swap(vFacevVertices);
 
-          for(int idx = 0; idx < 3; idx++) vsFaceCustom[iface].normal[idx] *= -1.0;
+          for(int idx = 0; idx < 3; idx++)
+            vsFaceCustom[iface].normal[idx] *= -1.0;
 
         }
 
@@ -2107,18 +2109,18 @@ void SimData::splitInternalFaces()
   for(int i = 0; i < counter_; i++) vsetGlueVerticies[i].insert(i);
 
   // TODO
-  vector<bool> exlude_some_verticies(nNodes,false);
-  for ( int iface = 0; iface < nFaces; iface++ )
-  {
-      // vector<int>::iterator it_face_vrtx;
-      // for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
-    for (const auto & vert : vsFaceCustom[ iface ].vVertices)
-      {
-        if(vsFaceCustom[ iface ].nMarker == -3333332 || vsFaceCustom[ iface ].nMarker == -3333331)
-          // exlude_some_verticies[*it_face_vrtx] = true;
-          exlude_some_verticies[vert] = true;
-      }
-  }
+  // vector<bool> exlude_some_verticies(nNodes,false);
+  // for ( int iface = 0; iface < nFaces; iface++ )
+  // {
+  //     // vector<int>::iterator it_face_vrtx;
+  //     // for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
+  //   for (const auto & vert : vsFaceCustom[ iface ].vVertices)
+  //     {
+  //       if(vsFaceCustom[ iface ].nMarker == -3333332 || vsFaceCustom[ iface ].nMarker == -3333331)
+  //         // exlude_some_verticies[*it_face_vrtx] = true;
+  //         exlude_some_verticies[vert] = true;
+  //     }
+  // }
 
   vector<double> vVerticesPair; vVerticesPair.resize(2, 0);
   for ( int iface = 0; iface < nFaces; iface++ )
@@ -2419,25 +2421,47 @@ void SimData::splitInternalFaces()
 
 void SimData::handleConnections()
 {
-  // we always start to count fractures
+  // we start with DFM fractures
   int counter = 0;
   for ( int iface = 0; iface < nFaces; iface++ )
   {
     if ( vsFaceCustom[iface].nMarker > 0 && vsFaceCustom[iface].nMarker < 1111110 )
     {
-      vsFaceCustom[iface].fluidElement = counter; counter++;
+      // vsFaceCustom[iface].fluidElement = counter;
+      vsFaceCustom[iface].flow_elements.push_back(counter);
+      counter++;
     }
 
-    if ( vsFaceCustom[iface].nMarker < 0 )
-      vsFaceCustom[iface].fluidElement = -1;
+    // if ( vsFaceCustom[iface].nMarker < 0 )
+    //   vsFaceCustom[iface].fluidElement = -1;
   }
 
   // then we count cells
-  for(int icell = 0; icell < nCells; icell++)
-  {
-    vsCellCustom[icell].fluidElement = counter; counter++;
-  }
+  // if ( vsCellCustom[icell].nMarker == conf.label ) // cells
+  for(std::size_t icell = 0; icell < nCells; icell++)
+    for (const auto & conf: config.domains)
+      if (vsCellCustom[icell].nMarker == conf.label and conf.coupled)
+    {
+      vsCellCustom[icell].flow_elements.push_back(counter);
+      counter++;
+    }
 
+  // finally embedded fractures
+  int ifrac = 0;
+  for (std::size_t ifrac=0; ifrac<vEfrac.size(); ++ifrac)
+  {
+    const auto & efrac = vEfrac[ifrac];
+    for (std::size_t i=0; i<efrac.cells.size(); ++i)
+    {
+      const std::size_t icell = efrac.cells[i];
+      for (const auto & conf: config.domains)
+        if (vsCellCustom[icell].nMarker == conf.label and conf.coupled)
+        {
+          vsCellCustom[icell].flow_elements.push_back
+              (get_flow_element_index( ifrac, i));
+        }
+    }
+  }
 }
 
 #include <random>
@@ -2447,6 +2471,7 @@ void SimData::definePhysicalFacets()
   nNeumannFaces = 0;
   nDirichletFaces = 0;
   nDirichletNodes = 0;
+  int nfluid = 0;
 
   vsPhysicalFacet.resize(nFaces);
   for (std::size_t iface = 0; iface < nFaces; iface++)
@@ -2456,10 +2481,13 @@ void SimData::definePhysicalFacets()
       for (const auto & conf : config.bc_faces)
         if( vsFaceCustom[iface].nMarker == conf.label)
         {
+          // vsPhysicalFacet[n_facets].nface = n_facets;
           vsPhysicalFacet[n_facets].nface = iface;
           vsPhysicalFacet[n_facets].ntype = conf.type;
           vsPhysicalFacet[n_facets].nmark = conf.label;
           vsPhysicalFacet[n_facets].condition = conf.value;
+          vsPhysicalFacet[n_facets].nfluid = -1;
+
           n_facets++;
           if (conf.type == 1)
             nDirichletFaces++;
@@ -2467,10 +2495,17 @@ void SimData::definePhysicalFacets()
             nNeumannFaces++;
           else
             throw std::invalid_argument("boundary type can be only 1 and 2");
+
         }
     }
-    else if(vsFaceCustom[iface].nMarker > 0)  // internal DFM face
+    else if(vsFaceCustom[iface].nMarker > 0 and  vsFaceCustom[iface].nMarker < 1111110 )  // internal DFM face
     {
+      // std::cout << "frac iface = " << iface << std::endl;
+      vsPhysicalFacet[n_facets].nface = iface;
+      vsPhysicalFacet[n_facets].ntype = 0;
+      vsPhysicalFacet[n_facets].nmark = vsFaceCustom[iface].nMarker;
+      vsPhysicalFacet[n_facets].nfluid = nfluid;
+
       bool found_label = false;
       for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
         if( vsFaceCustom[iface].nMarker == config.discrete_fractures[ifrac].label)
@@ -2490,10 +2525,14 @@ void SimData::definePhysicalFacets()
         vsFaceCustom[iface].aperture = 1; //m
         vsFaceCustom[iface].conductivity = 0; //mD.m
       }
+
+      n_facets++;
+      nfluid++;
     }
   }
 
   nPhysicalFacets = n_facets;
+  std::cout << "nPhysicalFacets = " << nPhysicalFacets << std::endl;
 }
 
 

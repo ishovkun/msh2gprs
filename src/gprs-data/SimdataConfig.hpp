@@ -11,6 +11,7 @@ struct DomainConfig
   // map expressions to variables
   std::map<int,int> local_to_global_vars;
   std::map<int,int> global_to_local_vars;
+  bool coupled = true;
 };
 
 

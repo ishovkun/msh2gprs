@@ -121,6 +121,12 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it,
 
       if (key_value.first == comment)
         continue;
+      else if (key_value.first == "Coupled")
+      {
+        conf.coupled = static_cast<bool>(std::stoi(key_value.second));
+        std::cout << "conf.coupled = " << conf.coupled << std::endl;
+        continue;
+      }
       else
       {
         std::cout << "\treading expression " << key_value.first << std::endl;

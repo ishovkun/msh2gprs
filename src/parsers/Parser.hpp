@@ -17,6 +17,7 @@ class Parser
  private:
   // JSON
   void parse_json(const std::string & fname);
+  // var type can be 0 or 1: flow domain or geomechanics domain
   void domain_props_json(const nlohmann::json::iterator & section_it,
                          const int                        var_type);
   void embedded_fracs_json(const nlohmann::json::iterator & section_it);
