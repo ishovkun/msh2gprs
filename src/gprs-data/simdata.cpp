@@ -2504,7 +2504,17 @@ void SimData::definePhysicalFacets()
       vsPhysicalFacet[n_facets].nface = iface;
       vsPhysicalFacet[n_facets].ntype = 0;
       vsPhysicalFacet[n_facets].nmark = vsFaceCustom[iface].nMarker;
-      vsPhysicalFacet[n_facets].nfluid = nfluid;
+      bool coupled = false;
+      const auto & neighbors = vsFaceCustom[iface].vNeighbors;
+      for (const auto & neighbor : neighbors)
+        for (const auto & conf: config.domains)
+          if (vsCellCustom[neighbor].nMarker == conf.label and conf.coupled)
+            coupled = true;
+
+      if (coupled)
+        vsPhysicalFacet[n_facets].nfluid = nfluid;
+      else
+        vsPhysicalFacet[n_facets].nfluid = -2;  // just a negative number (-2 + 1 < 0)
 
       bool found_label = false;
       for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
