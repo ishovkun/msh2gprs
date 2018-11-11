@@ -49,7 +49,7 @@ class Wedge: public Polyhedron<Scalar>
 template<typename Scalar>
 Wedge<Scalar>::Wedge()
     :
-    Polyhedron(13)
+    Polyhedron<Scalar>(13)
 {}
 
 
@@ -57,7 +57,7 @@ template<typename Scalar>
 Wedge<Scalar>::Wedge(const std::vector<Point<3,Scalar>> & vertices,
                      const std::vector<std::size_t>     & indices)
     :
-    Polyhedron(13)
+    Polyhedron<Scalar>(13)
 {
   set_data(vertices, indices);
 }

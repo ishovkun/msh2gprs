@@ -45,14 +45,15 @@ class Pyramid : public Polyhedron<Scalar>
 template<typename Scalar>
 Pyramid<Scalar>::Pyramid()
     :
-    Polyhedron(14)
+    Polyhedron<Scalar>(14)
 {}
 
 
 template<typename Scalar>
-Pyramid<Scalar>::Pyramid()
+Pyramid<Scalar>::Pyramid(const std::vector<Point<3,Scalar>> & vertices,
+                         const std::vector<std::size_t>     & indices)
     :
-    Polyhedron(14)
+    Polyhedron<Scalar>(14)
 {
   set_data(vertices, indices);
 }

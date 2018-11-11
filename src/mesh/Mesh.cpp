@@ -1,5 +1,7 @@
 #include <Mesh.hpp>
 
+#include <angem/PolyhedronFactory.hpp>
+
 namespace mesh
 {
 
@@ -39,15 +41,8 @@ uint256_t Mesh::hash_value(const Face & face) const
 
 
 void Mesh::insert(const Polyhedron & poly,
-                  const int type)
+                  const int          marker)
 {
-  if (type == -1)
-  {
-    const int n_verts = poly.get_points().size();
-    // if (n_verts == 4)
-      // shape_ids.push_back();
-  }
-
   std::vector<std::size_t> indices;
   const std::vector<Point> & points = poly.get_points();
   for (const auto & p : points)
@@ -56,14 +51,49 @@ void Mesh::insert(const Polyhedron & poly,
     indices.push_back(ind);
   }
 
+  const std::size_t new_element_index = cells.size();
   cells.push_back(indices);
+  shape_ids.push_back(poly.id());
 
-  for (const auto & edge : poly.get_faces())
+  for (const auto & face : poly.get_faces())
   {
-
+    const auto hash = hash_value(face);
+    auto iter = map_faces.find(hash);
+    if (iter != map_faces.end())
+      (iter->second).push_back(new_element_index);
+    else
+      map_faces.insert({ {hash, {new_element_index}} });
   }
-
-
 }
+
+
+const std::vector<std::size_t> & Mesh::get_neighbors( const Face & face ) const
+{
+  const auto hash = hash_value(face);
+  const auto iter = map_faces.find(hash);
+
+  if (iter == map_faces.end())
+    throw std::out_of_range("edge does not exist");
+
+  return iter->second;
+}
+
+
+const std::vector<std::size_t> &
+Mesh::get_neighbors( const std::size_t icell ) const
+{
+  std::vector<std::size_t> v_neighbors;
+  const Polyhedron poly =
+      angem::PolyhedronFactory::create<double>(vertices.points, cells[icell]);
+  for (const auto face : poly.get_faces())
+  {
+    const std::vector<std::size_t> & face_neighbors = get_neighbors(face);
+    for (const std::size_t jcell : face_neighbors)
+      if (jcell != icell)
+        v_neighbors.push_back(jcell);
+  }
+  return std::move(v_neighbors);
+}
+
 
 }
