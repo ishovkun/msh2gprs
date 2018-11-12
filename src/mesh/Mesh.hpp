@@ -2,6 +2,7 @@
 
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
+#include <angem/Polygon.hpp>
 #include <uint256/uint256_t.h>
 #include <ShapeID.hpp>
 
@@ -14,8 +15,12 @@ namespace mesh
 using Point = angem::Point<3,double>;
 // using Polygon = angem::Polygon<double>;
 using Polyhedron = angem::Polyhedron<double>;
+using Polygon = angem::Polygon<double>;
 using Face = std::vector<std::size_t>;
 
+/* TODO: iterators of cells, faces, physical faces
+ * functions for element volume and face area and normals
+ */
 
 // maximum 6-vert polygons as faces (hashing)
 // this allows hashing about (2^256)^(1/6) ≈ 7x10¹² vertices
@@ -27,7 +32,9 @@ class Mesh
   // infers type by number of vertices
   void insert(const Polyhedron & poly,
               const int          marker = -1);
-  bool empty() const {return cells.empty();}
+  // insert marker into map_physical_faces
+  void insert_physical_face(const Polygon & poly,
+                            const int       marker);
 
   // GETTERS
   // get vector of neighbor cell indices
@@ -36,6 +43,8 @@ class Mesh
   const std::vector<std::size_t> & get_neighbors( const Face & face ) const;
   // get vector of vectors of indices representing faces of a cell
   std::vector<std::vector<std::size_t>> get_faces( const std::size_t ielement ) const;
+  // true if vector of cells is empty
+  bool empty() const {return cells.empty();}
 
   // MANIPULATION
   // delete an element from the mesh
@@ -49,6 +58,8 @@ class Mesh
   std::vector<std::vector<std::size_t>> cells;  // vertex indices
   // map face -> neighbor elements
   std::unordered_map<uint256_t, std::vector<std::size_t>> map_faces;
+  // map face -> marker
+  std::unordered_map<uint256_t, int> map_physical_faces;
   std::vector<int> shape_ids;
 
  private:

@@ -84,10 +84,6 @@ const std::vector<std::size_t> & Mesh::get_neighbors( const Face & face ) const
     for (auto & v : face)
       std::cout << v << " ";
     std::cout << std::endl;
-
-    // for (auto & h : map_faces)
-    //   std::cout << h.first << std::endl;
-    std::cout << hash << std::endl;
     throw std::out_of_range("face does not exist");
   }
 
@@ -98,6 +94,9 @@ const std::vector<std::size_t> & Mesh::get_neighbors( const Face & face ) const
 std::vector<std::size_t>
 Mesh::get_neighbors( const std::size_t icell ) const
 {
+  if (icell >= cells.size())
+    throw std::out_of_range("wrong cell index: " + std::to_string(icell));
+
   std::vector<std::size_t> neighbors;
   const Polyhedron poly =
       angem::PolyhedronFactory::create<double>(vertices.points, cells[icell],
@@ -139,6 +138,23 @@ std::vector<std::vector<std::size_t>> Mesh::get_faces(const Polyhedron & poly) c
   }
   return std::move(faces);
 
+}
+
+
+void Mesh::insert_physical_face(const Polygon & poly,
+                                const int       marker)
+{
+  const auto & points = poly.get_points();
+  std::vector<std::size_t> face(points.size());
+  for (int i=0; i<points.size(); ++i)
+    face[i] = vertices.find(points[i]);
+
+  const auto hash = hash_value(face);
+  auto it = map_physical_faces.find(hash);
+  if (it == map_physical_faces.end())
+    map_physical_faces.insert({hash, marker});
+  else
+    it->second = marker;
 }
 
 }

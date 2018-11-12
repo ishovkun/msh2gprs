@@ -124,15 +124,20 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     for (int j=0; j<tokens.size() - vert_shift; ++j)
       ivertices[j] = std::atoi(tokens[j+vert_shift].c_str()) - 1;
 
-      if (std::find(begin(polyhedras), end(polyhedras), element_type) != polyhedras.end())
-      {
-        const auto polyhedron = angem::PolyhedronFactory::create
-            (mesh.vertices.points, ivertices, vtk_id);
-        mesh.insert(polyhedron);
-      }
-      else if (std::find(begin(polygons), end(polygons), element_type) !=
-               polygons.end())
-      {}
+    // 3D element
+    if (std::find(begin(polyhedras), end(polyhedras), element_type) != polyhedras.end())
+    {
+      const auto polyhedron = angem::PolyhedronFactory::create
+          (mesh.vertices.points, ivertices, vtk_id);
+      mesh.insert(polyhedron);
+    }
+    // 2D element
+    else if (std::find(begin(polygons), end(polygons), element_type) !=
+             polygons.end())
+    {
+      const angem::Polygon<double> poly(mesh.vertices.points, ivertices);
+      mesh.insert_physical_face(poly, marker);
+    }
     else
       throw std::out_of_range("unknown element type");
 
