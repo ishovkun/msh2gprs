@@ -62,13 +62,9 @@ int main(int argc, char *argv[])
   mesh::Mesh msh;
   Parsers::GmshReader::read_input(filesystem::absolute(path_gmsh), msh);
 
-  std::vector<std::size_t> neighbors = msh.get_neighbors(0);
-  // for (auto n : neighbors)
-  //   std::cout << n << std::endl;
-
-  // std::string outstream;
-  // SimData * pSimData;
+  SimData * pSimData;
   // pSimData = new SimData(filesystem::absolute(path_gmsh), config);
+  pSimData = new SimData(msh, config);
 
   // cout << "Read gmsh data" << endl;
   // pSimData->readGmshFile();
@@ -79,8 +75,8 @@ int main(int argc, char *argv[])
   // cout << "Convert GMSH FEM mesh into SIM data" << endl;
   // pSimData->convertGmsh2Sim();
 
-  // cout << "Fill 3D rock properties" << endl;
-  // pSimData->defineRockProperties();
+  cout << "Fill 3D rock properties" << endl;
+  pSimData->defineRockProperties();
 
   // cout << "Make SDA properties" << endl;
   // pSimData->defineEmbeddedFractureProperties();
@@ -144,6 +140,6 @@ int main(int argc, char *argv[])
   //   }
   // }
 
-  // delete pSimData;
+  delete pSimData;
   return 0;
 }

@@ -123,7 +123,8 @@ struct EmbeddedFracture
 class SimData
 {
 public:
-  SimData(const string & inputstream, const SimdataConfig & config);
+  // SimData(const string & inputstream, const SimdataConfig & config);
+  SimData(mesh::Mesh & grid, const SimdataConfig & config);
   ~SimData();
   // void readSetupValues();
   void readTotalData();
@@ -137,7 +138,7 @@ public:
   void defineRockProperties();
   void defineEmbeddedFractureProperties();
   void computeCellClipping();
-  void mergeSmallFracCells();
+  // void mergeSmallFracCells();
   void definePhysicalFacets();
   void defineStressAndDispOnBoundary();
 
@@ -152,7 +153,7 @@ public:
   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
                                      const int   frac_ind);
   void computeInterEDFMTransmissibilities();
-  void computeTransBetweenDifferentEfracs();
+  // void computeTransBetweenDifferentEfracs();
 
 
   void createSimpleWells();
@@ -185,8 +186,8 @@ protected:
                                               const std::vector<std::vector<std::size_t>> & polys,
                                               const std::vector<int>                      & markers,
                                               FlowData                                    & flow_data) const;
-  std::size_t get_flow_element_index(const std::size_t ifrac,
-                                     const std::size_t ielement) const;
+  // std::size_t get_flow_element_index(const std::size_t ifrac,
+  //                                    const std::size_t ielement) const;
 
 
    int checkReservedBoundaryName(int nmarker)
@@ -197,6 +198,7 @@ protected:
    renum * pRenum;
 
 public:
+  mesh::Mesh & grid;
   int corner_cell;
   bool dual_media;
   vector<double> grade_total, temp_total;
@@ -229,8 +231,8 @@ public:
   vector<vector<double> > vvVrtxDisp;
   vector<int> vConstraintVertex;
 
-  int nCells;
-  vector<Gelement> vsCellCustom;
+  // int nCells;
+  // vector<Gelement> vsCellCustom;
   std::vector<RockProps> vsCellRockProps;
   std::vector<std::string> rockPropNames;
 

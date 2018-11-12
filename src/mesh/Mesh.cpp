@@ -56,6 +56,7 @@ void Mesh::insert(const Polyhedron & poly,
   const std::size_t new_element_index = cells.size();
   cells.push_back(indices);
   shape_ids.push_back(poly.id());
+  cell_markers.push_back(marker);
 
   for (const auto & face : poly.get_faces())
   {

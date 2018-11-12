@@ -45,6 +45,8 @@ class Mesh
   std::vector<std::vector<std::size_t>> get_faces( const std::size_t ielement ) const;
   // true if vector of cells is empty
   bool empty() const {return cells.empty();}
+  std::size_t n_cells() const {return cells.size();}
+  std::size_t n_vertices() const {return vertices.size();}
 
   // MANIPULATION
   // delete an element from the mesh
@@ -61,6 +63,7 @@ class Mesh
   // map face -> marker
   std::unordered_map<uint256_t, int> map_physical_faces;
   std::vector<int> shape_ids;
+  std::vector<int> cell_markers;
 
  private:
   // get global indices of polygon face vertices

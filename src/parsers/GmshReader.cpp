@@ -42,11 +42,20 @@ void GmshReader::read_input(const std::string & filename,
   float version;
   mesh_file >> version;
 
-  if (version >= 2 and version < 3)
-    read_gmsh2_input(mesh_file, mesh);
-  else
-    throw std::out_of_range("cannot read this msh file "
-                            "(version "+ std::to_string(version));
+  try
+  {
+    if (version >= 2 and version < 3)
+      read_gmsh2_input(mesh_file, mesh);
+    else
+      throw std::out_of_range("cannot read this msh file "
+                              "(version "+ std::to_string(version));
+  }
+  catch (...)
+  {
+    mesh_file.close();
+    return;
+  }
+  mesh_file.close();
 }
 
 
