@@ -32,7 +32,22 @@ class PolyhedronFactory
       case 14:
         return Pyramid<Scalar>(vertices, indices);
       default:
-        throw NotImplemented("3D element does not exist");
+        {
+          // try to construct based on number of points
+          const int n_verts = vertices.size();
+          switch (n_verts)
+          {
+            case 4:
+              return Tetrahedron<Scalar>(vertices, indices);
+            case 5:
+              return Pyramid<Scalar>(vertices, indices);
+            case 6:
+              return Wedge<Scalar>(vertices, indices);
+            case 8:
+              return Hexahedron<Scalar>(vertices, indices);
+          }
+          throw NotImplemented("3D element does not exist");
+        }
     }
   }
 

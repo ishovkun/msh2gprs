@@ -3,7 +3,10 @@
 // #include <gprs_data/transes.hpp>
 #include <parsers/Parser.hpp>
 #include <uint256/uint256_t.h>
+#include <parsers/GmshReader.hpp>
+#include <mesh/Mesh.hpp>
 
+#include <string>
 #include <experimental/filesystem>
 
 namespace filesystem = std::experimental::filesystem;
@@ -54,83 +57,92 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  std::string outstream;
-  SimData * pSimData;
-  pSimData = new SimData(filesystem::absolute(path_gmsh), config);
+  std::cout << "reading ";
+  std::cout << filesystem::absolute(path_gmsh) << std::endl;
+  mesh::Mesh msh;
+  Parsers::GmshReader::read_input(filesystem::absolute(path_gmsh), msh);
 
-  cout << "Read gmsh data" << endl;
-  pSimData->readGmshFile();
+  std::vector<std::size_t> neighbors = msh.get_neighbors(0);
+  // for (auto n : neighbors)
+  //   std::cout << n << std::endl;
 
-  cout << "Extract all polygons (slow)" << endl;
-  pSimData->extractInternalFaces();
+  // std::string outstream;
+  // SimData * pSimData;
+  // pSimData = new SimData(filesystem::absolute(path_gmsh), config);
 
-  cout << "Convert GMSH FEM mesh into SIM data" << endl;
-  pSimData->convertGmsh2Sim();
+  // cout << "Read gmsh data" << endl;
+  // pSimData->readGmshFile();
 
-  cout << "Fill 3D rock properties" << endl;
-  pSimData->defineRockProperties();
+  // cout << "Extract all polygons (slow)" << endl;
+  // pSimData->extractInternalFaces();
 
-  cout << "Make SDA properties" << endl;
-  pSimData->defineEmbeddedFractureProperties();
+  // cout << "Convert GMSH FEM mesh into SIM data" << endl;
+  // pSimData->convertGmsh2Sim();
 
-  cout << "Create physical facets" << endl;
-  cout << " ( bnd & frac faces )" << endl;
-  pSimData->definePhysicalFacets();
+  // cout << "Fill 3D rock properties" << endl;
+  // pSimData->defineRockProperties();
 
-  cout << endl << "Convert FEM mesh into FVM mesh" << endl;
-  pSimData->handleConnections();
+  // cout << "Make SDA properties" << endl;
+  // pSimData->defineEmbeddedFractureProperties();
 
-  std::cout << "computing reservoir transes" << std::endl;
-  pSimData->computeReservoirTransmissibilities();
+  // cout << "Create physical facets" << endl;
+  // cout << " ( bnd & frac faces )" << endl;
+  // pSimData->definePhysicalFacets();
 
-  cout << "Compute cell clipping and EDFM transmissibilities" << endl;
-  pSimData->computeCellClipping();
+  // cout << endl << "Convert FEM mesh into FVM mesh" << endl;
+  // pSimData->handleConnections();
 
-  // // cout << "Merge small edfm cells" << endl;
-  // // pSimData->mergeSmallFracCells();
+  // std::cout << "computing reservoir transes" << std::endl;
+  // pSimData->computeReservoirTransmissibilities();
 
-  std::cout << "mesh fractures" << std::endl;
-  pSimData->meshFractures();
+  // cout << "Compute cell clipping and EDFM transmissibilities" << endl;
+  // pSimData->computeCellClipping();
 
-  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  // pSimData->computeInterEDFMTransmissibilities();
-  pSimData->computeTransBetweenDifferentEfracs();
+  // // // cout << "Merge small edfm cells" << endl;
+  // // // pSimData->mergeSmallFracCells();
 
-  // cout << "Create simple wells" << endl;
-  // pSimData->createSimpleWells();
+  // std::cout << "mesh fractures" << std::endl;
+  // pSimData->meshFractures();
 
-  if (pSimData->nDFMFracs > 0)
-  {
-    cout << "Split FEM mesh on internal surfaces" << endl;
-    pSimData->splitInternalFaces();
-  }
+  // std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  // // pSimData->computeInterEDFMTransmissibilities();
+  // pSimData->computeTransBetweenDifferentEfracs();
 
-  cout << "Write FEM mesh data\n";
-  OutputData output_data(pSimData);
+  // // cout << "Create simple wells" << endl;
+  // // pSimData->createSimpleWells();
 
-  const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";
-  std::cout << "output directory: " << output_dir << std::endl;
-  output_data.write_output(output_dir);
+  // if (pSimData->nDFMFracs > 0)
+  // {
+  //   cout << "Split FEM mesh on internal surfaces" << endl;
+  //   pSimData->splitInternalFaces();
+  // }
 
-  // if no frac remove vtk files
-  if (pSimData->vEfrac.empty())
-  {
-    const std::string efrac_vtk_file = output_dir + "efrac.vtk";
-    if (filesystem::exists(efrac_vtk_file))
-    {
-      std::cout << "cleanup old efrac.vtk file" << std::endl;
-      filesystem::remove(efrac_vtk_file);
-    }
-  }
-  if (pSimData->nDFMFracs == 0)
-  {
-    const std::string dfm_vtk_file = output_dir + "dfm.vtk";
-    if (filesystem::exists(dfm_vtk_file))
-    {
-      std::cout << "cleanup old dfm.vtk file" << std::endl;
-      filesystem::remove(dfm_vtk_file);
-    }
-  }
+  // cout << "Write FEM mesh data\n";
+  // OutputData output_data(pSimData);
+
+  // const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";
+  // std::cout << "output directory: " << output_dir << std::endl;
+  // output_data.write_output(output_dir);
+
+  // // if no frac remove vtk files
+  // if (pSimData->vEfrac.empty())
+  // {
+  //   const std::string efrac_vtk_file = output_dir + "efrac.vtk";
+  //   if (filesystem::exists(efrac_vtk_file))
+  //   {
+  //     std::cout << "cleanup old efrac.vtk file" << std::endl;
+  //     filesystem::remove(efrac_vtk_file);
+  //   }
+  // }
+  // if (pSimData->nDFMFracs == 0)
+  // {
+  //   const std::string dfm_vtk_file = output_dir + "dfm.vtk";
+  //   if (filesystem::exists(dfm_vtk_file))
+  //   {
+  //     std::cout << "cleanup old dfm.vtk file" << std::endl;
+  //     filesystem::remove(dfm_vtk_file);
+  //   }
+  // }
 
   // delete pSimData;
   return 0;

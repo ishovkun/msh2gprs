@@ -31,7 +31,7 @@ class Mesh
 
   // GETTERS
   // get vector of neighbor cell indices
-  const std::vector<std::size_t> & get_neighbors( const std::size_t icell ) const;
+  std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
   // vector of indices of cells neighboring a face
   const std::vector<std::size_t> & get_neighbors( const Face & face ) const;
   // get vector of vectors of indices representing faces of a cell
@@ -52,6 +52,8 @@ class Mesh
   std::vector<int> shape_ids;
 
  private:
+  // get global indices of polygon face vertices
+  std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
   // constant complexity (order of n_vertices)
   // linear complexity (size of face)
   uint256_t hash_value(const Face & face) const;

@@ -29,11 +29,13 @@ uint256_t Mesh::hash_value(const Face & face) const
 
   uint256_t mult = 1;
   uint256_t result = 0;
-  for (int i=0; i<max_polygon_size_vertices; ++i)
+  for (int i=0; i<face_sorted.size(); ++i)
   {
     // hashing starts with 1 since
     // (1,2,3) and (0,1,2,3) are different elementes
-    result += 1 + mult * face_sorted[i];
+    // result += static_cast<uint256_t>(1) +
+    //     mult * static_cast<uint256_t>(face_sorted[i]);
+    result += mult * static_cast<uint256_t>(1 + face_sorted[i]);
     mult *= max_vertices;
   }
   return result;
@@ -57,7 +59,12 @@ void Mesh::insert(const Polyhedron & poly,
 
   for (const auto & face : poly.get_faces())
   {
-    const auto hash = hash_value(face);
+    // get global indices of face vertices
+    std::vector<std::size_t> face_glob;
+    for (const auto & ivert : face)
+      face_glob.push_back(indices[ivert]);
+
+    const auto hash = hash_value(face_glob);
     auto iter = map_faces.find(hash);
     if (iter != map_faces.end())
       (iter->second).push_back(new_element_index);
@@ -73,27 +80,65 @@ const std::vector<std::size_t> & Mesh::get_neighbors( const Face & face ) const
   const auto iter = map_faces.find(hash);
 
   if (iter == map_faces.end())
-    throw std::out_of_range("edge does not exist");
+  {
+    for (auto & v : face)
+      std::cout << v << " ";
+    std::cout << std::endl;
+
+    // for (auto & h : map_faces)
+    //   std::cout << h.first << std::endl;
+    std::cout << hash << std::endl;
+    throw std::out_of_range("face does not exist");
+  }
 
   return iter->second;
 }
 
 
-const std::vector<std::size_t> &
+std::vector<std::size_t>
 Mesh::get_neighbors( const std::size_t icell ) const
 {
-  std::vector<std::size_t> v_neighbors;
+  std::vector<std::size_t> neighbors;
   const Polyhedron poly =
-      angem::PolyhedronFactory::create<double>(vertices.points, cells[icell]);
-  for (const auto face : poly.get_faces())
+      angem::PolyhedronFactory::create<double>(vertices.points, cells[icell],
+                                               shape_ids[icell]);
+  for (const auto & face : get_faces(poly))
   {
     const std::vector<std::size_t> & face_neighbors = get_neighbors(face);
     for (const std::size_t jcell : face_neighbors)
+    {
       if (jcell != icell)
-        v_neighbors.push_back(jcell);
+      {
+        neighbors.push_back(jcell);
+      }
+    }
   }
-  return std::move(v_neighbors);
+  return std::move(neighbors);
 }
 
+
+std::vector<std::vector<std::size_t>> Mesh::get_faces(const Polyhedron & poly) const
+{
+  // find  global indices of polygon vertices
+  std::vector<std::size_t> indices;
+  const std::vector<Point> & points = poly.get_points();
+  for (const auto & p : points)
+  {
+    const std::size_t ind = vertices.find(p);
+    indices.push_back(ind);
+  }
+
+  // get faces with global indexing of vertices
+  std::vector<std::vector<std::size_t>> faces;
+  for (const auto & face : poly.get_faces())
+  {
+    std::vector<std::size_t> face_glob;
+    for (const auto ivert : face)
+      face_glob.push_back(indices[ivert]);
+    faces.push_back(face_glob);
+  }
+  return std::move(faces);
+
+}
 
 }

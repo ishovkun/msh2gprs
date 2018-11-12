@@ -181,7 +181,8 @@ __int128 PointSet<dim,Scalar>::hash_value(const Point<dim,Scalar> &p) const
     if (ixd < 0 or ixd > (upper[i] - lower[i]) / tol)
     {
       std::cout.precision(12);
-      std::cout << "ixd = " << ixd << std::endl;
+      // std::cout << "ixd = " << ixd << std::endl;
+      std::cout << "weird point = " << p << std::endl;
       throw std::out_of_range("Point cannot be added to set");
     }
 
