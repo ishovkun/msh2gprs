@@ -5,6 +5,8 @@
 #include <angem/Polygon.hpp>
 #include <uint256/uint256_t.h>
 #include <ShapeID.hpp>
+#include <CellIterator.hpp>
+#include <FaceIterator.hpp>
 
 #include <algorithm> // std::sort
 
@@ -35,6 +37,19 @@ class Mesh
   // insert marker into map_physical_faces
   void insert_physical_face(const Polygon & poly,
                             const int       marker);
+
+  // iterators
+  // cell iterators
+  CellIterator create_cell_iterator(const std::size_t icell)
+  {return CellIterator(icell, map_faces, shape_ids, cell_markers);}
+  CellIterator begin_cells(){return create_cell_iterator(0);}
+  CellIterator end_cells()  {return create_cell_iterator(cells.size());}
+
+  // face iterators
+  FaceIterator create_face_iterator(const std::size_t iface)
+  {return FaceIterator(iface, map_faces, map_physical_faces);}
+  FaceIterator begin_faces(){return create_face_iterator(0);}
+  FaceIterator end_faces()  {return create_face_iterator(map_faces.size());}
 
   // GETTERS
   // get vector of neighbor cell indices

@@ -1189,6 +1189,12 @@ void SimData::defineRockProperties()
     }
 
     // loop cells and evaluate expressions
+    for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+    {
+      if ( cell.marker() == conf.label ) // cells
+        std::cout << "success" << std::endl;
+      abort();
+    }
 //     for ( int icell = 0; icell < grid.n_cells(); icell++ )
 //       if ( vsCellCustom[icell].nMarker == conf.label ) // cells
 //       {
