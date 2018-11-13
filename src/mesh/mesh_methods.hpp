@@ -12,8 +12,8 @@ namespace mesh
 
 using Point = angem::Point<3,double>;
 
-extern std::size_t MAX_HASHED_VERTICES;
-extern int INTERNAL_FACE_ID;
+extern const std::size_t MAX_HASHED_VERTICES;
+extern const int INTERNAL_FACE_ID;
 
 std::size_t estimate_max_vertices(const int n_polygon_vertices);
 

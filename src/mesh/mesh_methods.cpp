@@ -5,8 +5,9 @@
 namespace mesh
 {
 
-std::size_t MAX_HASHED_VERTICES = estimate_max_vertices(6);
-int INTERNAL_FACE_ID = 0;
+const int MAX_POLYGON_VETRICES = 6;
+const std::size_t MAX_HASHED_VERTICES = estimate_max_vertices(MAX_POLYGON_VETRICES);
+const int INTERNAL_FACE_ID = 0;
 
 
 std::size_t estimate_max_vertices(const int n_polygon_vertices)
@@ -44,7 +45,7 @@ uint256_t hash_value(const std::vector<std::size_t> & face)
 
   uint256_t mult = 1;
   uint256_t result = 0;
-  for (int i=0; i<face_sorted.size(); ++i)
+  for (int i=face_sorted.size()-1; i>=0; --i)
   {
     // hashing starts with 1 since
     // (1,2,3) and (0,1,2,3) are different elementes
@@ -59,18 +60,23 @@ std::vector<std::size_t> invert_hash(const uint256_t & hash)
 {
   std::vector<std::size_t> vertices;
   uint256_t current_value = hash;
-  uint256_t mult = 1;
-  for (int i=0; i<MAX_HASHED_VERTICES; ++i)
+  for (int i=0; i<MAX_POLYGON_VETRICES; ++i)
   {
-    // + 1 since hashing starts with 1
-    const std::size_t ivertex = current_value % MAX_HASHED_VERTICES - 1;
-    current_value = (current_value - ivertex + 1) / mult;
-    mult *= MAX_HASHED_VERTICES;
+    // - 1 since hashing starts with 1
+    const std::size_t ivertex = (current_value % MAX_HASHED_VERTICES) - 1;
+    current_value = current_value / MAX_HASHED_VERTICES;
     vertices.push_back(ivertex);
     if (current_value == 0)
       break;
   }
-  return std::move(vertices);
+  std::vector<std::size_t> vertices_sorted(vertices.size());
+  int ind = vertices.size() - 1;
+  for (const auto & v : vertices)
+  {
+    vertices_sorted[ind] = v;
+    ind--;
+  }
+  return std::move(vertices_sorted);
 }
 
 

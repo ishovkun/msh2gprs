@@ -33,6 +33,7 @@ void Mesh::insert(const Polyhedron & poly,
       face_glob.push_back(indices[ivert]);
 
     const auto hash = hash_value(face_glob);
+
     auto iter = map_faces.find(hash);
     if (iter != map_faces.end())
       (iter->second).push_back(new_element_index);

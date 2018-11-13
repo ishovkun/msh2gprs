@@ -442,9 +442,10 @@ void SimData::computeReservoirTransmissibilities()
   // nodes
   for ( std::size_t i = 0; i < grid.n_vertices(); i++ )
   {
-    calc.vCoordinatesX[i] = grid.vertices[i][0];
-    calc.vCoordinatesY[i] = grid.vertices[i][1];
-    calc.vCoordinatesZ[i] = grid.vertices[i][2];
+    Point vertex = grid.vertices[i];
+    calc.vCoordinatesX[i] = vertex.x();
+    calc.vCoordinatesY[i] = vertex.y();
+    calc.vCoordinatesZ[i] = vertex.z();
   }
 
   // polygons (2d elements)
@@ -455,7 +456,14 @@ void SimData::computeReservoirTransmissibilities()
   std::size_t ipoly = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++ipoly)
   {
+    std::cout << "neighbors" << std::endl;
+    for (auto n : face.neighbors())
+      std::cout << n << " " << std::flush;
+    std::cout << std::endl;
     calc.vvFNodes.push_back(face.vertex_indices());
+
+    abort();
+
     if (face.marker() > 0)
     {
       calc.vCodePolygon[ipoly] = code_polygon;
@@ -473,15 +481,18 @@ void SimData::computeReservoirTransmissibilities()
   calc.vCodePolyhedron.clear();
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
+    const auto faces = cell.faces();
+    calc.vvVFaces[cell.index()].reserve(faces.size());
     for (const mesh::face_iterator face : cell.faces())
     {
       const auto hash = face.hash();
       const std::size_t ipolygon = dfm_faces[hash].nface;
-      for (const std::size_t ivertex : face.vertex_indices())
-        calc.vvVFaces[ipolygon].push_back( ivertex );
-      for (const std::size_t ivertex : face.vertex_indices())
-        std::cout << ivertex << "\t";
-      std::cout << std::endl;
+      calc.vvVFaces[cell.index()].push_back(ipolygon);
+      // for (const std::size_t ivertex : face.vertex_indices())
+      //   calc.vvVFaces[ipolygon].push_back( ivertex );
+      // for (const std::size_t ivertex : face.vertex_indices())
+      //   std::cout << ivertex << "\t";
+      // std::cout << std::endl;
 
     }
     calc.vCodePolyhedron.push_back( dfm_faces.size() + cell.index());

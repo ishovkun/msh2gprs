@@ -118,7 +118,10 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
                                     std::istream_iterator<std::string>{}};
     if (tokens.empty())
+    {
+      i--;
       continue;
+    }
     // tokens:
     // first - element number
     // second - type
@@ -133,6 +136,9 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     std::vector<std::size_t> ivertices(tokens.size() - vert_shift);
     for (int j=0; j<tokens.size() - vert_shift; ++j)
       ivertices[j] = std::atoi(tokens[j+vert_shift].c_str()) - 1;
+    for (auto v : ivertices)
+      std::cout << v << "\t";
+    std::cout << std::endl;
 
     // 3D element
     if (std::find(begin(polyhedras), end(polyhedras), element_type) != polyhedras.end())
