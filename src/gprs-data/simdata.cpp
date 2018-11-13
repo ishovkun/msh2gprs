@@ -450,14 +450,11 @@ void SimData::computeReservoirTransmissibilities()
   // polygons (2d elements)
   int code_polygon = 0;
   calc.vvFNodes.clear();
-  vector<double> vConductivity, vAperture;
+  std::vector<double> vConductivity, vAperture;
 
   std::size_t ipoly = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++ipoly)
   {
-    // for (auto ivert : face.vertex_indices())
-    //   std::cout << ivert << std::endl;
-    // abort();
     calc.vvFNodes.push_back(face.vertex_indices());
     if (face.marker() > 0)
     {
@@ -472,84 +469,82 @@ void SimData::computeReservoirTransmissibilities()
   }
 
   // polyhedra (3d elements)
-  // set<int>::iterator itintset;
-  // tran.vNbVFaces.clear();
   calc.vvVFaces.resize(grid.n_cells());
   calc.vCodePolyhedron.clear();
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
-    // for (const std::vector<std::size_t> face : cell.faces())
-    //   calc.vvVFaces[ipoly].push_back( face );
+    for (const mesh::face_iterator face : cell.faces())
+    {
+      const auto hash = face.hash();
+      const std::size_t ipolygon = dfm_faces[hash].nface;
+      for (const std::size_t ivertex : face.vertex_indices())
+        calc.vvVFaces[ipolygon].push_back( ivertex );
+      for (const std::size_t ivertex : face.vertex_indices())
+        std::cout << ivertex << "\t";
+      std::cout << std::endl;
+
+    }
+    calc.vCodePolyhedron.push_back( dfm_faces.size() + cell.index());
   }
-  // for(int ipoly = 0; ipoly < nCells; ipoly++)
-  // {
-  //   const std::size_t n = vsetPolyhedronPolygon[ipoly].size();
-  //   itintset = vsetPolyhedronPolygon[ipoly].begin();
-  //   for(std::size_t i = 0; i < n; i++)
-  //   {
-  //     tran.vvVFaces[ipoly].push_back( *itintset );
-  //     itintset++;
-  //   }
-  //   tran.vCodePolyhedron.push_back( nDFMFracs + ipoly);
-  // }
 
-//   // Properties
-//   tran.vZPermeability.assign(tran.NbZones * 3, 0.0);
-//   tran.vZConduction.assign( (tran.NbPolyhedra + nDFMFracs) * 3, 0.0);
+  // Properties
+  calc.vZPermeability.assign(calc.NbZones * 3, 0.0);
+  calc.vZConduction.assign( (calc.NbPolyhedra + dfm_faces.size()) * 3, 0.0);
 
-//   // DFM fractures
-//   for ( std::size_t i = 0; i < tran.NbFracs; i++ )
-//   {
-//     tran.vZoneCode[i] = i;
-//     tran.vZVolumeFactor[i] = vAperture[i];
-//     tran.vZPorosity[i] = 1.0;
-//     tran.vZPermCode[i] = 1;
+  // DFM fractures
+  for ( std::size_t i = 0; i < calc.NbFracs; i++ )
+  {
+    calc.vZoneCode[i] = i;
+    calc.vZVolumeFactor[i] = vAperture[i];
+    calc.vZPorosity[i] = 1.0;
+    calc.vZPermCode[i] = 1;
 
-//     //@HACK default permeability for all fractures
-//     tran.vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
-//     tran.vZPermeability[i*3+1] = tran.vZPermeability[i*3+0];
-//     tran.vZPermeability[i*3+2] = tran.vZPermeability[i*3+0];
+    //@HACK default permeability for all fractures
+    const double perm = vConductivity[i] / vAperture[i];
+    calc.vZPermeability[i*3+0] = perm;
+    calc.vZPermeability[i*3+1] = perm;
+    calc.vZPermeability[i*3+2] = perm;
 
-//     tran.vZConduction[i*3+0] = 1;
-//     tran.vZConduction[i*3+1] = 1;
-//     tran.vZConduction[i*3+2] = 1;
-//     tran.vTimurConnectionFactor[i] = 1.0;
-//   }
+    calc.vZConduction[i*3+0] = 1;
+    calc.vZConduction[i*3+1] = 1;
+    calc.vZConduction[i*3+2] = 1;
+    calc.vTimurConnectionFactor[i] = 1.0;
+  }
 
 //   // properties regular cells
-//   for ( std::size_t i = 0; i < tran.NbPolyhedra; i++ )
-//   {
-//     const std::size_t n = i + nDFMFracs;
-//     tran.vZoneCode[n] = tran.vCodePolyhedron[i];
-//     tran.vZPorosity[n] = get_property(i, "PORO");
-//     tran.vZPermCode[n] = 1;
+  for ( std::size_t i = 0; i < calc.NbPolyhedra; i++ )
+  {
+    const std::size_t n = i + dfm_faces.size();
+    calc.vZoneCode[n] = calc.vCodePolyhedron[i];
+    calc.vZPorosity[n] = get_property(i, "PORO");
+    calc.vZPermCode[n] = 1;
 
-//     const angem::Point<3,double> perm = get_permeability(i);
-//     tran.vZPermeability[n*3+0] = perm[0];
-//     tran.vZPermeability[n*3+1] = perm[1];
-//     tran.vZPermeability[n*3+2] = perm[2];
+    const angem::Point<3,double> perm = get_permeability(i);
+    calc.vZPermeability[n*3+0] = perm[0];
+    calc.vZPermeability[n*3+1] = perm[1];
+    calc.vZPermeability[n*3+2] = perm[2];
 
-//     double thc = 0;
-//     try
-//     {
-//       thc = get_property(i, "THCROCK");
-//     }
-//     catch (const std::out_of_range& e)
-//     {
-//       tran.vZConduction[n*3+0] = thc;
-//       tran.vZConduction[n*3+1] = thc;
-//       tran.vZConduction[n*3+2] = thc;
-//     }
+    double thc = 0;
+    try
+    {
+      thc = get_property(i, "THCROCK");
+    }
+    catch (const std::out_of_range& e)
+    {
+      calc.vZConduction[n*3+0] = thc;
+      calc.vZConduction[n*3+1] = thc;
+      calc.vZConduction[n*3+2] = thc;
+    }
 
-//     tran.vZVolumeFactor[n] = get_volume_factor(i);
-//     tran.vTimurConnectionFactor[n] = 1.0;
-//   }
+    calc.vZVolumeFactor[n] = get_volume_factor(i);
+    calc.vTimurConnectionFactor[n] = 1.0;
+  }
 
-//   FlowData matrix_flow_data;
-//   std::cout << "run karimi" << std::endl;
-//   tran.compute_flow_data();
-//   std::cout << "karimi done" << std::endl;
-//   tran.extractData(matrix_flow_data);
+  FlowData matrix_flow_data;
+  std::cout << "run karimi" << std::endl;
+  calc.compute_flow_data();
+  std::cout << "karimi done" << std::endl;
+  calc.extractData(matrix_flow_data);
 
 //   // copy to global
 //   for (std::size_t i=0; i<matrix_flow_data.volumes.size(); ++i)
@@ -1898,134 +1893,134 @@ void SimData::defineRockProperties()
 
 void SimData::methodElementCenter(int nelem, vector<Gelement> &vsElement)
 {
-  int nodes_in_elem = vsElement[nelem].nVertices;
+  // int nodes_in_elem = vsElement[nelem].nVertices;
 
-  vsElement[nelem].center.clear();
+  // vsElement[nelem].center.clear();
 
-  for (int inodes = 0; inodes < nodes_in_elem; inodes++)
-  {
-    int gl_node_num = vsElement[nelem].vVertices[inodes];
-    for (int idx = 0; idx < 3; idx++)
-    {
-      vsElement[nelem].center[idx] += vvVrtxCoords[gl_node_num][idx] / nodes_in_elem;
-    }
-  }
+  // for (int inodes = 0; inodes < nodes_in_elem; inodes++)
+  // {
+  //   int gl_node_num = vsElement[nelem].vVertices[inodes];
+  //   for (int idx = 0; idx < 3; idx++)
+  //   {
+  //     vsElement[nelem].center[idx] += vvVrtxCoords[gl_node_num][idx] / nodes_in_elem;
+  //   }
+  // }
 
-  vsElement[nelem].center_distance = 0.0;
-  for (int idx = 0; idx < 3; idx++)
-  {
-    vsElement[nelem].center_distance += vsElement[nelem].center[idx] * vsElement[nelem].center[idx];
-  }
-  vsElement[nelem].center_distance = sqrt(vsElement[nelem].center_distance);
+  // vsElement[nelem].center_distance = 0.0;
+  // for (int idx = 0; idx < 3; idx++)
+  // {
+  //   vsElement[nelem].center_distance += vsElement[nelem].center[idx] * vsElement[nelem].center[idx];
+  // }
+  // vsElement[nelem].center_distance = sqrt(vsElement[nelem].center_distance);
 
-  double distance, buf;
-  int node_master, node_slave;
-  switch ( vsElement[nelem].formIndex )
-  {
-  case TETRA4:
-    distance = 0.0;
-    node_master = vsElement[nelem].vVertices[0];
-    for ( int inode = 1; inode < nodes_in_elem; ++inode )
-    {
-      node_slave = vsElement[nelem].vVertices[inode];
-      buf = 0.0;
-      for ( int idx = 0; idx < 3; idx++ )
-      {
-        buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
-      }
-      distance += sqrt ( buf );
+  // double distance, buf;
+  // int node_master, node_slave;
+  // switch ( vsElement[nelem].formIndex )
+  // {
+  // case TETRA4:
+  //   distance = 0.0;
+  //   node_master = vsElement[nelem].vVertices[0];
+  //   for ( int inode = 1; inode < nodes_in_elem; ++inode )
+  //   {
+  //     node_slave = vsElement[nelem].vVertices[inode];
+  //     buf = 0.0;
+  //     for ( int idx = 0; idx < 3; idx++ )
+  //     {
+  //       buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
+  //     }
+  //     distance += sqrt ( buf );
 
-    }
-    vsElement[nelem].thickness = distance / (nodes_in_elem-1);
-    break;
-  case TETRA10:
-    distance = 0.0;
-    node_master = vsElement[nelem].vVertices[0];
-    for ( int inode = 1; inode < nodes_in_elem; ++inode )
-    {
-      node_slave = vsElement[nelem].vVertices[inode];
-      buf = 0.0;
-      for ( int idx = 0; idx < 3; idx++ )
-      {
-        buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
-      }
-      distance += sqrt ( buf );
+  //   }
+  //   vsElement[nelem].thickness = distance / (nodes_in_elem-1);
+  //   break;
+  // case TETRA10:
+  //   distance = 0.0;
+  //   node_master = vsElement[nelem].vVertices[0];
+  //   for ( int inode = 1; inode < nodes_in_elem; ++inode )
+  //   {
+  //     node_slave = vsElement[nelem].vVertices[inode];
+  //     buf = 0.0;
+  //     for ( int idx = 0; idx < 3; idx++ )
+  //     {
+  //       buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
+  //     }
+  //     distance += sqrt ( buf );
 
-    }
-    vsElement[nelem].thickness = distance / (nodes_in_elem-1);
-    break;
-  case PRISM6:
-    distance = 0.0;
-    for ( int inode = 0; inode < nodes_in_elem / 2; ++inode )
-    {
-      node_master = vsElement[nelem].vVertices[inode];
-      node_slave = vsElement[nelem].vVertices[inode + nodes_in_elem / 2];
-      buf = 0.0;
-      for ( int idx = 0; idx < 3; idx++ )
-      {
-        buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
-      }
-      distance += sqrt ( buf );
-    }
-    vsElement[nelem].thickness = distance / (nodes_in_elem / 2);
-    break;
-  case PRISM8:
-    distance = 0.0;
-    for ( int inode = 0; inode < nodes_in_elem / 2; ++inode )
-    {
-      node_master = vsElement[nelem].vVertices[inode];
-      node_slave = vsElement[nelem].vVertices[inode + nodes_in_elem / 2];
-      buf = 0.0;
-      for ( int idx = 0; idx < 3; idx++ )
-      {
-        buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
-      }
-      distance += sqrt ( buf );
-    }
-    vsElement[nelem].thickness = distance / (nodes_in_elem / 2);
-    break;
-  default:
-    break;
-  }
+  //   }
+  //   vsElement[nelem].thickness = distance / (nodes_in_elem-1);
+  //   break;
+  // case PRISM6:
+  //   distance = 0.0;
+  //   for ( int inode = 0; inode < nodes_in_elem / 2; ++inode )
+  //   {
+  //     node_master = vsElement[nelem].vVertices[inode];
+  //     node_slave = vsElement[nelem].vVertices[inode + nodes_in_elem / 2];
+  //     buf = 0.0;
+  //     for ( int idx = 0; idx < 3; idx++ )
+  //     {
+  //       buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
+  //     }
+  //     distance += sqrt ( buf );
+  //   }
+  //   vsElement[nelem].thickness = distance / (nodes_in_elem / 2);
+  //   break;
+  // case PRISM8:
+  //   distance = 0.0;
+  //   for ( int inode = 0; inode < nodes_in_elem / 2; ++inode )
+  //   {
+  //     node_master = vsElement[nelem].vVertices[inode];
+  //     node_slave = vsElement[nelem].vVertices[inode + nodes_in_elem / 2];
+  //     buf = 0.0;
+  //     for ( int idx = 0; idx < 3; idx++ )
+  //     {
+  //       buf += ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] ) * ( vvVrtxCoords[node_master][idx] - vvVrtxCoords[node_slave][idx] );
+  //     }
+  //     distance += sqrt ( buf );
+  //   }
+  //   vsElement[nelem].thickness = distance / (nodes_in_elem / 2);
+  //   break;
+  // default:
+  //   break;
+  // }
 }
 
 
 void SimData::methodFaceNormalVector(int nelem, vector<Gelement> &vsElement)
 {
 
-  for (int i = 0; i < 3; i++) vvPlate[i].assign(3, 0.0);
+//   for (int i = 0; i < 3; i++) vvPlate[i].assign(3, 0.0);
 
-  for (int inodes = 0; inodes < 3; inodes++)
-  {
-    int gl_node_num = vsElement[nelem].vVertices[vPointPass[inodes]];
-    for (int idx = 0; idx < 3; idx++)
-    {
-      vvPlate[inodes][idx] = vvVrtxCoords[gl_node_num][idx];
-    }
-  }
-  // calculate basis
-  vPointCoord[0] = vvPlate[1][1] * vvPlate[2][2] - vvPlate[1][2] * vvPlate[2][1] +
-                   vvPlate[2][1] * vvPlate[0][2] - vvPlate[0][1] * vvPlate[2][2] +
-                   vvPlate[0][1] * vvPlate[1][2] - vvPlate[1][1] * vvPlate[0][2];
+//   for (int inodes = 0; inodes < 3; inodes++)
+//   {
+//     int gl_node_num = vsElement[nelem].vVertices[vPointPass[inodes]];
+//     for (int idx = 0; idx < 3; idx++)
+//     {
+//       vvPlate[inodes][idx] = vvVrtxCoords[gl_node_num][idx];
+//     }
+//   }
+//   // calculate basis
+//   vPointCoord[0] = vvPlate[1][1] * vvPlate[2][2] - vvPlate[1][2] * vvPlate[2][1] +
+//                    vvPlate[2][1] * vvPlate[0][2] - vvPlate[0][1] * vvPlate[2][2] +
+//                    vvPlate[0][1] * vvPlate[1][2] - vvPlate[1][1] * vvPlate[0][2];
 
-  vPointCoord[1] = vvPlate[0][0] * vvPlate[2][2] - vvPlate[0][0] * vvPlate[1][2] +
-                   vvPlate[1][0] * vvPlate[0][2] - vvPlate[1][0] * vvPlate[2][2] +
-                   vvPlate[2][0] * vvPlate[1][2] - vvPlate[2][0] * vvPlate[0][2];
+//   vPointCoord[1] = vvPlate[0][0] * vvPlate[2][2] - vvPlate[0][0] * vvPlate[1][2] +
+//                    vvPlate[1][0] * vvPlate[0][2] - vvPlate[1][0] * vvPlate[2][2] +
+//                    vvPlate[2][0] * vvPlate[1][2] - vvPlate[2][0] * vvPlate[0][2];
 
-  vPointCoord[2] = -vvPlate[1][0] * vvPlate[0][1] + vvPlate[0][0] * vvPlate[1][1] -
-                   vvPlate[0][0] * vvPlate[2][1] + vvPlate[1][0] * vvPlate[2][1] +
-                   vvPlate[2][0] * vvPlate[0][1] - vvPlate[2][0] * vvPlate[1][1];
+//   vPointCoord[2] = -vvPlate[1][0] * vvPlate[0][1] + vvPlate[0][0] * vvPlate[1][1] -
+//                    vvPlate[0][0] * vvPlate[2][1] + vvPlate[1][0] * vvPlate[2][1] +
+//                    vvPlate[2][0] * vvPlate[0][1] - vvPlate[2][0] * vvPlate[1][1];
 
-  //calculate length
-  double length = 0.0;
-  for (int i = 0; i < 3; i++) length += vPointCoord[i] * vPointCoord[i];
+//   //calculate length
+//   double length = 0.0;
+//   for (int i = 0; i < 3; i++) length += vPointCoord[i] * vPointCoord[i];
 
-  length = sqrt(length);
+//   length = sqrt(length);
 
-  // calculate normal basis
-  vsElement[nelem].normal.clear();
+//   // calculate normal basis
+//   vsElement[nelem].normal.clear();
 
-  for (int i = 0; i < 3; i++) vsElement[nelem].normal[i] = vPointCoord[i] / length;
+//   for (int i = 0; i < 3; i++) vsElement[nelem].normal[i] = vPointCoord[i] / length;
 
 
 }

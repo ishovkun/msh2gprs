@@ -50,7 +50,7 @@ class Mesh
   // cell iterators
   cell_iterator create_cell_iterator(const std::size_t icell)
   {return cell_iterator(icell, vertices, cells, map_faces,
-                        shape_ids, cell_markers);}
+                        shape_ids, cell_markers, map_physical_faces);}
   cell_iterator begin_cells(){return create_cell_iterator(0);}
   cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
 

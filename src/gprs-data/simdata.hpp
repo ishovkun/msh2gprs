@@ -199,37 +199,29 @@ protected:
 
 public:
   mesh::Mesh & grid;
-  int corner_cell;
-  bool dual_media;
-  vector<double> grade_total, temp_total;
+  // int corner_cell;
+  // vector<double> grade_total, temp_total;
   // int nNodes;
   // std::size_t nNodes;
 
-  double dNotNumber;
+  // double dNotNumber;
 
-  int nBndNodes;
-  vector<vector<double> > vvBndFaceNodesCoor;
-  vector<vector<int> >    vvBndFaceNodes;
-  vector<int>    vBndFaceCode;
+  // int nBndNodes;
+  // vector<vector<double> > vvBndFaceNodesCoor;
+  // vector<vector<int> >    vvBndFaceNodes;
+  // vector<int>    vBndFaceCode;
 
-  vector<vector<double> > vvInputCoorNodes;
-  vector<vector<int> >    vvElementNodes;
-  vector<int> vElementCode;
+  // vector<vector<double> > vvInputCoorNodes;
+  // vector<vector<int> >    vvElementNodes;
+  // vector<int> vElementCode;
 
-  string instream;
   string outstream;
 
   // Internal Data
-  std::size_t nVertices;
-  double maxVrtxCoordsX;
-  double maxVrtxCoordsY;
-  double maxVrtxCoordsZ;
-  double minVrtxCoordsX;
-  double minVrtxCoordsY;
-  double minVrtxCoordsZ;
-  vector< angem::Point<3,double> > vvVrtxCoords;
-  vector<vector<double> > vvVrtxDisp;
-  vector<int> vConstraintVertex;
+  // std::size_t nVertices;
+  // vector< angem::Point<3,double> > vvVrtxCoords;
+  // vector<vector<double> > vvVrtxDisp;
+  // vector<int> vConstraintVertex;
 
   // int nCells;
   // vector<Gelement> vsCellCustom;
@@ -240,85 +232,19 @@ public:
   FlowData flow_data;
   FlowData new_flow_data;
 
-  int nAtoms;
-  vector<vector<int> > vvAtoms;
+  std::size_t nDirichletFaces;
+  std::size_t nDirichletNodes;
+  std::size_t nNeumannFaces;
 
-  // int nExternalBoundaryFaces;
-  // vector<Gelement> vsFaceCustom;
-
-  // set<int> setIdenticalExternalMarker;
-  // set<int> setIdenticalInternalMarker;
-
-  vector<double> vIdenticalInternalFacetPerm;
-  vector<double> vIdenticalInternalFacetAperture;
-  vector<double> vIdenticalInternalFacetFFpermMult;
-  vector<double> vIdenticalInternalFacetFMpermMult;
-
-  // polygons and polyhedrons
-  vector<set<int> > vsetPolyhedronPolygon;
-  vector<set<int> > vsetPolygonPolyhedron;
-
-  int nDirichletFaces;
-  int nDirichletNodes;
-  int nNeumannFaces;
-
-  // int nPhysicalFacets;
-  // vector<PhysicalFace> vsPhysicalFacet;
   std::unordered_map<uint256_t, PhysicalFace> boundary_faces;
   std::unordered_map<uint256_t, PhysicalFace> dfm_faces;
   vector<PhysicalFace> vsPhysicalBoundary;
 
-  // vector<vector<PhysicalFace> > vvsBCIn;
-  // vector<vector<PhysicalFace> > vvsBCOut;
-
   //wells
-  int nWells;
   vector<SimpleWell> vsWell;
-
-  double Sxx, Syy, Szz, Syz, Sxz, Sxy;
 
   SimdataConfig config;
 
-
 protected:
   StandardElements * pStdElement;
-  void computePropertyMaps();
-  struct tokens: std::ctype<char>
-  {
-    tokens(): std::ctype<char>(get_table()) {}
-
-    static std::ctype_base::mask const* get_table()
-    {
-        typedef std::ctype<char> cctype;
-        // static const cctype::mask *const_rc= cctype::classic_table();
-
-        static cctype::mask rc[cctype::table_size];
-
-        rc[' '] = std::ctype_base::space;
-        rc['\t'] = std::ctype_base::space;
-        rc['/'] = std::ctype_base::space;
-        return &rc[0];
-   }
-  };
-
-  struct wordtokens: std::ctype<char>
-  {
-    wordtokens(): std::ctype<char>(get_table()) {}
-
-    static std::ctype_base::mask const* get_table()
-    {
-        typedef std::ctype<char> cctype;
-        // static const cctype::mask *const_rc= cctype::classic_table();
-
-        static cctype::mask rc[cctype::table_size];
-
-        rc['_'] = std::ctype_base::space;
-        rc['.'] = std::ctype_base::space;
-        return &rc[0];
-   }
-  };
-
-  vector<int> vPointPass;
-  vector<double> vPointCoord;
-  vector<vector<double> > vvPlate;
 };
