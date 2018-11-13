@@ -36,14 +36,20 @@ void Mesh::insert(const Polyhedron & poly,
 
     auto iter = map_faces.find(hash);
     if (iter != map_faces.end())
-      (iter->second).push_back(new_element_index);
+    {
+      (iter->second).neighbors.push_back(new_element_index);
+    }
     else
-      map_faces.insert({ {hash, {new_element_index}} });
+    {
+      Face face_data;
+      face_data.neighbors.push_back(new_element_index);
+      map_faces.insert({ {hash, face_data} });
+    }
   }
 }
 
 
-const std::vector<std::size_t> & Mesh::get_neighbors( const Face & face ) const
+const std::vector<std::size_t> & Mesh::get_neighbors( const FaceiVertices & face ) const
 {
   const auto hash = hash_value(face);
   const auto iter = map_faces.find(hash);
@@ -56,7 +62,7 @@ const std::vector<std::size_t> & Mesh::get_neighbors( const Face & face ) const
     throw std::out_of_range("face does not exist");
   }
 
-  return iter->second;
+  return iter->second.neighbors;
 }
 
 
@@ -100,11 +106,13 @@ void Mesh::insert_physical_face(const Polygon & poly,
     face[i] = vertices.find(points[i]);
 
   const auto hash = hash_value(face);
-  auto it = map_physical_faces.find(hash);
-  if (it == map_physical_faces.end())
-    map_physical_faces.insert({hash, marker});
+  auto it = map_faces.find(hash);
+  // if (it == map_faces.end())
+  //   map_physical_faces.insert({hash, marker});
+  if (it != map_faces.end())
+    it->second.marker = marker;
   else
-    it->second = marker;
+    throw std::out_of_range("face does not exist");
 }
 
 

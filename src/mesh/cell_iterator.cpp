@@ -9,10 +9,9 @@ cell_iterator::
 cell_iterator(const std::size_t                       icell,
               angem::PointSet<3,double>             & vertices,
               std::vector<std::vector<std::size_t>> & cells,
-              std::unordered_map<uint256_t, std::vector<std::size_t>> & map_faces,
+              std::unordered_map<uint256_t, Face>   & map_faces,
               std::vector<int>                      & shape_ids,
-              std::vector<int>                      & cell_markers,
-              std::unordered_map<uint256_t, int> & map_physical_faces)
+              std::vector<int>                      & cell_markers)
 
     :
     icell(icell),
@@ -20,8 +19,7 @@ cell_iterator(const std::size_t                       icell,
     cells(cells),
     map_faces(map_faces),
     shape_ids(shape_ids),
-    cell_markers(cell_markers),
-    map_physical_faces(map_physical_faces)
+    cell_markers(cell_markers)
 {}
 
 
@@ -95,7 +93,7 @@ std::vector<face_iterator> cell_iterator::faces() const
     auto it_face = map_faces.find(hash);
     if (it_face == map_faces.end())
       throw std::out_of_range("face does not exist");
-    face_iterator face(it_face, vertices, map_physical_faces);
+    face_iterator face(it_face, vertices);
     faces.push_back(face);
   }
   return std::move(faces);

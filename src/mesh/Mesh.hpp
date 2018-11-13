@@ -5,6 +5,7 @@
 #include <angem/Polygon.hpp>
 #include <uint256/uint256_t.h>
 #include <ShapeID.hpp>
+#include <Face.hpp>
 #include <cell_iterator.hpp>
 #include <face_iterator.hpp>
 #include <mesh_methods.hpp>
@@ -28,9 +29,9 @@ using Point = angem::Point<3,double>;
 // using Polygon = angem::Polygon<double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
-using Face = std::vector<std::size_t>;
-using FaceMap = std::unordered_map<uint256_t, std::vector<std::size_t>>;
-
+// using Face = std::vector<std::size_t>;
+using FaceiVertices = std::vector<std::size_t>;
+using FaceMap = std::unordered_map<uint256_t, Face>;
 
 // maximum 6-vert polygons as faces (hashing)
 // this allows hashing about (2^256)^(1/6) ≈ 7x10¹² vertices
@@ -50,13 +51,13 @@ class Mesh
   // cell iterators
   cell_iterator create_cell_iterator(const std::size_t icell)
   {return cell_iterator(icell, vertices, cells, map_faces,
-                        shape_ids, cell_markers, map_physical_faces);}
+                        shape_ids, cell_markers);}
   cell_iterator begin_cells(){return create_cell_iterator(0);}
   cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
 
   // face iterators
   face_iterator create_face_iterator(const FaceMap::iterator & it)
-  {return face_iterator(it, vertices, map_physical_faces);}
+  {return face_iterator(it, vertices);}
   face_iterator begin_faces(){return create_face_iterator(map_faces.begin());}
   face_iterator end_faces()  {return create_face_iterator(map_faces.end());}
 
@@ -64,7 +65,7 @@ class Mesh
   // get vector of neighbor cell indices
   std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
   // vector of indices of cells neighboring a face
-  const std::vector<std::size_t> & get_neighbors( const Face & face ) const;
+  const std::vector<std::size_t> & get_neighbors( const FaceiVertices & face ) const;
   // get vector of vectors of indices representing faces of a cell
   std::vector<std::vector<std::size_t>> get_faces( const std::size_t ielement ) const;
   // true if vector of cells is empty
@@ -90,9 +91,7 @@ class Mesh
   angem::PointSet<3,double>             vertices;
   std::vector<std::vector<std::size_t>> cells;  // vertex indices
   // map face -> neighbor elements
-  std::unordered_map<uint256_t, std::vector<std::size_t>> map_faces;
-  // map face -> marker
-  std::unordered_map<uint256_t, int> map_physical_faces;
+  std::unordered_map<uint256_t, Face> map_faces;
   std::vector<int> shape_ids;
   std::vector<int> cell_markers;
 

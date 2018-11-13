@@ -3,6 +3,7 @@
 #include <uint256/uint256_t.h>
 #include <angem/PointSet.hpp>
 #include <Polyhedron.hpp>
+#include <Face.hpp>
 #include <face_iterator.hpp>
 #include <vector>
 #include <unordered_map>
@@ -18,10 +19,9 @@ class cell_iterator
   cell_iterator(const std::size_t                       icell,
                 angem::PointSet<3,double>             & vertices,
                 std::vector<std::vector<std::size_t>> & cells,
-                std::unordered_map<uint256_t, std::vector<std::size_t>> & map_faces,
+                std::unordered_map<uint256_t, Face>   & map_faces,
                 std::vector<int>                      & shape_ids,
-                std::vector<int>                      & cell_markers,
-                std::unordered_map<uint256_t, int>    & map_physical_faces);
+                std::vector<int>                      & cell_markers);
   // assignment operator
   cell_iterator & operator=(const cell_iterator & other);
   // comparison
@@ -47,10 +47,9 @@ class cell_iterator
   std::size_t icell;
   angem::PointSet<3,double>             & vertices;
   std::vector<std::vector<std::size_t>> & cells;
-  std::unordered_map<uint256_t, std::vector<std::size_t>> & map_faces;
+  std::unordered_map<uint256_t, Face>   & map_faces;
   std::vector<int> & shape_ids;
   std::vector<int> & cell_markers;
-  std::unordered_map<uint256_t, int>  & map_physical_faces;
 };
 
 }

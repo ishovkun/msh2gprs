@@ -456,13 +456,7 @@ void SimData::computeReservoirTransmissibilities()
   std::size_t ipoly = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++ipoly)
   {
-    std::cout << "neighbors" << std::endl;
-    for (auto n : face.neighbors())
-      std::cout << n << " " << std::flush;
-    std::cout << std::endl;
     calc.vvFNodes.push_back(face.vertex_indices());
-
-    abort();
 
     if (face.marker() > 0)
     {
