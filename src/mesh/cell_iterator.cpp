@@ -1,5 +1,6 @@
 #include <cell_iterator.hpp>
 #include <mesh_methods.hpp>
+#include <PolyhedronFactory.hpp>
 
 namespace mesh
 {
@@ -64,6 +65,13 @@ cell_iterator & cell_iterator::operator++()
 {
   icell++;
   return (*this);
+}
+
+
+angem::Polyhedron<double> cell_iterator::polyhedron() const
+{
+  return angem::PolyhedronFactory::create<double>(vertices.points, cells[icell],
+                                                  shape_ids[icell]);
 }
 
 

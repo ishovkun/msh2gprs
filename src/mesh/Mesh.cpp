@@ -164,5 +164,12 @@ Point Mesh::get_center(const std::size_t icell) const
   return std::move(get_element_center(vertices, cells[icell]));
 }
 
+Polyhedron Mesh::get_polyhedron(const std::size_t icell) const
+{
+  return angem::PolyhedronFactory::create<double>(vertices.points,
+                                                  cells[icell],
+                                                  shape_ids[icell]);
+}
+
 
 }

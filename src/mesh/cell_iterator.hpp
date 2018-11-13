@@ -2,6 +2,7 @@
 
 #include <uint256/uint256_t.h>
 #include <angem/PointSet.hpp>
+#include <Polyhedron.hpp>
 #include <vector>
 #include <unordered_map>
 
@@ -31,6 +32,7 @@ class cell_iterator
   std::vector<std::size_t> neighbor_indices() const;
   std::vector<cell_iterator> neighbors() const;
   Point center() const;
+  angem::Polyhedron<double> polyhedron() const;
 
   // incrementing
   cell_iterator & operator++();

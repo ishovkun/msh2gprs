@@ -12,4 +12,8 @@ using Point = angem::Point<3,double>;
 Point get_element_center(const angem::PointSet<3,double> & vertices,
                          const std::vector<std::size_t>  & ivertices);
 
+std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> & vertices,
+                                          const std::vector<std::size_t>  & ivertices);
+
+
 }

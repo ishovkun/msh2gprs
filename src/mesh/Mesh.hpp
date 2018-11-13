@@ -68,6 +68,7 @@ class Mesh
   inline std::size_t n_vertices() const {return vertices.size();}
   // get cell center coordinates
   Point get_center(const std::size_t icell) const;
+  Polyhedron get_polyhedron(const std::size_t icell) const;
 
   // MANIPULATION
   // delete an element from the mesh

@@ -87,93 +87,88 @@ SimData::~SimData()
 }
 
 
-// void SimData::defineEmbeddedFractureProperties()
-// {
-//   std::size_t ef_ind = 0;
-//   // class that checks if shapes collide
-//   angem::CollisionGJK<double> collision;
-//   // non-const since fracture is adjusted to avoid collision with vertices
-//   for (auto & frac_conf : config.fractures)
-//   {
-//     vEfrac.emplace_back();
-//     auto & frac = vEfrac.back();
-//     Point total_shift = {0, 0, 0};
+void SimData::defineEmbeddedFractureProperties()
+{
+  std::size_t ef_ind = 0;
+  // class that checks if shapes collide
+  angem::CollisionGJK<double> collision;
+  // non-const since fracture is adjusted to avoid collision with vertices
+  for (auto & frac_conf : config.fractures)
+  {
+    vEfrac.emplace_back();
+    auto & frac = vEfrac.back();
+    Point total_shift = {0, 0, 0};
 
-//  redo_collision:
-//     std::cout << "fracture polygon" << std::endl;
-//     std::cout << *(frac_conf.body) << std::endl;
+ redo_collision:
+    std::cout << "fracture polygon" << std::endl;
+    std::cout << *(frac_conf.body) << std::endl;
 
-//     // find cells intersected by the fracture
-//     frac.cells.clear();
-//     for(std::size_t icell = 0; icell < grid.n_cells(); icell++)
-//     {
-//       const auto & cell = vsCellCustom[icell];
+    // find cells intersected by the fracture
+    frac.cells.clear();
+    for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+    {
+      const auto poly_cell = cell.polyhedron();
 
-//       std::vector<angem::Point<3,double>> verts;
-//       for (const auto & ivertex : cell.vVertices)
-//         verts.push_back(vvVrtxCoords[ivertex]);
+      if (collision.check(*frac_conf.body, poly_cell))
+      {
+        frac.cells.push_back(cell.index());
 
-//       angem::Shape<double> pcell(vvVrtxCoords, cell.vVertices);
+        // check if some vertices are too close to the fracture
+        // and if so move a fracture a little bit
+        // for (const auto & ivertex : cell.vVertices)
+        for (const auto & vertex : poly_cell.get_points())
+        {
+          // const auto & vert = vvVrtxCoords[ivertex];
+          const auto vc = poly_cell.center() - vertex;
+          if ( fabs(frac_conf.body->plane.distance(vertex)/vc.norm()) < 1e-4 )
+          {
+            // shift in the direction perpendicular to fracture
+            const double h = (poly_cell.get_points()[1] -
+                              poly_cell.get_points()[0]).norm();
+            const Point shift = h/5 * frac_conf.body->plane.normal();
+            total_shift += shift;
+            std::cout << "shifting fracture: " << shift ;
+            std::cout << " due to collision with vertex: " << vertex;
+            std::cout << std::endl;
+            frac_conf.body->move(shift);
+            goto redo_collision;
+          }
+        }  // end adjusting fracture
+      }  // end collision processing
+    }    // end cell loop
 
-//       if (collision.check(*frac_conf.body, pcell))
-//       {
-//         frac.cells.push_back(icell);
+    std::cout << "Total shift = " << total_shift << std::endl;
+    const std::size_t n_efrac_cells = frac.cells.size();
+    std::cout << "fracture " << ef_ind
+              << " occupies " << n_efrac_cells
+              << " cells"
+              << std::endl;
+    if (n_efrac_cells == 0)
+    {
+      vEfrac.pop_back();
+      continue;
+    }
 
-//         // check if some vertices are too close to the fracture
-//         // and if so move a fracture a little bit
-//         for (const auto & ivertex : cell.vVertices)
-//         {
-//           const auto & vert = vvVrtxCoords[ivertex];
-//           const auto vc = vsCellCustom[icell].center - vert;
-//           if ( fabs(frac_conf.body->plane.distance(vert)/vc.norm()) < 1e-4 )
-//           {
-//             // shift in the direction perpendicular to fracture
-//             const double h = (vvVrtxCoords[cell.vVertices[1]] -
-//                               vvVrtxCoords[cell.vVertices[0]]).norm();
-//             const Point shift = h/5 * frac_conf.body->plane.normal();
-//             total_shift += shift;
-//             std::cout << "shifting fracture: " << shift ;
-//             std::cout << " due to collision with vertex: " << ivertex;
-//             std::cout << std::endl;
-//             frac_conf.body->move(shift);
-//             goto redo_collision;
-//           }
-//         }  // end adjusting fracture
-//       }  // end collision processing
-//     }    // end cell loop
+    // fill out properties
+    std::cout << "n_efrac_cells = " << n_efrac_cells << std::endl;
 
-//     std::cout << "Total shift = " << total_shift << std::endl;
-//     const std::size_t n_efrac_cells = frac.cells.size();
-//     std::cout << "fracture " << ef_ind
-//               << " occupies " << n_efrac_cells
-//               << " cells"
-//               << std::endl;
-//     if (n_efrac_cells == 0)
-//     {
-//       vEfrac.pop_back();
-//       continue;
-//     }
+    vEfrac[ef_ind].points.assign(n_efrac_cells,
+                                 frac_conf.body->center());
+    vEfrac[ef_ind].dip.assign(n_efrac_cells,
+                              frac_conf.body->plane.dip_angle());
+    vEfrac[ef_ind].strike.assign(n_efrac_cells,
+                                 frac_conf.body->plane.strike_angle());
 
-//     // fill out properties
-//     std::cout << "n_efrac_cells = " << n_efrac_cells << std::endl;
+    vEfrac[ef_ind].cohesion       = frac_conf.cohesion;
+    vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
+    vEfrac[ef_ind].dilation_angle = frac_conf.dilation_angle;
+    vEfrac[ef_ind].aperture       = frac_conf.aperture;
+    vEfrac[ef_ind].conductivity   = frac_conf.conductivity;
 
-//     vEfrac[ef_ind].points.assign(n_efrac_cells,
-//                                  frac_conf.body->center());
-//     vEfrac[ef_ind].dip.assign(n_efrac_cells,
-//                               frac_conf.body->plane.dip_angle());
-//     vEfrac[ef_ind].strike.assign(n_efrac_cells,
-//                                  frac_conf.body->plane.strike_angle());
+    ef_ind++;
+  }  // end efracs loop
 
-//     vEfrac[ef_ind].cohesion       = frac_conf.cohesion;
-//     vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
-//     vEfrac[ef_ind].dilation_angle = frac_conf.dilation_angle;
-//     vEfrac[ef_ind].aperture       = frac_conf.aperture;
-//     vEfrac[ef_ind].conductivity   = frac_conf.conductivity;
-
-//     ef_ind++;
-//   }  // end efracs loop
-
-// }
+}
 
 
 // void SimData::computeCellClipping()
