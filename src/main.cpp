@@ -81,9 +81,9 @@ int main(int argc, char *argv[])
   cout << "Make SDA properties" << endl;
   pSimData->defineEmbeddedFractureProperties();
 
-  // cout << "Create physical facets" << endl;
-  // cout << " ( bnd & frac faces )" << endl;
-  // pSimData->definePhysicalFacets();
+  cout << "Create physical facets" << endl;
+  cout << " ( bnd & frac faces )" << endl;
+  pSimData->definePhysicalFacets();
 
   // cout << endl << "Convert FEM mesh into FVM mesh" << endl;
   // pSimData->handleConnections();

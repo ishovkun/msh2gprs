@@ -140,8 +140,7 @@ void SimData::defineEmbeddedFractureProperties()
     std::cout << "Total shift = " << total_shift << std::endl;
     const std::size_t n_efrac_cells = frac.cells.size();
     std::cout << "fracture " << ef_ind
-              << " occupies " << n_efrac_cells
-              << " cells"
+              << " occupies " << n_efrac_cells << " cells"
               << std::endl;
     if (n_efrac_cells == 0)
     {
@@ -2471,15 +2470,73 @@ void SimData::methodChangeFacesNormalVector()
 // }
 
 // #include <random>
-// void SimData::definePhysicalFacets()
-// {
-//   std::size_t n_facets = 0;
-//   nNeumannFaces = 0;
-//   nDirichletFaces = 0;
-//   nDirichletNodes = 0;
-//   int nfluid = 0;
+void SimData::definePhysicalFacets()
+{
+  std::size_t n_facets = 0;
+  nNeumannFaces = 0;
+  nDirichletFaces = 0;
+  nDirichletNodes = 0;
+  int nfluid = 0;
 
-//   vsPhysicalFacet.resize(nFaces);
+  // vsPhysicalFacet.resize(nFaces);
+  std::size_t iface = 0;
+  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++iface)
+  {
+    const int marker = face.marker();
+    if (marker < 0)  // external face
+    {
+      for (const auto & conf : config.bc_faces)
+        if (marker == conf.label)
+        {
+          PhysicalFace facet;
+          facet.nface = iface;
+          facet.ntype = conf.type;
+          facet.nmark = conf.label;
+          facet.condition = conf.value;
+          facet.nfluid = -1;
+          boundary_faces.insert({face.hash(), facet});
+        }
+    }
+    else if (marker > 0)  // internal face (fracture)
+    {
+      PhysicalFace facet;
+      facet.nface = iface;
+      facet.ntype = 0;
+      facet.nmark = marker;
+      bool coupled = false;
+      const auto neighbors = face.neighbors();
+      for (const auto & neighbor : neighbors)
+        for (const auto & conf: config.domains)
+          if (grid.cell_markers[neighbor] == conf.label and conf.coupled)
+            coupled = true;
+
+      if (coupled)
+        facet.nfluid = nfluid;
+      else
+        facet.nfluid = -2;  // just a negative number (-2 + 1 < 0)
+
+      bool found_label = false;
+      for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
+        if( marker == config.discrete_fractures[ifrac].label)
+        {
+          facet.aperture = config.discrete_fractures[ifrac].aperture; //m
+          facet.conductivity = config.discrete_fractures[ifrac].conductivity; //mD.m
+          found_label = true;
+        }
+      if (!found_label)
+      {
+        std::cout << "No properties for DFM label "
+                  << vsFaceCustom[iface].nMarker
+                  << " found! Setting sealed fault."
+                  << std::endl;
+        facet.aperture = 1; //m
+        facet.conductivity = 0; //mD.m
+      }
+
+      dfm_faces.insert({face.hash(), facet});
+      nfluid++;
+    }
+  }
 //   for (std::size_t iface = 0; iface < nFaces; iface++)
 //   {
 //     if(vsFaceCustom[iface].nMarker < 0)  // external face
@@ -2549,7 +2606,7 @@ void SimData::methodChangeFacesNormalVector()
 
 //   nPhysicalFacets = n_facets;
 //   std::cout << "nPhysicalFacets = " << nPhysicalFacets << std::endl;
-// }
+}
 
 
 // void SimData::createSimpleWells()

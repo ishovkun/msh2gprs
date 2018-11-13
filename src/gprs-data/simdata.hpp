@@ -79,10 +79,10 @@ struct PhysicalFace
   int ntype;
   int nface;
   int nmark;
-  int axle;
   int nfluid;
-  // vector<double> vCondition;
   angem::Point<3,double> condition;
+  double aperture;
+  double conductivity;
 };
 
 
@@ -264,12 +264,14 @@ public:
   int nDirichletNodes;
   int nNeumannFaces;
 
-  int nPhysicalFacets;
-  vector<PhysicalFace> vsPhysicalFacet;
+  // int nPhysicalFacets;
+  // vector<PhysicalFace> vsPhysicalFacet;
+  std::unordered_map<uint256_t, PhysicalFace> boundary_faces;
+  std::unordered_map<uint256_t, PhysicalFace> dfm_faces;
   vector<PhysicalFace> vsPhysicalBoundary;
 
-  vector<vector<PhysicalFace> > vvsBCIn;
-  vector<vector<PhysicalFace> > vvsBCOut;
+  // vector<vector<PhysicalFace> > vvsBCIn;
+  // vector<vector<PhysicalFace> > vvsBCOut;
 
   //wells
   int nWells;

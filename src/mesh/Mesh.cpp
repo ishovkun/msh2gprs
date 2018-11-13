@@ -5,41 +5,8 @@
 namespace mesh
 {
 
-
-std::size_t estimate_max_vertices(const int n_polygon_vertices)
-{
-  const std::size_t max_vertices =
-      static_cast<std::size_t>(
-          pow(std::pow(2, 256) - 1, 1.0 / n_polygon_vertices));
-  return max_vertices;
-
-}
-
-
 Mesh::Mesh()
-    :
-    max_vertices(estimate_max_vertices(max_polygon_size_vertices))
 {}
-
-
-uint256_t Mesh::hash_value(const Face & face) const
-{
-  Face face_sorted = face;
-  std::sort(face_sorted.begin(), face_sorted.end());
-
-  uint256_t mult = 1;
-  uint256_t result = 0;
-  for (int i=0; i<face_sorted.size(); ++i)
-  {
-    // hashing starts with 1 since
-    // (1,2,3) and (0,1,2,3) are different elementes
-    // result += static_cast<uint256_t>(1) +
-    //     mult * static_cast<uint256_t>(face_sorted[i]);
-    result += mult * static_cast<uint256_t>(1 + face_sorted[i]);
-    mult *= max_vertices;
-  }
-  return result;
-}
 
 
 void Mesh::insert(const Polyhedron & poly,

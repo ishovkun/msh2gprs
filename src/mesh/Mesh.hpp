@@ -12,6 +12,15 @@
 #include <algorithm> // std::sort
 
 
+/*
+ * This class implements a structure for unstructure grid storage
+ * It features constant lookup and insertion times
+ * for faces, cells, and their neighbors.
+ * Due to this feature though, the order of faces is not guaranteed
+ * so that unordered_map[hash]->value should be used to store
+ * data related to faces
+ */
+
 namespace mesh
 {
 
@@ -20,10 +29,8 @@ using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 using Face = std::vector<std::size_t>;
+using FaceMap = std::unordered_map<uint256_t, std::vector<std::size_t>>;
 
-/* TODO: iterators of cells, faces, physical faces
- * functions for element volume and face area and normals
- */
 
 // maximum 6-vert polygons as faces (hashing)
 // this allows hashing about (2^256)^(1/6) ≈ 7x10¹² vertices
@@ -48,10 +55,10 @@ class Mesh
   cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
 
   // face iterators
-  face_iterator create_face_iterator(const std::size_t iface)
-  {return face_iterator(iface, map_faces, map_physical_faces);}
-  face_iterator begin_faces(){return create_face_iterator(0);}
-  face_iterator end_faces()  {return create_face_iterator(map_faces.size());}
+  face_iterator create_face_iterator(const FaceMap::iterator & it)
+  {return face_iterator(it, vertices, map_physical_faces);}
+  face_iterator begin_faces(){return create_face_iterator(map_faces.begin());}
+  face_iterator end_faces()  {return create_face_iterator(map_faces.end());}
 
   // GETTERS
   // get vector of neighbor cell indices
@@ -90,11 +97,6 @@ class Mesh
  private:
   // get global indices of polygon face vertices
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
-  // constant complexity (order of n_vertices)
-  // linear complexity (size of face)
-  uint256_t hash_value(const Face & face) const;
-  const std::size_t max_vertices;
-  static constexpr int max_polygon_size_vertices = 6;
 };
 
 

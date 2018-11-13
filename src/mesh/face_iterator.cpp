@@ -1,6 +1,55 @@
 #include <face_iterator.hpp>
+#include <mesh_methods.hpp>
 
 namespace mesh
 {
+
+face_iterator::
+face_iterator(const FaceMap::iterator            & it,
+              angem::PointSet<3,double>          & vertices,
+              std::unordered_map<uint256_t, int> & map_physical_faces)
+    :
+    face_it(it),
+    vertices(vertices),
+    map_physical_faces(map_physical_faces)
+{}
+
+
+bool face_iterator::operator==(const face_iterator & other) const
+{
+  // compare face index
+  if (face_it != other.face_it)
+    return false;
+
+  // compare pointers to data structures (by pointer)
+  const std::string msg = "Warning: comparing cell iterators of different mesh objects";
+  if ((&map_physical_faces) != (&other.map_physical_faces))
+  {
+    std::cout << msg << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+bool face_iterator::operator!=(const face_iterator & other) const
+{
+  return !(*this == other);
+}
+
+
+face_iterator & face_iterator::operator++()
+{
+  face_it++;
+  return (*this);
+}
+
+
+int face_iterator::marker() const
+{
+  return get_face_marker(face_it->first, map_physical_faces);
+}
+
 
 }
