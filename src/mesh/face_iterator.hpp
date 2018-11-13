@@ -9,12 +9,12 @@ namespace mesh
 {
 using Point = angem::Point<3,double>;
 
-class FaceIterator
+class face_iterator
 {
  public:
-  FaceIterator(const std::size_t iface,
-               std::unordered_map<uint256_t, std::vector<std::size_t>> & map_faces,
-               std::unordered_map<uint256_t, int> map_physical_faces);
+  face_iterator(const std::size_t iface,
+                std::unordered_map<uint256_t, std::vector<std::size_t>> & map_faces,
+                std::unordered_map<uint256_t, int> map_physical_faces);
   Point center() const;
   Point normal() const;
 

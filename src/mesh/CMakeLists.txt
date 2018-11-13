@@ -5,9 +5,15 @@ ADD_LIBRARY(mesh
   utils.hpp
   Mesh.hpp
   ShapeID.hpp
+  cell_iterator.hpp
+  face_iterator.hpp
+  mesh_methods.hpp
   # implementation
   ShapeID.cpp
   Mesh.cpp
+  cell_iterator.cpp
+  face_iterator.cpp
+  mesh_methods.cpp
 )
 
 SET_TARGET_PROPERTIES (

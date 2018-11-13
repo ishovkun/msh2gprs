@@ -158,4 +158,11 @@ void Mesh::insert_physical_face(const Polygon & poly,
     it->second = marker;
 }
 
+
+Point Mesh::get_center(const std::size_t icell) const
+{
+  return std::move(get_element_center(vertices, cells[icell]));
+}
+
+
 }

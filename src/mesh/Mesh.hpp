@@ -5,8 +5,9 @@
 #include <angem/Polygon.hpp>
 #include <uint256/uint256_t.h>
 #include <ShapeID.hpp>
-#include <CellIterator.hpp>
-#include <FaceIterator.hpp>
+#include <cell_iterator.hpp>
+#include <face_iterator.hpp>
+#include <mesh_methods.hpp>
 
 #include <algorithm> // std::sort
 
@@ -40,16 +41,17 @@ class Mesh
 
   // iterators
   // cell iterators
-  CellIterator create_cell_iterator(const std::size_t icell)
-  {return CellIterator(icell, map_faces, shape_ids, cell_markers);}
-  CellIterator begin_cells(){return create_cell_iterator(0);}
-  CellIterator end_cells()  {return create_cell_iterator(cells.size());}
+  cell_iterator create_cell_iterator(const std::size_t icell)
+  {return cell_iterator(icell, vertices, cells, map_faces,
+                        shape_ids, cell_markers);}
+  cell_iterator begin_cells(){return create_cell_iterator(0);}
+  cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
 
   // face iterators
-  FaceIterator create_face_iterator(const std::size_t iface)
-  {return FaceIterator(iface, map_faces, map_physical_faces);}
-  FaceIterator begin_faces(){return create_face_iterator(0);}
-  FaceIterator end_faces()  {return create_face_iterator(map_faces.size());}
+  face_iterator create_face_iterator(const std::size_t iface)
+  {return face_iterator(iface, map_faces, map_physical_faces);}
+  face_iterator begin_faces(){return create_face_iterator(0);}
+  face_iterator end_faces()  {return create_face_iterator(map_faces.size());}
 
   // GETTERS
   // get vector of neighbor cell indices
@@ -60,8 +62,12 @@ class Mesh
   std::vector<std::vector<std::size_t>> get_faces( const std::size_t ielement ) const;
   // true if vector of cells is empty
   bool empty() const {return cells.empty();}
-  std::size_t n_cells() const {return cells.size();}
-  std::size_t n_vertices() const {return vertices.size();}
+  // get number of cells
+  inline std::size_t n_cells() const {return cells.size();}
+  // get number of vertices
+  inline std::size_t n_vertices() const {return vertices.size();}
+  // get cell center coordinates
+  Point get_center(const std::size_t icell) const;
 
   // MANIPULATION
   // delete an element from the mesh

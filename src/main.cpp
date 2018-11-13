@@ -78,8 +78,8 @@ int main(int argc, char *argv[])
   cout << "Fill 3D rock properties" << endl;
   pSimData->defineRockProperties();
 
-  // cout << "Make SDA properties" << endl;
-  // pSimData->defineEmbeddedFractureProperties();
+  cout << "Make SDA properties" << endl;
+  pSimData->defineEmbeddedFractureProperties();
 
   // cout << "Create physical facets" << endl;
   // cout << " ( bnd & frac faces )" << endl;

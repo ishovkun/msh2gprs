@@ -1192,9 +1192,34 @@ void SimData::defineRockProperties()
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
     {
       if ( cell.marker() == conf.label ) // cells
-        std::cout << "success" << std::endl;
-      abort();
-    }
+      {
+        std::fill(vars.begin(), vars.end(), 0);
+        Point center(cell.center());
+        vars[0] = center[0];  // x
+        vars[1] = center[1];  // y
+        vars[2] = center[2];  // z
+
+        // Evaluate expression -> write into variable
+        for (std::size_t i=0; i<n_expressions; ++i)
+          vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
+
+        // copy vars to cell properties
+        vsCellRockProps[cell.index()].v_props.resize(n_variables - shift);
+        // start from 3 to skip x,y,z
+        for (std::size_t j=shift; j<n_variables; ++j)
+        {
+          try
+          {
+            vsCellRockProps[cell.index()].v_props[j - shift] = vars[j];
+          }
+          catch (std::out_of_range & e)
+          {
+            vsCellRockProps[cell.index()].v_props[j - shift] = 0;
+          }
+        }
+      }  // end match label
+    }    // end cell loop
+
 //     for ( int icell = 0; icell < grid.n_cells(); icell++ )
 //       if ( vsCellCustom[icell].nMarker == conf.label ) // cells
 //       {
