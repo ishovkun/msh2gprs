@@ -107,12 +107,14 @@ void Mesh::insert_physical_face(const Polygon & poly,
 
   const auto hash = hash_value(face);
   auto it = map_faces.find(hash);
-  // if (it == map_faces.end())
-  //   map_physical_faces.insert({hash, marker});
-  if (it != map_faces.end())
-    it->second.marker = marker;
+  if (it == map_faces.end())
+  {
+    Face face_data;
+    face_data.marker = marker;
+    map_faces.insert({hash, face_data});
+  }
   else
-    throw std::out_of_range("face does not exist");
+    it->second.marker = marker;
 }
 
 

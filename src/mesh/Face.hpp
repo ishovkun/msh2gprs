@@ -6,7 +6,7 @@ namespace mesh
 struct Face
 {
   std::vector<std::size_t> neighbors;
-  int marker = -1;
+  int marker = 0;  // internal face by default
 };
 
 }
