@@ -33,6 +33,8 @@ class cell_iterator
   std::vector<cell_iterator> neighbors() const;
   Point center() const;
   angem::Polyhedron<double> polyhedron() const;
+  std::vector<std::vector<std::size_t>> faces() const;
+
 
   // incrementing
   cell_iterator & operator++();

@@ -425,65 +425,73 @@ void SimData::defineEmbeddedFractureProperties()
 // }
 
 
-// void SimData::computeReservoirTransmissibilities()
-// {
-//   // init tran
-//   CalcTranses tran;
-//   tran.NbNodes     = nNodes;
-//   tran.NbPolyhedra = nCells;
-//   tran.NbPolygons  = nFaces;
-//   tran.NbFracs     = nDFMFracs;
-//   tran.NbZones     = nDFMFracs + nCells;
-//   tran.NbOptions   = 1;
-//   tran.fracporo    = 1.0;
-//   tran.init();
+void SimData::computeReservoirTransmissibilities()
+{
+  // init tran
+  CalcTranses calc;
+  calc.NbNodes     = grid.n_vertices();
+  calc.NbPolyhedra = grid.n_cells();
+  calc.NbPolygons  = grid.n_faces();
+  calc.NbFracs     = dfm_faces.size();
+  calc.NbZones     = dfm_faces.size() + grid.n_cells();
+  calc.NbOptions   = 1;
+  calc.fracporo    = 1.0;
+  calc.init();
 
-//   // fill data
-//   // nodes
-//   for ( std::size_t i = 0; i < nNodes; i++ )
-//   {
-//     tran.vCoordinatesX[i] = vvVrtxCoords[i][0];
-//     tran.vCoordinatesY[i] = vvVrtxCoords[i][1];
-//     tran.vCoordinatesZ[i] = vvVrtxCoords[i][2];
-//   }
+  // fill data
+  // nodes
+  for ( std::size_t i = 0; i < grid.n_vertices(); i++ )
+  {
+    calc.vCoordinatesX[i] = grid.vertices[i][0];
+    calc.vCoordinatesY[i] = grid.vertices[i][1];
+    calc.vCoordinatesZ[i] = grid.vertices[i][2];
+  }
 
-//   // polygons (2d elements)
-//   int code_polygon = 0;
-//   // tran.vNbFNodes.clear();
-//   tran.vvFNodes.clear();
-//   // tran.vCodePolygon.clear();
-//   vector<double> vConductivity, vAperture;
+  // polygons (2d elements)
+  int code_polygon = 0;
+  calc.vvFNodes.clear();
+  vector<double> vConductivity, vAperture;
 
-//   for(int ipoly = 0; ipoly < nFaces; ipoly++)
-//   {
-//     tran.vvFNodes.push_back( vsFaceCustom[ipoly].vVertices);
-//     if(vsFaceCustom[ipoly].nMarker > 0)  // dfm frac
-//     {
-//       tran.vCodePolygon[ipoly] = code_polygon;
-//       code_polygon++;
-//       vConductivity.push_back(vsFaceCustom[ipoly].conductivity);
-//       vAperture.push_back(vsFaceCustom[ipoly].aperture);
-//     }
-//     else  // non-frac faces
-//       tran.vCodePolygon[ipoly] = -1;
-//   }
+  std::size_t ipoly = 0;
+  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++ipoly)
+  {
+    // for (auto ivert : face.vertex_indices())
+    //   std::cout << ivert << std::endl;
+    // abort();
+    calc.vvFNodes.push_back(face.vertex_indices());
+    if (face.marker() > 0)
+    {
+      calc.vCodePolygon[ipoly] = code_polygon;
+      code_polygon++;
+      vConductivity.push_back(dfm_faces[face.hash()].conductivity);
+      vAperture.push_back(dfm_faces[face.hash()].aperture);
+    }
+    else  // non-frac faces
+      calc.vCodePolygon[ipoly] = -1;
 
-//   // polyhedra (3d elements)
-//   set<int>::iterator itintset;
-//   // tran.vNbVFaces.clear();
-//   tran.vvVFaces.resize(nCells);
-//   tran.vCodePolyhedron.clear();
-//   for(int ipoly = 0; ipoly < nCells; ipoly++)
-//   {
-//     const std::size_t n = vsetPolyhedronPolygon[ipoly].size();
-//     itintset = vsetPolyhedronPolygon[ipoly].begin();
-//     for(std::size_t i = 0; i < n; i++)
-//     {
-//       tran.vvVFaces[ipoly].push_back( *itintset );
-//       itintset++;
-//     }
-//     tran.vCodePolyhedron.push_back( nDFMFracs + ipoly);
-//   }
+  }
+
+  // polyhedra (3d elements)
+  // set<int>::iterator itintset;
+  // tran.vNbVFaces.clear();
+  calc.vvVFaces.resize(grid.n_cells());
+  calc.vCodePolyhedron.clear();
+  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  {
+    // for (const std::vector<std::size_t> face : cell.faces())
+    //   calc.vvVFaces[ipoly].push_back( face );
+  }
+  // for(int ipoly = 0; ipoly < nCells; ipoly++)
+  // {
+  //   const std::size_t n = vsetPolyhedronPolygon[ipoly].size();
+  //   itintset = vsetPolyhedronPolygon[ipoly].begin();
+  //   for(std::size_t i = 0; i < n; i++)
+  //   {
+  //     tran.vvVFaces[ipoly].push_back( *itintset );
+  //     itintset++;
+  //   }
+  //   tran.vCodePolyhedron.push_back( nDFMFracs + ipoly);
+  // }
 
 //   // Properties
 //   tran.vZPermeability.assign(tran.NbZones * 3, 0.0);
@@ -589,7 +597,7 @@ void SimData::defineEmbeddedFractureProperties()
 //   }
 
 //   new_flow_data = flow_data;
-// }
+}
 
 
 // std::size_t SimData::get_flow_element_index(const std::size_t ifrac,
@@ -2022,83 +2030,83 @@ void SimData::methodFaceNormalVector(int nelem, vector<Gelement> &vsElement)
 
 }
 
-void SimData::methodChangeFacesNormalVector()
-{
-  pair<set<int>::iterator, bool> pairIterBool;
-  angem::Point<3,double> vDatumNormal = {0,0,0};
+// void SimData::methodChangeFacesNormalVector()
+// {
+//   pair<set<int>::iterator, bool> pairIterBool;
+//   angem::Point<3,double> vDatumNormal = {0,0,0};
 
-  vector<std::size_t> vFacevVertices;
+//   vector<std::size_t> vFacevVertices;
 
-  nExternalBoundaryFaces = 0;
-  nDFMFracs = 0;
+//   // nExternalBoundaryFaces = 0;
+//   // nDFMFracs = 0;
 
-  // count external faces and dfm fracs
-  for(int iface = 0; iface < nFaces; iface++)
-  {
-    if( vsFaceCustom[iface].nMarker < 0)  // external
-    {
-      setIdenticalExternalMarker.insert( vsFaceCustom[iface].nMarker );
-      nExternalBoundaryFaces++;
-      continue;
-    }
+//   // count external faces and dfm fracs
+//   for(int iface = 0; iface < nFaces; iface++)
+//   {
+//     if( vsFaceCustom[iface].nMarker < 0)  // external
+//     {
+//       setIdenticalExternalMarker.insert( vsFaceCustom[iface].nMarker );
+//       nExternalBoundaryFaces++;
+//       continue;
+//     }
 
-    // for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
-    //   if( vsFaceCustom[iface].nMarker == config.discrete_fractures[ifrac].label)
-    if( vsFaceCustom[iface].nMarker > 0)
-      {
-        pairIterBool = setIdenticalInternalMarker.insert( vsFaceCustom[iface].nMarker );
-        const double conductivity = 500;
-        const double aperture = 5e-3;
-        vIdenticalInternalFacetPerm.push_back (conductivity / aperture);
-        vIdenticalInternalFacetAperture.push_back (aperture);
-        vIdenticalInternalFacetFFpermMult.push_back ( 1.0 );
-        nDFMFracs++;
-      }
+//     // for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
+//     //   if( vsFaceCustom[iface].nMarker == config.discrete_fractures[ifrac].label)
+//     if( vsFaceCustom[iface].nMarker > 0)
+//       {
+//         pairIterBool = setIdenticalInternalMarker.insert( vsFaceCustom[iface].nMarker );
+//         const double conductivity = 500;
+//         const double aperture = 5e-3;
+//         vIdenticalInternalFacetPerm.push_back (conductivity / aperture);
+//         vIdenticalInternalFacetAperture.push_back (aperture);
+//         vIdenticalInternalFacetFFpermMult.push_back ( 1.0 );
+//         nDFMFracs++;
+//       }
 
-  }
+//   }
 
-  set<int>::iterator itintset;
-  for (itintset = setIdenticalInternalMarker.begin();
-       itintset != setIdenticalInternalMarker.end(); ++itintset)
-  {
-    // datum normal vector
-    for(int iface = 0; iface < nFaces; iface++)
-    {
-      if( vsFaceCustom[iface].nMarker == *itintset)
-      {
-        vDatumNormal = vsFaceCustom[iface].normal;
-        break;
-      }
-    }
+//   set<int>::iterator itintset;
+//   for (itintset = setIdenticalInternalMarker.begin();
+//        itintset != setIdenticalInternalMarker.end(); ++itintset)
+//   {
+//     // datum normal vector
+//     for(int iface = 0; iface < nFaces; iface++)
+//     {
+//       if( vsFaceCustom[iface].nMarker == *itintset)
+//       {
+//         vDatumNormal = vsFaceCustom[iface].normal;
+//         break;
+//       }
+//     }
 
-    for(int iface = 0; iface < nFaces; iface++)
-    {
-      if( vsFaceCustom[iface].nMarker == *itintset)
-      {
-        double cosa = 0;
-        for(int idx = 0; idx < 3; idx++)
-          cosa += vDatumNormal[idx] * vsFaceCustom[iface].normal[idx];
+//     for(int iface = 0; iface < nFaces; iface++)
+//     {
+//       if( vsFaceCustom[iface].nMarker == *itintset)
+//       {
+//         double cosa = 0;
+//         for(int idx = 0; idx < 3; idx++)
+//           cosa += vDatumNormal[idx] * vsFaceCustom[iface].normal[idx];
 
-        // non collinear vector. change verticies order
-        if(cosa < 0.0)
-        {
-          vFacevVertices.clear();
-          for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
-          {
-            vFacevVertices.push_back( vsFaceCustom[iface].vVertices[ vsFaceCustom[iface].nVertices - ivrtx - 1] );
-          }
-          vsFaceCustom[iface].vVertices.swap(vFacevVertices);
+//         // non collinear vector. change verticies order
+//         if(cosa < 0.0)
+//         {
+//           vFacevVertices.clear();
+//           for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
+//           {
+//             vFacevVertices.push_back( vsFaceCustom[iface].vVertices[ vsFaceCustom[iface].nVertices - ivrtx - 1] );
+//           }
+//           vsFaceCustom[iface].vVertices.swap(vFacevVertices);
 
-          for(int idx = 0; idx < 3; idx++)
-            vsFaceCustom[iface].normal[idx] *= -1.0;
+//           for(int idx = 0; idx < 3; idx++)
+//             vsFaceCustom[iface].normal[idx] *= -1.0;
 
-        }
+//         }
 
-      }
-    }
-  }
+//       }
+//     }
+//   }
 
-}
+// }
 
 // void SimData::splitInternalFaces()
 // {
@@ -2482,7 +2490,7 @@ void SimData::definePhysicalFacets()
   std::size_t iface = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++iface)
   {
-    const int marker = face.marker();
+    const int marker = -face.marker();
     if (marker < 0)  // external face
     {
       for (const auto & conf : config.bc_faces)
@@ -2526,7 +2534,7 @@ void SimData::definePhysicalFacets()
       if (!found_label)
       {
         std::cout << "No properties for DFM label "
-                  << vsFaceCustom[iface].nMarker
+                  << marker
                   << " found! Setting sealed fault."
                   << std::endl;
         facet.aperture = 1; //m
@@ -2537,75 +2545,6 @@ void SimData::definePhysicalFacets()
       nfluid++;
     }
   }
-//   for (std::size_t iface = 0; iface < nFaces; iface++)
-//   {
-//     if(vsFaceCustom[iface].nMarker < 0)  // external face
-//     {
-//       for (const auto & conf : config.bc_faces)
-//         if( vsFaceCustom[iface].nMarker == conf.label)
-//         {
-//           // vsPhysicalFacet[n_facets].nface = n_facets;
-//           vsPhysicalFacet[n_facets].nface = iface;
-//           vsPhysicalFacet[n_facets].ntype = conf.type;
-//           vsPhysicalFacet[n_facets].nmark = conf.label;
-//           vsPhysicalFacet[n_facets].condition = conf.value;
-//           vsPhysicalFacet[n_facets].nfluid = -1;
-
-//           n_facets++;
-//           if (conf.type == 1)
-//             nDirichletFaces++;
-//           else if (conf.type == 2)
-//             nNeumannFaces++;
-//           else
-//             throw std::invalid_argument("boundary type can be only 1 and 2");
-
-//         }
-//     }
-//     else if(vsFaceCustom[iface].nMarker > 0 and  vsFaceCustom[iface].nMarker < 1111110 )  // internal DFM face
-//     {
-//       // std::cout << "frac iface = " << iface << std::endl;
-//       vsPhysicalFacet[n_facets].nface = iface;
-//       vsPhysicalFacet[n_facets].ntype = 0;
-//       vsPhysicalFacet[n_facets].nmark = vsFaceCustom[iface].nMarker;
-//       bool coupled = false;
-//       const auto & neighbors = vsFaceCustom[iface].vNeighbors;
-//       for (const auto & neighbor : neighbors)
-//         for (const auto & conf: config.domains)
-//           if (vsCellCustom[neighbor].nMarker == conf.label and conf.coupled)
-//             coupled = true;
-
-//       if (coupled)
-//         vsPhysicalFacet[n_facets].nfluid = nfluid;
-//       else
-//         vsPhysicalFacet[n_facets].nfluid = -2;  // just a negative number (-2 + 1 < 0)
-
-//       bool found_label = false;
-//       for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
-//         if( vsFaceCustom[iface].nMarker == config.discrete_fractures[ifrac].label)
-//         {
-//           const double aperture = config.discrete_fractures[ifrac].aperture;
-//           const double conductivity = config.discrete_fractures[ifrac].conductivity;
-//           vsFaceCustom[iface].aperture = aperture; //m
-//           vsFaceCustom[iface].conductivity = conductivity; //mD.m
-//           found_label = true;
-//         }
-//       if (!found_label)
-//       {
-//         std::cout << "No properties for DFM label "
-//                   << vsFaceCustom[iface].nMarker
-//                   << " found! Setting sealed fault."
-//                   << std::endl;
-//         vsFaceCustom[iface].aperture = 1; //m
-//         vsFaceCustom[iface].conductivity = 0; //mD.m
-//       }
-
-//       n_facets++;
-//       nfluid++;
-//     }
-//   }
-
-//   nPhysicalFacets = n_facets;
-//   std::cout << "nPhysicalFacets = " << nPhysicalFacets << std::endl;
 }
 
 

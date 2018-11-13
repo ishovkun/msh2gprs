@@ -10,7 +10,7 @@ face_iterator(const FaceMap::iterator            & it,
               std::unordered_map<uint256_t, int> & map_physical_faces)
     :
     face_it(it),
-    vertices(vertices),
+    mesh_vertices(vertices),
     map_physical_faces(map_physical_faces)
 {}
 
@@ -50,6 +50,20 @@ int face_iterator::marker() const
 {
   return get_face_marker(face_it->first, map_physical_faces);
 }
+
+
+std::vector<Point> face_iterator::vertices() const
+{
+  std::vector<std::size_t> ivertices(invert_hash(face_it->first));
+  return std::move(get_vertex_coordinates(mesh_vertices, ivertices));
+}
+
+
+std::vector<std::size_t> face_iterator::vertex_indices() const
+{
+  return std::move(invert_hash(face_it->first));
+}
+
 
 
 }

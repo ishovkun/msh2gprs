@@ -86,26 +86,7 @@ Mesh::get_neighbors( const std::size_t icell ) const
 
 std::vector<std::vector<std::size_t>> Mesh::get_faces(const Polyhedron & poly) const
 {
-  // find  global indices of polygon vertices
-  std::vector<std::size_t> indices;
-  const std::vector<Point> & points = poly.get_points();
-  for (const auto & p : points)
-  {
-    const std::size_t ind = vertices.find(p);
-    indices.push_back(ind);
-  }
-
-  // get faces with global indexing of vertices
-  std::vector<std::vector<std::size_t>> faces;
-  for (const auto & face : poly.get_faces())
-  {
-    std::vector<std::size_t> face_glob;
-    for (const auto ivert : face)
-      face_glob.push_back(indices[ivert]);
-    faces.push_back(face_glob);
-  }
-  return std::move(faces);
-
+  return std::move(get_face_indices(poly, vertices));
 }
 
 
@@ -130,6 +111,7 @@ Point Mesh::get_center(const std::size_t icell) const
 {
   return std::move(get_element_center(vertices, cells[icell]));
 }
+
 
 Polyhedron Mesh::get_polyhedron(const std::size_t icell) const
 {

@@ -75,4 +75,14 @@ angem::Polyhedron<double> cell_iterator::polyhedron() const
 }
 
 
+std::vector<std::vector<std::size_t>> cell_iterator::faces() const
+{
+  const angem::Polyhedron<double> poly =
+      angem::PolyhedronFactory::create<double>(vertices.points,
+                                               cells[icell],
+                                               shape_ids[icell]);
+  return std::move(get_face_indices(poly, vertices));
+
+}
+
 }

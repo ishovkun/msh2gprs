@@ -88,8 +88,8 @@ int main(int argc, char *argv[])
   // cout << endl << "Convert FEM mesh into FVM mesh" << endl;
   // pSimData->handleConnections();
 
-  // std::cout << "computing reservoir transes" << std::endl;
-  // pSimData->computeReservoirTransmissibilities();
+  std::cout << "computing reservoir transes" << std::endl;
+  pSimData->computeReservoirTransmissibilities();
 
   // cout << "Compute cell clipping and EDFM transmissibilities" << endl;
   // pSimData->computeCellClipping();

@@ -55,6 +55,25 @@ uint256_t hash_value(const std::vector<std::size_t> & face)
 }
 
 
+std::vector<std::size_t> invert_hash(const uint256_t & hash)
+{
+  std::vector<std::size_t> vertices;
+  uint256_t current_value = hash;
+  uint256_t mult = 1;
+  for (int i=0; i<MAX_HASHED_VERTICES; ++i)
+  {
+    // + 1 since hashing starts with 1
+    const std::size_t ivertex = current_value % MAX_HASHED_VERTICES - 1;
+    current_value = (current_value - ivertex + 1) / mult;
+    mult *= MAX_HASHED_VERTICES;
+    vertices.push_back(ivertex);
+    if (current_value == 0)
+      break;
+  }
+  return std::move(vertices);
+}
+
+
 int get_face_marker(const uint256_t & hash,
                     const std::unordered_map<uint256_t, int> & map_physical_faces)
 {
@@ -63,5 +82,42 @@ int get_face_marker(const uint256_t & hash,
     return INTERNAL_FACE_ID;
   else return it->second;
 }
+
+
+std::vector<std::vector<std::size_t>>
+get_face_indices(const angem::Polyhedron<double> & poly,
+                 const angem::PointSet<3,double> & vertices)
+{
+  // find  global indices of polygon vertices
+  std::vector<std::size_t> indices;
+  const std::vector<Point> & points = poly.get_points();
+  for (const auto & p : points)
+  {
+    const std::size_t ind = vertices.find(p);
+    indices.push_back(ind);
+  }
+
+  // get faces with global indexing of vertices
+  std::vector<std::vector<std::size_t>> faces;
+  for (const auto & face : poly.get_faces())
+  {
+    std::vector<std::size_t> face_glob;
+    for (const auto ivert : face)
+      face_glob.push_back(indices[ivert]);
+    faces.push_back(face_glob);
+  }
+  return std::move(faces);
+
+}
+
+
+// angem::Polyhedron<double> get_polyhedron(const std::size_t icell,
+//                                          const angem::PointSet<3,double> & vertices,
+//                                          const std::vector<int>          & shape_ids)
+// {
+//   return std::move(angem::PolyhedronFactory::create<double>(vertices.points,
+//                                                             cells[icell],
+//                                                             shape_ids[icell]));
+// }
 
 }

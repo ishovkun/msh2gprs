@@ -32,13 +32,15 @@ class face_iterator
   // get vector of neighbor indices
   inline
   const std::vector<std::size_t> & neighbors() const {return face_it->second;}
+  std::vector<Point> vertices() const;
+  std::vector<std::size_t> vertex_indices() const;
   // incrementing
   face_iterator & operator++();
   face_iterator & operator--();
 
  private:
   FaceMap::iterator face_it;
-  angem::PointSet<3,double>          & vertices;
+  angem::PointSet<3,double>          & mesh_vertices;
   std::unordered_map<uint256_t, int> & map_physical_faces;
 };
 

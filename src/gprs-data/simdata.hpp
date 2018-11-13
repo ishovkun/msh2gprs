@@ -203,7 +203,7 @@ public:
   bool dual_media;
   vector<double> grade_total, temp_total;
   // int nNodes;
-  std::size_t nNodes;
+  // std::size_t nNodes;
 
   double dNotNumber;
 
@@ -243,13 +243,11 @@ public:
   int nAtoms;
   vector<vector<int> > vvAtoms;
 
-  int nExternalBoundaryFaces;
-  int nDFMFracs;
-  std::size_t nFaces;
-  vector<Gelement> vsFaceCustom;
+  // int nExternalBoundaryFaces;
+  // vector<Gelement> vsFaceCustom;
 
-  set<int> setIdenticalExternalMarker;
-  set<int> setIdenticalInternalMarker;
+  // set<int> setIdenticalExternalMarker;
+  // set<int> setIdenticalInternalMarker;
 
   vector<double> vIdenticalInternalFacetPerm;
   vector<double> vIdenticalInternalFacetAperture;
