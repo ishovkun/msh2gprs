@@ -40,7 +40,7 @@ class Hexahedron: public Polyhedron<Scalar>
 template<typename Scalar>
 Hexahedron<Scalar>::Hexahedron()
     :
-    Polyhedron(12)
+    Polyhedron<Scalar>(12)
 {}
 
 
@@ -48,7 +48,7 @@ template<typename Scalar>
 Hexahedron<Scalar>::Hexahedron(const std::vector<Point<3,Scalar>> & vertices,
                                const std::vector<std::size_t>     & indices)
     :
-    Polyhedron(12)
+    Polyhedron<Scalar>(12)
 {
   set_data(vertices, indices);
 }

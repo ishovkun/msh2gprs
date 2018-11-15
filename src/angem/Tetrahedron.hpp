@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Polyhedron.hpp>
+#include <Exceptions.hpp>
 
 namespace angem
 {
@@ -48,7 +49,7 @@ class Tetrahedron: public Polyhedron<Scalar>
 template<typename Scalar>
 Tetrahedron<Scalar>::Tetrahedron()
     :
-    Polyhedron(10)
+    Polyhedron<Scalar>(10)
 {}
 
 
@@ -56,7 +57,7 @@ template<typename Scalar>
 Tetrahedron<Scalar>::Tetrahedron(const std::vector<Point<3,Scalar>> & vertices,
                                  const std::vector<std::size_t>     & indices)
     :
-    Polyhedron(10)
+    Polyhedron<Scalar>(10)
 {
   set_data(vertices, indices);
 }

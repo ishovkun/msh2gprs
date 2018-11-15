@@ -26,14 +26,14 @@ class Mesh
   // this method does not allow duplicates in vertices
   // infers type by number of vertices
   void insert(const Polyhedron & poly,
-              const int type = -1);
+              const int          marker = -1);
   bool empty() const {return cells.empty();}
 
   // GETTERS
   // get vector of neighbor cell indices
-  std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
+  const std::vector<std::size_t> & get_neighbors( const std::size_t icell ) const;
   // vector of indices of cells neighboring a face
-  std::vector<std::size_t> get_neighbors( const Face & face ) const;
+  const std::vector<std::size_t> & get_neighbors( const Face & face ) const;
   // get vector of vectors of indices representing faces of a cell
   std::vector<std::vector<std::size_t>> get_faces( const std::size_t ielement ) const;
 
@@ -45,8 +45,8 @@ class Mesh
                           const std::size_t jcell);
 
   // ATTRIBUTES
-  angem::PointSet<3,double>                    vertices;
-  std::vector<std::vector<std::size_t>> cells;  // indices
+  angem::PointSet<3,double>             vertices;
+  std::vector<std::vector<std::size_t>> cells;  // vertex indices
   // map face -> neighbor elements
   std::unordered_map<uint256_t, std::vector<std::size_t>> map_faces;
   std::vector<int> shape_ids;

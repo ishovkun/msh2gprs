@@ -1,14 +1,20 @@
 ﻿#include "simdata.hpp"
 
+// library for analytical geometry
 #include <angem/Point.hpp>
 #include <angem/Rectangle.hpp>
 #include <angem/PointSet.hpp>
 #include "angem/CollisionGJK.hpp"
 #include <angem/Collisions.hpp>
-#include <muparser/muParser.h>
 #include <angem/utils.hpp>
+// supported element types
+#include <angem/PolyhedronFactory.hpp>
+// to remesh embedded fractures
 #include <mesh/utils.hpp>
+// 3D mesh format
 #include <mesh/Mesh.hpp>
+// parser for user-defined expressions for reservoir data
+#include <muparser/muParser.h>
 
 
 #define SPECIAL_CELL = 999
@@ -1377,40 +1383,63 @@ void SimData::readGmshFile()
           break;
 
         case 4:
-          node_list_run = 3 + ntags;
-          node_list_end = node_list_run + 4;
-          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-          Element3D.vtkIndex = 10;
-          Element3D.formIndex = TETRA4;
-          Element3D.nMarker = atoi(vstrings[3].c_str());
-          vsCellCustom.push_back( Element3D );
-          nCells++;
-          break;
+          {
+            node_list_run = 3 + ntags;
+            node_list_end = node_list_run + 4;
+            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+            Element3D.vtkIndex = 10;
+            Element3D.formIndex = TETRA4;
+            Element3D.nMarker = atoi(vstrings[3].c_str());
+            // msh.insert(angem::PolyhedronFactory::create(vvVrtxCoords,
+            //                                      Element3D.vVertices,
+            //                                      Element3D.vtkIndex) ,
+            //            Element3D.nMarker);
+
+            vsCellCustom.push_back( Element3D );
+            nCells++;
+            break;
+          }
 
         case 5:
-          node_list_run = 3 + ntags;
-          node_list_end = node_list_run + 8;
-          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-          Element3D.vtkIndex = 12;
-          // @HACK: use elements with one integration point for SDA
-          // if (config.fractures.size() > 0)
-          //   Element3D.vtkIndex = 17;
-          Element3D.formIndex = PRISM8;  // this is a hex !!!
-          Element3D.nMarker = atoi(vstrings[3].c_str());
-          vsCellCustom.push_back( Element3D );
-          nCells++;
-          break;
+          {
+            node_list_run = 3 + ntags;
+            node_list_end = node_list_run + 8;
+            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+            Element3D.vtkIndex = 12;
+            // @HACK: use elements with one integration point for SDA
+            // if (config.fractures.size() > 0)
+            //   Element3D.vtkIndex = 17;
+            Element3D.formIndex = PRISM8;  // this is a hex !!!
+            Element3D.nMarker = atoi(vstrings[3].c_str());
+            // msh.insert(angem::PolyhedronFactory::create(vvVrtxCoords,
+            //                                      Element3D.vVertices,
+            //                                      Element3D.vtkIndex) ,
+            //            Element3D.nMarker);
+
+
+            vsCellCustom.push_back( Element3D );
+            nCells++;
+            break;
+          }
 
         case 6:
-          node_list_run = 3 + ntags;
-          node_list_end = node_list_run + 6;
-          for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
-          Element3D.vtkIndex = 13;
-          Element3D.formIndex = PRISM6;
-          Element3D.nMarker = atoi(vstrings[3].c_str());
-          vsCellCustom.push_back( Element3D );
-          nCells++;
-          break;
+          {
+            node_list_run = 3 + ntags;
+            node_list_end = node_list_run + 6;
+            for (int j = node_list_run; j < node_list_end; j++) Element3D.vVertices.push_back(atoi(vstrings[j].c_str()));
+            Element3D.vtkIndex = 13;
+            Element3D.formIndex = PRISM6;
+            Element3D.nMarker = atoi(vstrings[3].c_str());
+            vsCellCustom.push_back( Element3D );
+            msh.insert(angem::PolyhedronFactory::create(vvVrtxCoords,
+                                                 Element3D.vVertices,
+                                                 Element3D.vtkIndex) ,
+                       Element3D.nMarker);
+
+
+            nCells++;
+            break;
+          }
 
         case 9:
           node_list_run = 3 + ntags;
