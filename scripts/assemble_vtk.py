@@ -4,12 +4,15 @@ import numpy as np
 # case_path = "/home/ishovkun/sim/edfm-1frac/"
 # case_path = "/home/ishovkun/sim/edfm-1frac-0/"
 # case_path = "/home/ishovkun/sim/aquifer/"
-case_path = "/home/ishovkun/sim/edfm-dfm/"
+# case_path = "/home/ishovkun/sim/edfm-dfm/"
+case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon/"
 
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 edfm_mesh_file = case_path + "efrac.vtk"
 dfm_mesh_file = case_path + "dfm.vtk"
 results_file = case_path + "OUTPUT.vars.txt"
+vtk_dir = case_path + "OUTPUT.vtk_output/"
+gm_sda_file = case_path + "gm_SDA.txt"
 output_dir = case_path + "field"
 
 n_dfm = 0
@@ -120,6 +123,70 @@ with open(results_file, "r") as f:
         all_data.append(data)
         line = f.readline().rstrip()
 
+# get edfm jumps from vtk files and add them to data
+# sda_data = np.zeros([n_edfm, 2])
+sda_data  = []
+if (n_edfm > 0):
+    with open (gm_sda_file, "r") as f:
+        found = False
+        n_sda_cells = 0
+        counter = 0
+        sda_cells = []
+        for word in [word for line in f for word in line.split()]:
+            if (word == "GM_EFRAC_CELLS"):
+                found = True
+                continue
+            if (word == "/"):
+                break
+            if (n_sda_cells == 0):
+                n_sda_cells = int(word)
+                continue
+            if (n_cells > 0):
+                sda_cells.append(int(word) - 1)
+                counter += 1
+                if (counter == n_sda_cells):
+                    counter = 0
+
+
+    print(sda_cells)
+
+    file_counter = 0
+    # print(sorted(os.listdir(vtk_dir)))
+    for fname in sorted(os.listdir(vtk_dir)):
+        sda_data.append(np.zeros([n_edfm, 2]))
+        if ("block_scalars" in fname):  # found vtk block file
+            print ("Reading ", fname)
+            with open(vtk_dir + fname, "r") as f:
+                # edfm_cell_index = n_cells
+                cell_counter = 0
+                sda_counter = 0
+                found_segment = False
+                skip_line = True
+                for line in f:
+                    split = line.split()
+                    if (len(split) == 0): continue
+
+                    if (len(split) > 1):
+                        if(split[1] == "Jump_n"):
+                            found_segment = True
+                            continue
+
+                    if (found_segment):
+                        if (skip_line):  # skip LOOKUP_TABLE HSV
+                            skip_line = False
+                            continue
+                        else:   # start counting cells
+                            # print(split)
+                            if (cell_counter in sda_cells):
+                                sda_data[file_counter][sda_counter, 0] = float(split[0])
+                                sda_counter += 1
+
+                            cell_counter += 1
+                            if (cell_counter == n_cells):
+                                found_segment = False
+                                cell_counter = 0
+                                skip_line = True
+
 print("n_volumes = ",                n_volumes,
       "|| n_dfm + n_edfm + n_cells = ", n_dfm + n_edfm + n_cells)
 if (n_volumes != n_dfm + n_edfm + n_cells):
@@ -198,3 +265,11 @@ if (n_edfm > 0):
                 f.write("LOOKUP_TABLE HSV\n")
                 for k in range(n_edfm):
                     f.write("%.5f\n" % all_data[i][n_dfm + n_cells + k, j])
+
+            # write sda data
+            for j in range(1):
+                header = "jump_n"
+                f.write("SCALARS\t" + header + "\tfloat\n")
+                f.write("LOOKUP_TABLE HSV\n")
+                for k in range(n_edfm):
+                    f.write("%.5f\n" % sda_data[i][k, j])
