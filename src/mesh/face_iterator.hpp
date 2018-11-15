@@ -29,6 +29,7 @@ class face_iterator
   int marker() const;
   // get hash value
   inline uint256_t hash() const {return face_it->first;}
+  std::size_t index() const {return face_it->second.index;}
   // get vector of neighbor indices
   inline
   const std::vector<std::size_t> & neighbors() const {return face_it->second.neighbors;}

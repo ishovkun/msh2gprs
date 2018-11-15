@@ -43,6 +43,7 @@ void Mesh::insert(const Polyhedron & poly,
     {
       Face face_data;
       face_data.neighbors.push_back(new_element_index);
+      face_data.index = map_faces.size();
       map_faces.insert({ {hash, face_data} });
     }
   }
@@ -111,6 +112,7 @@ void Mesh::insert_physical_face(const Polygon & poly,
   {
     Face face_data;
     face_data.marker = marker;
+    face_data.index = map_faces.size();
     map_faces.insert({hash, face_data});
   }
   else

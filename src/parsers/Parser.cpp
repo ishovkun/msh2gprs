@@ -240,8 +240,8 @@ Parser::boundary_conditions_faces(nlohmann::json::iterator it,
     config.bc_faces.emplace_back();
     auto & conf = config.bc_faces.back();
     conf.label = std::atoi(it.key().c_str());
-    if (conf.label >= 0)
-      throw std::invalid_argument("boundary labels should be negative");
+    // if (conf.label >= 0)
+    //   throw std::invalid_argument("boundary labels should be negative");
 
     boundary_conditions_face((*it).begin(), (*it).end(), conf);
   }
@@ -431,8 +431,8 @@ Parser::discrete_fracs_json(const nlohmann::json::iterator & section_it)
       const int label = std::atoi(frac_it.key().c_str());
       if (label == 0)
         continue;
-      if (label < 0)
-        throw std::invalid_argument("fracture labels should be positive");
+      // if (label < 0)
+      //   throw std::invalid_argument("fracture labels should be positive");
 
       std::cout << "parsing fracture " << label << std::endl;
       config.discrete_fractures.emplace_back();

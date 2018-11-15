@@ -13,6 +13,7 @@
 #include <iterator>
 #include <vector>
 #include <set>
+#include <unordered_set>
 
 #include "element.hpp"
 #include "renum.hpp"
@@ -107,12 +108,7 @@ struct EmbeddedFracture
   double                              cohesion;
   double                              friction_angle;
   double                              dilation_angle;
-  // cells -> points
-  // these two entries represent mesh within the frac
   mesh::SurfaceMesh<double>            mesh;
-  std::vector<angem::Point<3,double>>  vVertices;
-  // cells -> vertex indiced (fracture polygons)
-  std::vector<std::vector<std::size_t>> vIndices;
   double                               aperture;     // m
   double                               conductivity;  // md-m
 };
@@ -153,7 +149,7 @@ public:
   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
                                      const int   frac_ind);
   void computeInterEDFMTransmissibilities();
-  // void computeTransBetweenDifferentEfracs();
+  void computeTransBetweenDifferentEfracs();
 
 
   void createSimpleWells();
@@ -186,16 +182,32 @@ protected:
                                               const std::vector<std::vector<std::size_t>> & polys,
                                               const std::vector<int>                      & markers,
                                               FlowData                                    & flow_data) const;
-  // std::size_t get_flow_element_index(const std::size_t ifrac,
-  //                                    const std::size_t ielement) const;
+  std::size_t get_flow_element_index(const std::size_t ifrac,
+                                     const std::size_t ielement) const;
+
+  bool is_fracture (const int marker)
+  {
+    const auto it = fracture_face_markers.find(marker);
+    if (it != fracture_face_markers.end())
+      return true;
+    else return false;
+  }
+
+  bool is_boundary (const int marker)
+  {
+    const auto it = boundary_face_markers.find(marker);
+    if (it != boundary_face_markers.end())
+      return true;
+    else return false;
+  }
 
 
-   int checkReservedBoundaryName(int nmarker)
-   {
-     if( nmarker > 1000000 ) return(-1);
-     return(1);
-   }
-   renum * pRenum;
+   // int checkReservedBoundaryName(int nmarker)
+   // {
+   //   if( nmarker > 1000000 ) return(-1);
+   //   return(1);
+   // }
+   // renum * pRenum;
 
 public:
   mesh::Mesh & grid;
@@ -236,9 +248,13 @@ public:
   std::size_t nDirichletNodes;
   std::size_t nNeumannFaces;
 
-  std::unordered_map<uint256_t, PhysicalFace> boundary_faces;
-  std::unordered_map<uint256_t, PhysicalFace> dfm_faces;
-  vector<PhysicalFace> vsPhysicalBoundary;
+  std::unordered_map<std::size_t, PhysicalFace> boundary_faces;
+  std::unordered_map<std::size_t, PhysicalFace> dfm_faces;
+  std::size_t n_flow_dfm_faces;
+  // vector<PhysicalFace> vsPhysicalBoundary;
+
+  std::unordered_set<int> fracture_face_markers;
+  std::unordered_set<int> boundary_face_markers;
 
   //wells
   vector<SimpleWell> vsWell;

@@ -91,27 +91,26 @@ int main(int argc, char *argv[])
   std::cout << "computing reservoir transes" << std::endl;
   pSimData->computeReservoirTransmissibilities();
 
-  // cout << "Compute cell clipping and EDFM transmissibilities" << endl;
-  // pSimData->computeCellClipping();
+  cout << "Compute cell clipping and EDFM transmissibilities" << endl;
+  pSimData->computeCellClipping();
 
-  // // // cout << "Merge small edfm cells" << endl;
-  // // // pSimData->mergeSmallFracCells();
+  // cout << "Merge small edfm cells" << endl;
+  // pSimData->mergeSmallFracCells();
 
   // std::cout << "mesh fractures" << std::endl;
   // pSimData->meshFractures();
 
-  // std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  // // pSimData->computeInterEDFMTransmissibilities();
-  // pSimData->computeTransBetweenDifferentEfracs();
+  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  pSimData->computeTransBetweenDifferentEfracs();
 
   // // cout << "Create simple wells" << endl;
   // // pSimData->createSimpleWells();
 
-  // if (pSimData->nDFMFracs > 0)
-  // {
-  //   cout << "Split FEM mesh on internal surfaces" << endl;
-  //   pSimData->splitInternalFaces();
-  // }
+  if (pSimData->nDFMFracs > 0)
+  {
+    cout << "Split FEM mesh on internal surfaces" << endl;
+    pSimData->splitInternalFaces();
+  }
 
   // cout << "Write FEM mesh data\n";
   // OutputData output_data(pSimData);
