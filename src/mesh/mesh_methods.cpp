@@ -145,8 +145,6 @@ std::unordered_set<std::size_t> find_internal_vertices(const SurfaceMesh<double>
     }
   }
   return std::move(internal_points);
-
-
 }
 
 }

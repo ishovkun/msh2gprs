@@ -192,8 +192,16 @@ void Mesh::split_faces()
     mesh_faces.insert(poly);
   }
 
-  std::unordered_set<std::size_t> internal_points =
-      find_internal_vertices(mesh_faces);
+  // std::unordered_set<std::size_t> internal_points =
+  //     find_internal_vertices(mesh_faces);
+  for (auto edge=mesh_faces.begin_edges(); edge!=mesh_faces.end_edges(); ++edge)
+    if (edge.neighbors().size() > 1)
+    {
+      const std::pair<std::size_t, std::size_t> ivertices = edge.vertex_indices();
+      std::cout << "edge.neighbors().size() = " << edge.neighbors().size() << std::endl;
+      // TODO: call split_face on edge neighbors(faces)
+    }
+}
 
 }
 
