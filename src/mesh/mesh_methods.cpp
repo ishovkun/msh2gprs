@@ -1,6 +1,7 @@
 #include <mesh_methods.hpp>
 #include <angem/utils.hpp>
 #include <algorithm>  // std::sort
+#include <cmath>      // std::pow
 
 namespace mesh
 {
@@ -14,7 +15,7 @@ std::size_t estimate_max_vertices(const int n_polygon_vertices)
 {
   const std::size_t max_vertices =
       static_cast<std::size_t>(
-          pow(std::pow(2, 256) - 1, 1.0 / n_polygon_vertices));
+          std::pow(std::pow(2, 256) - 1, 1.0 / n_polygon_vertices));
   return max_vertices;
 
 }
@@ -125,5 +126,27 @@ get_face_indices(const angem::Polyhedron<double> & poly,
 //                                                             cells[icell],
 //                                                             shape_ids[icell]));
 // }
+
+
+std::unordered_set<std::size_t> find_internal_vertices(const SurfaceMesh<double> & msh)
+{
+  std::unordered_set<std::size_t> internal_points;
+
+  for (const_edge_iterator edge=msh.begin_edges(); edge!=msh.end_edges(); ++edge)
+  {
+    if (edge.neighbors().size() > 1)
+    {
+      const std::pair<std::size_t, std::size_t> ivertices = edge.vertex_indices();
+      std::cout << "edge.neighbors().size() = " << edge.neighbors().size() << std::endl;
+      // TODO: record number of neighbors
+      // if > 2 -- fracture intersection. need more vertex splits
+      internal_points.insert(ivertices.first);
+      internal_points.insert(ivertices.second);
+    }
+  }
+  return std::move(internal_points);
+
+
+}
 
 }

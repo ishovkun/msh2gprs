@@ -3,8 +3,10 @@
 #include <angem/Point.hpp>
 #include <angem/PointSet.hpp>
 #include <angem/Polyhedron.hpp>
+#include <SurfaceMesh.hpp>
 #include <uint256/uint256_t.h>
 
+#include <unordered_set>
 
 
 namespace mesh
@@ -43,6 +45,7 @@ get_face_indices(const angem::Polyhedron<double> & poly,
                  const angem::PointSet<3,double> & vertices);
 
 
+std::unordered_set<std::size_t> find_internal_vertices(const SurfaceMesh<double> & msh);
 // angem::Polyhedron<double> get_polyhedron(const std::size_t icell,
 //                                          const angem::PointSet<3,double> & vertices,
 //                                          const std::vector<int>          & shape_ids);

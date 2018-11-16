@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   // // cout << "Create simple wells" << endl;
   // // pSimData->createSimpleWells();
 
-  if (pSimData->nDFMFracs > 0)
+  if (pSimData->dfm_faces.size() > 0)
   {
     cout << "Split FEM mesh on internal surfaces" << endl;
     pSimData->splitInternalFaces();

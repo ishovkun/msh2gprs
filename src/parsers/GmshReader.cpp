@@ -152,7 +152,8 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
              polygons.end())
     {
       const angem::Polygon<double> poly(mesh.vertices.points, ivertices);
-      mesh.insert_physical_face(poly, marker);
+      // mesh.insert_physical_face(poly, marker);
+      mesh.insert(poly, marker);
     }
     else
       throw std::out_of_range("unknown element type");

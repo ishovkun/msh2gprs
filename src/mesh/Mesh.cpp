@@ -1,9 +1,11 @@
 #include <Mesh.hpp>
+#include <SurfaceMesh.hpp>
 
 #include <angem/PolyhedronFactory.hpp>
 
 namespace mesh
 {
+
 
 Mesh::Mesh()
 {}
@@ -98,8 +100,8 @@ std::vector<std::vector<std::size_t>> Mesh::get_faces(const Polyhedron & poly) c
 }
 
 
-void Mesh::insert_physical_face(const Polygon & poly,
-                                const int       marker)
+void Mesh::insert(const Polygon & poly,
+                  const int       marker)
 {
   const auto & points = poly.get_points();
   std::vector<std::size_t> face(points.size());
@@ -133,5 +135,66 @@ Polyhedron Mesh::get_polyhedron(const std::size_t icell) const
                                                   shape_ids[icell]);
 }
 
+
+// void Mesh::split(face_iterator & face)
+// {
+//   auto new_points = face.vertices();
+//   const std::size_t old_n_vertices = vertices.size();
+//   std::vector<std::size_t> indices;
+//   indices.reserve(new_points.size());
+//   std::size_t index = old_n_vertices;
+//   for (auto vertex : vertices)
+//   {
+//     vertices.points.push_back(vertex);
+//     indices.push_back(index);
+//     index++;
+//   }
+
+//   Face new_face;
+//   new_face.index = n_faces();
+//   new_face.marker = face.marker();
+//   const auto hash = hash_value(indices);
+
+//   std::cout << "not implemented" << std::endl;
+//   exit(0);
+//   // TODO: update element vertices
+//   // duplication of vertices depends on how many fractures
+//   // intersect in a vertex
+//   // auto neighbors = face.neighbors();
+//   // if (neighbors.size() > 1)
+//   // {
+//   //   for (auto & neighbor : neighbors)
+//   //   {
+
+//   //   }
+//   }
+// }
+
+
+void Mesh::mark_for_split(const face_iterator & face)
+{
+  marked_for_split.push_back(face.hash());
+}
+
+
+void Mesh::split_faces()
+{
+  /* Algorithm:
+  * 1. create SurfaceMesh from marked faces
+  * 2. find internal vertices (not on boundary)
+  * 3. split each face that has internal vertices
+  */
+  SurfaceMesh<double> mesh_faces(1e-6);
+  for (const auto & hash : marked_for_split)
+  {
+    face_iterator face = create_face_iterator(map_faces.find(hash));
+    Polygon poly(face.vertices());
+    mesh_faces.insert(poly);
+  }
+
+  std::unordered_set<std::size_t> internal_points =
+      find_internal_vertices(mesh_faces);
+
+}
 
 }

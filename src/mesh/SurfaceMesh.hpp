@@ -4,6 +4,9 @@
 #include <angem/Polygon.hpp>
 #include <angem/PointSet.hpp>
 #include <angem/Exceptions.hpp>
+#include <surface_mesh_methods.hpp>
+#include <edge_iterator.hpp>
+#include <const_edge_iterator.hpp>
 
 // #include <unordered_set>
 
@@ -17,10 +20,10 @@ template <typename Scalar>
 class SurfaceMesh // : PolyGroup<Scalar>
 {
  public:
-  SurfaceMesh(const double tol = 1e-6,
-              const std::size_t max_edges = 1e8);
+  // SurfaceMesh(const double tol = 1e-6, const std::size_t max_edges = 1e8);
+  SurfaceMesh(const double tol = 1e-6);
   // add new polygon (element) to the mesh. no check for duplicates
-  void insert(const Polygon<Scalar> & poly);
+  void insert(const angem::Polygon<Scalar> & poly);
   // true if vector of polygons is empty
   bool empty() const {return polygons.empty();}
 
@@ -39,13 +42,29 @@ class SurfaceMesh // : PolyGroup<Scalar>
   std::size_t merge_element(const std::size_t element);
   Scalar minimum_edge_size() const;
 
+  // ITERATORS
+  edge_iterator<Scalar> create_edge_iterator(EdgeMap::iterator &it)
+  {
+    return edge_iterator<Scalar>(it, vertices);
+  }
+  edge_iterator<Scalar> begin_edges() {return create_edge_iterator(map_edges.begin());}
+  edge_iterator<Scalar> end_edges() {return create_edge_iterator(map_edges.end());}
+
+  const_edge_iterator<Scalar> create_edge_iterator(EdgeMap::const_iterator it) const
+  {
+    return const_edge_iterator<Scalar>(it, vertices);
+  }
+  const_edge_iterator<Scalar> begin_edges() const {return create_edge_iterator(map_edges.begin());}
+  const_edge_iterator<Scalar> end_edges() const {return create_edge_iterator(map_edges.end());}
+
+
   PointSet<3,Scalar>                    vertices;
   std::vector<std::vector<std::size_t>> polygons;  // indices
   // std::vector<std::size_t> neighbors;
 
   // hash of two vert indices -> vector polygons
   // essentially edge -> neighbor elements
-  std::unordered_map<std::size_t, std::vector<std::size_t>> map_edge_neighbors;
+  std::unordered_map<std::size_t, std::vector<std::size_t>> map_edges;
 
  private:
   // merge two elements haaving a comon edge
@@ -69,55 +88,29 @@ class SurfaceMesh // : PolyGroup<Scalar>
   // get vertex indices from vector of contingent edges
   static std::vector<std::size_t> get_vertices(const std::vector<Edge> & edges);
 
-  inline
-  std::size_t hash_value(const std::size_t ind1,
-                         const std::size_t ind2) const
-  {
-    if (ind1 < ind2)
-      return max_edges*ind1 + ind2;
-    else
-      return max_edges*ind2 + ind1;
-  }
-
-  inline
-  std::size_t hash_value(const Edge &edge) const
-  {
-    return hash_value(edge.first, edge.second);
-  }
-
-  inline
-  std::pair<std::size_t, std::size_t> invert_hash(const std::size_t hash) const
-  {
-    std::pair<std::size_t,std::size_t> pair;
-    pair.first = (hash - hash % max_edges) / max_edges;
-    pair.second = hash % max_edges;
-    return pair;
-  }
-
 
   Scalar tol;
-  std::size_t max_edges;  // used to hash a int-int pair
 };
 
 
 template <typename Scalar>
-SurfaceMesh<Scalar>::SurfaceMesh(const double tol,
-                                 const std::size_t max_edges)
+// SurfaceMesh<Scalar>::SurfaceMesh(const double tol,
+//                                  const std::size_t max_edges)
+SurfaceMesh<Scalar>::SurfaceMesh(const double tol)
     :
-    tol(tol),
-    max_edges(max_edges)
+    tol(tol)
 {
   assert(tol > 0);
 }
 
 
 template <typename Scalar>
-void SurfaceMesh<Scalar>::insert(const Polygon<Scalar> & poly)
+void SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly)
 {
   // this part is a copy of PolyGroup add method
   // append vertices, compute vertex indices, and append these indices
   std::vector<std::size_t> indices;
-  const std::vector<Point<3,Scalar>> & points = poly.get_points();
+  const std::vector<angem::Point<3,Scalar>> & points = poly.get_points();
   for (const auto & p : points)
   {
     const std::size_t ind = vertices.insert(p);
@@ -138,11 +131,11 @@ void SurfaceMesh<Scalar>::insert(const Polygon<Scalar> & poly)
       throw std::runtime_error("what kind of polygon is that?");
 
     const std::size_t hash = hash_value(i1, i2);
-    auto iter = map_edge_neighbors.find(hash);
-    if (iter != map_edge_neighbors.end())
+    auto iter = map_edges.find(hash);
+    if (iter != map_edges.end())
       (iter->second).push_back(polygons.size() - 1);
     else
-      map_edge_neighbors.insert({ {hash, {polygons.size() - 1}} });
+      map_edges.insert({ {hash, {polygons.size() - 1}} });
   }
 
 }
@@ -183,7 +176,7 @@ std::size_t SurfaceMesh<Scalar>::merge_element( const std::size_t ielement )
     for (std::size_t element : edge_neighbors)
       if (element != ielement)
       {
-        const Polygon<Scalar> poly(vertices.points, polygons[element]);
+        const angem::Polygon<Scalar> poly(vertices.points, polygons[element]);
         const Scalar area = poly.area();
         if (area > max_area)
         {
@@ -206,10 +199,10 @@ template <typename Scalar>
 void SurfaceMesh<Scalar>::delete_element(const std::size_t element)
 {
   // delete polygon and reduce all polygons
-  // in map_edge_neighbors with higher indices by 1
+  // in map_edges with higher indices by 1
   polygons.erase(polygons.begin() + element);
-  for (auto iter = map_edge_neighbors.begin();
-       iter != map_edge_neighbors.end(); ++iter)
+  for (auto iter = map_edges.begin();
+       iter != map_edges.end(); ++iter)
   {
     for (std::size_t i=0; i<iter->second.size(); ++i)
     {
@@ -228,15 +221,15 @@ void SurfaceMesh<Scalar>::delete_replace_connections(const std::size_t deleted_e
 {
   assert(deleted_element != replacement_element);
   // delete polygon and reduce all polygons
-  // in map_edge_neighbors with higher indices by 1
+  // in map_edges with higher indices by 1
   std::size_t repl = replacement_element;
   if (repl > deleted_element)
     repl--;
 
   polygons.erase(polygons.begin() + deleted_element);
 
-  for (auto iter = map_edge_neighbors.begin();
-       iter != map_edge_neighbors.end(); ++iter)
+  for (auto iter = map_edges.begin();
+       iter != map_edges.end(); ++iter)
   {
     for (std::size_t i=0; i<iter->second.size(); ++i)
     {
@@ -329,8 +322,8 @@ void SurfaceMesh<Scalar>::merge_elements(const std::size_t ielement,
   for (std::size_t i=0; i<new_element.size(); ++i)
     if (new_element[i] == edge.first or new_element[i] == edge.second)
     {
-      Point<3,Scalar> v1 = vertices[new_element[i+1]] - vertices[new_element[i]];
-      Point<3,Scalar> v2 = vertices[new_element[i]] - vertices[new_element[i-1]];
+      angem::Point<3,Scalar> v1 = vertices[new_element[i+1]] - vertices[new_element[i]];
+      angem::Point<3,Scalar> v2 = vertices[new_element[i]] - vertices[new_element[i-1]];
       if ( (v1.cross(v2)).norm() < 1e-10 )
       {
         new_element.erase(new_element.begin() + i);
@@ -348,7 +341,7 @@ SurfaceMesh<Scalar>::get_edges( const std::size_t ielement ) const
 {
   std::vector<Edge> edges;
 
-  std::vector<Point<3,Scalar>> points;
+  std::vector<angem::Point<3,Scalar>> points;
   for (const auto & vertex : polygons[ielement])
     points.push_back(vertices.points[vertex]);
 
@@ -379,8 +372,8 @@ SurfaceMesh<Scalar>::get_neighbors( const Edge & edge ) const
 {
   std::vector<std::size_t> v_neighbors;
   const std::size_t hash = hash_value(edge.first, edge.second);
-  const auto iter = map_edge_neighbors.find(hash);
-  if (iter == map_edge_neighbors.end())
+  const auto iter = map_edges.find(hash);
+  if (iter == map_edges.end())
     throw std::out_of_range("edge does not exist");
 
   return iter->second;
@@ -391,7 +384,7 @@ template <typename Scalar>
 Scalar SurfaceMesh<Scalar>::minimum_edge_size() const
 {
   Scalar min_size = std::numeric_limits<Scalar>::max();
-  for (const auto & conn : map_edge_neighbors)
+  for (const auto & conn : map_edges)
   {
     const std::pair<std::size_t,std::size_t> verts = invert_hash(conn.first);
     const Scalar h = (vertices[verts.first] - vertices[verts.second]).norm();

@@ -8,12 +8,14 @@ ADD_LIBRARY(mesh
   cell_iterator.hpp
   face_iterator.hpp
   mesh_methods.hpp
+  surface_mesh_methods.hpp
   # implementation
   ShapeID.cpp
   Mesh.cpp
   cell_iterator.cpp
   face_iterator.cpp
   mesh_methods.cpp
+  surface_mesh_methods.cpp
 )
 
 SET_TARGET_PROPERTIES (

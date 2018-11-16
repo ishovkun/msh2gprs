@@ -44,8 +44,8 @@ class Mesh
   void insert(const Polyhedron & poly,
               const int          marker = -1);
   // insert marker into map_physical_faces
-  void insert_physical_face(const Polygon & poly,
-                            const int       marker);
+  void insert(const Polygon & poly,
+              const int       marker);
 
   // iterators
   // cell iterators
@@ -86,6 +86,21 @@ class Mesh
   // merges jcell into icell if they have a common face
   std::size_t merge_cells(const std::size_t icell,
                           const std::size_t jcell);
+  // tell grid which faces to split before calling split_faces method
+  void mark_for_split(const face_iterator & face);
+  // split faces marked for splitting with mark_for_split
+  void split_faces();
+
+  /* split a face
+   * retults in adding
+   * (1) new vertices (pushed to the back of vertices set)
+   * (2) one new face
+   * update of neighbors
+   * face marker is copied from the old marker
+   * TODO: find out what happens to the iterator
+   * TODO: make it a private method
+  */
+  void split(face_iterator & face);
 
   // ATTRIBUTES
   angem::PointSet<3,double>             vertices;
@@ -98,6 +113,7 @@ class Mesh
  private:
   // get global indices of polygon face vertices
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
+  std::vector<uint256_t> marked_for_split;
 };
 
 

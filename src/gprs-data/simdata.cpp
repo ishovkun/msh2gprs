@@ -249,7 +249,7 @@ void SimData::computeCellClipping()
     }  // end face loop
 
     angem::PointSet<3,double> setVert(tol);
-    mesh::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ grid.n_cells());
+    mesh::SurfaceMesh<double> frac_msh(1e-6);
     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
     {
       // loop through sda cells
@@ -2257,8 +2257,14 @@ void SimData::methodFaceNormalVector(int nelem, vector<Gelement> &vsElement)
 
 // }
 
-// void SimData::splitInternalFaces()
-// {
+void SimData::splitInternalFaces()
+{
+  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++ face)
+  {
+    if (is_fracture(face.marker()))
+      grid.mark_for_split(face);
+  }
+  grid.split_faces();
 //   int counter_;
 //   cout << endl << "Create set of stick vertices (slow)" << endl;
 //   vector<set<int> > vsetGlueVerticies;
@@ -2624,7 +2630,7 @@ void SimData::methodFaceNormalVector(int nelem, vector<Gelement> &vsElement)
 //         }
 //     }
 //   }
-// }
+}
 
 // #include <random>
 void SimData::definePhysicalFacets()
