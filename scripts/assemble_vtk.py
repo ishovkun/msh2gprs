@@ -5,7 +5,8 @@ import numpy as np
 # case_path = "/home/ishovkun/sim/edfm-1frac-0/"
 # case_path = "/home/ishovkun/sim/aquifer/"
 # case_path = "/home/ishovkun/sim/edfm-dfm/"
-case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon/"
+# case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon/"
+case_path = "/home/ishovkun/sim/9-fracs-coupled/"
 
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 edfm_mesh_file = case_path + "efrac.vtk"
@@ -124,8 +125,8 @@ with open(results_file, "r") as f:
         line = f.readline().rstrip()
 
 # get edfm jumps from vtk files and add them to data
-# sda_data = np.zeros([n_edfm, 2])
-sda_data  = []
+sda_data = []
+sda_names = ["Jump_n", "Jump_t", "status"]
 if (n_edfm > 0):
     with open (gm_sda_file, "r") as f:
         found = False
@@ -140,21 +141,26 @@ if (n_edfm > 0):
                 break
             if (n_sda_cells == 0):
                 n_sda_cells = int(word)
+                # print(n_sda_cells)
                 continue
             if (n_cells > 0):
                 sda_cells.append(int(word) - 1)
                 counter += 1
                 if (counter == n_sda_cells):
+                    n_sda_cells = 0
                     counter = 0
 
+    # print(sda_cells)
+    print("n_sda = ", len(sda_cells))
 
-    print(sda_cells)
-
-    file_counter = 0
+    file_counter = -1
+    var_index = 0
     # print(sorted(os.listdir(vtk_dir)))
+    # for fname in ["block_scalars.000000077.vtk"]:
     for fname in sorted(os.listdir(vtk_dir)):
-        sda_data.append(np.zeros([n_edfm, 2]))
         if ("block_scalars" in fname):  # found vtk block file
+            file_counter += 1
+            sda_data.append(np.zeros([n_edfm, len(sda_names)]))
             print ("Reading ", fname)
             with open(vtk_dir + fname, "r") as f:
                 # edfm_cell_index = n_cells
@@ -163,12 +169,16 @@ if (n_edfm > 0):
                 found_segment = False
                 skip_line = True
                 for line in f:
-                    split = line.split()
+                    split = line.rstrip().split()
                     if (len(split) == 0): continue
 
                     if (len(split) > 1):
-                        if(split[1] == "Jump_n"):
+                        if(split[1] in sda_names):
+                            # print("found ", split[1])
                             found_segment = True
+                            for n in range(len(sda_names)):
+                                if (split[1] == sda_names[n]):
+                                    var_index = n
                             continue
 
                     if (found_segment):
@@ -176,9 +186,14 @@ if (n_edfm > 0):
                             skip_line = False
                             continue
                         else:   # start counting cells
-                            # print(split)
                             if (cell_counter in sda_cells):
-                                sda_data[file_counter][sda_counter, 0] = float(split[0])
+                                var = float(split[0])
+                                sda_index = sda_cells.index(cell_counter)
+                                # print(sda_index, len(sda_cells))
+                                # print(len(sda_data), file_counter)
+                                # sda_data[file_counter][sda_counter, var_index] = var
+                                sda_data[file_counter][sda_index, var_index] = var
+
                                 sda_counter += 1
 
                             cell_counter += 1
@@ -186,7 +201,12 @@ if (n_edfm > 0):
                                 found_segment = False
                                 cell_counter = 0
                                 skip_line = True
+                                sda_counter = 0
+    print(len(sda_data))
+    print(len(times))
+    # exit(0)
 
+# print(sda_data[0][:, 0])
 print("n_volumes = ",                n_volumes,
       "|| n_dfm + n_edfm + n_cells = ", n_dfm + n_edfm + n_cells)
 if (n_volumes != n_dfm + n_edfm + n_cells):
@@ -211,7 +231,6 @@ if (n_dfm > 0):
         dfm_msh_txt = f.read()
 
 
-# save efrac vtk
 import shutil
 try:
     shutil.rmtree(output_dir)
@@ -235,8 +254,6 @@ for i in range(len(times)):
             header = headers[i][j].replace("=", "_")
             f.write("SCALARS\t" + header + "\tfloat\n")
             f.write("LOOKUP_TABLE HSV\n")
-            # print(all_data[i].shape)
-            # for k in range(n_frac_elements):
             for k in range(n_cells):
                 f.write("%.5f\n" % all_data[i][n_dfm + k, j])
 
@@ -267,9 +284,15 @@ if (n_edfm > 0):
                     f.write("%.5f\n" % all_data[i][n_dfm + n_cells + k, j])
 
             # write sda data
-            for j in range(1):
-                header = "jump_n"
-                f.write("SCALARS\t" + header + "\tfloat\n")
-                f.write("LOOKUP_TABLE HSV\n")
-                for k in range(n_edfm):
-                    f.write("%.5f\n" % sda_data[i][k, j])
+            if (len(sda_data) > 0):
+                if (len(sda_data) <= i):
+                    sda_time_index = -1
+                else:
+                    sda_time_index = i
+
+                for j in range(len(sda_names)):
+                    header = sda_names[j]
+                    f.write("SCALARS\t" + header + "\tfloat\n")
+                    f.write("LOOKUP_TABLE HSV\n")
+                    for k in range(n_edfm):
+                        f.write("%.6f\n" % sda_data[sda_time_index][k, j])
