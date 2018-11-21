@@ -25,6 +25,7 @@
 namespace mesh
 {
 
+
 using Point = angem::Point<3,double>;
 // using Polygon = angem::Polygon<double>;
 using Polyhedron = angem::Polyhedron<double>;
@@ -32,6 +33,8 @@ using Polygon = angem::Polygon<double>;
 // using Face = std::vector<std::size_t>;
 using FaceiVertices = std::vector<std::size_t>;
 using FaceMap = std::unordered_map<uint256_t, Face>;
+
+using hash_type = uint256_t;
 
 // maximum 6-vert polygons as faces (hashing)
 // this allows hashing about (2^256)^(1/6) ≈ 7x10¹² vertices
@@ -91,29 +94,28 @@ class Mesh
   // split faces marked for splitting with mark_for_split
   void split_faces();
 
-  /* split a face
-   * retults in adding
-   * (1) new vertices (pushed to the back of vertices set)
-   * (2) one new face
-   * update of neighbors
-   * face marker is copied from the old marker
-   * TODO: find out what happens to the iterator
-   * TODO: make it a private method
-  */
-  void split(face_iterator & face);
-
   // ATTRIBUTES
   angem::PointSet<3,double>             vertices;
   std::vector<std::vector<std::size_t>> cells;  // vertex indices
   // map face -> neighbor elements
-  std::unordered_map<uint256_t, Face> map_faces;
+  std::unordered_map<hash_type, Face> map_faces;
   std::vector<int> shape_ids;
   std::vector<int> cell_markers;
 
  private:
+  /* split a vertex
+   * retults in adding new vertices (pushed to the back of vertices set)
+   * modifies elements of cells array
+   */
+  void split_vertex(const std::size_t                            ivertex,
+                    const std::vector<face_iterator>             & vertex_faces,
+                    std::unordered_map<std::size_t, std::size_t> & map_old_new_cells,
+                    std::vector<std::vector<std::size_t>>        & new_cells);
+
   // get global indices of polygon face vertices
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
-  std::vector<uint256_t> marked_for_split;
+  std::vector<hash_type> marked_for_split;
+
 };
 
 

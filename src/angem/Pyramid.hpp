@@ -39,6 +39,11 @@ class Pyramid : public Polyhedron<Scalar>
   void set_data(const std::vector<Point<3,Scalar>> & vertices);
   void set_data(const std::vector<Point<3,Scalar>> & vertices,
                 const std::vector<std::size_t>     & indices);
+
+  // don't create polyhedron, just give me vector of faces with indices in
+  // the global vector
+  static std::vector<std::vector<std::size_t>>
+  get_faces(const std::vector<std::size_t>     & indices);
 };
 
 
@@ -100,6 +105,20 @@ Pyramid<Scalar>::set_data(const std::vector<Point<3,Scalar>> & vertices,
   this->faces[2] = {0, 1, 4};
   this->faces[3] = {1, 4, 2};
   this->faces[4] = {2, 3, 4};
+}
+
+
+template<typename Scalar>
+std::vector<std::vector<std::size_t>>
+Pyramid<Scalar>::get_faces(const std::vector<std::size_t>     & indices)
+{
+  std::vector<std::vector<std::size_t>> global_faces(5);
+  global_faces[0] = {indices[0], indices[1], indices[2], indices[3]};
+  global_faces[1] = {indices[0], indices[4], indices[3]};
+  global_faces[2] = {indices[0], indices[1], indices[4]};
+  global_faces[3] = {indices[1], indices[4], indices[2]};
+  global_faces[4] = {indices[2], indices[3], indices[4]};
+  return std::move(global_faces);
 }
 
 }

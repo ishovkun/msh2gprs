@@ -34,6 +34,10 @@ class Hexahedron: public Polyhedron<Scalar>
   virtual void set_data(const std::vector<Point<3,Scalar>> & vertices) override;
   void set_data(const std::vector<Point<3,Scalar>> & vertices,
                 const std::vector<std::size_t>     & indices);
+  // don't create polyhedron, just give me vector of faces with indices in
+  // the global vector
+  static std::vector<std::vector<std::size_t>>
+  get_faces(const std::vector<std::size_t>     & indices);
 };
 
 
@@ -90,5 +94,18 @@ Hexahedron<Scalar>::set_data(const std::vector<Point<3,Scalar>> & vertices,
 }
 
 
+template<typename Scalar>
+std::vector<std::vector<std::size_t>>
+Hexahedron<Scalar>::get_faces(const std::vector<std::size_t>     & indices)
+{
+  std::vector<std::vector<std::size_t>> global_faces(6);
+  global_faces[0] = {indices[0], indices[1], indices[2], indices[3]};
+  global_faces[1] = {indices[4], indices[5], indices[6], indices[7]};
+  global_faces[2] = {indices[0], indices[4], indices[5], indices[1]};
+  global_faces[3] = {indices[3], indices[7], indices[6], indices[2]};
+  global_faces[4] = {indices[0], indices[4], indices[7], indices[3]};
+  global_faces[5] = {indices[1], indices[5], indices[6], indices[2]};
+  return std::move(global_faces);
+}
 
 }

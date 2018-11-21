@@ -2264,6 +2264,7 @@ void SimData::splitInternalFaces()
     if (is_fracture(face.marker()))
       grid.mark_for_split(face);
   }
+
   grid.split_faces();
 //   int counter_;
 //   cout << endl << "Create set of stick vertices (slow)" << endl;

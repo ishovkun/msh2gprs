@@ -51,8 +51,49 @@ class PolyhedronFactory
     }
   }
 
+  template<typename Scalar>
+  static Polyhedron<Scalar>
+  create(const int  vtk_id = -1)
+  {
+    switch (vtk_id)
+    {
+      case 10:
+        return Tetrahedron<Scalar>();
+      case 12:
+        return Hexahedron<Scalar>();
+      case 13:
+        return Wedge<Scalar>();
+      case 14:
+        return Pyramid<Scalar>();
+      default:
+        throw NotImplemented("3D element does not exist");
+    }
+  }
+
+
+  template<typename Scalar>
+  static std::vector<std::vector<std::size_t>>
+  get_global_faces(const std::vector<std::size_t> & indices,
+                   const int  vtk_id)
+  {
+    switch (vtk_id)
+    {
+      case 10:
+        return Tetrahedron<Scalar>::get_faces(indices);
+      case 12:
+        return Hexahedron<Scalar>::get_faces(indices);
+      case 13:
+        return Wedge<Scalar>::get_faces(indices);
+      case 14:
+        return Pyramid<Scalar>::get_faces(indices);
+      default:
+        throw NotImplemented("3D element does not exist");
+    }
+  }
+
+
  private:
-  PolyhedronFactory() {};
+  PolyhedronFactory(){};
 };
 
 }

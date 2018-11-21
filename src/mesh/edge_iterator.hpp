@@ -16,7 +16,7 @@ template <typename Scalar>
 class edge_iterator
 {
  public:
-  edge_iterator(EdgeMap::iterator         & it,
+  edge_iterator(EdgeMap::iterator          it,
                 angem::PointSet<3,Scalar> & vertices);
   // comparison
   bool operator==(const edge_iterator<Scalar> & other) const;
@@ -25,8 +25,10 @@ class edge_iterator
   edge_iterator<Scalar> & operator++();
 
   // Getters
+  // vector of surface mesh element indices
   inline const std::vector<std::size_t> & neighbors() const {return map_it->second;}
   std::pair<std::size_t, std::size_t> vertex_indices() const;
+  std::pair<angem::Point<3,double>,angem::Point<3,double> > vertices() const;
 
  private:
   EdgeMap::iterator map_it;
@@ -35,7 +37,7 @@ class edge_iterator
 
 
 template <typename Scalar>
-edge_iterator<Scalar>::edge_iterator(EdgeMap::iterator         & it,
+edge_iterator<Scalar>::edge_iterator(EdgeMap::iterator          it,
                                      angem::PointSet<3,Scalar> & vertices)
     :
     map_it(it),
@@ -74,5 +76,13 @@ std::pair<std::size_t, std::size_t> edge_iterator<Scalar>::vertex_indices() cons
   return invert_hash(map_it->first);
 }
 
+
+template <typename Scalar>
+std::pair<angem::Point<3,double>,angem::Point<3,double> >
+edge_iterator<Scalar>::vertices() const
+{
+  const auto ivertices = vertex_indices();
+  return {mesh_vertices[ivertices.first], mesh_vertices[ivertices.first]};
+}
 
 }

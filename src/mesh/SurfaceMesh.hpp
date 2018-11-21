@@ -7,6 +7,7 @@
 #include <surface_mesh_methods.hpp>
 #include <edge_iterator.hpp>
 #include <const_edge_iterator.hpp>
+#include <surface_element_iterator.hpp>
 
 // #include <unordered_set>
 
@@ -23,7 +24,8 @@ class SurfaceMesh // : PolyGroup<Scalar>
   // SurfaceMesh(const double tol = 1e-6, const std::size_t max_edges = 1e8);
   SurfaceMesh(const double tol = 1e-6);
   // add new polygon (element) to the mesh. no check for duplicates
-  void insert(const angem::Polygon<Scalar> & poly);
+  // returns new element index
+  std::size_t insert(const angem::Polygon<Scalar> & poly);
   // true if vector of polygons is empty
   bool empty() const {return polygons.empty();}
 
@@ -43,7 +45,7 @@ class SurfaceMesh // : PolyGroup<Scalar>
   Scalar minimum_edge_size() const;
 
   // ITERATORS
-  edge_iterator<Scalar> create_edge_iterator(EdgeMap::iterator &it)
+  edge_iterator<Scalar> create_edge_iterator(EdgeMap::iterator it)
   {
     return edge_iterator<Scalar>(it, vertices);
   }
@@ -57,10 +59,18 @@ class SurfaceMesh // : PolyGroup<Scalar>
   const_edge_iterator<Scalar> begin_edges() const {return create_edge_iterator(map_edges.begin());}
   const_edge_iterator<Scalar> end_edges() const {return create_edge_iterator(map_edges.end());}
 
+  surface_element_iterator<Scalar> create_poly_iterator(const std::size_t ielement)
+  {
+    return surface_element_iterator<Scalar> (ielement, vertices,
+                                             polygons, map_edges);
+  }
+
+  surface_element_iterator<Scalar> begin_polygons() {return create_poly_iterator(0);}
+  surface_element_iterator<Scalar> end_polygons() {return create_poly_iterator(polygons.size());}
+
 
   PointSet<3,Scalar>                    vertices;
   std::vector<std::vector<std::size_t>> polygons;  // indices
-  // std::vector<std::size_t> neighbors;
 
   // hash of two vert indices -> vector polygons
   // essentially edge -> neighbor elements
@@ -105,7 +115,7 @@ SurfaceMesh<Scalar>::SurfaceMesh(const double tol)
 
 
 template <typename Scalar>
-void SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly)
+std::size_t SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly)
 {
   // this part is a copy of PolyGroup add method
   // append vertices, compute vertex indices, and append these indices
@@ -116,6 +126,8 @@ void SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly)
     const std::size_t ind = vertices.insert(p);
     indices.push_back(ind);
   }
+
+  const std::size_t new_element_index = polygons.size();
   polygons.push_back(indices);
 
   // now we need to compute edges
@@ -133,10 +145,11 @@ void SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly)
     const std::size_t hash = hash_value(i1, i2);
     auto iter = map_edges.find(hash);
     if (iter != map_edges.end())
-      (iter->second).push_back(polygons.size() - 1);
+      (iter->second).push_back(new_element_index);
     else
-      map_edges.insert({ {hash, {polygons.size() - 1}} });
+      map_edges.insert({ {hash, {new_element_index}} });
   }
+  return new_element_index;
 
 }
 

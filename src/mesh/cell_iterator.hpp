@@ -37,6 +37,8 @@ class cell_iterator
   angem::Polyhedron<double> polyhedron() const;
   std::vector<face_iterator> faces() const;
 
+  // other
+  bool has_vertex(const std::size_t ivertex) const;
 
   // incrementing
   cell_iterator & operator++();

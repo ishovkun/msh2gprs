@@ -3,6 +3,7 @@
 #include <Shape.hpp>
 #include <Plane.hpp>
 #include <PointSet.hpp>
+#include <typeinfo>
 
 namespace angem
 {
@@ -15,6 +16,7 @@ class Polyhedron: public Shape<Scalar>
   Polyhedron(const std::vector<Point<3,Scalar>>          & vertices,
              const std::vector<std::vector<std::size_t>> & faces,
              const int                                     vtk_id = -1);
+
   void set_data(const std::vector<Point<3,Scalar>>          & vertices,
                 const std::vector<std::vector<std::size_t>> & faces);
   int id() const {return vtk_id;}

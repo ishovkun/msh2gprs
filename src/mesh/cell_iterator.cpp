@@ -99,4 +99,26 @@ std::vector<face_iterator> cell_iterator::faces() const
   return std::move(faces);
 }
 
+
+bool cell_iterator::has_vertex( const std::size_t ivertex ) const
+{
+  for (auto & jvertex : cells[icell])
+    if (jvertex == ivertex)
+      return true;
+
+  return false;
+}
+
+
+std::vector<std::size_t> cell_iterator::neighbor_indices() const
+{
+  const Polyhedron poly =
+      angem::PolyhedronFactory::create<double>(vertices.points, cells[icell],
+                                               shape_ids[icell]);
+  // for (const auto & face : poly.get_faces)
+  std::cout << "not implemented" << std::endl << std::flush;
+  abort();
+
+}
+
 }
