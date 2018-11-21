@@ -607,16 +607,13 @@ void SimData::computeReservoirTransmissibilities()
     const auto faces = cell.faces();
     const std::size_t icell = cell.index();
     calc.vvVFaces[icell].reserve(faces.size());
-    std::cout << "icell = " << icell << std::endl;
     for (const mesh::face_iterator face : faces)
     {
       // TODO: get face indices some other way
       // if (dfm_faces.find(hash) == dfm_faces.end())
       //   throw std::out_of_range("bad cell hash");
-      // const std::size_t ipolygon = dfm_faces[hash].nface;
       const std::size_t ipolygon = face.index();
       calc.vvVFaces[icell].push_back(ipolygon);
-      std::cout << "\tipolygon = " << ipolygon << std::endl;
     }
     calc.vCodePolyhedron[icell] = dfm_faces.size() + icell;
   }
@@ -2649,7 +2646,7 @@ void SimData::definePhysicalFacets()
     bool is_boundary = false;
     const int marker = face.marker();
     for (const auto & conf : config.bc_faces)
-      if (marker == conf.label)
+      if (marker == conf.label or face.neighbors().size() < 2)
       {
         is_boundary = true;
         PhysicalFace facet;
@@ -2660,6 +2657,7 @@ void SimData::definePhysicalFacets()
         facet.nfluid = -1;
         boundary_faces.insert({face.index(), facet});
         boundary_face_markers.insert(marker);
+        continue;
       }
     if (!is_boundary and marker != 0)
     {

@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
     pSimData->splitInternalFaces();
   }
 
-  // cout << "Write FEM mesh data\n";
-  // OutputData output_data(pSimData);
+  cout << "Write FEM mesh data\n";
+  OutputData output_data(*pSimData, msh);
 
   // const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";
   // std::cout << "output directory: " << output_dir << std::endl;

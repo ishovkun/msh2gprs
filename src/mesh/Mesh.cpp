@@ -200,7 +200,6 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
     igroup++;
   }
 
-  std::cout << "creating new vertices" << std::endl;
   // create new vertices
   std::vector<std::size_t> new_ivertices(n_groups);
   const angem::Point<3,double> vertex = vertices[ivertex];
@@ -216,7 +215,7 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
     }
   }
 
-  std::cout << "modify cell elements" << std::endl;
+  // std::cout << "modify cell elements" << std::endl;
   // modify new cell vertices
   for (int igroup = 0; igroup < groups.size(); ++igroup)
   {
@@ -241,7 +240,7 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
           jvertex = new_ivertices[igroup];
     }
   }
-  std::cout << "end vertex split" << std::endl;
+  // std::cout << "end vertex split" << std::endl;
 
 }
 
@@ -295,7 +294,7 @@ void Mesh::split_faces()
     }
   }
 
-  std::cout << "modifying face map" << std::endl;
+  // std::cout << "modifying face map" << std::endl;
 
   // modify face map
   for (const auto it_cell : map_old_new_cells)
@@ -309,7 +308,7 @@ void Mesh::split_faces()
     const std::vector<std::vector<std::size_t>> new_poly_faces =
         angem::PolyhedronFactory::get_global_faces<double>(new_cells[new_icell],
                                                            shape_ids[icell]);
-    std::cout << "got some faces" << std::endl;
+    // std::cout << "got some faces" << std::endl;
 
     assert(old_poly_faces.size() == new_poly_faces.size());
 
@@ -352,8 +351,6 @@ void Mesh::split_faces()
     // replace old cell with new cell
     cells[icell] = new_cells[new_icell];
   }
-
-  std::cout << "end modifying cells" << std::endl;
 
   // compute new face indices
   std::size_t face_index = 0;

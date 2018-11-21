@@ -163,4 +163,54 @@ void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
 }
 
 
+void VTKWriter::write_vtk(const std::vector<Point>                    & vertices,
+                          const std::vector<std::vector<std::size_t>> & cells,
+                          const std::vector<int>                      & vtk_indices,
+                          const std::string                           & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Fractures \n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  // points
+  const std::size_t n_points = vertices.size();
+  out << "POINTS" << "\t"
+      << n_points << " float"
+      << std::endl;
+
+  for (const auto & p : vertices)
+    out << p << std::endl;
+
+  // cells
+  const std::size_t n_cells = cells.size();
+  std::size_t vind_size_total = 0;
+  for (const auto & cell : cells)
+    vind_size_total += cell.size();
+
+  out << "CELLS" << "\t"
+      << n_cells << "\t"
+      << vind_size_total + n_cells
+      << std::endl;
+
+  for (const auto & cell : cells)
+  {
+    out << cell.size() << "\t";
+    for (std::size_t i : cell)
+      out << i << "\t";
+    out << std::endl;
+  }
+
+  out << std::endl;
+  out << "CELL_TYPES" << "\t" << n_cells << std::endl;
+  for (const auto & id : vtk_indices)
+  {
+    out << id << std::endl;
+  }
+
+  out.close();
+}
 }  // end namespace

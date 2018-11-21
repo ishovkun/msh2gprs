@@ -14,6 +14,11 @@ class VTKWriter
                         const std::vector<std::vector<std::size_t>> & cells,
                         const std::string                           & fname);
 
+  static void write_vtk(const std::vector<Point>                    & vertices,
+                        const std::vector<std::vector<std::size_t>> & cells,
+                        const std::vector<int>                      & vtk_indices,
+                        const std::string                           & fname);
+
   static void write_vtk(const std::vector<Point>    & vertices,
                         const std::vector<Gelement> & elements,
                         const std::string           & fname);
