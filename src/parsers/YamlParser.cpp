@@ -47,12 +47,13 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
 
     if (key == "file")
       config.efrac_file = it->second.as<std::string>();
-    else
+    else if (key == "fracture")
     {
       config.fractures.emplace_back();
       embedded_fracture(it->second, config.fractures.back());
     }
-
+    else
+      std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
 }
 
@@ -64,26 +65,13 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
     const std::string key = it->first.as<std::string>();
     std::cout << "\treading entry " << key << std::endl;
 
-    int label;
-    try {
-      label = it->first.as<int>();
-    }
-    catch (YAML::TypedBadConversion<int> & error)
+    if (key == "fracture")
     {
-      std::cout << "discrete fracture id must be an integer" << std::endl;
-      std::cout << "aborting" << std::endl;
-      exit(-1);
+      config.discrete_fractures.emplace_back();
+      discrete_fracture(it->second, config.discrete_fractures.back());
     }
-
-    if (label == 0)  // id 0 is for internal boundaries
-    {
-      std::cout << "\t\tid = 0: skippint" << std::endl;
-      continue;
-    }
-
-    config.discrete_fractures.emplace_back();
-    config.discrete_fractures.back().label = label;
-    discrete_fracture(it->second, config.discrete_fractures.back());
+    else
+      std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
 
 }
@@ -181,6 +169,8 @@ void YamlParser::discrete_fracture(const YAML::Node       & node,
       conf.aperture = it->second.as<double>();
     else if (key == "conductivity")
       conf.conductivity = it->second.as<double>();
+    else if (key == "label")
+      conf.label = it->second.as<int>();
   }
 }
 

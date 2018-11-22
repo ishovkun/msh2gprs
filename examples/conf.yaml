@@ -13,13 +13,16 @@ Embedded Fractures :
     type : Rectangle
 
 Discrete Fractures :
-  # ids for discrete fractures are used to identify them
-  # as physical boundary ids
-  1:
+  # at this level use only "fracture" -- indicates an entry
+  fracture:
     conductivity : 1
     aperture : 0.01
-  2:
+    # labels discrete fractures are used to identify them
+    # as physical boundary ids
+    label: 1
+  fracture:
     conductivity : 1
+    label: 2
 
 Domain Mechanical Properties:
   file: gm_domain.txt
@@ -58,9 +61,9 @@ Boundary Conditions:            # geomechanical bc's
   Dirichlet nodes:
     search tolerance: 1e-4
     # node ids are not used (can be anything)
-    0:
+    node:
       coord: [-30, 0, 0]
       value: [nan, 0, nan]
-    1:
+    node:
       coord: [+30, 0, 0]
       value: [0, nan, nan]
