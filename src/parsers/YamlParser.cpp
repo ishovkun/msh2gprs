@@ -191,44 +191,43 @@ void YamlParser::section_domain_props(const YAML::Node & node,
         config.mechanics_domain_file = it->second.as<std::string>();
       continue;
     }
-
-    int label;
-    try {
-      label = it->first.as<int>();
-    }
-    catch (YAML::TypedBadConversion<int> & error)
+    else if (key == "domain")
     {
-      std::cout << "domain id must be an integer" << std::endl;
-      std::cout << "aborting" << std::endl;
-      exit(-1);
-    }
+      int label;
+      try {
+        label = it->second["label"].as<int>();
+        if (label == 0)
+        {
+          std::cout << "domain label cannot be 0" << std::endl;
+          exit(-1);
+        }
+      }
+      catch (YAML::TypedBadConversion<int> & error)
+      {
+        std::cout << "domain id must be an integer" << std::endl;
+        std::cout << "aborting" << std::endl;
+        exit(-1);
+      }
 
-    // find current domain id in existing config
-    int counter = 0;
-    for (const auto & domain : config.domains)
-    {
-      if (label == domain.label)
-        break;
-      else
-        counter++;
-    }
-
-    // get pointer to the existing config or create if none
-    DomainConfig * p_conf;
-    if (counter == config.domains.size())
-    {
-      config.domains.emplace_back();
-      p_conf = &config.domains.back();
+      DomainConfig & conf = get_domain_config(label);
+      std::cout << "Reading domain " << conf.label << std::endl;
+      domain(it->second, var_type, conf);
     }
     else
-      p_conf = &(config.domains[counter]);
+      std::cout << "attribute " << key << " unknown: skipping" << std::endl;
+    // int label;
+    // try {
+    //   label = it->first.as<int>();
+    // }
+    // catch (YAML::TypedBadConversion<int> & error)
+    // {
+    //   std::cout << "domain id must be an integer" << std::endl;
+    //   std::cout << "aborting" << std::endl;
+    //   exit(-1);
+    // }
 
-    DomainConfig & conf = *p_conf;
-    conf.label = label;
+    // conf.label = label;
 
-    std::cout << "Reading domain " << conf.label << std::endl;
-    // set props
-    domain(it->second, var_type, conf);
   }
 
 }
@@ -253,6 +252,8 @@ void YamlParser::domain(const YAML::Node & node,
       if (!conf.coupled)
         std::cout << "domain " <<conf.label << " is decoupled !!!" << std::endl;
     }
+    if (key == "label") // coupling with mechanics
+      continue;
     else
     {
       // save property name and expression
@@ -305,10 +306,13 @@ void YamlParser::boundary_conditions_faces(const YAML::Node & node)
     const std::string key = it->first.as<std::string>();
     std::cout << "\t\treading entry " << key << std::endl;
 
-    config.bc_faces.emplace_back();
-    auto & conf = config.bc_faces.back();
-    conf.label = it->first.as<int>();
-    bc_face(it->second, conf);
+    if (key == "face")
+    {
+      config.bc_faces.emplace_back();
+      auto & conf = config.bc_faces.back();
+      bc_face(it->second, conf);
+    }
+    std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
 }
 
@@ -323,6 +327,8 @@ void YamlParser::bc_face(const YAML::Node & node,
 
     if (key == "type")
       conf.type = it->second.as<int>();
+    else if (key == "label")
+      conf.label = it->second.as<int>();
     else if (key == "value")
     {
       const std::vector<std::string> str_values =
@@ -354,11 +360,14 @@ void YamlParser::boundary_conditions_nodes(const YAML::Node & node)
       config.node_search_tolerance = it->second.as<double>();
       continue;
     }
-
-    config.bc_nodes.emplace_back();
-    auto & conf = config.bc_nodes.back();
-    bc_node(it->second, conf);
-
+    else if (key == "node")
+    {
+      config.bc_nodes.emplace_back();
+      auto & conf = config.bc_nodes.back();
+      bc_node(it->second, conf);
+    }
+    else
+      std::cout << "attribute " << key << " unknown: skipping" << std::endl;
   }
 }
 
@@ -390,6 +399,32 @@ void YamlParser::bc_node(const YAML::Node & node, BCNodeConfig & conf)
     else
       std::cout << "attribute " << key << " unknown: skipping" << std::endl;
   }
+}
+
+
+DomainConfig & YamlParser::get_domain_config(const int label)
+{
+  // find current domain id in existing config
+  int counter = 0;
+  for (const auto & domain : config.domains)
+  {
+    if (label == domain.label)
+      break;
+    else
+      counter++;
+  }
+
+  // get pointer to the existing config or create if none
+  DomainConfig * p_conf;
+  if (counter == config.domains.size())
+  {
+    config.domains.emplace_back();
+    p_conf = &config.domains.back();
+  }
+  else
+    p_conf = &(config.domains[counter]);
+
+  return *p_conf;
 }
 
 }

@@ -38,6 +38,8 @@ class YamlParser
   void bc_face(const YAML::Node & node, BCConfig & conf);
   void bc_node(const YAML::Node & node, BCNodeConfig & conf);
 
+  DomainConfig & get_domain_config(const int label);
+
   // ATTRIBUTES
   SimdataConfig config;
 };
