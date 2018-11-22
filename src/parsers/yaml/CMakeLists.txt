@@ -348,10 +348,10 @@ endif()
 ###
 ### Extras
 ###
-if(YAML_CPP_BUILD_TESTS)
-	enable_testing()
-	add_subdirectory(test)
-endif()
+# if(YAML_CPP_BUILD_TESTS)
+# 	enable_testing()
+# 	add_subdirectory(test)
+# endif()
 if(YAML_CPP_BUILD_TOOLS)
 	add_subdirectory(util)
 endif()
