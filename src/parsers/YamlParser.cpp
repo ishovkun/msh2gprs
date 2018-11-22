@@ -23,7 +23,7 @@ void YamlParser::parse_file(const std::string & fname)
       config.mesh_file = it->second.as<std::string>();
     else if (key == "Domain Flow Properties")
       section_domain_props(it->second, 0);
-    else if (key == "Domain Mechanics Properties")
+    else if (key == "Domain Mechanical Properties")
       section_domain_props(it->second, 1);
     else if (key == "Embedded Fractures")
       embedded_fracs(it->second);
@@ -68,7 +68,15 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
     if (key == "fracture")
     {
       config.discrete_fractures.emplace_back();
-      discrete_fracture(it->second, config.discrete_fractures.back());
+      // check if frac has a label
+      auto & conf = config.discrete_fractures.back();
+      extract_subnode_value("label", it, conf.label);
+      if (conf.label == 0)
+      {
+        std::cout << "cannot have label 0" << std::endl;
+        exit(-1);
+      }
+      discrete_fracture(it->second, conf);
     }
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
@@ -204,30 +212,22 @@ void YamlParser::section_domain_props(const YAML::Node & node,
       }
       catch (YAML::TypedBadConversion<int> & error)
       {
-        std::cout << "domain id must be an integer" << std::endl;
+        std::cout << "domain label must be an integer" << std::endl;
         std::cout << "aborting" << std::endl;
+        exit(-1);
+      }
+      catch (YAML::InvalidNode & error)
+      {
+        std::cout << "domain label must be specified" << std::endl;
         exit(-1);
       }
 
       DomainConfig & conf = get_domain_config(label);
-      std::cout << "Reading domain " << conf.label << std::endl;
+      std::cout << "\tReading domain " << conf.label << std::endl;
       domain(it->second, var_type, conf);
     }
     else
       std::cout << "attribute " << key << " unknown: skipping" << std::endl;
-    // int label;
-    // try {
-    //   label = it->first.as<int>();
-    // }
-    // catch (YAML::TypedBadConversion<int> & error)
-    // {
-    //   std::cout << "domain id must be an integer" << std::endl;
-    //   std::cout << "aborting" << std::endl;
-    //   exit(-1);
-    // }
-
-    // conf.label = label;
-
   }
 
 }
@@ -312,7 +312,8 @@ void YamlParser::boundary_conditions_faces(const YAML::Node & node)
       auto & conf = config.bc_faces.back();
       bc_face(it->second, conf);
     }
-    std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
+    else
+      std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
 }
 
@@ -414,17 +415,15 @@ DomainConfig & YamlParser::get_domain_config(const int label)
       counter++;
   }
 
-  // get pointer to the existing config or create if none
   DomainConfig * p_conf;
   if (counter == config.domains.size())
   {
     config.domains.emplace_back();
-    p_conf = &config.domains.back();
+    config.domains.back().label = label;
+    return config.domains.back();
   }
   else
-    p_conf = &(config.domains[counter]);
-
-  return *p_conf;
+    return config.domains[counter];
 }
 
 }

@@ -40,6 +40,24 @@ class YamlParser
 
   DomainConfig & get_domain_config(const int label);
 
+  template <typename ValueType>
+  void extract_subnode_value(const std::string           & key,
+                             const  YAML::const_iterator & it,
+                             ValueType                   & value)
+  {
+    try {
+      value = it->second[key].as<ValueType>();
+    }
+    catch (YAML::TypedBadConversion<int> & error)
+    {
+      std::cout << "cannot convert " << key << ": "
+                <<it->second[key] << std::endl;
+      std::cout << error.what() << std::endl;
+      std::cout << "aborting" << std::endl;
+      exit(-1);
+    }
+  }
+
   // ATTRIBUTES
   SimdataConfig config;
 };

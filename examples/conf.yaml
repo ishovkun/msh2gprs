@@ -27,7 +27,8 @@ Discrete Fractures :
 Domain Mechanical Properties:
   file: gm_domain.txt
   # domain id is matched with the physical volume id in gmsh
-  9999992:
+  domain:
+    label: 9999992
     GMREF_PRESSURE: 100
     GMCELL_DENSITY: 1000
     GMCELL_BIOT: 1
@@ -37,24 +38,28 @@ Domain Mechanical Properties:
 Domain Flow Properties:
   file: domain.txt
   # domain id is matched with the physical volume id in gmsh
-  9999992:
+  domain:
+    label: 9999992
     Coupled: true                  # true/false on by default
     RTEMP: 0
 
 Boundary Conditions:            # geomechanical bc's
   file: "bcond.txt"
-  # ids are physical boundary ids in gmsh file
   Faces:
-    1111111:
+    face:
       # left
+      # labels are physical boundary ids in gmsh file
+      label: 1111111
       type: 2                     # neumann
       value: [-100, 0, 0]
-    1111111:
+    face:
       # right
+      label: 1111112
       type: 2
       value: [100, 0, 0]
-    3333331:
+    face:
       # bottom
+      label: 3333331
       type: 1                     # dirichlet
       value: [nan, nan, 0]
 
