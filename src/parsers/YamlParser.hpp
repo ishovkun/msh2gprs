@@ -1,0 +1,45 @@
+#pragma once
+#include "yaml-cpp/yaml.h"  // IWYU pragma: keep
+
+#include <SimdataConfig.hpp>
+
+#include <string>
+
+namespace Parsers
+{
+
+class YamlParser
+{
+ public:
+  YamlParser();
+  void parse_file(const std::string & fname);
+  SimdataConfig & get_config() {return config;}
+
+ private:
+  // sections
+   // var type can be 0 or 1: flow domain or geomechanics domain
+  void section_domain_props(const YAML::Node & node,
+                            const int          var_type);
+  void embedded_fracs(const YAML::Node & node);
+  void discrete_fracs(const YAML::Node & node);
+  void boundary_conditions(const YAML::Node & node);
+  // subsections
+  void boundary_conditions_faces(const YAML::Node & node);
+  void boundary_conditions_nodes(const YAML::Node & node);
+  // subsections
+  void embedded_fracture(const YAML::Node       & node,
+                         EmbeddedFractureConfig & conf);
+  void discrete_fracture(const YAML::Node       & node,
+                         DiscreteFractureConfig & conf);
+  void domain(const YAML::Node & node,
+              const int          var_type,
+              DomainConfig     & conf);
+  // subsubsection
+  void bc_face(const YAML::Node & node, BCConfig & conf);
+  void bc_node(const YAML::Node & node, BCNodeConfig & conf);
+
+  // ATTRIBUTES
+  SimdataConfig config;
+};
+
+}

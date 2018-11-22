@@ -1,0 +1,66 @@
+Mesh file: mesh.msh
+
+Embedded Fractures :
+  file : efrac.txt
+  # this id is not really used anywhere
+  # just used as a yaml map key (can be anything)
+  fracture:
+    type: Rectangle
+    center: [0, 0, 0]
+    length: 3
+    width: 1
+  fracture:
+    type : Rectangle
+
+Discrete Fractures :
+  # ids for discrete fractures are used to identify them
+  # as physical boundary ids
+  1:
+    conductivity : 1
+    aperture : 0.01
+  2:
+    conductivity : 1
+
+Domain Mechanical Properties:
+  file: gm_domain.txt
+  # domain id is matched with the physical volume id in gmsh
+  9999992:
+    GMREF_PRESSURE: 100
+    GMCELL_DENSITY: 1000
+    GMCELL_BIOT: 1
+    GMREF_TEMPERATURE: 100
+    GMCELL_MODEL: 0
+
+Domain Flow Properties:
+  file: domain.txt
+  # domain id is matched with the physical volume id in gmsh
+  9999992:
+    Coupled: true                  # true/false on by default
+    RTEMP: 0
+
+Boundary Conditions:            # geomechanical bc's
+  file: "bcond.txt"
+  # ids are physical boundary ids in gmsh file
+  Faces:
+    1111111:
+      # left
+      type: 2                     # neumann
+      value: [-100, 0, 0]
+    1111111:
+      # right
+      type: 2
+      value: [100, 0, 0]
+    3333331:
+      # bottom
+      type: 1                     # dirichlet
+      value: [nan, nan, 0]
+
+  Dirichlet nodes:
+    search tolerance: 1e-4
+    # node ids are not used (can be anything)
+    0:
+      coord: [-30, 0, 0]
+      value: [nan, 0, nan]
+    1:
+      coord: [+30, 0, 0]
+      value: [0, nan, nan]
