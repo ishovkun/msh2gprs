@@ -2639,7 +2639,6 @@ void SimData::definePhysicalFacets()
   nDirichletNodes = 0;
   int nfluid = 0;
 
-  // vsPhysicalFacet.resize(nFaces);
   std::size_t iface = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++iface)
   {
@@ -2659,6 +2658,7 @@ void SimData::definePhysicalFacets()
         boundary_face_markers.insert(marker);
         continue;
       }
+
     if (!is_boundary and marker != 0)
     {
       PhysicalFace facet;

@@ -151,6 +151,7 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
           affected_cells.insert(cell_j.index());
       }
     }
+  std::cout << "got affected cells" << std::endl;
 
   // group affected elements
   // two elements are in the same group if they are neighbors and
@@ -172,6 +173,7 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
 
     for (const std::size_t jcell : get_neighbors(icell))
     {
+      std::cout << "jcell = " << jcell << std::endl;
       std::vector<std::size_t> pair_cells;
       if (icell > jcell)
       {
@@ -187,18 +189,25 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
       // find out if i and j neighbor by a marked face
       bool neighbor_by_marked_face = false;
       for (const auto & face : vertex_faces)
-        if (map_faces.find(face.hash())->second.neighbors == pair_cells)
+      {
+        const auto it = map_faces.find(face.hash());
+        if (it->second.neighbors == pair_cells)
         {
           neighbor_by_marked_face = true;
           break;
         }
+      }
 
+      std::cout << "bound = " << neighbor_by_marked_face << std::endl;
+      std::cout << "i_group " << igroup << " outta " << groups.size() << std::endl;
       if (!neighbor_by_marked_face)
         groups[igroup].push_back(jcell);
     }
 
     igroup++;
   }
+
+  std::cout << "got groups" << std::endl;
 
   // create new vertices
   std::vector<std::size_t> new_ivertices(n_groups);
@@ -261,6 +270,7 @@ void Mesh::split_faces()
 
   SurfaceMesh<double> mesh_faces(1e-6);
   // map 2d-element : 3d face hash
+  std::cout << "making 2d frac mesh" << std::endl;
   std::unordered_map<std::size_t, hash_type> map_2d_3d;
   for (const auto & hash : marked_for_split)
   {
@@ -270,6 +280,7 @@ void Mesh::split_faces()
     map_2d_3d.insert({ielement, hash});
   }
 
+  std::cout << "splitting vertices" << std::endl;
   std::unordered_map<std::size_t, std::size_t> map_old_new_cells;
   std::vector<std::vector<std::size_t>> new_cells;
   std::unordered_map<hash_type, Face> map_new_faces;
@@ -287,6 +298,7 @@ void Mesh::split_faces()
       }
 
       const auto edge_vertices = edge.vertices();
+      std::cout << "splitting vertex = " << edge_vertices.first << std::endl;
       split_vertex(vertices.find(edge_vertices.first), vertex_faces,
                    map_old_new_cells, new_cells);
       split_vertex(vertices.find(edge_vertices.second), vertex_faces,
@@ -294,7 +306,7 @@ void Mesh::split_faces()
     }
   }
 
-  // std::cout << "modifying face map" << std::endl;
+  std::cout << "modifying face map" << std::endl;
 
   // modify face map
   for (const auto it_cell : map_old_new_cells)
@@ -308,12 +320,13 @@ void Mesh::split_faces()
     const std::vector<std::vector<std::size_t>> new_poly_faces =
         angem::PolyhedronFactory::get_global_faces<double>(new_cells[new_icell],
                                                            shape_ids[icell]);
-    // std::cout << "got some faces" << std::endl;
+    std::cout << "got some faces" << std::endl;
 
     assert(old_poly_faces.size() == new_poly_faces.size());
 
     for (int i=0; i<old_poly_faces.size(); ++i)
     {
+      std::cout << "processing face " << i << std::endl;
       const hash_type old_hash = hash_value(old_poly_faces[i]);
       const hash_type new_hash = hash_value(new_poly_faces[i]);
       if (new_hash == old_hash)
