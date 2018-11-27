@@ -132,7 +132,7 @@ Polyhedron Mesh::get_polyhedron(const std::size_t icell) const
 }
 
 
-void Mesh::split_vertex(const std::size_t                            ivertex,
+void Mesh::split_vertex(const std::size_t                              ivertex,
                         const std::vector<face_iterator>             & vertex_faces,
                         std::unordered_map<std::size_t, std::size_t> & map_old_new_cells,
                         std::vector<std::vector<std::size_t>>        & new_cells)
@@ -151,7 +151,6 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
           affected_cells.insert(cell_j.index());
       }
     }
-  std::cout << "got affected cells" << std::endl;
 
   // group affected elements
   // two elements are in the same group if they are neighbors and
@@ -159,7 +158,7 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
   const int n_groups = vertex_faces.size();
   std::vector<std::vector<std::size_t>> groups(n_groups);
   int igroup = 0;
-  // just is purely for faster checking
+  // just is purely for faster checking: cells that are already processed
   std::unordered_set<std::size_t> grouped_cells;
   for (const std::size_t icell : affected_cells)
   {
@@ -171,9 +170,8 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
     else
       continue;
 
-    for (const std::size_t jcell : get_neighbors(icell))
+    for (const std::size_t jcell : affected_cells)
     {
-      std::cout << "jcell = " << jcell << std::endl;
       std::vector<std::size_t> pair_cells;
       if (icell > jcell)
       {
@@ -198,16 +196,16 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
         }
       }
 
-      std::cout << "bound = " << neighbor_by_marked_face << std::endl;
-      std::cout << "i_group " << igroup << " outta " << groups.size() << std::endl;
       if (!neighbor_by_marked_face)
+      {
         groups[igroup].push_back(jcell);
+        grouped_cells.insert(jcell);
+      }
+
     }
 
     igroup++;
   }
-
-  std::cout << "got groups" << std::endl;
 
   // create new vertices
   std::vector<std::size_t> new_ivertices(n_groups);
@@ -224,7 +222,6 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
     }
   }
 
-  // std::cout << "modify cell elements" << std::endl;
   // modify new cell vertices
   for (int igroup = 0; igroup < groups.size(); ++igroup)
   {
@@ -249,8 +246,6 @@ void Mesh::split_vertex(const std::size_t                            ivertex,
           jvertex = new_ivertices[igroup];
     }
   }
-  // std::cout << "end vertex split" << std::endl;
-
 }
 
 
