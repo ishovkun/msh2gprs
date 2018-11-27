@@ -1,23 +1,24 @@
-#include <Parser.hpp>
+#include <JsonParser.hpp>
 
 #include <string>
 #include <fstream>  // std::ifstream
 #include <iostream>  // debug
-#include <Rectangle.hpp>
+#include <angem/Rectangle.hpp>
+
 
 namespace Parsers
 {
 
-Parser::Parser()
+JsonParser::JsonParser()
 {}
 
 
 void
-Parser::parse_file(const std::string & fname)
+JsonParser::parse_file(const std::string & fname)
 {
-  std::size_t str_len = fname.size();
+  const std::size_t str_len = fname.size();
   if (fname.substr(str_len - 4, str_len) == "json")
-    parse_json(fname);
+    parse(fname);
   else
   {
     std::cout << "file type not supported" << std::endl;
@@ -26,14 +27,14 @@ Parser::parse_file(const std::string & fname)
 }
 
 
-SimdataConfig & Parser::get_config()
+SimdataConfig & JsonParser::get_config()
 {
   return config;
 }
 
 
 void
-Parser::parse_json(const std::string & fname)
+JsonParser::parse(const std::string & fname)
 {
   // read a JSON file
   std::ifstream input(fname);
@@ -47,15 +48,15 @@ Parser::parse_json(const std::string & fname)
     std::cout << "Entering section " << section_it.key() << '\n';
 
     if (section_it.key() == "Domain Flow Properties")
-      domain_props_json(section_it, 0);
+      domain_props(section_it, 0);
     else if (section_it.key() == "Domain Mechanics Properties")
-      domain_props_json(section_it, 1);
+      domain_props(section_it, 1);
     else if (section_it.key() == "Embedded Fractures")
-      embedded_fracs_json(section_it);
+      embedded_fracs(section_it);
     else if (section_it.key() == "Discrete Fractures")
-      discrete_fracs_json(section_it);
+      discrete_fracs(section_it);
     else if (section_it.key() == "Boundary conditions")
-      boundary_conditions_json(section_it);
+      boundary_conditions(section_it);
     else if (section_it.key() == "Mesh file")
       config.mesh_file = (*section_it).get<std::string>();
     else
@@ -65,8 +66,8 @@ Parser::parse_json(const std::string & fname)
 
 
 void
-Parser::domain_props_json(const nlohmann::json::iterator & section_it,
-                          const int                        var_type)
+JsonParser::domain_props(const nlohmann::json::iterator & section_it,
+                         const int                        var_type)
 {
   nlohmann::json::iterator
       domain_it = (*section_it).begin(),
@@ -79,12 +80,16 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it,
       continue;
     if (domain_it.key() == "file")
     {
-      config.domain_file = (*domain_it).get<std::string>();
+      if (var_type == 0)
+        config.domain_file = (*domain_it).get<std::string>();
+      else if (var_type == 1)
+        config.mechanics_domain_file = (*domain_it).get<std::string>();
       continue;
     }
 
     // check whether the label has been used already
     const int label = std::atoi(domain_it.key().c_str());
+    // find current domain id in existing config
     int counter = 0;
     for (const auto & domain : config.domains)
     {
@@ -94,6 +99,7 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it,
         counter++;
     }
 
+    // get pointer to the existing config or create if none
     DomainConfig * p_conf;
     if (counter == config.domains.size())
     {
@@ -117,14 +123,15 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it,
     for (;attrib_it != attrib_end; ++attrib_it)
     {
       const std::pair<std::string, std::string> key_value =
-          get_pair_json((*attrib_it).begin());
+          get_pair((*attrib_it).begin());
 
       if (key_value.first == comment)
         continue;
       else if (key_value.first == "Coupled")
       {
         conf.coupled = static_cast<bool>(std::stoi(key_value.second));
-        std::cout << "conf.coupled = " << conf.coupled << std::endl;
+        if (!conf.coupled)
+          std::cout << "domain " <<conf.label << " is decoupled !!!" << std::endl;
         continue;
       }
       else
@@ -135,7 +142,7 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it,
         conf.expressions.push_back(key_value.second);
         // check if in global list and append if so
         const std::size_t ind = find(key_value.first, config.all_vars);
-        if (ind == config.all_vars.size())
+        if (ind == config.all_vars.size())  // new variable
         {
           config.all_vars.push_back(key_value.first);
           // special case - service variable (not outputted)
@@ -157,14 +164,14 @@ Parser::domain_props_json(const nlohmann::json::iterator & section_it,
 
 
 std::pair<std::string,std::string>
-Parser::get_pair_json(const nlohmann::json::iterator & pair_it)
+JsonParser::get_pair(const nlohmann::json::iterator & pair_it)
 {
   return std::make_pair(pair_it.key(), (*pair_it).get<std::string>());
 }
 
 
 void
-Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
+JsonParser::embedded_fracs(const nlohmann::json::iterator & section_it)
 {
   nlohmann::json::iterator
       frac_it = (*section_it).begin(),
@@ -191,7 +198,7 @@ Parser::embedded_fracs_json(const nlohmann::json::iterator & section_it)
 
 
 void
-Parser::boundary_conditions_json(const nlohmann::json::iterator & it)
+JsonParser::boundary_conditions(const nlohmann::json::iterator & it)
 {
   nlohmann::json::iterator
       bc_it = (*it).begin(),
@@ -228,8 +235,8 @@ Parser::boundary_conditions_json(const nlohmann::json::iterator & it)
 
 
 void
-Parser::boundary_conditions_faces(nlohmann::json::iterator it,
-                                  const nlohmann::json::iterator & end)
+JsonParser::boundary_conditions_faces(nlohmann::json::iterator it,
+                                      const nlohmann::json::iterator & end)
 {
   for (; it != end; ++it)
   {
@@ -249,9 +256,9 @@ Parser::boundary_conditions_faces(nlohmann::json::iterator it,
 
 
 void
-Parser::boundary_conditions_face(nlohmann::json::iterator         it,
-                                 const nlohmann::json::iterator & end,
-                                 BCConfig & conf)
+JsonParser::boundary_conditions_face(nlohmann::json::iterator         it,
+                                     const nlohmann::json::iterator & end,
+                                     BCConfig & conf)
 {
   for (; it != end; ++it)
   {
@@ -279,8 +286,8 @@ Parser::boundary_conditions_face(nlohmann::json::iterator         it,
 
 
 void
-Parser::boundary_conditions_nodes(nlohmann::json::iterator         it,
-                                  const nlohmann::json::iterator & end)
+JsonParser::boundary_conditions_nodes(nlohmann::json::iterator         it,
+                                      const nlohmann::json::iterator & end)
 {
   for (; it != end; ++it)
   {
@@ -294,7 +301,6 @@ Parser::boundary_conditions_nodes(nlohmann::json::iterator         it,
       continue;
     }
 
-
     config.bc_nodes.emplace_back();
     auto & conf = config.bc_nodes.back();
     boundary_conditions_node((*it).begin(), (*it).end(), conf);
@@ -303,9 +309,9 @@ Parser::boundary_conditions_nodes(nlohmann::json::iterator         it,
 
 
 void
-Parser::boundary_conditions_node(nlohmann::json::iterator it,
-                                 const nlohmann::json::iterator & end,
-                                 BCNodeConfig & conf)
+JsonParser::boundary_conditions_node(nlohmann::json::iterator it,
+                                     const nlohmann::json::iterator & end,
+                                     BCNodeConfig & conf)
 {
   for (; it != end; ++it)
   {
@@ -330,12 +336,11 @@ Parser::boundary_conditions_node(nlohmann::json::iterator it,
       }
     }
     else
-      std::cout << "attribute " << it.key()
-                << " unknown: skipping" << std::endl;
+      std::cout << "attribute " << it.key() << " unknown: skipping" << std::endl;
   }
 }
 
-void Parser::embedded_fracture(nlohmann::json::iterator it,
+void JsonParser::embedded_fracture(nlohmann::json::iterator it,
                                const nlohmann::json::iterator & end,
                                EmbeddedFractureConfig & conf)
 {
@@ -362,8 +367,8 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
       continue;
     else if (key == "type")
     {
-      assert (shape == (*it).get<std::string>());
       shape = (*it).get<std::string>();
+      assert (shape == "Rectangle");
     }
     else if (key == "height")
       height = (*it).get<double>();
@@ -402,7 +407,7 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
                 << " unknown: skipping" << std::endl;
   }
 
-  std::cout << "Making fracture" << std::endl;
+  std::cout << "Making embedded fracture" << std::endl;
   conf.body = std::make_shared<angem::Rectangle<double>>
       (center, length, height, dip, strike);
 
@@ -416,7 +421,7 @@ void Parser::embedded_fracture(nlohmann::json::iterator it,
 
 
 void
-Parser::discrete_fracs_json(const nlohmann::json::iterator & section_it)
+JsonParser::discrete_fracs(const nlohmann::json::iterator & section_it)
 {
   nlohmann::json::iterator
       frac_it = (*section_it).begin(),
@@ -445,9 +450,9 @@ Parser::discrete_fracs_json(const nlohmann::json::iterator & section_it)
 }
 
 
-void Parser::discrete_fracture(nlohmann::json::iterator it,
-                               const nlohmann::json::iterator & end,
-                               DiscreteFractureConfig & conf)
+void JsonParser::discrete_fracture(nlohmann::json::iterator it,
+                                   const nlohmann::json::iterator & end,
+                                   DiscreteFractureConfig & conf)
 {
   for (; it != end; ++it)
   {

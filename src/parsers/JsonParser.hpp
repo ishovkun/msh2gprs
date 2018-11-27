@@ -8,20 +8,19 @@
 namespace Parsers
 {
 
-class Parser
+class JsonParser
 {
  public:
-  Parser();
+  JsonParser();
   void parse_file(const std::string & fname);
   SimdataConfig & get_config();
  private:
-  // JSON
-  void parse_json(const std::string & fname);
+  void parse(const std::string & fname);
   // var type can be 0 or 1: flow domain or geomechanics domain
-  void domain_props_json(const nlohmann::json::iterator & section_it,
+  void domain_props(const nlohmann::json::iterator & section_it,
                          const int                        var_type);
-  void embedded_fracs_json(const nlohmann::json::iterator & section_it);
-  void boundary_conditions_json(const nlohmann::json::iterator & section_it);
+  void embedded_fracs(const nlohmann::json::iterator & section_it);
+  void boundary_conditions(const nlohmann::json::iterator & section_it);
   void boundary_conditions_faces(nlohmann::json::iterator it,
                                  const nlohmann::json::iterator & end);
   void boundary_conditions_nodes(nlohmann::json::iterator it,
@@ -35,7 +34,7 @@ class Parser
   void embedded_fracture(nlohmann::json::iterator it,
                          const nlohmann::json::iterator & end,
                          EmbeddedFractureConfig & conf);
-  void discrete_fracs_json(const nlohmann::json::iterator & section_it);
+  void discrete_fracs(const nlohmann::json::iterator & section_it);
   void discrete_fracture(nlohmann::json::iterator it,
                          const nlohmann::json::iterator & end,
                          DiscreteFractureConfig & conf);
@@ -43,7 +42,7 @@ class Parser
 
 
   std::pair<std::string,std::string>
-  get_pair_json(const nlohmann::json::iterator & section_it);
+  get_pair(const nlohmann::json::iterator & section_it);
   // ATTRIBUTES
   SimdataConfig config;
   std::string comment = "_comment_";

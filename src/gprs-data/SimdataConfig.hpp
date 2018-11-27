@@ -1,5 +1,6 @@
 #pragma once
 #include <Polygon.hpp>
+#include <map>
 
 #include <memory> // shared / unique_ptr
 
@@ -70,6 +71,7 @@ struct SimdataConfig
   // output file names
   std::string mesh_file;
   std::string domain_file = "domain.txt";
+  std::string mechanics_domain_file = "domain.txt";
   std::string efrac_file = "efrac.txt";
   std::string bcond_file = "bcond.txt";
   // special keywords needed for computing fluid data
