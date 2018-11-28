@@ -2654,12 +2654,11 @@ void SimData::definePhysicalFacets()
   std::size_t iface = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++iface)
   {
-    bool is_boundary = false;
+    const bool is_boundary = (face.neighbors().size() < 2);
     const int marker = face.marker();
     for (const auto & conf : config.bc_faces)
-      if (marker == conf.label or face.neighbors().size() < 2)
+      if (marker == conf.label)
       {
-        is_boundary = true;
         PhysicalFace facet;
         facet.nface = iface;
         facet.ntype = conf.type;
@@ -2668,7 +2667,7 @@ void SimData::definePhysicalFacets()
         facet.nfluid = -1;
         boundary_faces.insert({face.index(), facet});
         boundary_face_markers.insert(marker);
-        continue;
+        break;
       }
 
     if (!is_boundary and marker != 0)
@@ -2704,6 +2703,8 @@ void SimData::definePhysicalFacets()
                   << marker
                   << " found! Setting sealed fault."
                   << std::endl;
+        std::cout << "n_neighbors " << face.neighbors().size() << std::endl;
+        std::cout << "is_boundary = " << is_boundary << std::endl;
         facet.aperture = 1; //m
         facet.conductivity = 0; //mD.m
       }
