@@ -82,7 +82,7 @@ std::pair<angem::Point<3,double>,angem::Point<3,double> >
 edge_iterator<Scalar>::vertices() const
 {
   const auto ivertices = vertex_indices();
-  return {mesh_vertices[ivertices.first], mesh_vertices[ivertices.first]};
+  return {mesh_vertices[ivertices.first], mesh_vertices[ivertices.second]};
 }
 
 }

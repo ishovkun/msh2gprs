@@ -152,6 +152,11 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
       }
     }
 
+  std::cout << "affected elements" << std::endl;
+  for (auto cell : affected_cells)
+    std::cout << cell << "\t";
+  std::cout << std::endl;
+
   // group affected elements
   // two elements are in the same group if they are neighbors and
   // the neighboring face is not in vertex_faces array
@@ -159,52 +164,63 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
   std::vector<std::vector<std::size_t>> groups(n_groups);
   int igroup = 0;
   // just is purely for faster checking: cells that are already processed
-  std::unordered_set<std::size_t> grouped_cells;
+  std::unordered_set<std::size_t> processed_cells;
   for (const std::size_t icell : affected_cells)
   {
-    if (grouped_cells.find(icell) == grouped_cells.end())
+    if (processed_cells.find(icell) == processed_cells.end())
     {
-      grouped_cells.insert(icell);
+      processed_cells.insert(icell);
       groups[igroup].push_back(icell);
     }
     else
       continue;
 
     for (const std::size_t jcell : affected_cells)
-    {
-      std::vector<std::size_t> pair_cells;
-      if (icell > jcell)
+      if (processed_cells.find(jcell) == processed_cells.end())
       {
-        pair_cells.push_back(jcell);
-        pair_cells.push_back(icell);
-      }
-      else  // they are always not equal
-      {
-        pair_cells.push_back(icell);
-        pair_cells.push_back(jcell);
-      }
 
-      // find out if i and j neighbor by a marked face
-      bool neighbor_by_marked_face = false;
-      for (const auto & face : vertex_faces)
-      {
-        const auto it = map_faces.find(face.hash());
-        if (it->second.neighbors == pair_cells)
+        std::vector<std::size_t> pair_cells;
+        if (icell > jcell)
         {
-          neighbor_by_marked_face = true;
-          break;
+          pair_cells.push_back(jcell);
+          pair_cells.push_back(icell);
         }
-      }
+        else  // they are always not equal
+        {
+          pair_cells.push_back(icell);
+          pair_cells.push_back(jcell);
+        }
 
-      if (!neighbor_by_marked_face)
-      {
-        groups[igroup].push_back(jcell);
-        grouped_cells.insert(jcell);
-      }
+        // find out if i and j neighbor by a marked face
+        bool neighbor_by_marked_face = false;
+        for (const auto & face : vertex_faces)
+        {
+          const auto it = map_faces.find(face.hash());
+          if (it->second.neighbors == pair_cells)
+          {
+            neighbor_by_marked_face = true;
+            break;
+          }
+        }
 
-    }
+        if (!neighbor_by_marked_face)
+        {
+          groups[igroup].push_back(jcell);
+          processed_cells.insert(jcell);
+        }
+
+      }
 
     igroup++;
+  }
+
+  std::cout << "groups" << std::endl;
+  for (std::size_t i=0; i<groups.size(); ++i)
+  {
+    std::cout << "group " << i << ": ";
+    for (auto & cell : groups[i])
+      std::cout << cell << "\t";
+    std::cout << std::endl;
   }
 
   // create new vertices
@@ -296,6 +312,7 @@ void Mesh::split_faces()
       std::cout << "splitting vertex = " << edge_vertices.first << std::endl;
       split_vertex(vertices.find(edge_vertices.first), vertex_faces,
                    map_old_new_cells, new_cells);
+      std::cout << "splitting vertex = " << edge_vertices.second << std::endl;
       split_vertex(vertices.find(edge_vertices.second), vertex_faces,
                    map_old_new_cells, new_cells);
     }
@@ -315,13 +332,11 @@ void Mesh::split_faces()
     const std::vector<std::vector<std::size_t>> new_poly_faces =
         angem::PolyhedronFactory::get_global_faces<double>(new_cells[new_icell],
                                                            shape_ids[icell]);
-    std::cout << "got some faces" << std::endl;
 
     assert(old_poly_faces.size() == new_poly_faces.size());
 
     for (int i=0; i<old_poly_faces.size(); ++i)
     {
-      std::cout << "processing face " << i << std::endl;
       const hash_type old_hash = hash_value(old_poly_faces[i]);
       const hash_type new_hash = hash_value(new_poly_faces[i]);
       if (new_hash == old_hash)
