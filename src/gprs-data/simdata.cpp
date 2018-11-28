@@ -2703,8 +2703,6 @@ void SimData::definePhysicalFacets()
                   << marker
                   << " found! Setting sealed fault."
                   << std::endl;
-        std::cout << "n_neighbors " << face.neighbors().size() << std::endl;
-        std::cout << "is_boundary = " << is_boundary << std::endl;
         facet.aperture = 1; //m
         facet.conductivity = 0; //mD.m
       }
