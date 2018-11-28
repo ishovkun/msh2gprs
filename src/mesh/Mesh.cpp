@@ -152,10 +152,10 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
       }
     }
 
-  std::cout << "affected elements" << std::endl;
-  for (auto cell : affected_cells)
-    std::cout << cell << "\t";
-  std::cout << std::endl;
+  // std::cout << "affected elements" << std::endl;
+  // for (auto cell : affected_cells)
+  //   std::cout << cell << "\t";
+  // std::cout << std::endl;
 
   // group affected elements
   // two elements are in the same group if they are neighbors and
@@ -175,28 +175,21 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
     else
       continue;
 
-    for (const std::size_t jcell : affected_cells)
+    for (const std::size_t jcell : get_neighbors(icell))
       if (processed_cells.find(jcell) == processed_cells.end())
       {
 
-        std::vector<std::size_t> pair_cells;
-        if (icell > jcell)
-        {
-          pair_cells.push_back(jcell);
-          pair_cells.push_back(icell);
-        }
-        else  // they are always not equal
-        {
-          pair_cells.push_back(icell);
-          pair_cells.push_back(jcell);
-        }
+        auto pair_cells = std::minmax(icell, jcell);
+        std::vector<std::size_t> ordered_neighbors =
+            {pair_cells.first, pair_cells.second};
 
         // find out if i and j neighbor by a marked face
         bool neighbor_by_marked_face = false;
         for (const auto & face : vertex_faces)
         {
           const auto it = map_faces.find(face.hash());
-          if (it->second.neighbors == pair_cells)
+
+          if (it->second.neighbors == ordered_neighbors)
           {
             neighbor_by_marked_face = true;
             break;
@@ -212,15 +205,6 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
       }
 
     igroup++;
-  }
-
-  std::cout << "groups" << std::endl;
-  for (std::size_t i=0; i<groups.size(); ++i)
-  {
-    std::cout << "group " << i << ": ";
-    for (auto & cell : groups[i])
-      std::cout << cell << "\t";
-    std::cout << std::endl;
   }
 
   // create new vertices
@@ -291,7 +275,6 @@ void Mesh::split_faces()
     map_2d_3d.insert({ielement, hash});
   }
 
-  std::cout << "splitting vertices" << std::endl;
   std::unordered_map<std::size_t, std::size_t> map_old_new_cells;
   std::vector<std::vector<std::size_t>> new_cells;
   std::unordered_map<hash_type, Face> map_new_faces;
@@ -309,16 +292,16 @@ void Mesh::split_faces()
       }
 
       const auto edge_vertices = edge.vertices();
-      std::cout << "splitting vertex = " << edge_vertices.first << std::endl;
+      // std::cout << "splitting vertex = " << edge_vertices.first << std::endl;
       split_vertex(vertices.find(edge_vertices.first), vertex_faces,
                    map_old_new_cells, new_cells);
-      std::cout << "splitting vertex = " << edge_vertices.second << std::endl;
+      // std::cout << "splitting vertex = " << edge_vertices.second << std::endl;
       split_vertex(vertices.find(edge_vertices.second), vertex_faces,
                    map_old_new_cells, new_cells);
     }
   }
 
-  std::cout << "modifying face map" << std::endl;
+  // std::cout << "modifying face map" << std::endl;
 
   // modify face map
   for (const auto it_cell : map_old_new_cells)
