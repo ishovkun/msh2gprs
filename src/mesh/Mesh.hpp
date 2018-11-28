@@ -112,6 +112,12 @@ class Mesh
                     std::unordered_map<std::size_t, std::size_t> & map_old_new_cells,
                     std::vector<std::vector<std::size_t>>        & new_cells);
 
+  // two elements are in the same group if they are neighbors and
+  // the neighboring face is not in vertex_faces array
+  std::vector<std::vector<std::size_t>>
+  group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & affected_cells,
+                                   const std::vector<face_iterator>      & vertex_faces) const;
+
   // get global indices of polygon face vertices
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
   std::vector<hash_type> marked_for_split;

@@ -157,55 +157,9 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
   //   std::cout << cell << "\t";
   // std::cout << std::endl;
 
-  // group affected elements
-  // two elements are in the same group if they are neighbors and
-  // the neighboring face is not in vertex_faces array
-  const int n_groups = vertex_faces.size();
-  std::vector<std::vector<std::size_t>> groups(n_groups);
-  int igroup = 0;
-  // just is purely for faster checking: cells that are already processed
-  std::unordered_set<std::size_t> processed_cells;
-  for (const std::size_t icell : affected_cells)
-  {
-    if (processed_cells.find(icell) == processed_cells.end())
-    {
-      processed_cells.insert(icell);
-      groups[igroup].push_back(icell);
-    }
-    else
-      continue;
-
-    for (const std::size_t jcell : get_neighbors(icell))
-      if (processed_cells.find(jcell) == processed_cells.end())
-      {
-
-        auto pair_cells = std::minmax(icell, jcell);
-        std::vector<std::size_t> ordered_neighbors =
-            {pair_cells.first, pair_cells.second};
-
-        // find out if i and j neighbor by a marked face
-        bool neighbor_by_marked_face = false;
-        for (const auto & face : vertex_faces)
-        {
-          const auto it = map_faces.find(face.hash());
-
-          if (it->second.neighbors == ordered_neighbors)
-          {
-            neighbor_by_marked_face = true;
-            break;
-          }
-        }
-
-        if (!neighbor_by_marked_face)
-        {
-          groups[igroup].push_back(jcell);
-          processed_cells.insert(jcell);
-        }
-
-      }
-
-    igroup++;
-  }
+  std::vector<std::vector<std::size_t>> groups =
+      group_cells_based_on_split_faces(affected_cells, vertex_faces);
+  const int n_groups = groups.size();
 
   // create new vertices
   std::vector<std::size_t> new_ivertices(n_groups);
@@ -265,7 +219,6 @@ void Mesh::split_faces()
 
   SurfaceMesh<double> mesh_faces(1e-6);
   // map 2d-element : 3d face hash
-  std::cout << "making 2d frac mesh" << std::endl;
   std::unordered_map<std::size_t, hash_type> map_2d_3d;
   for (const auto & hash : marked_for_split)
   {
@@ -301,7 +254,7 @@ void Mesh::split_faces()
     }
   }
 
-  // std::cout << "modifying face map" << std::endl;
+  std::cout << "modifying face map" << std::endl;
 
   // modify face map
   for (const auto it_cell : map_old_new_cells)
@@ -370,5 +323,100 @@ void Mesh::split_faces()
   marked_for_split.clear();
 }
 
+
+std::vector<std::vector<std::size_t>>
+Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & affected_cells,
+                                       const std::vector<face_iterator>      & vertex_faces) const
+{
+  // group affected elements
+  // two elements are in the same group if they are neighbors and
+  // the neighboring face is not in vertex_faces array
+  const int n_groups = vertex_faces.size();
+  std::unordered_map<std::size_t, int> map_cell_group;
+  int igroup = 0;
+  int new_group = 0;
+  // just is purely for faster checking: cells that are already processed
+  std::unordered_set<std::size_t> processed_cells;
+  for (const std::size_t icell : affected_cells)
+  {
+    // std::cout << "icell = " << icell << std::endl;
+
+    auto group_it = map_cell_group.find(icell);
+    if (group_it != map_cell_group.end())
+    {
+      igroup = group_it->second;
+    }
+    else
+    {
+      igroup = new_group;
+      // groups[igroup].push_back(icell);
+      map_cell_group.insert({icell, igroup});
+      new_group++;
+    }
+    // std::cout << "igroup = " << igroup << " of " << n_groups << "\t";
+
+    processed_cells.insert(icell);
+
+    for (const std::size_t jcell : get_neighbors(icell))
+      // if (processed_cells.find(jcell) == processed_cells.end() and
+      //     affected_cells.find(jcell) != affected_cells.end())
+      if (affected_cells.find(jcell) != affected_cells.end())
+      {
+        auto pair_cells = std::minmax(icell, jcell);
+        std::vector<std::size_t> ordered_neighbors =
+            {pair_cells.first, pair_cells.second};
+        // std::cout << "checking " << jcell;
+        //           << pair_cells.first << "\t"
+        //           << pair_cells.second << "\t"
+        //           << std::endl;
+
+        // find out if i and j neighbor by a marked face
+        bool neighbor_by_marked_face = false;
+        for (const auto & face : vertex_faces)
+        {
+          const auto it = map_faces.find(face.hash());
+
+          if (it->second.neighbors == ordered_neighbors)
+          {
+            neighbor_by_marked_face = true;
+            break;
+          }
+        }
+
+        if (!neighbor_by_marked_face)
+        {
+          // std::cout << " same" << std::endl;
+          auto group_it = map_cell_group.find(jcell);
+          if (group_it == map_cell_group.end())
+            map_cell_group.insert({jcell, igroup});
+          else
+          {
+            if (group_it->second < igroup)
+            {
+              map_cell_group[icell] = group_it->second;
+              igroup = group_it->second;
+              new_group--;
+            }
+            else
+              map_cell_group[jcell] = igroup;
+          }
+        }
+        // else
+        //   std::cout << " other" << std::endl;
+      }
+    // std::cout << "igroup = " << igroup << std::endl << std::endl;
+  }
+  // std::cout << "groups" << std::endl;
+  // for (auto & it : map_cell_group)
+  //   std::cout << it.first << "\t" << it.second << std::endl;
+
+  // abort();
+
+  std::vector<std::vector<std::size_t>> groups(n_groups);
+  for (auto it : map_cell_group)
+    groups[it.second].push_back(it.first);
+
+  return std::move(groups);
+}
 
 }
