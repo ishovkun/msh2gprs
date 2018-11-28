@@ -252,7 +252,7 @@ void YamlParser::domain(const YAML::Node & node,
       if (!conf.coupled)
         std::cout << "domain " <<conf.label << " is decoupled !!!" << std::endl;
     }
-    if (key == "label") // coupling with mechanics
+    else if (key == "label") // coupling with mechanics
       continue;
     else
     {

@@ -676,9 +676,7 @@ void SimData::computeReservoirTransmissibilities()
   }
 
   FlowData matrix_flow_data;
-  std::cout << "run karimi" << std::endl;
   calc.compute_flow_data();
-  std::cout << "karimi done" << std::endl;
   calc.extractData(matrix_flow_data);
 
   // copy to global
@@ -1321,6 +1319,7 @@ void SimData::defineRockProperties()
           std::cout << "when setting variable '"
                     << config.all_vars[j]
                     << "'" << std::endl;
+          exit(-1);
         }
 
       }
@@ -1333,6 +1332,7 @@ void SimData::defineRockProperties()
         std::cout << "when setting expression '"
                   << conf.expressions[i]
                   << "'" << std::endl;
+        exit(-1);
       }
     }
 
@@ -1342,14 +1342,26 @@ void SimData::defineRockProperties()
       if ( cell.marker() == conf.label ) // cells
       {
         std::fill(vars.begin(), vars.end(), 0);
-        Point center(cell.center());
+        Point center = cell.center();
         vars[0] = center[0];  // x
         vars[1] = center[1];  // y
         vars[2] = center[2];  // z
 
         // Evaluate expression -> write into variable
         for (std::size_t i=0; i<n_expressions; ++i)
+        {
+          try {
           vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
+          }
+          catch(mu::Parser::exception_type & e)
+          {
+            std::cout << _T("Evaluation error:  ") << e.GetMsg() << endl;
+            std::cout << "when evaluating expression '"
+                      << conf.expressions[i]
+                      << "'" << std::endl;
+            exit(-1);
+          }
+        }
 
         // copy vars to cell properties
         vsCellRockProps[cell.index()].v_props.resize(n_variables - shift);
