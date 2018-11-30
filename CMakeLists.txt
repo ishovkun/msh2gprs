@@ -15,12 +15,16 @@ ENDIF()
 find_package(Boost 1.65.1 COMPONENTS REQUIRED)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
+if(Boost_FOUND)
+  add_definitions(-DUSE_BOOST)
+else()
+  # 256 bit integer lib (for mesh)
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/uint256)
+ENDIF()
+
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
 ADD_SUBDIRECTORY(src/angem)
-
-# 256 bit integer lib (for mesh)
-# INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/uint256)
 
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
@@ -40,7 +44,7 @@ ADD_SUBDIRECTORY(src/parsers)
 
 
 # targets
-set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Debug)
 # set(CMAKE_BUILD_TYPE Release)
 
 ADD_EXECUTABLE(msh2gprs ${CMAKE_SOURCE_DIR}/src/main.cpp)

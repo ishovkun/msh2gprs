@@ -28,6 +28,9 @@ TARGET_INCLUDE_DIRECTORIES(mesh PUBLIC
 )
 
 
-# # TARGET_LINK_LIBRARIES(mesh angem uint256)
+if(Boost_FOUND)
+  TARGET_LINK_LIBRARIES(mesh angem ${Boost_LIBRARIES})
+else()
+  TARGET_LINK_LIBRARIES(mesh angem uint256)
+endif()
 # TARGET_LINK_LIBRARIES(mesh angem vli)
-TARGET_LINK_LIBRARIES(mesh angem ${Boost_LIBRARIES})

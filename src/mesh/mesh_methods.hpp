@@ -4,34 +4,29 @@
 #include <angem/PointSet.hpp>
 #include <angem/Polyhedron.hpp>
 #include <SurfaceMesh.hpp>
-// #include <uint256/uint256_t.h>
 #include <Face.hpp>
-// #include <vli/integer.hpp>
+
+#ifdef USE_BOOST
 #include <boost/multiprecision/cpp_int.hpp>
+#else
+#include <uint256/uint256_t.h>
+#endif
 
 
 #include <unordered_set>
 
 
-// namespace std
-// {
-
-// template <>
-// struct hash<vli::integer<256>>
-// {
-//   vli::integer<256> operator()(vli::integer<256> key) const
-//   {
-//     return key;
-//   }
-// };
-// }
-
 namespace mesh
 {
 
 using Point = angem::Point<3,double>;
-// using hash_type = vli::integer<256>;
+
+#ifdef USE_BOOST
 using hash_type = boost::multiprecision::uint256_t;
+#else
+using hash_type = uint256_t;
+#endif
+
 using FaceMap = std::unordered_map<hash_type, Face>;
 
 
