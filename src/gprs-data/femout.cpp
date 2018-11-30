@@ -69,114 +69,133 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
                            grid.shape_ids, vtk_file);
 
-  // if (data.dfm_faces.size() > 0)
-  // { // DFM frac geometry
-  //   mesh::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ 1e10);
-  //   for(std::size_t iface = 0; iface < pSim->vsFaceCustom.size(); iface++)
-  //     if(pSim->vsFaceCustom[iface].nMarker > 0)  // dfm frac
-  //     {
-  //       angem::Polygon<double> poly_face(pSim->vvVrtxCoords,
-  //                                        pSim->vsFaceCustom[iface].vVertices);
-  //       frac_msh.insert(poly_face);
-  //     }
+  if (data.dfm_faces.size() > 0)
+  { // DFM frac geometry
+    mesh::SurfaceMesh<double> frac_msh(/* tol = */ 1e-6);
+    for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+      if(data.is_fracture(face.marker()))  // dfm frac
+      {
+        // angem::Polygon<double> poly_face(pSim->vvVrtxCoords,
+        //                                  pSim->vsFaceCustom[iface].vVertices);
+        angem::Polygon<double> poly_face(grid.vertices.points,
+                                         face.vertex_indices());
+        frac_msh.insert(poly_face);
+      }
 
-  //   const std::string vtk_dfm_file = output_path + "dfm.vtk";
-  //   IO::VTKWriter::write_vtk(frac_msh.vertices.points, frac_msh.polygons,
-  //                            vtk_dfm_file);
+    const std::string vtk_dfm_file = output_path + "dfm.vtk";
+    IO::VTKWriter::write_vtk(frac_msh.vertices.points, frac_msh.polygons,
+                             vtk_dfm_file);
 
-  // }
+  }
 
-  // geomechfile.precision(12);
-  // cout << "write all coordinates\n";
-  // geomechfile << "GMNODE_COORDS" << endl;
-  // for (int i = 0 ; i < pSim->nNodes; i++)
+  geomechfile.precision(12);
+  cout << "write all coordinates\n";
+  geomechfile << "GMNODE_COORDS" << endl;
+  for (const auto & vertex : grid.vertices)
+      geomechfile << vertex[0] << "\t"
+                  << vertex[1] << "\t"
+                  << vertex[2] << "\n";
+
+  cout << "write all elements\n";
+  geomechfile << "GMCELL_NODES" << endl;
+  for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
+  {
+    const auto & vertices = cell.vertices();
+    geomechfile << vertices.size() << "\t";
+
+    switch (cell.shape_id())
+    {
+      case 25: // super wierd element 25
+        {
+          for (int j = 0; j < 8; j++)
+            geomechfile << vertices[j] + 1 << "\t";
+          geomechfile << vertices[8] + 1 << "\t";
+          geomechfile << vertices[11] + 1 << "\t";
+          geomechfile << vertices[13] + 1 << "\t";
+          geomechfile << vertices[9] + 1 << "\t";
+
+          geomechfile << vertices[16] + 1 << "\t";
+          geomechfile << vertices[18] + 1 << "\t";
+          geomechfile << vertices[19] + 1 << "\t";
+          geomechfile << vertices[17] + 1 << "\t";
+
+          geomechfile << vertices[10] + 1 << "\t";
+          geomechfile << vertices[12] + 1 << "\t";
+          geomechfile << vertices[14] + 1 << "\t";
+          geomechfile << vertices[15] + 1 << "\t";
+          break;
+        }
+      case 26:
+        {
+          for (int j = 0; j < 6; j++)
+            geomechfile << vertices[j] + 1 << "\t";
+
+          geomechfile << vertices[6] + 1 << "\t";
+          geomechfile << vertices[9] + 1 << "\t";
+          geomechfile << vertices[7] + 1 << "\t";
+
+          geomechfile << vertices[12] + 1 << "\t";
+          geomechfile << vertices[14] + 1 << "\t";
+          geomechfile << vertices[13] + 1 << "\t";
+
+          geomechfile << vertices[8] + 1 << "\t";
+          geomechfile << vertices[10] + 1 << "\t";
+          geomechfile << vertices[11] + 1 << "\t";
+          break;
+        }
+      default:
+        {
+          for (const auto vertex : vertices)
+            geomechfile << vertex + 1 << "\t";
+          break;
+        }
+    }
+
+    geomechfile << std::endl;
+  }
+
+  geomechfile << "/" << endl << endl;
+
+  geomechfile << "GMCELL_TYPE" << endl;
+  for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
+    geomechfile <<  cell.shape_id() << std::endl;
+  geomechfile << "/" << std::endl << std::endl;
+
+  geomechfile << "GMCELL_TO_FLOWCELLS" << endl;
+  for (const auto & flow_cells : data.gm_cell_to_flow_cell)
+  {
+    const std::size_t n_connected_elements = flow_cells.size();
+    if (n_connected_elements == 0)
+      geomechfile << 1 << "\t" << -1 << std::endl;
+    else
+    {
+      geomechfile << n_connected_elements << "\t";
+      for (const std::size_t ielement : flow_cells)
+        geomechfile << ielement + 1 << "\t";
+      geomechfile << std::endl;
+    }
+  }
+  geomechfile << "/\n\n";
+
+  std::cout << "write all faces\n";
+
+  geomechfile << "GMFACE_NODES\n";
+  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  {
+    const std::vector<std::size_t> ivertices = face.vertex_indices();
+    geomechfile << ivertices.size() << "\t";
+    for (const std::size_t & ivertex : ivertices)
+      geomechfile << ivertex + 1 << "\t";
+    geomechfile << std::endl;
+  }
+
+  geomechfile << "/" << std::endl << std::endl;
+
+  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
   // {
-  //   geomechfile << pSim->vvVrtxCoords[i][0] << "\t"
-  //               << pSim->vvVrtxCoords[i][1] << "\t"
-  //               << pSim->vvVrtxCoords[i][2] << "\n";
+
   // }
-  // geomechfile << "/" << endl << endl;
 
-  // cout << "write all elements\n";
-  // geomechfile << "GMCELL_NODES" << endl;
-  // for (int i = 0; i < pSim->nCells; i++)
-  // {
-  //   geomechfile << pSim->vsCellCustom[i].nVertices << "\t";
-  //   if(pSim->vsCellCustom[i].vtkIndex == 25)
-  //   {
-  //     // super wierd element 25
-  //     for (int j = 0; j < 8; j++)
-  //       geomechfile << pSim->vsCellCustom[i].vVertices[j] + 1 << "\t";
-
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[8] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[11] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[13] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[9] + 1 << "\t";
-
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[16] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[18] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[19] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[17] + 1 << "\t";
-
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[10] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[12] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[14] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[15] + 1 << "\t";
-  //     geomechfile << endl;
-  //   }
-  //   else if(pSim->vsCellCustom[i].vtkIndex == 26)
-  //   {
-  //     for (int j = 0; j < 6; j++)
-  //       geomechfile << pSim->vsCellCustom[i].vVertices[j] + 1 << "\t";
-
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[6] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[9] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[7] + 1 << "\t";
-
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[12] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[14] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[13] + 1 << "\t";
-
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[8] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[10] + 1 << "\t";
-  //     geomechfile << pSim->vsCellCustom[i].vVertices[11] + 1 << "\t";
-  //     geomechfile << endl;
-  //   }
-  //   else
-  //   {
-  //     for (int j = 0; j < pSim->vsCellCustom[i].nVertices; j++)
-  //       geomechfile << pSim->vsCellCustom[i].vVertices[j] + 1 << "\t";
-  //     geomechfile << endl;
-  //   }
-  // }
-  // geomechfile << "/" << endl << endl;
-
-
-  // geomechfile << "GMCELL_TYPE" << endl;
-  // for (int i = 0; i < pSim->nCells; i++)
-  //   geomechfile <<  pSim->vsCellCustom[i].vtkIndex << endl;
-  // geomechfile << "/" << endl << endl;
-
-  // geomechfile << "GMCELL_TO_FLOWCELLS" << endl;
-  // int i_ = 0;
-  // for (std::size_t i = 0; i < pSim->nCells; i++)
-  // {
-  //   const std::size_t n_connected_elements =
-  //       pSim->vsCellCustom[i].flow_elements.size();
-  //   if (n_connected_elements == 0)
-  //     geomechfile << 1 << "\t" << -1 << std::endl;
-  //   else
-  //   {
-  //     geomechfile << n_connected_elements << "\t";
-  //     for (const std::size_t ielement : pSim->vsCellCustom[i].flow_elements)
-  //       geomechfile << ielement + 1 << "\t";
-  //     geomechfile << std::endl;
-  //   }
-  // }
-  // geomechfile << "/\n\n";
-
-  // cout << "write all faces\n";
-  // geomechfile << "GMFACE_NODES\n";
   // for (int i = 0; i < pSim->nFaces; i++)
   // {
   //   geomechfile << pSim->vsFaceCustom[i].nVertices << "\t";

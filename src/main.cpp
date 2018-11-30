@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
   // // std::cout << "mesh fractures" << std::endl;
   // // pSimData->meshFractures();
 
-  // std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  // pSimData->computeTransBetweenDifferentEfracs();
+  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  pSimData->computeTransBetweenDifferentEfracs();
 
   // // // cout << "Create simple wells" << endl;
   // // // pSimData->createSimpleWells();

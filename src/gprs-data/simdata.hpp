@@ -165,26 +165,6 @@ public:
   double get_volume_factor(const std::size_t cell) const;
   void meshFractures();
 
-protected:
-   void methodElementCenter(int nelem, vector<Gelement> &vsElement);
-   void methodFaceNormalVector(int nelem, vector<Gelement> &vsElement);
-   void methodChangeFacesNormalVector();
-
-   void methodRandomRockProperties();
-   double createLognormalDistribution(double E, double S);
-
-  void handle_edfm_face_intersection(const std::size_t ifrac,
-                                     const std::size_t jfrac,
-                                     const std::vector<std::size_t> & icells,
-                                     const std::vector<std::size_t> & jcells);
-
-  void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
-                                              const std::vector<std::vector<std::size_t>> & polys,
-                                              const std::vector<int>                      & markers,
-                                              FlowData                                    & flow_data) const;
-  std::size_t get_flow_element_index(const std::size_t ifrac,
-                                     const std::size_t ielement) const;
-
   bool is_fracture (const int marker)
   {
     const auto it = fracture_face_markers.find(marker);
@@ -202,32 +182,23 @@ protected:
   }
 
 
-   // int checkReservedBoundaryName(int nmarker)
-   // {
-   //   if( nmarker > 1000000 ) return(-1);
-   //   return(1);
-   // }
-   // renum * pRenum;
+
+protected:
+  void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
+                                              const std::vector<std::vector<std::size_t>> & polys,
+                                              const std::vector<int>                      & markers,
+                                              FlowData                                    & flow_data) const;
+  std::size_t get_flow_element_index(const std::size_t ifrac,
+                                     const std::size_t ielement) const;
+
+  // renum * pRenum;
 
 public:
   mesh::Mesh & grid;
-  // int corner_cell;
-  // vector<double> grade_total, temp_total;
-  // int nNodes;
-  // std::size_t nNodes;
 
-  // double dNotNumber;
-
-  // int nBndNodes;
   // vector<vector<double> > vvBndFaceNodesCoor;
   // vector<vector<int> >    vvBndFaceNodes;
   // vector<int>    vBndFaceCode;
-
-  // vector<vector<double> > vvInputCoorNodes;
-  // vector<vector<int> >    vvElementNodes;
-  // vector<int> vElementCode;
-
-  string outstream;
 
   // Internal Data
   // std::size_t nVertices;
@@ -252,6 +223,7 @@ public:
   std::unordered_map<std::size_t, PhysicalFace> dfm_faces;
   std::size_t n_flow_dfm_faces;
   // vector<PhysicalFace> vsPhysicalBoundary;
+  std::vector<std::vector<std::size_t>> gm_cell_to_flow_cell;
 
   std::unordered_set<int> fracture_face_markers;
   std::unordered_set<int> boundary_face_markers;

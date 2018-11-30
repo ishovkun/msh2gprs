@@ -15,7 +15,7 @@ cell_iterator(const std::size_t                       icell,
 
     :
     icell(icell),
-    vertices(vertices),
+    mesh_vertices(vertices),
     cells(cells),
     map_faces(map_faces),
     shape_ids(shape_ids),
@@ -58,7 +58,7 @@ bool cell_iterator::operator!=(const cell_iterator & other) const
 
 Point cell_iterator::center() const
 {
-  return std::move(get_element_center(vertices, cells[icell]));
+  return std::move(get_element_center(mesh_vertices, cells[icell]));
 }
 
 
@@ -71,7 +71,8 @@ cell_iterator & cell_iterator::operator++()
 
 angem::Polyhedron<double> cell_iterator::polyhedron() const
 {
-  return angem::PolyhedronFactory::create<double>(vertices.points, cells[icell],
+  return angem::PolyhedronFactory::create<double>(mesh_vertices.points,
+                                                  cells[icell],
                                                   shape_ids[icell]);
 }
 
@@ -79,12 +80,12 @@ angem::Polyhedron<double> cell_iterator::polyhedron() const
 std::vector<face_iterator> cell_iterator::faces() const
 {
   const angem::Polyhedron<double> poly =
-      angem::PolyhedronFactory::create<double>(vertices.points,
+      angem::PolyhedronFactory::create<double>(mesh_vertices.points,
                                                cells[icell],
                                                shape_ids[icell]);
   // return std::move(get_face_indices(poly, vertices));
   std::vector<std::vector<std::size_t>> face_vertex_indices =
-      get_face_indices(poly, vertices);
+      get_face_indices(poly, mesh_vertices);
 
   std::vector<face_iterator> faces;
   for (const auto & ivertices : face_vertex_indices)
@@ -93,7 +94,7 @@ std::vector<face_iterator> cell_iterator::faces() const
     auto it_face = map_faces.find(hash);
     if (it_face == map_faces.end())
       throw std::out_of_range("face does not exist");
-    face_iterator face(it_face, vertices);
+    face_iterator face(it_face, mesh_vertices);
     faces.push_back(face);
   }
   return std::move(faces);
@@ -113,7 +114,8 @@ bool cell_iterator::has_vertex( const std::size_t ivertex ) const
 std::vector<std::size_t> cell_iterator::neighbor_indices() const
 {
   const Polyhedron poly =
-      angem::PolyhedronFactory::create<double>(vertices.points, cells[icell],
+      angem::PolyhedronFactory::create<double>(mesh_vertices.points,
+                                               cells[icell],
                                                shape_ids[icell]);
   // for (const auto & face : poly.get_faces)
   std::cout << "not implemented" << std::endl << std::flush;

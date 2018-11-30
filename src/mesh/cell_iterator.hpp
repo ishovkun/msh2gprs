@@ -28,6 +28,7 @@ class cell_iterator
   bool operator==(const cell_iterator & other) const;
   bool operator!=(const cell_iterator & other) const;
   // GETTERS
+  inline std::vector<std::size_t> & vertices() {return cells[icell];}
   inline std::size_t index() const {return icell;}
   inline int shape_id() const {return shape_ids[icell];}
   inline int marker() const {return cell_markers[icell];}
@@ -47,7 +48,7 @@ class cell_iterator
  private:
   // std::vector<std::vector<std::size_t>> & cells;  // vertex indices
   std::size_t icell;
-  angem::PointSet<3,double>             & vertices;
+  angem::PointSet<3,double>             & mesh_vertices;
   std::vector<std::vector<std::size_t>> & cells;
   std::unordered_map<hash_type, Face>   & map_faces;
   std::vector<int> & shape_ids;
