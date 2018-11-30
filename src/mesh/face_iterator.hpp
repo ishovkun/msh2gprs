@@ -6,11 +6,12 @@
 #include <Face.hpp>
 #include <vector>
 #include <unordered_map>
+#include <mesh_methods.hpp>
 
 namespace mesh
 {
 using Point = angem::Point<3,double>;
-using FaceMap = std::unordered_map<uint256_t, Face>;
+using FaceMap = std::unordered_map<hash_type, Face>;
 
 class face_iterator
 {
@@ -28,7 +29,7 @@ class face_iterator
   // get face marker, (-1) if not defined
   int marker() const;
   // get hash value
-  inline uint256_t hash() const {return face_it->first;}
+  inline hash_type hash() const {return face_it->first;}
   std::size_t index() const {return face_it->second.index;}
   // get vector of neighbor indices
   inline

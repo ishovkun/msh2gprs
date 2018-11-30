@@ -39,35 +39,40 @@ std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> & vert
 }
 
 
-uint256_t hash_value(const std::vector<std::size_t> & face)
+hash_type hash_value(const std::vector<std::size_t> & face)
 {
   std::vector<std::size_t> face_sorted = face;
   std::sort(face_sorted.begin(), face_sorted.end());
 
-  uint256_t mult = 1;
-  uint256_t result = 0;
+  hash_type mult(1);
+  hash_type result(0);
   for (int i=face_sorted.size()-1; i>=0; --i)
   {
     // hashing starts with 1 since
     // (1,2,3) and (0,1,2,3) are different elementes
-    result += mult * static_cast<uint256_t>(1 + face_sorted[i]);
+    result += mult * static_cast<hash_type>(1 + face_sorted[i]);
     mult *= MAX_HASHED_VERTICES;
   }
   return result;
 }
 
 
-std::vector<std::size_t> invert_hash(const uint256_t & hash)
+std::vector<std::size_t> invert_hash(const hash_type & hash)
 {
   std::vector<std::size_t> vertices;
-  uint256_t current_value = hash;
+  hash_type current_value = hash;
+  hash_type mvert(MAX_HASHED_VERTICES);
+  hash_type zero(0);
   for (int i=0; i<MAX_POLYGON_VETRICES; ++i)
   {
     // - 1 since hashing starts with 1
-    const std::size_t ivertex = (current_value % MAX_HASHED_VERTICES) - 1;
-    current_value = current_value / MAX_HASHED_VERTICES;
+    // const std::size_t ivertex = (current_value % mvert) - 1;
+    // [0] i guess that's how to retreive size_t from this class
+    const std::size_t ivertex = static_cast<std::size_t>(current_value % mvert) - 1;
+    // current_value = current_value / MAX_HASHED_VERTICES;
+    current_value = current_value / mvert;
     vertices.push_back(ivertex);
-    if (current_value == 0)
+    if (current_value == zero)
       break;
   }
 
@@ -82,8 +87,8 @@ std::vector<std::size_t> invert_hash(const uint256_t & hash)
 }
 
 
-int get_face_marker(const uint256_t & hash,
-                    const std::unordered_map<uint256_t, int> & map_physical_faces)
+int get_face_marker(const hash_type & hash,
+                    const std::unordered_map<hash_type, int> & map_physical_faces)
 {
   const auto it = map_physical_faces.find(hash);
   if (it == map_physical_faces.end())

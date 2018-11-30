@@ -3,12 +3,11 @@
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
 #include <angem/Polygon.hpp>
-#include <uint256/uint256_t.h>
+#include <mesh_methods.hpp>
 #include <ShapeID.hpp>
 #include <Face.hpp>
 #include <cell_iterator.hpp>
 #include <face_iterator.hpp>
-#include <mesh_methods.hpp>
 
 #include <algorithm> // std::sort
 
@@ -32,9 +31,10 @@ using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 // using Face = std::vector<std::size_t>;
 using FaceiVertices = std::vector<std::size_t>;
-using FaceMap = std::unordered_map<uint256_t, Face>;
+// using hash_type = uint256_t;
+// using hash_type = vli::integer<128>;
+// using FaceMap = std::unordered_map<hash_type, Face>;
 
-using hash_type = uint256_t;
 
 // maximum 6-vert polygons as faces (hashing)
 // this allows hashing about (2^256)^(1/6) ≈ 7x10¹² vertices

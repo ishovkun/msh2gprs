@@ -11,13 +11,20 @@ IF( EXISTS "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json" )
   )
 ENDIF()
 
+find_package(Boost 1.65.1
+  COMPONENTS filesystem iostreams unit_test_framework REQUIRED)
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
+
+
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
 ADD_SUBDIRECTORY(src/angem)
 
 # 256 bit integer lib (for mesh)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/uint256)
-ADD_SUBDIRECTORY(src/uint256)
+# INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/uint256)
+# ADD_SUBDIRECTORY(src/uint256)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/vli)
+ADD_SUBDIRECTORY(src/vli)
 
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
@@ -57,4 +64,5 @@ endif()
 # for profiling memory leaks
 # TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh uint256 -lstdc++fs -lasan)
 # last flag for std::filesystem
-TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh uint256 -lstdc++fs)
+# TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh uint256 -lstdc++fs)
+TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh vli -lstdc++fs)

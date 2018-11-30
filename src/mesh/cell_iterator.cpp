@@ -9,7 +9,7 @@ cell_iterator::
 cell_iterator(const std::size_t                       icell,
               angem::PointSet<3,double>             & vertices,
               std::vector<std::vector<std::size_t>> & cells,
-              std::unordered_map<uint256_t, Face>   & map_faces,
+              std::unordered_map<hash_type, Face>   & map_faces,
               std::vector<int>                      & shape_ids,
               std::vector<int>                      & cell_markers)
 
