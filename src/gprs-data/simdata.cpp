@@ -16,6 +16,8 @@
 // parser for user-defined expressions for reservoir data
 #include <muparser/muParser.h>
 
+// profiling
+#include <ctime>
 
 #define SPECIAL_CELL = 999
 #include <algorithm>
@@ -554,6 +556,7 @@ void SimData::computeCellClipping()
 void SimData::computeReservoirTransmissibilities()
 {
   // count flow dfm fractures
+  std::clock_t time1 = std::clock();
 
   // init tran
   CalcTranses calc;
@@ -576,12 +579,13 @@ void SimData::computeReservoirTransmissibilities()
     calc.vCoordinatesZ[i] = vertex.z();
   }
 
+  std::clock_t time2 = std::clock();
+  double a2 = double(time2 - time1) / CLOCKS_PER_SEC;
+  std::cout << "done vertices = " << a2 << std::endl;
+
   // polygons (2d elements)
   int code_polygon = 0;
   calc.vvFNodes.resize(grid.n_faces());
-  // std::vector<double> vConductivity, vAperture;
-  // vConductivity.resize(grid.n_faces());
-  // vAperture.resize(grid.n_faces());
 
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
   {
@@ -592,12 +596,15 @@ void SimData::computeReservoirTransmissibilities()
     {
       calc.vCodePolygon[ipoly] = code_polygon;
       code_polygon++;
-      // vConductivity[ipoly] = dfm_faces[ipoly].conductivity;
-      // vAperture[ipoly] = dfm_faces[ipoly].aperture;
     }
     else  // non-frac faces
       calc.vCodePolygon[ipoly] = -1;
   }
+
+  std::clock_t time3 = std::clock();
+  double a3 = double(time3 - time2) / CLOCKS_PER_SEC;
+  std::cout << "done 2d elements = " << a3 << std::endl;
+
 
   // polyhedra (3d elements)
   calc.vvVFaces.resize(grid.n_faces());
@@ -607,7 +614,7 @@ void SimData::computeReservoirTransmissibilities()
     const auto faces = cell.faces();
     const std::size_t icell = cell.index();
     calc.vvVFaces[icell].reserve(faces.size());
-    for (const mesh::face_iterator face : faces)
+    for (const mesh::face_iterator & face : faces)
     {
       // TODO: get face indices some other way
       // if (dfm_faces.find(hash) == dfm_faces.end())
@@ -617,6 +624,10 @@ void SimData::computeReservoirTransmissibilities()
     }
     calc.vCodePolyhedron[icell] = dfm_faces.size() + icell;
   }
+
+    std::clock_t time4 = std::clock();
+    double a4 = double(time4 - time3) / CLOCKS_PER_SEC;
+    std::cout << "done 3d elements = " << a4 << std::endl;
 
   // Properties
   calc.vZPermeability.assign(calc.NbZones * 3, 0.0);
@@ -645,6 +656,11 @@ void SimData::computeReservoirTransmissibilities()
       calc.vTimurConnectionFactor[i] = 1.0;
     }
   }
+
+  std::clock_t time5 = std::clock();
+  double a5 = double(time5 - time4) / CLOCKS_PER_SEC;
+  std::cout << "done dfm frac props = " << a5 << std::endl;
+
 
   // properties regular cells
   for ( std::size_t i = 0; i < calc.NbPolyhedra; i++ )
@@ -675,8 +691,15 @@ void SimData::computeReservoirTransmissibilities()
     calc.vTimurConnectionFactor[n] = 1.0;
   }
 
+  std::clock_t time6 = std::clock();
+  double t6 = double(time6 - time5) / CLOCKS_PER_SEC;
+  std::cout << "done regular cell props = " << t6 << std::endl;
+
+
   FlowData matrix_flow_data;
+  std::cout << "compute karimi" << std::endl;
   calc.compute_flow_data();
+  std::cout << "end compute karimi" << std::endl;
   calc.extractData(matrix_flow_data);
 
   // copy to global

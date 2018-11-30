@@ -70,6 +70,7 @@ std::vector<std::size_t> invert_hash(const uint256_t & hash)
     if (current_value == 0)
       break;
   }
+
   std::vector<std::size_t> vertices_sorted(vertices.size());
   int ind = vertices.size() - 1;
   for (const auto & v : vertices)
