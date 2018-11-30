@@ -46,9 +46,17 @@ class Mesh
   // infers type by number of vertices
   void insert(const Polyhedron & poly,
               const int          marker = -1);
+  // same as above but without searching vertices
+  void insert_cell(const std::vector<std::size_t> & ivertices,
+                   const int                        vtk_id,
+                   const int                        marker = -1);
   // insert marker into map_physical_faces
   void insert(const Polygon & poly,
               const int       marker);
+  // insert element without searching vertices
+  void insert_face(const std::vector<std::size_t> & ivertices,
+                   const int                        vtk_id,
+                   const int                        marker);
 
   // iterators
   // cell iterators

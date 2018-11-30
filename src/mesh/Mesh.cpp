@@ -52,6 +52,38 @@ void Mesh::insert(const Polyhedron & poly,
 }
 
 
+void Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
+                       const int                        vtk_id,
+                       const int                        marker)
+{
+  const std::vector<std::vector<std::size_t>> poly_faces =
+      angem::PolyhedronFactory::get_global_faces<double>(ivertices, vtk_id);
+
+  const std::size_t new_element_index = cells.size();
+
+  cells.push_back(ivertices);
+  shape_ids.push_back(vtk_id);
+  cell_markers.push_back(marker);
+
+  for (const auto & face : poly_faces)
+  {
+    const auto hash = hash_value(face);
+    auto iter = map_faces.find(hash);
+    if (iter != map_faces.end())
+    {
+      (iter->second).neighbors.push_back(new_element_index);
+    }
+    else
+    {
+      Face face_data;
+      face_data.neighbors.push_back(new_element_index);
+      face_data.index = map_faces.size();
+      map_faces.insert({ {hash, face_data} });
+    }
+  }
+}
+
+
 const std::vector<std::size_t> & Mesh::get_neighbors( const FaceiVertices & face ) const
 {
   const auto hash = hash_value(face);
@@ -104,17 +136,31 @@ void Mesh::insert(const Polygon & poly,
   for (int i=0; i<points.size(); ++i)
     face[i] = vertices.find(points[i]);
 
-  const auto hash = hash_value(face);
+  // const vtk_id = poly.vtk_id();
+  const int vtk_id = -1;
+  insert_face(face, vtk_id, marker);
+}
+
+
+void Mesh::insert_face(const std::vector<std::size_t> & ivertices,
+                       const int                        vtk_id,
+                       const int                        marker)
+{
+  const auto hash = hash_value(ivertices);
   auto it = map_faces.find(hash);
   if (it == map_faces.end())
   {
     Face face_data;
     face_data.marker = marker;
+    face_data.vtk_id = vtk_id;
     face_data.index = map_faces.size();
     map_faces.insert({hash, face_data});
   }
   else
+  {
     it->second.marker = marker;
+    it->second.vtk_id = vtk_id;
+  }
 }
 
 

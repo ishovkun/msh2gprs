@@ -7,12 +7,8 @@
 #include "angem/CollisionGJK.hpp"
 #include <angem/Collisions.hpp>
 #include <angem/utils.hpp>
-// supported element types
-#include <angem/PolyhedronFactory.hpp>
-// to remesh embedded fractures
-#include <mesh/utils.hpp>
-// 3D mesh format
-#include <mesh/Mesh.hpp>
+#include <mesh/utils.hpp> // to remesh embedded fractures
+#include <mesh/Mesh.hpp> // 3D mesh format
 // parser for user-defined expressions for reservoir data
 #include <muparser/muParser.h>
 
