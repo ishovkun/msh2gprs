@@ -25,9 +25,13 @@ SET_TARGET_PROPERTIES (
 
 TARGET_INCLUDE_DIRECTORIES(mesh PUBLIC
 	${CMAKE_SOURCE_DIR}/src
+	${CMAKE_SOURCE_DIR}/src/uint256
 )
 
 
-# # TARGET_LINK_LIBRARIES(mesh angem uint256)
+if(Boost_FOUND)
+  TARGET_LINK_LIBRARIES(mesh angem ${Boost_LIBRARIES})
+else()
+  TARGET_LINK_LIBRARIES(mesh angem uint256)
+endif()
 # TARGET_LINK_LIBRARIES(mesh angem vli)
-TARGET_LINK_LIBRARIES(mesh angem ${Boost_LIBRARIES})
