@@ -4,6 +4,7 @@
 #include <Plane.hpp>
 #include <PointSet.hpp>
 #include <typeinfo>
+#include <exception>
 
 namespace angem
 {
@@ -20,6 +21,7 @@ class Polyhedron: public Shape<Scalar>
   void set_data(const std::vector<Point<3,Scalar>>          & vertices,
                 const std::vector<std::vector<std::size_t>> & faces);
   int id() const {return vtk_id;}
+  virtual Scalar volume() const;
 
   const std::vector<std::vector<std::size_t>> & get_faces() const;
   std::vector<std::vector<std::size_t>> & get_faces();
@@ -87,6 +89,14 @@ const std::vector<std::vector<std::size_t>> &
 Polyhedron<Scalar>::get_faces() const
 {
   return faces;
+}
+
+
+template<typename Scalar>
+Scalar Polyhedron<Scalar>::volume() const
+{
+  throw std::logic_error("cannot find volume of arbitrary polyhedron");
+  return static_cast<Scalar>(0.0);
 }
 
 }

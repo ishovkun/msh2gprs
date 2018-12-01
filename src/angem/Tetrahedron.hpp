@@ -43,6 +43,13 @@ class Tetrahedron: public Polyhedron<Scalar>
   virtual void set_data(const std::vector<Point<3,Scalar>> & vertices) override;
   void set_data(const std::vector<Point<3,Scalar>> & vertices,
                 const std::vector<std::size_t>     & indices);
+  // GETTERS
+  virtual Scalar volume() const override;
+  static Scalar volume(const Point<3,Scalar> & v1,
+                       const Point<3,Scalar> & v2,
+                       const Point<3,Scalar> & v3,
+                       const Point<3,Scalar> & v4);
+
   // don't create polyhedron, just give me vector of faces with indices in
   // the global vector
   static std::vector<std::vector<std::size_t>>
@@ -111,6 +118,32 @@ Tetrahedron<Scalar>::get_faces(const std::vector<std::size_t> & indices)
   global_faces[2] = {indices[0], indices[2], indices[3]};
   global_faces[3] = {indices[0], indices[1], indices[2]};
   return std::move(global_faces);
+}
+
+
+template<typename Scalar>
+Scalar Tetrahedron<Scalar>::volume() const
+{
+  // volume = 1 / 6 |a·(b x c)|
+  Point<3,Scalar> a = this->points[1] - this->points[0];
+  Point<3,Scalar> b = this->points[2] - this->points[0];
+  Point<3,Scalar> c = this->points[3] - this->points[0];
+  return static_cast<Scalar>(1./6.) * a.dot(b.cross(c));
+}
+
+
+template<typename Scalar>
+inline
+Scalar Tetrahedron<Scalar>::volume(const Point<3,Scalar> & v0,
+                                   const Point<3,Scalar> & v1,
+                                   const Point<3,Scalar> & v2,
+                                   const Point<3,Scalar> & v3)
+{
+  // volume = 1 / 6 |a·(b x c)|
+  Point<3,Scalar> a = v1 - v0;
+  Point<3,Scalar> b = v2 - v0;
+  Point<3,Scalar> c = v3 - v0;
+  return static_cast<Scalar>(1./6.) * fabs(a.dot(b.cross(c)));
 }
 
 }

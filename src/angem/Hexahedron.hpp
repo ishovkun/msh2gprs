@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Polyhedron.hpp>
+#include <Tetrahedron.hpp>
+#include <Exceptions.hpp>
 
 /* Hexahedron vertex numbering:
 Hexahedron:             Hexahedron20:          Hexahedron27:
@@ -34,6 +36,8 @@ class Hexahedron: public Polyhedron<Scalar>
   virtual void set_data(const std::vector<Point<3,Scalar>> & vertices) override;
   void set_data(const std::vector<Point<3,Scalar>> & vertices,
                 const std::vector<std::size_t>     & indices);
+  // GETTERS
+  virtual Scalar volume() const override;
   // don't create polyhedron, just give me vector of faces with indices in
   // the global vector
   static std::vector<std::vector<std::size_t>>
@@ -106,6 +110,25 @@ Hexahedron<Scalar>::get_faces(const std::vector<std::size_t>     & indices)
   global_faces[4] = {indices[0], indices[4], indices[7], indices[3]};
   global_faces[5] = {indices[1], indices[5], indices[6], indices[2]};
   return std::move(global_faces);
+}
+
+
+template<typename Scalar>
+Scalar Hexahedron<Scalar>::volume() const
+{
+  /* volume = sum of volumes of 6 tetrahedrons
+   * see
+   * See discussions, stats, and author profiles for this publication at:
+   * https://www.researchgate.net/publication/260322098
+   *Reentry Flows in Chemical Non-Equilibrium in Three-Dimensions */
+
+  const auto & points = this->points;
+  return Tetrahedron<Scalar>::volume(points[3], points[6], points[0], points[4]) +
+      Tetrahedron<Scalar>::volume(points[4], points[0], points[5], points[6]) +
+      Tetrahedron<Scalar>::volume(points[0], points[1], points[6], points[5]) +
+      Tetrahedron<Scalar>::volume(points[0], points[1], points[6], points[2]) +
+      Tetrahedron<Scalar>::volume(points[3], points[2], points[6], points[0]) +
+      Tetrahedron<Scalar>::volume(points[7], points[3], points[6], points[0]);
 }
 
 }
