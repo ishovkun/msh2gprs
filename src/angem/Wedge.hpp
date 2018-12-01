@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Polyhedron.hpp>
+#include <Plane.hpp>
 
 namespace angem
 {
@@ -40,15 +41,18 @@ class Wedge: public Polyhedron<Scalar>
   Wedge(const std::vector<Point<3,Scalar>> & vertices,
         const std::vector<std::size_t>     & indices);
 
-  // don't create polyhedron, just give me vector of faces with indices in
-  // the global vector
-  static std::vector<std::vector<std::size_t>>
-  get_faces(const std::vector<std::size_t>     & indices);
-
   // SETTERS
   virtual void set_data(const std::vector<Point<3,Scalar>> & vertices) override;
   void set_data(const std::vector<Point<3,Scalar>> & vertices,
                 const std::vector<std::size_t>     & indices);
+
+  // GETTERS
+  // don't create polyhedron, just give me vector of faces with indices in
+  // the global vector
+  static std::vector<std::vector<std::size_t>>
+  get_faces(const std::vector<std::size_t>     & indices);
+  virtual Scalar volume() const override;
+
 };
 
 
@@ -115,6 +119,21 @@ Wedge<Scalar>::get_faces(const std::vector<std::size_t>     & indices)
   global_faces[3] = {indices[1], indices[2], indices[5], indices[4]};
   global_faces[4] = {indices[0], indices[3], indices[5], indices[2]};
   return std::move(global_faces);
+}
+
+
+template<typename Scalar>
+inline
+Scalar Wedge<Scalar>::volume() const
+{
+  // see on wiki
+  const auto & pts = this->points;
+  const auto a = pts[5].distance(pts[2]);
+  const auto b = pts[1].distance(pts[2]);
+  const auto c = pts[0].distance(pts[3]);
+  const Plane<Scalar> pln(pts[1], pts[2], pts[4]);
+  const auto h = fabs(pln.distance(pts[0]));
+  return b*h/3. * (a + c/2);
 }
 
 }

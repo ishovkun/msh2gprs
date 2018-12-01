@@ -122,6 +122,7 @@ Tetrahedron<Scalar>::get_faces(const std::vector<std::size_t> & indices)
 
 
 template<typename Scalar>
+inline
 Scalar Tetrahedron<Scalar>::volume() const
 {
   // volume = 1 / 6 |a·(b x c)|
