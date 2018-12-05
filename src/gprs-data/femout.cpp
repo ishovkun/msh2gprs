@@ -184,18 +184,28 @@ void OutputData::writeGeomechDataNewKeywords(const std::string & output_path)
   {
     const std::vector<std::size_t> ivertices = face.vertex_indices();
     geomechfile << ivertices.size() << "\t";
-    for (const std::size_t & ivertex : ivertices)
+    for (const std::size_t ivertex : ivertices)
       geomechfile << ivertex + 1 << "\t";
     geomechfile << std::endl;
   }
 
   geomechfile << "/" << std::endl << std::endl;
 
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  // {
+  geomechfile << "GMFACE_TYPE" << std::endl;
+  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+    if (face.vtk_id() != -1)
+      geomechfile << face.vtk_id() << std::endl;
+  geomechfile << "/" << std::endl << std::endl;
 
-  // }
-
+  geomechfile << "GMFACE_GMCELLS" << std::endl;
+  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  {
+    const auto & neighbors = face.neighbors();
+    geomechfile << neighbors.size() << std::endl;
+    for (const auto & neighbor : neighbors)
+      geomechfile << neighbor + 1 << std::endl;
+  }
+  geomechfile << "/" << std::endl << std::endl;
   // for (int i = 0; i < pSim->nFaces; i++)
   // {
   //   geomechfile << pSim->vsFaceCustom[i].nVertices << "\t";

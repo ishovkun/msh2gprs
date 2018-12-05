@@ -31,6 +31,7 @@ class face_iterator
   // get hash value
   inline hash_type hash() const {return face_it->first;}
   std::size_t index() const {return face_it->second.index;}
+  int vtk_id() const {return face_it->second.vtk_id;}
   // get vector of neighbor indices
   inline
   const std::vector<std::size_t> & neighbors() const {return face_it->second.neighbors;}
