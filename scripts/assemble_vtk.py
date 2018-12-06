@@ -7,7 +7,8 @@ import re
 # case_path = "/home/ishovkun/sim/mech-tests/edfm-nc/16-40/"
 # case_path = "/home/ishovkun/sim/mech-tests/edfm-nc-old/"
 # case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon-nc/nc-16/"
-case_path = "/home/ishovkun/sim/edfm-1frac/"
+# case_path = "/home/ishovkun/sim/edfm-1frac/"
+case_path = "/home/ishovkun/sim/DFM-1frac-flow/new/"
 
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 edfm_mesh_file = case_path + "efrac.vtk"
@@ -16,6 +17,29 @@ results_file = case_path + "OUTPUT.vars.txt"
 vtk_dir = case_path + "OUTPUT.vtk_output/"
 gm_sda_file = case_path + "gm_SDA.txt"
 output_dir = case_path + "field"
+
+# Print iterations progress
+def printProgressBar (iteration, total, prefix = '', suffix = '',
+                      decimals = 1, length = 100, fill = '█'):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
+    # Print New Line on Complete
+    if iteration == total:
+        print()
+
 
 n_dfm = 0
 try:
@@ -245,9 +269,10 @@ except FileExistsError:
 
 
 
-print("saving reservoir data")
+printProgressBar(0, len(times), prefix = 'Saving Reservoir Data:', suffix = 'Complete', length = 20)
 # save reservoir vtk
 for i in range(len(times)):
+    printProgressBar(i+1, len(times), prefix = 'Saving Reservoir Data:', suffix = 'Complete', length = 20)
     with open(output_dir + "/" + "blocks-" + str(i) + ".vtk", "w") as f:
         match = re.search("DATASET.*\n", res_msh_txt)
         f.write(res_msh_txt[:match.end()])
@@ -265,8 +290,9 @@ for i in range(len(times)):
                 f.write("%.5f\n" % all_data[i][n_dfm + k, j])
 
 if (n_dfm > 0):
-    print("saving DFM data")
+    printProgressBar(0, len(times), prefix = 'Saving DFM Data:', suffix = 'Complete', length = 20)
     for i in range(len(times)):
+        printProgressBar(i+1, len(times), prefix = 'Saving DFM Data:', suffix = 'Complete', length = 20)
         with open(output_dir + "/" + "dfm-" + str(i) + ".vtk", "w") as f:
             match = re.search("DATASET.*\n", dfm_msh_txt)
             f.write(dfm_msh_txt[:match.end()])
@@ -284,8 +310,9 @@ if (n_dfm > 0):
                     f.write("%.5f\n" % all_data[i][k, j])
 
 if (n_edfm > 0):
-    print("saving EDFM data")
+    printProgressBar(0, len(times), prefix = 'Saving EDFM Data:', suffix = 'Complete', length = 20)
     for i in range(len(times)):
+        printProgressBar(i+1, len(times), prefix = 'Saving EDFM Data:', suffix = 'Complete', length = 20)
         with open(output_dir + "/" + "edfm-" + str(i) + ".vtk", "w") as f:
             # f.write(edfm_msh_txt)
             f.write(edfm_msh_txt[:match.end()])
