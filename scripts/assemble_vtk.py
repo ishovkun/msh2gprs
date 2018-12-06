@@ -1,12 +1,13 @@
 import os
 import numpy as np
+import re
 
-# case_path = "/home/ishovkun/sim/edfm-1frac/"
-# case_path = "/home/ishovkun/sim/edfm-1frac-0/"
-# case_path = "/home/ishovkun/sim/aquifer/"
-# case_path = "/home/ishovkun/sim/edfm-dfm/"
 # case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon/"
-case_path = "/home/ishovkun/sim/9-fracs-coupled/"
+# case_path = "/home/ishovkun/sim/mech-tests/dfm-sneddon-32/"
+# case_path = "/home/ishovkun/sim/mech-tests/edfm-nc/16-40/"
+# case_path = "/home/ishovkun/sim/mech-tests/edfm-nc-old/"
+# case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon-nc/nc-16/"
+case_path = "/home/ishovkun/sim/edfm-1frac/"
 
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 edfm_mesh_file = case_path + "efrac.vtk"
@@ -127,7 +128,7 @@ with open(results_file, "r") as f:
 # get edfm jumps from vtk files and add them to data
 sda_data = []
 sda_names = ["Jump_n", "Jump_t", "status"]
-if (n_edfm > 0):
+if (n_edfm > 0 and os.path.isdir(vtk_dir)):
     with open (gm_sda_file, "r") as f:
         found = False
         n_sda_cells = 0
@@ -248,8 +249,14 @@ print("saving reservoir data")
 # save reservoir vtk
 for i in range(len(times)):
     with open(output_dir + "/" + "blocks-" + str(i) + ".vtk", "w") as f:
-        f.write(res_msh_txt)
+        match = re.search("DATASET.*\n", res_msh_txt)
+        f.write(res_msh_txt[:match.end()])
+        f.write("FIELD FieldData 2\n")
+        f.write("TIME 1 1 double\n%f\n"%times[i])
+        f.write("CYCLE 1 1 int\n%d\n"%1)
+        f.write(res_msh_txt[match.end():])
         f.write("CELL_DATA " + str(n_cells) + "\n")
+        # f.write("Time 1 double\n%f\n"%times[i])
         for j in range(len(headers[i])):
             header = headers[i][j].replace("=", "_")
             f.write("SCALARS\t" + header + "\tfloat\n")
@@ -261,7 +268,13 @@ if (n_dfm > 0):
     print("saving DFM data")
     for i in range(len(times)):
         with open(output_dir + "/" + "dfm-" + str(i) + ".vtk", "w") as f:
-            f.write(dfm_msh_txt)
+            match = re.search("DATASET.*\n", dfm_msh_txt)
+            f.write(dfm_msh_txt[:match.end()])
+            f.write("FIELD FieldData 2\n")
+            f.write("TIME 1 1 double\n%f\n"%times[i])
+            f.write("CYCLE 1 1 int\n%d\n"%i)
+            f.write(dfm_msh_txt[match.end():])
+            # f.write(dfm_msh_txt)
             f.write("CELL_DATA " + str(n_dfm) + "\n")
             for j in range(len(headers[i])):
                 header = headers[i][j].replace("=", "_")
@@ -274,7 +287,12 @@ if (n_edfm > 0):
     print("saving EDFM data")
     for i in range(len(times)):
         with open(output_dir + "/" + "edfm-" + str(i) + ".vtk", "w") as f:
-            f.write(edfm_msh_txt)
+            # f.write(edfm_msh_txt)
+            f.write(edfm_msh_txt[:match.end()])
+            f.write("FIELD FieldData 2\n")
+            f.write("TIME 1 1 double\n%f\n"%times[i])
+            f.write("CYCLE 1 1 int\n%d\n"%i)
+            f.write(edfm_msh_txt[match.end():])
             f.write("CELL_DATA " + str(n_edfm) + "\n")
             for j in range(len(headers[i])):
                 header = headers[i][j].replace("=", "_")
