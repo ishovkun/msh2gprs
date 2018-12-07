@@ -78,6 +78,8 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
       }
       discrete_fracture(it->second, conf);
     }
+    else if (key == "file")
+      config.discrete_frac_file = it->second.as<std::string>();
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }

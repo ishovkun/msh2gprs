@@ -504,60 +504,53 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   geomechfile.open(file_name.c_str());
   set<int>::iterator itsetint;
 
-  //   int counter = 0;
-  //   int nFractures_ = 0;
-  //   cout << "write all fractured faces\n";
+  int counter = 0;
+  int nFractures_ = 0;
+  cout << "write all fractured faces\n";
 
-  //   geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
-  //   for(itsetint = pSim->setIdenticalInternalMarker.begin();
-  //       itsetint != pSim->setIdenticalInternalMarker.end();
-  //       itsetint++, nFractures_++)
+  geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
+  for (const auto facet_it : data.dfm_faces)
+  {
+    geomechfile << facet_it.second.nface + 1 << "\t";
+    geomechfile << facet_it.second.nfluid + 1 << endl;
+  }
+  // for(itsetint = pSim->setIdenticalInternalMarker.begin();
+  //     itsetint != pSim->setIdenticalInternalMarker.end();
+  //     itsetint++, nFractures_++)
+  // {
+  //   for (int i = 0; i < pSim->nPhysicalFacets; i++)
   //   {
-  //     for (int i = 0; i < pSim->nPhysicalFacets; i++)
+  //     if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
   //     {
-  //       if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
+  //       geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
+  //       geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
+  //       if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
   //       {
-  //         geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-  //         geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
-  //         if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
-  //         {
-  //           cout << "Fracture interface # " << nFractures_ << endl;
-  //           cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
-  //           cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
-  //           cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
-  //           exit(0);
-  //         }
+  //         cout << "Fracture interface # " << nFractures_ << endl;
+  //         cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
+  //         cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
+  //         cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
+  //         exit(0);
   //       }
   //     }
   //   }
-
-  //   geomechfile << "/" << endl << endl;
-
-  //   nFractures_ = 0;
-  //   geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << endl;
-  //   for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
-  //     for (int i = 0; i < pSim->nPhysicalFacets; i++)
-  //       if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-  //         geomechfile << pSim->vsFaceCustom[pSim->vsPhysicalFacet[i].nface].conductivity << endl;
-
-  //   geomechfile << "/" << endl << endl;
+  // }
+  geomechfile << "/" << endl << endl;
 
   //   nFractures_ = 0;
-  //   geomechfile << "GMFACE_FRACTURE_REGION\n";
-  //   for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
-  //     for (int i = 0; i < pSim->nPhysicalFacets; i++)
-  //       if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-  //         geomechfile << 1 << endl;
+  geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
+  for (const auto facet_it : data.dfm_faces)
+    geomechfile << facet_it.second.conductivity << std::endl;
 
-  //   geomechfile << "/" << endl << endl;
+  geomechfile << "GMFACE_FRACTURE_REGION" << std::endl;
+  for (const auto facet_it : data.dfm_faces)
+    geomechfile << 1 << std::endl;
+  geomechfile << "/" << std::endl << std::endl;
 
-  //   nFractures_ = 0;
-  //   geomechfile << "GMFACE_FRACTURE_GROUP\n";
-  //   for(itsetint = pSim->setIdenticalInternalMarker.begin(); itsetint != pSim->setIdenticalInternalMarker.end(); itsetint++, nFractures_++)
-  //     for (int i = 0; i < pSim->nPhysicalFacets; i++)
-  //       if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-  //         geomechfile << nFractures_ + 1 << endl;
+  geomechfile << "GMFACE_FRACTURE_GROUP" << std::endl;
+  for (const auto facet_it : data.dfm_faces)
+    geomechfile << 1 << std::endl;
+  geomechfile << "/" << std::endl << std::endl;
 
-  //   geomechfile << "/" << endl << endl;
-  //   geomechfile.close();
+  geomechfile.close();
 }
