@@ -12,11 +12,10 @@ IF( EXISTS "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json" )
 ENDIF()
 
 # boost is optional for 256-bit integers (for mesh library)
-# but it works muuuch better with it
-find_package(Boost 1.65.1 COMPONENTS REQUIRED)
-INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
-
+# but it works muuuch faster with it
+find_package(Boost 1.65.1)
 if(Boost_FOUND)
+  INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
   add_definitions(-DUSE_BOOST)
 else()
   # 256 bit integer lib (for mesh)
