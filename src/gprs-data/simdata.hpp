@@ -181,8 +181,6 @@ public:
     else return false;
   }
 
-
-
 protected:
   void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
                                               const std::vector<std::vector<std::size_t>> & polys,
@@ -196,18 +194,6 @@ protected:
 public:
   mesh::Mesh & grid;
 
-  // vector<vector<double> > vvBndFaceNodesCoor;
-  // vector<vector<int> >    vvBndFaceNodes;
-  // vector<int>    vBndFaceCode;
-
-  // Internal Data
-  // std::size_t nVertices;
-  // vector< angem::Point<3,double> > vvVrtxCoords;
-  // vector<vector<double> > vvVrtxDisp;
-  // vector<int> vConstraintVertex;
-
-  // int nCells;
-  // vector<Gelement> vsCellCustom;
   std::vector<RockProps> vsCellRockProps;
   std::vector<std::string> rockPropNames;
 

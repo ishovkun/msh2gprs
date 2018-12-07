@@ -11,7 +11,12 @@ public:
   ~OutputData();
 
   void write_output(const std::string & output_path);
-  void writeGeomechDataNewKeywords(const std::string & output_path);
+ private:
+  void saveGeometry(const std::string & output_path);
+  void saveGeomechDataNewKeywords(const std::string file_name);
+  void saveEmbeddedFractureProperties(const std::string file_name);
+  void saveBoundaryConditions(const std::string file_name);
+  void saveDiscreteFractureProperties(const std::string file_name);
 
 protected:
   SimData & data;

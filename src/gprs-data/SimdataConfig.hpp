@@ -72,7 +72,8 @@ struct SimdataConfig
   std::string mesh_file;
   std::string domain_file = "domain.txt";
   std::string mechanics_domain_file = "domain.txt";
-  std::string efrac_file = "efrac.txt";
+  std::string efrac_file = "gm_SDA.txt";
+  std::string discrete_frac_file = "gm_DFM.txt";
   std::string bcond_file = "bcond.txt";
   // special keywords needed for computing fluid data
   // (they are not outputted)
