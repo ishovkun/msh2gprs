@@ -70,9 +70,7 @@ void Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
     const auto hash = hash_value(face);
     auto iter = map_faces.find(hash);
     if (iter != map_faces.end())
-    {
       (iter->second).neighbors.push_back(new_element_index);
-    }
     else
     {
       Face face_data;

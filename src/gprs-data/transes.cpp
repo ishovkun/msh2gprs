@@ -11,10 +11,6 @@ CalcTranses::CalcTranses()
 void CalcTranses::init()
 {
   //coordinates
-  vCoordinatesX.resize(NbNodes);
-  vCoordinatesY.resize(NbNodes);
-  vCoordinatesZ.resize(NbNodes);
-
   X.resize(NbNodes);
   Y.resize(NbNodes);
   Z.resize(NbNodes);
@@ -38,10 +34,6 @@ void CalcTranses::init()
   OptionGO = 0;
   OptionMC = 0;
   Tolerance = 0.05;
-
-  vCoordinatesX.resize( NbNodes );
-  vCoordinatesY.resize( NbNodes );
-  vCoordinatesZ.resize( NbNodes );
 
   // vNbFNodes.resize(NbPolygons);
   vvFNodes.resize(NbPolygons);
@@ -1105,13 +1097,6 @@ void CalcTranses::compute_flow_data()
     int   NbActivePolygon;
     int   NbFeatureCode;
 
-    for (std::size_t i = 0; i < NbNodes; i++)
-    {
-      X[i] = vCoordinatesX[i];
-      Y[i] = vCoordinatesY[i];
-      Z[i] = vCoordinatesZ[i];
-    }
-
     EQF.resize(NbPolygons);
     CodePolygon.resize(NbPolygons);
     FNodes.resize(NbPolygons);
@@ -1164,6 +1149,7 @@ void CalcTranses::compute_flow_data()
 
     for (std::size_t i=0; i<NbZones; i++)
     {
+      // std::cout << "i = " << i << std::endl;
       ZoneCode[i] = vZoneCode[i];
       std::size_t j = ZoneCode[i];
       ZVolumeFactor[j] = vZVolumeFactor[j];

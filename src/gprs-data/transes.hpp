@@ -64,9 +64,10 @@ public:
   int NbFracs;
   int NbOptions;
   //coordinates
-  std::vector<double> vCoordinatesX;
-  std::vector<double> vCoordinatesY;
-  std::vector<double> vCoordinatesZ;
+  std::vector<double>	X,Y,Z;
+  // std::vector<double> vCoordinatesX;
+  // std::vector<double> vCoordinatesY;
+  // std::vector<double> vCoordinatesZ;
   //faces
   std::vector<std::vector<std::size_t> > vvVFaces;
   std::vector<int> vCodePolygon;
@@ -113,7 +114,6 @@ protected:
   int		OptionVC,OptionGO,OptionMC;
 
   ///// Grid information /////
-  std::vector<double>	X,Y,Z;
   std::vector<std::vector<std::size_t>>		FNodes;
 
   std::vector<int>		CodePolygon;

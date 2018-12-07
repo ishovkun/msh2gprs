@@ -293,212 +293,9 @@ void SimData::computeCellClipping()
 
     vEfrac[ifrac].mesh = std::move(frac_msh);
 
-    // get indices of frac vertices
-    // vEfrac[ifrac].vIndices.resize(vvSection.size());
-    // std::size_t icell = 0;
-    // for (const auto & cell_section : vvSection)
-    // {
-    //   for (const Point & p : cell_section)
-    //   {
-    //     const std::size_t ind = setVert.find(p);
-    //     vEfrac[ifrac].vIndices[icell].push_back(ind);
-    //   }
-    //   icell++;
-    // }
-
-    // convert set of vertices to std::vector
-    // vEfrac[ifrac].vVertices.resize(setVert.size());
-    // std::size_t ivert = 0;
-    // for (const Point & p : setVert)
-    // {
-    //   // vEfrac[ifrac].vVertices[ivert] = p;
-    //   ivert++;
-    // }
-
-    // std::cout << "computing edfm transes" << std::endl;
     computeEDFMTransmissibilities(splits, ifrac);
 
-
-//     for(int iface = 0; iface < vsFaceCustom.size(); iface++)
-//     {
-//       // vector of cells containing efrac and neighboring face
-//       std::vector<std::size_t> v_neighbors;
-//       for (const std::size_t & ineighbor : vsFaceCustom[iface].vNeighbors)
-//       {
-//         const std::size_t frac_cell_local_ind = find(ineighbor, frac_cells);
-//         if (frac_cell_local_ind != frac_cells.size())
-//           v_neighbors.push_back(frac_cell_local_ind);
-//       }
-
-//       if (v_neighbors.size() > 0)
-//       {
-//         // construct polygon and determine intersection points
-//         angem::Polygon<double> poly_face(vvVrtxCoords,
-//                                          vsFaceCustom[iface].vVertices);
-//         std::vector<Point> section;
-//         angem::collision(poly_face, frac_plane, section);
-
-//         // no intersection
-//         // we still need to add polygon into splits for transmissibility
-//         if (section.size() < 2)
-//         {
-//           angem::PolyGroup<double> split;
-//           angem::split(poly_face, frac_plane, split,
-//                        MARKER_BELOW_FRAC, MARKER_ABOVE_FRAC);
-//           angem::Polygon<double>::reorder_indices(split.vertices.points,
-//                                                   split.polygons[0]);
-//           for (const auto & ineighbor : v_neighbors)
-//             splits[ineighbor].add(split);
-//           continue;
-//         }
-
-//         // save intersection data into neighbor fracture cells
-//         for (const auto & ineighbor : v_neighbors)
-//           for (const auto & p : section)
-//             vvSection[ineighbor].push_back(p);
-
-//         // build polygons from intersection and save to scratch
-//         angem::PolyGroup<double> split;
-//         angem::split(poly_face, frac_plane, split,
-//                      MARKER_BELOW_FRAC, MARKER_ABOVE_FRAC);
-//         angem::Polygon<double>::reorder_indices(split.vertices.points,
-//                                                 split.polygons[0]);
-//         angem::Polygon<double>::reorder_indices(split.vertices.points,
-//                                                 split.polygons[1]);
-//         // add split to neighbor cess splits
-//         for (const auto & ineighbor : v_neighbors)
-//           splits[ineighbor].add(split);
-
-//       }  // end if has ef cells neighbors
-//     }    // end face loop
-
-//     angem::PointSet<3,double> setVert(tol);
-//     mesh::SurfaceMesh<double> frac_msh(1e-6, /* max_edges = */ nCells);
-//     for (std::size_t i=0; i<vEfrac[ifrac].cells.size(); ++i)
-//     {
-//       // loop through sda cells
-//       auto & section_points = vvSection[i];
-
-//       // some point among those we obtain in the previous part of code
-//       // are duplicated since two adjacent faces intersecting a plane
-//       // have one point in common
-//       std::vector<Point> set_points;
-//       angem::remove_duplicates(section_points, set_points, tol);
-
-//       // correct ordering for quads
-//       // if (set_points.size() > 3)
-//       // {
-//       //   angem::Polygon<double>::reorder(set_points);
-//       // }
-//       angem::Polygon<double> poly_section(set_points);
-//       vvSection[i] = poly_section.get_points();
-//       frac_msh.insert(poly_section);
-
-//       // remove cell if number of points < 3 <=> area = 0
-//       if (set_points.size() < 3)
-//       {
-//         std::cout << "erasing fracture cell" << vEfrac[ifrac].cells[i] << std::endl;
-//         vEfrac[ifrac].cells.erase(vEfrac[ifrac].cells.begin() + i);
-//         vvSection.erase(vvSection.begin() + i);
-//         vEfrac[ifrac].points.erase(vEfrac[ifrac].points.begin() + i);
-//         vEfrac[ifrac].strike.erase(vEfrac[ifrac].strike.begin() + i);
-//         vEfrac[ifrac].dip.erase(vEfrac[ifrac].dip.begin() + i);
-//         i--;
-//         continue;
-//       }
-
-//       // add fracture polygon to splits to compute transes
-//       // @TODO: add marker to consider this an active poly
-//       splits[i].add(angem::Polygon<double>(set_points), MARKER_FRAC);
-
-//       // write points into a global set so we have an ordered set
-//       // of vertices and we can retreive indices
-//       for (const Point & p : set_points)
-//         setVert.insert(p);
-
-//     }
-
-//     vEfrac[ifrac].mesh = std::move(frac_msh);
-
-//     // get indices of frac vertices
-//     vEfrac[ifrac].vIndices.resize(vvSection.size());
-//     std::size_t icell = 0;
-//     for (const auto & cell_section : vvSection)
-//     {
-//       for (const Point & p : cell_section)
-//       {
-//         const std::size_t ind = setVert.find(p);
-//         vEfrac[ifrac].vIndices[icell].push_back(ind);
-//       }
-//       icell++;
-//     }
-
-//     // convert set of vertices to std::vector
-//     vEfrac[ifrac].vVertices.resize(setVert.size());
-//     std::size_t ivert = 0;
-//     for (const Point & p : setVert)
-//     {
-//       vEfrac[ifrac].vVertices[ivert] = p;
-//       ivert++;
-//     }
-
-//     // std::cout << "computing edfm transes" << std::endl;
-//     computeEDFMTransmissibilities(splits, ifrac);
   }  // end efrac loop
-
-
-//   // clear cell connections
-//   // for (std::size_t f=0; f<vEfrac.size(); ++f)
-//   // {
-//   //   const auto & efrac = vEfrac[f];
-//   //   for (std::size_t i=0; i<efrac.cells.size(); ++i)
-//   //     for (std::size_t j=i; j<efrac.cells.size(); ++j)
-//   //       if (flow_data.connection_exists(efrac.cells[i], efrac.cells[j]))
-//   //       {
-//   //         const std::size_t dead_conn = flow_data.connection_index(efrac.cells[i], efrac.cells[j]);
-//   //         // const double T_ij = flow_data.trans_ij[dead_conn];
-//   //         flow_data.clear_connection(efrac.cells[i], efrac.cells[j]);
-//   //         const std::size_t con_fi =
-//   //             flow_data.connection_index(efrac.cells[i],
-//   //                                        get_flow_element_index(f, i) );
-//   //         const double T_fi = flow_data.trans_ij[con_fi];
-
-//   //         flow_data.insert_connection(get_flow_element_index(f, i),
-//   //                                     efrac.cells[j]);
-//   //         flow_data.trans_ij.push_back(T_fi);
-
-//   //         const std::size_t con_fj =
-//   //             flow_data.connection_index(efrac.cells[j],
-//   //                                        get_flow_element_index(f, j) );
-//   //         const double T_fj = flow_data.trans_ij[con_fj];
-
-//   //         flow_data.insert_connection(get_flow_element_index(f, j),
-//   //                                     efrac.cells[i]);
-//   //         flow_data.trans_ij.push_back(T_fj);
-//   //       }
-//   // }
-
-//   // for (std::size_t f=0; f<vEfrac.size(); ++f)
-//   // {
-//   //   const auto & efrac = vEfrac[f];
-//   //   for (std::size_t i=0; i<efrac.cells.size(); ++i)
-//   //   {
-//   //     // const auto neighbors = flow_data.v_neighbors[get_flow_element_index( f, efrac.cells[i] )];
-//   //     const auto neighbors = flow_data.v_neighbors[efrac.cells[i]];
-//   //     for (const auto & neighbor : neighbors)
-//   //     {
-//   //       if (neighbor < nCells)
-//   //       {
-//   //         const std::size_t dead_conn = flow_data.connection_index(neighbor, efrac.cells[i]);
-//   //         const double T_ij = flow_data.trans_ij[dead_conn];
-//   //         flow_data.clear_connection(neighbor, efrac.cells[i]);
-//   //         flow_data.insert_connection(neighbor, get_flow_element_index(f, i));
-//   //         flow_data.trans_ij.push_back(T_ij);
-
-//   //       }
-//   //     }
-//   //   }
-//   // }
 
 }
 
@@ -562,14 +359,14 @@ void SimData::computeReservoirTransmissibilities()
   calc.fracporo    = 1.0;
   calc.init();
 
-  // fill data
+  // FILL DATA
   // nodes
   for ( std::size_t i = 0; i < grid.n_vertices(); i++ )
   {
     Point vertex = grid.vertices[i];
-    calc.vCoordinatesX[i] = vertex.x();
-    calc.vCoordinatesY[i] = vertex.y();
-    calc.vCoordinatesZ[i] = vertex.z();
+    calc.X[i] = vertex.x();
+    calc.Y[i] = vertex.y();
+    calc.Z[i] = vertex.z();
   }
 
   // polygons (2d elements)
@@ -583,8 +380,13 @@ void SimData::computeReservoirTransmissibilities()
 
     if (is_fracture(face.marker()))
     {
-      calc.vCodePolygon[ipoly] = code_polygon;
-      code_polygon++;
+      if(dfm_faces.find(face.index())->second.nfluid >= 0)
+      {
+        calc.vCodePolygon[ipoly] = code_polygon;
+        code_polygon++;
+      }
+      else  // non-frac faces
+        calc.vCodePolygon[ipoly] = -1;
     }
     else  // non-frac faces
       calc.vCodePolygon[ipoly] = -1;
@@ -600,19 +402,13 @@ void SimData::computeReservoirTransmissibilities()
     calc.vvVFaces[icell].reserve(faces.size());
     for (const mesh::face_iterator & face : faces)
     {
-      // TODO: get face indices some other way
-      // if (dfm_faces.find(hash) == dfm_faces.end())
-      //   throw std::out_of_range("bad cell hash");
       const std::size_t ipolygon = face.index();
       calc.vvVFaces[icell].push_back(ipolygon);
     }
-    calc.vCodePolyhedron[icell] = dfm_faces.size() + icell;
+    calc.vCodePolyhedron[icell] = n_flow_dfm_faces + icell;
   }
 
   // Properties
-  calc.vZPermeability.assign(calc.NbZones * 3, 0.0);
-  calc.vZConduction.assign( (calc.NbPolyhedra + n_flow_dfm_faces) * 3, 0.0);
-
   // DFM fractures
   for (auto it : dfm_faces)
   {
@@ -667,17 +463,20 @@ void SimData::computeReservoirTransmissibilities()
   }
 
 
-  FlowData matrix_flow_data;
   std::cout << "compute karimi" << std::endl;
+  FlowData matrix_flow_data;
   calc.compute_flow_data();
   std::cout << "end compute karimi" << std::endl;
   calc.extractData(matrix_flow_data);
 
   // copy to global
-  flow_data.volumes.reserve(matrix_flow_data.volumes.size());
-  flow_data.poro.reserve(matrix_flow_data.volumes.size());
-  flow_data.depth.reserve(matrix_flow_data.volumes.size());
-  for (std::size_t i=0; i<matrix_flow_data.volumes.size(); ++i)
+  const std::size_t n_volumes = matrix_flow_data.volumes.size();
+  std::cout << "n_volumes = " << n_volumes << std::endl;
+  std::cout << "grid.n_cells() = " << grid.n_cells() << std::endl;
+  flow_data.volumes.reserve(n_volumes);
+  flow_data.poro.reserve(n_volumes);
+  flow_data.depth.reserve(n_volumes);
+  for (std::size_t i=0; i<n_volumes; ++i)
   {
     flow_data.volumes.push_back(matrix_flow_data.volumes[i]);
     flow_data.poro.push_back(matrix_flow_data.poro[i]);
@@ -692,7 +491,6 @@ void SimData::computeReservoirTransmissibilities()
     flow_data.trans_ij.push_back(matrix_flow_data.trans_ij[iconn]);
   }
 
-
   // save custom user-defined cell data for flow output
   const std::size_t n_vars = rockPropNames.size();
 
@@ -706,15 +504,16 @@ void SimData::computeReservoirTransmissibilities()
   flow_data.custom_data.resize(n_flow_dfm_faces + grid.n_cells());
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
     if (is_fracture(face.marker()))
-    {
-      const std::size_t icell = face.neighbors()[0];
-      for (std::size_t j=0; j<n_vars; ++j)
-        if (config.expression_type[j] == 0)
-        {
-          const std::size_t ielement = dfm_faces[face.index()].nfluid;
-          flow_data.custom_data[ielement].push_back(vsCellRockProps[icell].v_props[j]);
-        }
-    }
+      if(dfm_faces.find(face.index())->second.nfluid >= 0)
+      {
+        const std::size_t icell = face.neighbors()[0];
+        for (std::size_t j=0; j<n_vars; ++j)
+          if (config.expression_type[j] == 0)
+          {
+            const std::size_t ielement = dfm_faces[face.index()].nfluid;
+            flow_data.custom_data[ielement].push_back(vsCellRockProps[icell].v_props[j]);
+          }
+      }
 
   for (std::size_t i=0; i<grid.n_cells(); ++i)
   {
@@ -760,9 +559,9 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
   // -------------------- geometry -----------------------
   for (std::size_t i=0; i<mesh.vertices.size(); ++i)
   {
-    calc.vCoordinatesX[i] = mesh.vertices[i][0];
-    calc.vCoordinatesY[i] = mesh.vertices[i][1];
-    calc.vCoordinatesZ[i] = mesh.vertices[i][2];
+    calc.X[i] = mesh.vertices[i][0];
+    calc.Y[i] = mesh.vertices[i][1];
+    calc.Z[i] = mesh.vertices[i][2];
   }
 
   // polygons (2d elements)
@@ -827,9 +626,9 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     // vertices
     for ( std::size_t i = 0; i < split.vertices.size(); i++ )
     {
-      tran.vCoordinatesX[i] = split.vertices[i][0];
-      tran.vCoordinatesY[i] = split.vertices[i][1];
-      tran.vCoordinatesZ[i] = split.vertices[i][2];
+      tran.X[i] = split.vertices[i][0];
+      tran.Y[i] = split.vertices[i][1];
+      tran.Z[i] = split.vertices[i][2];
     }
 
     // polygons (2d elements)
@@ -1019,9 +818,9 @@ compute_frac_frac_intersection_transes(const std::vector<Point>                 
   // -------------------- geometry -----------------------
   for (std::size_t i=0; i<verts.size(); ++i)
   {
-    tran.vCoordinatesX[i] = verts[i][0];
-    tran.vCoordinatesY[i] = verts[i][1];
-    tran.vCoordinatesZ[i] = verts[i][2];
+    tran.X[i] = verts[i][0];
+    tran.Y[i] = verts[i][1];
+    tran.Z[i] = verts[i][2];
   }
 
   // polygons (2d elements)
@@ -1612,7 +1411,7 @@ void SimData::definePhysicalFacets()
 
       if (coupled)
         nfluid++;
-    }
+    }  //  end DFM fracture face case
   }
   n_flow_dfm_faces = static_cast<std::size_t>(nfluid);
 }
