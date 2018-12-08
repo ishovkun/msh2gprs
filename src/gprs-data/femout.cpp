@@ -20,51 +20,43 @@ OutputData::~OutputData()
 
 void OutputData::write_output(const std::string & output_path)
 {
+  std::cout << "save geometry" << std::endl;
   saveGeometry(output_path);
+
+  std::cout << "save custom keyswords" << std::endl;
   saveGeomechDataNewKeywords(output_path + data.config.domain_file);
+
   if (!data.vEfrac.empty())
+  {
+    std::cout << "save embedded fractures" << std::endl;
     saveEmbeddedFractureProperties(output_path + data.config.efrac_file);
+  }
+
+  std::cout << "save mech boundary conditions" << std::endl;
   saveBoundaryConditions(output_path + data.config.bcond_file);
+
   if (data.dfm_faces.size() > 0)
+  {
+    std::cout << "save discrete fractures" << std::endl;
     saveDiscreteFractureProperties(output_path + data.config.discrete_frac_file);
+  }
+
+  std::cout << "save flow data" << std::endl;
   CalcTranses::save_output(data.flow_data, output_path);
 }
 
 
 void OutputData::saveGeometry(const std::string & output_path)
 {
-  // stringstream out;
-  // out << "model";
-  // out << "/";
-  // string outputPath_ = ""; // out.str();
-
-  // #if 0 //defined(_WIN32)
-  //   _mkdir(output_path.c_str()); // create directory
-  // //#else
-  //   mkdir(outputPath_.c_str(), 0777);
-  // #endif
-  // string outstring = pSim->outstream;
   string outstring;
 
   ofstream geomechfile;
-
-  // outstring = output_path + "gm_depth.txt";
-  // std::cout << "writing file: " << outstring  << std::endl;
-  // geomechfile.open(outstring.c_str());
-  // geomechfile << "GDEPTH" << endl;
-
-  // for (int i = 0; i < data.grid.n_cells(); i++)
-  // {
-	//   geomechfile << pSim->vsCellCustom[i].center [2] << "\n";
-  // }
-  // geomechfile << "/" << endl << endl;
-  // geomechfile.close();
 
   // GEOMETRY
   outstring =   output_path + "gm_geometry.txt";
   geomechfile.open(outstring.c_str());
   geomechfile << "GMDIMS" << endl;
-  // geomechfile <<  pSim->nNodes << "\t" << pSim->nCells << "\t" << pSim->nFaces;
+
   geomechfile << grid.n_vertices() << "\t"
               << grid.n_cells() << "\t"
               << grid.n_faces();
@@ -81,8 +73,6 @@ void OutputData::saveGeometry(const std::string & output_path)
     for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
       if(data.is_fracture(face.marker()))  // dfm frac
       {
-        // angem::Polygon<double> poly_face(pSim->vvVrtxCoords,
-        //                                  pSim->vsFaceCustom[iface].vVertices);
         angem::Polygon<double> poly_face(grid.vertices.points,
                                          face.vertex_indices());
         frac_msh.insert(poly_face);

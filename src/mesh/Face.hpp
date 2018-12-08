@@ -11,6 +11,7 @@ struct Face
   int marker = 0;  // internal face by default
   std::size_t index;
   int vtk_id;
+  std::vector<std::size_t> ordered_indices;
 };
 
 }

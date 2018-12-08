@@ -78,15 +78,6 @@ int main(int argc, char *argv[])
   SimData * pSimData;
   pSimData = new SimData(msh, config);
 
-  // cout << "Read gmsh data" << endl;
-  // pSimData->readGmshFile();
-
-  // cout << "Extract all polygons (slow)" << endl;
-  // pSimData->extractInternalFaces();
-
-  // cout << "Convert GMSH FEM mesh into SIM data" << endl;
-  // pSimData->convertGmsh2Sim();
-
   cout << "Fill 3D rock properties" << endl;
   pSimData->defineRockProperties();
 
@@ -96,9 +87,6 @@ int main(int argc, char *argv[])
   cout << "Create physical facets" << endl;
   cout << " ( bnd & frac faces )" << endl;
   pSimData->definePhysicalFacets();
-
-  // cout << endl << "Convert FEM mesh into FVM mesh" << endl;
-  // pSimData->handleConnections();
 
   std::cout << "computing reservoir transes" << std::endl;
   pSimData->computeReservoirTransmissibilities();
@@ -115,8 +103,8 @@ int main(int argc, char *argv[])
   std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
   pSimData->computeTransBetweenDifferentEfracs();
 
-  // // // cout << "Create simple wells" << endl;
-  // // // pSimData->createSimpleWells();
+  // cout << "Create simple wells" << endl;
+  // pSimData->createSimpleWells();
 
   if (pSimData->dfm_faces.size() > 0)
   {
@@ -124,7 +112,7 @@ int main(int argc, char *argv[])
     pSimData->splitInternalFaces();
   }
 
-  cout << "Write FEM mesh data\n";
+  cout << "Write Output data\n";
   OutputData output_data(*pSimData, msh);
 
   const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";

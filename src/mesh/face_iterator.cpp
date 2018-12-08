@@ -50,7 +50,8 @@ std::vector<Point> face_iterator::vertices() const
 
 std::vector<std::size_t> face_iterator::vertex_indices() const
 {
-  return std::move(invert_hash(face_it->first));
+  // return std::move(invert_hash(face_it->first));
+  return face_it->second.ordered_indices;
 }
 
 

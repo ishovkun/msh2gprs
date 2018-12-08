@@ -145,19 +145,19 @@ void CalcTranses::ComputeBasicGeometry()
         Fnz[i] +=.5*nz;
       }
 
-        FXG[i] = FXG[i] / FArea[i];
-        FYG[i] = FYG[i] / FArea[i];
-        FZG[i] = FZG[i] / FArea[i];
+      FXG[i] = FXG[i] / FArea[i];
+      FYG[i] = FYG[i] / FArea[i];
+      FZG[i] = FZG[i] / FArea[i];
 
-        Fnx[i] = Fnx[i] / FArea[i];
-        Fny[i] = Fny[i] / FArea[i];
-        Fnz[i] = Fnz[i] / FArea[i];
+      Fnx[i] = Fnx[i] / FArea[i];
+      Fny[i] = Fny[i] / FArea[i];
+      Fnz[i] = Fnz[i] / FArea[i];
 
-        nl = sqrt(Fnx[i]*Fnx[i] + Fny[i]*Fny[i] + Fnz[i]*Fnz[i]);
+      nl = sqrt(Fnx[i]*Fnx[i] + Fny[i]*Fny[i] + Fnz[i]*Fnz[i]);
 
-        Fnx[i] = Fnx[i] / nl;
-        Fny[i] = Fny[i] / nl;
-        Fnz[i] = Fnz[i] / nl;
+      Fnx[i] = Fnx[i] / nl;
+      Fny[i] = Fny[i] / nl;
+      Fnz[i] = Fnz[i] / nl;
     }
 
 ////////////////////////////////////////////////
@@ -193,6 +193,12 @@ void CalcTranses::ComputeBasicGeometry()
               Fnz[k]*(FZG[k]-zi);
 
           volumetmp = ABS(h*FArea[k]) / 3.;
+
+          if (std::isnan(volumetmp))
+          {
+            std::cout << "found nan volume = " << volumetmp << std::endl;
+            abort();
+          }
 
           VXG[i] += (FXG[k] + .25*(xi-FXG[k])) * volumetmp;
           VYG[i] += (FYG[k] + .25*(yi-FYG[k])) * volumetmp;

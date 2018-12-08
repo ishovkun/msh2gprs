@@ -76,6 +76,7 @@ void Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
       Face face_data;
       face_data.neighbors.push_back(new_element_index);
       face_data.index = map_faces.size();
+      face_data.ordered_indices = face;
       map_faces.insert({ {hash, face_data} });
     }
   }
@@ -106,10 +107,10 @@ Mesh::get_neighbors( const std::size_t icell ) const
     throw std::out_of_range("wrong cell index: " + std::to_string(icell));
 
   std::vector<std::size_t> neighbors;
-  const Polyhedron poly =
-      angem::PolyhedronFactory::create<double>(vertices.points, cells[icell],
-                                               shape_ids[icell]);
-  for (const auto & face : get_faces(poly))
+  const std::vector<std::vector<std::size_t>> cell_faces =
+      angem::PolyhedronFactory::get_global_faces<double>(cells[icell],
+                                                         shape_ids[icell]);
+  for (const auto & face : cell_faces)
   {
     const std::vector<std::size_t> & face_neighbors = get_neighbors(face);
     for (const std::size_t jcell : face_neighbors)
@@ -152,6 +153,7 @@ void Mesh::insert_face(const std::vector<std::size_t> & ivertices,
     face_data.marker = marker;
     face_data.vtk_id = vtk_id;
     face_data.index = map_faces.size();
+    face_data.ordered_indices = ivertices;
     map_faces.insert({hash, face_data});
   }
   else
@@ -195,11 +197,6 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
           affected_cells.insert(cell_j.index());
       }
     }
-
-  // std::cout << "affected elements" << std::endl;
-  // for (auto cell : affected_cells)
-  //   std::cout << cell << "\t";
-  // std::cout << std::endl;
 
   std::vector<std::vector<std::size_t>> groups =
       group_cells_based_on_split_faces(affected_cells, vertex_faces);
@@ -333,6 +330,7 @@ void Mesh::split_faces()
           Face new_face;
           new_face.neighbors.push_back(icell);
           new_face.marker = it_face_old->second.marker;
+          new_face.ordered_indices = new_poly_faces[i];
           map_faces.insert({new_hash, new_face});
         }
         else
@@ -409,10 +407,6 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
         auto pair_cells = std::minmax(icell, jcell);
         std::vector<std::size_t> ordered_neighbors =
             {pair_cells.first, pair_cells.second};
-        // std::cout << "checking " << jcell;
-        //           << pair_cells.first << "\t"
-        //           << pair_cells.second << "\t"
-        //           << std::endl;
 
         // find out if i and j neighbor by a marked face
         bool neighbor_by_marked_face = false;

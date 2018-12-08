@@ -393,7 +393,7 @@ void SimData::computeReservoirTransmissibilities()
   }
 
   // polyhedra (3d elements)
-  calc.vvVFaces.resize(grid.n_faces());
+  calc.vvVFaces.resize(grid.n_cells());
   calc.vCodePolyhedron.resize(grid.n_cells());
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
