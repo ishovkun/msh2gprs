@@ -15,6 +15,8 @@ ENDIF()
 # but it works muuuch faster with it
 find_package(Boost 1.65.1)
 if(Boost_FOUND)
+  message("Boost found. Using boost libraries for hashing.")
+  message("To turn off edit the CMakeLists file.")
   INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
   add_definitions(-DUSE_BOOST)
 else()
