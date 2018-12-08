@@ -553,9 +553,6 @@ void SimData::computeReservoirTransmissibilities()
     tran.vTimurConnectionFactor[n] = 1.0;
   }
 
-  for ( auto perm : tran.vZPermeability)
-    std::cout << perm << std::endl;
-
   FlowData matrix_flow_data;
   std::cout << "run karimi" << std::endl;
   tran.compute_flow_data();
