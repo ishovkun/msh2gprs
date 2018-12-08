@@ -95,6 +95,8 @@ Polyhedron<Scalar>::get_faces() const
 template<typename Scalar>
 Scalar Polyhedron<Scalar>::volume() const
 {
+  std::cout << "wrong class" << std::endl;
+  abort();
   // i don't know how it works
   // ask mohammad
   const std::size_t n_faces = faces.size();

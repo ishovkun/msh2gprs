@@ -105,7 +105,8 @@ void SimData::defineEmbeddedFractureProperties()
     frac.cells.clear();
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
     {
-      const auto poly_cell = cell.polyhedron();
+      const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell.polyhedron();
+      const auto & poly_cell = *p_poly_cell;
 
       if (collision.check(*frac_conf.body, poly_cell))
       {
@@ -397,6 +398,7 @@ void SimData::computeReservoirTransmissibilities()
   calc.vCodePolyhedron.resize(grid.n_cells());
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
+    std::cout << "cell.volume() = " << cell.volume() << std::endl;
     const auto faces = cell.faces();
     const std::size_t icell = cell.index();
     calc.vvVFaces[icell].reserve(faces.size());

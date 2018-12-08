@@ -69,7 +69,7 @@ cell_iterator & cell_iterator::operator++()
 }
 
 
-angem::Polyhedron<double> cell_iterator::polyhedron() const
+std::unique_ptr<Polyhedron<double>> cell_iterator::polyhedron() const
 {
   return angem::PolyhedronFactory::create<double>(mesh_vertices.points,
                                                   cells[icell],
@@ -109,14 +109,24 @@ bool cell_iterator::has_vertex( const std::size_t ivertex ) const
 
 std::vector<std::size_t> cell_iterator::neighbor_indices() const
 {
-  const Polyhedron poly =
+  std::vector<std::size_t> neighbors;
+  const auto v_faces = faces();
+  for (const auto face : v_faces)
+    for (const std::size_t neighbor : face.neighbors())
+      if (neighbor != icell)
+        neighbors.push_back(neighbor);
+  return neighbors;
+}
+
+
+double cell_iterator::volume() const
+{
+  const auto poly =
       angem::PolyhedronFactory::create<double>(mesh_vertices.points,
                                                cells[icell],
                                                shape_ids[icell]);
-  // for (const auto & face : poly.get_faces)
-  std::cout << "not implemented" << std::endl << std::flush;
-  abort();
 
+  return poly->volume();
 }
 
 }

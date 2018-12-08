@@ -89,7 +89,7 @@ class Mesh
   inline std::size_t n_faces() const {return map_faces.size();}
   // get cell center coordinates
   Point get_center(const std::size_t icell) const;
-  Polyhedron get_polyhedron(const std::size_t icell) const;
+  std::unique_ptr<Polyhedron> get_polyhedron(const std::size_t icell) const;
 
   // MANIPULATION
   // delete an element from the mesh

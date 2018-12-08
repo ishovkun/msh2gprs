@@ -170,7 +170,7 @@ Point Mesh::get_center(const std::size_t icell) const
 }
 
 
-Polyhedron Mesh::get_polyhedron(const std::size_t icell) const
+std::unique_ptr<Polyhedron> Mesh::get_polyhedron(const std::size_t icell) const
 {
   return angem::PolyhedronFactory::create<double>(vertices.points,
                                                   cells[icell],

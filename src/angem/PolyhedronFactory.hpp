@@ -16,7 +16,7 @@ class PolyhedronFactory
 {
  public:
   template<typename Scalar>
-  static Polyhedron<Scalar>
+  static std::unique_ptr<Polyhedron<Scalar>>
   create(const std::vector<Point<3,Scalar>> & vertices,
          const std::vector<std::size_t>     & indices,
          const int                            vtk_id = -1)
@@ -24,13 +24,17 @@ class PolyhedronFactory
     switch (vtk_id)
     {
       case 10:
-        return Tetrahedron<Scalar>(vertices, indices);
+        return std::make_unique<Tetrahedron<Scalar>>(vertices, indices);
+        break;
       case 12:
-        return Hexahedron<Scalar>(vertices, indices);
+        return std::make_unique<Hexahedron<Scalar>>(vertices, indices);
+        break;
       case 13:
-        return Wedge<Scalar>(vertices, indices);
+        return std::make_unique<Wedge<Scalar>>(vertices, indices);
+        break;
       case 14:
-        return Pyramid<Scalar>(vertices, indices);
+        return std::make_unique<Pyramid<Scalar>>(vertices, indices);
+        break;
       default:
         {
           // try to construct based on number of points
@@ -38,33 +42,38 @@ class PolyhedronFactory
           switch (n_verts)
           {
             case 4:
-              return Tetrahedron<Scalar>(vertices, indices);
+              return std::make_unique<Tetrahedron<Scalar>>(vertices, indices);
+              break;
             case 5:
-              return Pyramid<Scalar>(vertices, indices);
+              return std::make_unique<Hexahedron<Scalar>>(vertices, indices);
+              break;
             case 6:
-              return Wedge<Scalar>(vertices, indices);
+              return std::make_unique<Wedge<Scalar>>(vertices, indices);
+              break;
             case 8:
-              return Hexahedron<Scalar>(vertices, indices);
+              return std::make_unique<Pyramid<Scalar>>(vertices, indices);
+              break;
+            default:
+              throw NotImplemented("3D element does not exist");
           }
-          throw NotImplemented("3D element does not exist");
         }
     }
   }
 
   template<typename Scalar>
-  static Polyhedron<Scalar>
+  static std::unique_ptr<Polyhedron<Scalar>>
   create(const int  vtk_id = -1)
   {
     switch (vtk_id)
     {
       case 10:
-        return Tetrahedron<Scalar>();
+        return std::make_unique<Tetrahedron<Scalar>>();
       case 12:
-        return Hexahedron<Scalar>();
+        return std::make_unique<Hexahedron<Scalar>>();
       case 13:
-        return Wedge<Scalar>();
+        return std::make_unique<Wedge<Scalar>>();
       case 14:
-        return Pyramid<Scalar>();
+        return std::make_unique<Pyramid<Scalar>>();
       default:
         throw NotImplemented("3D element does not exist");
     }

@@ -35,7 +35,8 @@ class cell_iterator
   std::vector<std::size_t> neighbor_indices() const;
   std::vector<cell_iterator> neighbors() const;
   Point center() const;
-  angem::Polyhedron<double> polyhedron() const;
+  double volume() const;
+  std::unique_ptr<Polyhedron<double>> polyhedron() const;
   std::vector<face_iterator> faces() const;
 
   // other
