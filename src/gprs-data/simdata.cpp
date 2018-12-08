@@ -371,7 +371,6 @@ void SimData::computeReservoirTransmissibilities()
   }
 
   // polygons (2d elements)
-  int code_polygon = 0;
   calc.vvFNodes.resize(grid.n_faces());
 
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
@@ -380,15 +379,7 @@ void SimData::computeReservoirTransmissibilities()
     calc.vvFNodes[ipoly] = face.vertex_indices();
 
     if (is_fracture(face.marker()))
-    {
-      if(dfm_faces.find(face.index())->second.nfluid >= 0)
-      {
-        calc.vCodePolygon[ipoly] = code_polygon;
-        code_polygon++;
-      }
-      else  // non-frac faces
-        calc.vCodePolygon[ipoly] = -1;
-    }
+      calc.vCodePolygon[ipoly] = dfm_faces.find(face.index())->second.nfluid;
     else  // non-frac faces
       calc.vCodePolygon[ipoly] = -1;
   }
@@ -398,7 +389,7 @@ void SimData::computeReservoirTransmissibilities()
   calc.vCodePolyhedron.resize(grid.n_cells());
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
-    std::cout << "cell.volume() = " << cell.volume() << std::endl;
+    // std::cout << "cell.volume() = " << cell.volume() << std::endl;
     const auto faces = cell.faces();
     const std::size_t icell = cell.index();
     calc.vvVFaces[icell].reserve(faces.size());
@@ -415,14 +406,13 @@ void SimData::computeReservoirTransmissibilities()
   for (auto it : dfm_faces)
   {
     const int i = it.second.nfluid;
-    if (i > 0)  // if active
+    if (i >= 0)  // if active
     {
       calc.vZoneCode[i] = i;
       calc.vZVolumeFactor[i] = it.second.aperture;
       calc.vZPorosity[i] = 1.0;
       calc.vZPermCode[i] = 1;
 
-      //@HACK default permeability for all fractures
       const double perm = it.second.conductivity / it.second.aperture;
       calc.vZPermeability[i*3+0] = perm;
       calc.vZPermeability[i*3+1] = perm;
@@ -433,6 +423,17 @@ void SimData::computeReservoirTransmissibilities()
       calc.vZConduction[i*3+2] = 1;
       calc.vTimurConnectionFactor[i] = 1.0;
     }
+  }
+
+  // avoid catching exception each time
+  bool thermal_conductivity_available = true;
+  try
+  {
+    get_property(0, "THCROCK");
+  }
+  catch (const std::out_of_range& e)
+  {
+    thermal_conductivity_available = false;
   }
 
   // properties regular cells
@@ -449,23 +450,18 @@ void SimData::computeReservoirTransmissibilities()
     calc.vZPermeability[n*3+2] = perm[2];
 
     double thc = 0;
-    try
-    {
+    if (thermal_conductivity_available)
       thc = get_property(i, "THCROCK");
-    }
-    catch (const std::out_of_range& e)
-    {
-      calc.vZConduction[n*3+0] = thc;
-      calc.vZConduction[n*3+1] = thc;
-      calc.vZConduction[n*3+2] = thc;
-    }
+
+    calc.vZConduction[n*3+0] = thc;
+    calc.vZConduction[n*3+1] = thc;
+    calc.vZConduction[n*3+2] = thc;
 
     calc.vZVolumeFactor[n] = get_volume_factor(i);
     calc.vTimurConnectionFactor[n] = 1.0;
   }
 
-
-  std::cout << "compute karimi" << std::endl;
+  std::cout << "Compute karimi" << std::endl;
   FlowData matrix_flow_data;
   calc.compute_flow_data();
   std::cout << "end compute karimi" << std::endl;
