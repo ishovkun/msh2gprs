@@ -91,6 +91,7 @@ void OutputData::saveGeometry(const std::string & output_path)
       geomechfile << vertex[0] << "\t"
                   << vertex[1] << "\t"
                   << vertex[2] << "\n";
+  geomechfile << "/" << std::endl << std::endl;
 
   cout << "write all elements\n";
   geomechfile << "GMCELL_NODES" << endl;
@@ -527,10 +528,10 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   // }
   geomechfile << "/" << endl << endl;
 
-  //   nFractures_ = 0;
   geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
   for (const auto facet_it : data.dfm_faces)
     geomechfile << facet_it.second.conductivity << std::endl;
+  geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMFACE_FRACTURE_REGION" << std::endl;
   for (const auto facet_it : data.dfm_faces)
