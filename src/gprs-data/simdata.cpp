@@ -1312,11 +1312,13 @@ void SimData::splitInternalFaces()
 
 void SimData::handleConnections()
 {
+  std::cout << "handle connections" << std::endl;
   // cells
   for (auto cell = grid.begin_cells(); cell!=grid.end_cells(); ++cell)
     for (const auto & conf : config.domains)
-      if ( cell.marker() == conf.label and conf.coupled) // cells
-        gm_cell_to_flow_cell[cell.index()].push_back(n_flow_dfm_faces + cell.index());
+      if (cell.marker() == conf.label) // cells
+        if (conf.coupled)
+          gm_cell_to_flow_cell[cell.index()].push_back(n_flow_dfm_faces + cell.index());
 
   // finally embedded fractures
   for (std::size_t ifrac=0; ifrac<vEfrac.size(); ++ifrac)
@@ -1400,12 +1402,12 @@ void SimData::definePhysicalFacets()
 
       dfm_faces.insert({face.index(), facet});
 
-      // save to gm_cell_to_flow_cell array
-      for (const auto ineighbor : face.neighbors())
-        for (const auto & conf : config.domains)
-          if ( grid.cell_markers[ineighbor] == conf.label ) // cells
-            if (conf.coupled)
-              gm_cell_to_flow_cell[ineighbor].push_back(facet.nfluid);
+      // save to gmface_fracture_to_flowcell array
+      // for (const auto ineighbor : face.neighbors())
+      //   for (const auto & conf : config.domains)
+      //     if ( grid.cell_markers[ineighbor] == conf.label ) // cells
+      //       if (conf.coupled)
+      //         gm_cell_to_flow_cell[ineighbor].push_back(facet.nfluid);
 
       if (coupled)
         nfluid++;

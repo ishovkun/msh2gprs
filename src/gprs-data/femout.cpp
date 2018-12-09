@@ -53,7 +53,7 @@ void OutputData::saveGeometry(const std::string & output_path)
   ofstream geomechfile;
 
   // GEOMETRY
-  outstring =   output_path + "gm_geometry.txt";
+  outstring = output_path + data.config.mechanics_domain_file;
   geomechfile.open(outstring.c_str());
   geomechfile << "GMDIMS" << endl;
 
