@@ -513,7 +513,8 @@ void SimData::computeReservoirTransmissibilities()
     tran.vZPermCode[i] = 1;
 
     //@HACK default permeability for all fractures
-    tran.vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
+    tran.vZPermeability[i*3+0] = vConductivity[i]/vAperture[i];
+    // tran.vZPermeability[i*3+0] = 0.24e-3 * 0.24e-3 * 0.24e-3 / 12. / 1e-15 / 2e-3 * 0.12;
     tran.vZPermeability[i*3+1] = tran.vZPermeability[i*3+0];
     tran.vZPermeability[i*3+2] = tran.vZPermeability[i*3+0];
 
