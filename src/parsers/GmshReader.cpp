@@ -153,6 +153,7 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     {
       // const angem::Polygon<double> poly(mesh.vertices.points, ivertices);
       // mesh.insert(poly, marker);
+      // std::cout << "2D vtk_id = " << vtk_id << std::endl;
       mesh.insert_face(ivertices, vtk_id, marker);
     }
     else

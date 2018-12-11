@@ -79,6 +79,18 @@ void Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
       face_data.index = map_faces.size();
       face_data.old_index = face_data.index;
       face_data.ordered_indices = face;
+      switch (face.size())
+      {
+        case 3:
+          face_data.vtk_id = 5;  //  triangle
+          break;
+        case 4:
+          face_data.vtk_id = 9;  //  vtk_quad
+          break;
+        default:
+          face_data.vtk_id = 7;  //  vtk_polygon
+          break;
+      }
       map_faces.insert({ {hash, face_data} });
     }
   }
@@ -337,6 +349,7 @@ void Mesh::split_faces()
           new_face.marker = it_face_old->second.marker;
           new_face.ordered_indices = new_poly_faces[i];
           new_face.old_index = it_face_old->second.old_index;
+          new_face.vtk_id = it_face_old->second.vtk_id;
           map_faces.insert({new_hash, new_face});
         }
         else
