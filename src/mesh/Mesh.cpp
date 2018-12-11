@@ -46,6 +46,7 @@ void Mesh::insert(const Polyhedron & poly,
       Face face_data;
       face_data.neighbors.push_back(new_element_index);
       face_data.index = map_faces.size();
+      face_data.old_index = face_data.index;
       map_faces.insert({ {hash, face_data} });
     }
   }
@@ -76,6 +77,7 @@ void Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
       Face face_data;
       face_data.neighbors.push_back(new_element_index);
       face_data.index = map_faces.size();
+      face_data.old_index = face_data.index;
       face_data.ordered_indices = face;
       map_faces.insert({ {hash, face_data} });
     }
@@ -153,6 +155,7 @@ void Mesh::insert_face(const std::vector<std::size_t> & ivertices,
     face_data.marker = marker;
     face_data.vtk_id = vtk_id;
     face_data.index = map_faces.size();
+    face_data.old_index = face_data.index;
     face_data.ordered_indices = ivertices;
     map_faces.insert({hash, face_data});
   }
@@ -252,6 +255,8 @@ void Mesh::mark_for_split(const face_iterator & face)
 
 void Mesh::split_faces()
 {
+  // std::cout << "n_nodes() = " << n_vertices() << std::endl;
+  // std::cout << "n_faces = " << n_faces() << std::endl;
   /* Algorithm:
   * 1. create SurfaceMesh from marked faces
   * 2. find internal vertices (not on boundary)
@@ -295,7 +300,7 @@ void Mesh::split_faces()
     }
   }
 
-  std::cout << "modifying face map" << std::endl;
+  // std::cout << "modifying face map" << std::endl;
 
   // modify face map
   for (const auto it_cell : map_old_new_cells)
@@ -331,6 +336,7 @@ void Mesh::split_faces()
           new_face.neighbors.push_back(icell);
           new_face.marker = it_face_old->second.marker;
           new_face.ordered_indices = new_poly_faces[i];
+          new_face.old_index = it_face_old->second.old_index;
           map_faces.insert({new_hash, new_face});
         }
         else
@@ -395,7 +401,6 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
       map_cell_group.insert({icell, igroup});
       new_group++;
     }
-    // std::cout << "igroup = " << igroup << " of " << n_groups << "\t";
 
     processed_cells.insert(icell);
 
