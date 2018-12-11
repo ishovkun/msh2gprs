@@ -499,12 +499,24 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   int nFractures_ = 0;
   cout << "write all fractured faces\n";
 
-  geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
-  for (const auto facet_it : data.dfm_faces)
+  geomechfile << "GMFACE_FRACTURE\n";
+  for (const auto & gm_face : data.gm_dfm_faces)
   {
-    geomechfile << facet_it.second.nface + 1 << "\t";
-    geomechfile << facet_it.second.nfluid + 1 << endl;
+      geomechfile << gm_face.ifracture + 1 << "\t";
+      geomechfile << gm_face.gm_face_index + 1 << "\t";
+      if (gm_face.coupled)
+        geomechfile << gm_face.flow_cell + 1 << std::endl;
+      else
+        geomechfile << -1 << std::endl;
   }
+  geomechfile << "/" << std::endl << std::endl;
+
+  // geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
+  // for (const auto facet_it : data.dfm_faces)
+  // {
+  //   geomechfile << facet_it.second.nface + 1 << "\t";
+  //   geomechfile << facet_it.second.nfluid + 1 << endl;
+  // }
   // for(itsetint = pSim->setIdenticalInternalMarker.begin();
   //     itsetint != pSim->setIdenticalInternalMarker.end();
   //     itsetint++, nFractures_++)
@@ -526,7 +538,7 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   //     }
   //   }
   // }
-  geomechfile << "/" << endl << endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
   for (const auto facet_it : data.dfm_faces)

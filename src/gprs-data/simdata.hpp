@@ -27,6 +27,7 @@
 #include "mesh/Mesh.hpp"
 #include <SimdataConfig.hpp>
 
+
 struct GmConstraint
 {
   double dPenalty;
@@ -39,48 +40,58 @@ struct GmConstraint
 
 struct RockProps
 {
-  int model;
+  // int model;
   std::vector<double> v_props;
-  double poro;
-  double perm, perm_x, perm_y, perm_z;
-  double thc, thc_x, thc_y, thc_z;
-  double temp;
-  double heat_capacity;
+  // double poro;
+  // double perm, perm_x, perm_y, perm_z;
+  // double thc, thc_x, thc_y, thc_z;
+  // double temp;
+  // double heat_capacity;
 
-  double biot_plas;
-  double biot_flow;
-  double biot;
-  double young;
-  double poisson;
-  double density;
-  double poron;
+  // double biot_plas;
+  // double biot_flow;
+  // double biot;
+  // double young;
+  // double poisson;
+  // double density;
+  // double poron;
 
-  double temperature;
-  double pressure;
-  double volmult;
+  // double temperature;
+  // double pressure;
+  // double volmult;
 
-  double ref_pres;
-  double ref_temp;
-  double ref_stres;
-  double ref_strain;
+  // double ref_pres;
+  // double ref_temp;
+  // double ref_stres;
+  // double ref_strain;
 
-  double cohesion;
-  double friction;
-  double dilation;
-  double thermal_expansion;
-  double pore_thermal_expansion;
+  // double cohesion;
+  // double friction;
+  // double dilation;
+  // double thermal_expansion;
+  // double pore_thermal_expansion;
 
-  vector<double> zmf;
-  vector<double> stress;
+  // vector<double> zmf;
+  // vector<double> stress;
 };
 
+
+struct GMDFMFace
+{
+  std::size_t gm_face_index;
+  std::size_t flow_cell;
+  std::size_t ifracture;
+  bool coupled = false;
+};
 
 struct PhysicalFace
 {
   int ntype;
   int nface;
   int nmark;
-  int nfluid;
+  // int nfluid;
+  std::size_t nfluid;
+  bool coupled;
   angem::Point<3,double> condition;
   double aperture;
   double conductivity;
@@ -108,9 +119,9 @@ struct EmbeddedFracture
   double                              cohesion;
   double                              friction_angle;
   double                              dilation_angle;
-  mesh::SurfaceMesh<double>            mesh;
-  double                               aperture;     // m
-  double                               conductivity;  // md-m
+  mesh::SurfaceMesh<double>           mesh;
+  double                              aperture;     // m
+  double                              conductivity;  // md-m
 };
 
 
@@ -208,10 +219,12 @@ public:
   std::unordered_map<std::size_t, PhysicalFace> boundary_faces;
   std::unordered_map<std::size_t, PhysicalFace> dfm_faces;
   std::size_t n_flow_dfm_faces;
-  // vector<PhysicalFace> vsPhysicalBoundary;
+
+  // coupling mechanics and flow
+  std::vector<GMDFMFace> gm_dfm_faces;
   std::vector<std::vector<std::size_t>> gm_cell_to_flow_cell;
 
-  std::unordered_set<int> fracture_face_markers;
+  std::set<int> fracture_face_markers;
   std::unordered_set<int> boundary_face_markers;
 
   //wells

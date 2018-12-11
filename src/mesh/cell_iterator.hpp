@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <mesh_methods.hpp>
 
+#include <memory>  // unique_ptr
+
 namespace mesh
 {
 using Point = angem::Point<3,double>;

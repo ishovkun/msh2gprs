@@ -403,11 +403,11 @@ void SimData::computeReservoirTransmissibilities()
 
   // Properties
   // DFM fractures
-  for (auto it : dfm_faces)
+  for (const auto & it : dfm_faces)
   {
-    const int i = it.second.nfluid;
-    if (i >= 0)  // if active
+    if (it.second.coupled)  // if active
     {
+      const int i = static_cast<int>(it.second.nfluid);
       calc.vZoneCode[i] = i;
       calc.vZVolumeFactor[i] = it.second.aperture;
       calc.vZPorosity[i] = 1.0;
@@ -502,7 +502,7 @@ void SimData::computeReservoirTransmissibilities()
   flow_data.custom_data.resize(n_flow_dfm_faces + grid.n_cells());
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
     if (is_fracture(face.marker()))
-      if(dfm_faces.find(face.index())->second.nfluid >= 0)
+      if(dfm_faces.find(face.index())->second.coupled)
       {
         const std::size_t icell = face.neighbors()[0];
         for (std::size_t j=0; j<n_vars; ++j)
@@ -1313,14 +1313,20 @@ void SimData::splitInternalFaces()
 void SimData::handleConnections()
 {
   std::cout << "handle connections" << std::endl;
-  gm_cell_to_flow_cell.resize(flow_data.volumes.size());
+  // gm_cell_to_flow_cell.resize(flow_data.volumes.size());
+  gm_cell_to_flow_cell.resize(grid.n_cells(), std::vector<std::size_t>());
 
   // cells
   for (auto cell = grid.begin_cells(); cell!=grid.end_cells(); ++cell)
     for (const auto & conf : config.domains)
+    {
       if (cell.marker() == conf.label) // cells
         if (conf.coupled)
+        {
           gm_cell_to_flow_cell[cell.index()].push_back(n_flow_dfm_faces + cell.index());
+          break;
+        }
+    }
 
   // finally embedded fractures
   for (std::size_t ifrac=0; ifrac<vEfrac.size(); ++ifrac)
@@ -1335,7 +1341,18 @@ void SimData::handleConnections()
     }
   }
 
-  // gmface_fracture_to_flow (dfm face to flow cell)
+  // connection between dfm gm fractures and flow cells
+  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++ face)
+    if (is_fracture(face.marker()))
+    {
+      GMDFMFace gm_face;
+      gm_face.ifracture = find(face.marker(), fracture_face_markers);
+      gm_face.gm_face_index = face.index();
+      const auto flow_face_it = dfm_faces.find(face.master_index());
+      gm_face.coupled = flow_face_it->second.coupled;
+      gm_face.flow_cell = flow_face_it->second.nfluid;
+      gm_dfm_faces.push_back(gm_face);
+    }
 }
 
 
@@ -1360,7 +1377,7 @@ void SimData::definePhysicalFacets()
         facet.ntype = conf.type;
         facet.nmark = conf.label;
         facet.condition = conf.value;
-        facet.nfluid = -1;
+        facet.coupled = false;
         boundary_faces.insert({face.index(), facet});
         boundary_face_markers.insert(marker);
         break;
@@ -1381,9 +1398,15 @@ void SimData::definePhysicalFacets()
             coupled = true;
 
       if (coupled)
+      {
         facet.nfluid = nfluid;
+        facet.coupled = true;
+      }
       else
+      {
         facet.nfluid = -2;  // just a negative number (-2 + 1 < 0)
+        facet.coupled = false;
+      }
 
       bool found_label = false;
       for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
