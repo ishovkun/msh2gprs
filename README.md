@@ -1,7 +1,11 @@
 # MSH2GRPS
 msh2grps is a tool to easily create models for AD-GRPS (preprocessor).
 It currently supports mesh files created with GMsh tool.
+<<<<<<< HEAD
 The properties are be assigned with a choice of JSON or YAML human-readable formats.
+=======
+The properties are be assigned with a choice of JSON or YAML formats human-readable.
+>>>>>>> 9f25e5a256188167692c6125d15fd1cb5d39564d
 
 ## Features
 - Supports arbitrary keywords
