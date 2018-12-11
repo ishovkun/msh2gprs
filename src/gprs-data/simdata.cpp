@@ -1313,6 +1313,8 @@ void SimData::splitInternalFaces()
 void SimData::handleConnections()
 {
   std::cout << "handle connections" << std::endl;
+  gm_cell_to_flow_cell.resize(flow_data.volumes.size());
+
   // cells
   for (auto cell = grid.begin_cells(); cell!=grid.end_cells(); ++cell)
     for (const auto & conf : config.domains)
@@ -1332,12 +1334,13 @@ void SimData::handleConnections()
           gm_cell_to_flow_cell[icell].push_back(get_flow_element_index(ifrac, i));
     }
   }
+
+  // gmface_fracture_to_flow (dfm face to flow cell)
 }
 
 
 void SimData::definePhysicalFacets()
 {
-  gm_cell_to_flow_cell.resize(grid.n_cells());
   std::size_t n_facets = 0;
   nNeumannFaces = 0;
   nDirichletFaces = 0;
