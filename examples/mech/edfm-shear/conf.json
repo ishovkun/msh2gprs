@@ -1,39 +1,24 @@
 {
-    "Mesh file" : "cartesian.msh",
+    "Mesh file" : "geom.msh",
 
-    "Embedded Fractures" :
-    {
-        "file" : "efrac.txt",
-        "Aggregation threshold" : 0.3,
-		    "_comment_":
+		"Embedded Fractures" :
+		{
+		    "0":
         {
             "type": "Rectangle",
             "center" : [0,  0,  0],
-            "length":  3.99,
-            "height":  1,
+            "_comment_":  13.33,
+            "length":  9.99,
+            "height":  20,
             "dip":     90,
-            "strike":  45,
+            "strike":  30,
             "cohesion": 0,
             "friction angle": 30,
             "dilation angle": 1e-6,
             "aperture": 1e-4,
             "conductivity": 2
         }
-		    , "1":
-        {
-            "type": "Rectangle",
-            "center" : [0,  0,  0],
-            "length":  3.99,
-            "height":  1,
-            "dip":     90,
-            "strike":  140,
-            "cohesion": 0,
-            "friction angle": 30,
-            "dilation angle": 1e-6,
-            "aperture": 1e-4,
-            "conductivity": 10
-        }
-    }
+		}
 
     , "Domain Flow Properties" :
     {
@@ -44,8 +29,28 @@
             {"RTEMP"                         : "343.15"},
             {"THCROCK"                       : "2.8"},
             {"PORO"                          : "0.2"},
-            {"PERM"                          : "1"},
-            {"PRESSURE"                      : "1"}
+            {"PERM"                          : "10"},
+            {"SWAT"                          : "0.0"},
+            {"PRESSURE"                      : "10"}
+        ]
+    }
+    , "Domain Mechanics Properties" :
+    {
+        "9999992": [
+            {"_comment_" : "example of assigning coupling (GMCELL_TO_FLOWCELL)"},
+            {"_comment_" : "True by default"},
+            {"Coupled"                       : "1"},
+            {"GMCELL_MODEL"                  : "3"},
+            {"GMCELL_DENSITY"                : "1000"},
+            {"GMCELL_YOUNG"                  : "1"},
+            {"GMCELL_BIOT"                   : "0.25"},
+            {"GMREF_TEMPERATURE"             : "343.15"},
+            {"GMCELL_HEAT_CAPACITY"          : "2626.0605"},
+            {"GMCELL_THERMAL_EXPANSION"      : "0"},
+            {"GMCELL_PORE_THERMAL_EXPANSION" : "0"},
+            {"GMCELL_POISSON"                : "0.25"},
+            {"GMREF_PRESSURE"                : "10"}
+
         ]
     }
     , "Boundary conditions" :
@@ -79,22 +84,22 @@
             "search tolerance" : 1e-4,
             "0" :
             {
-                "coord" : [-30, 0, 0],
+                "coord" : [-100, 0, 0],
                 "value" : ["nan", "0" , "nan"]
             }
             , "1" :
             {
-                "coord" : [30, 0, 0],
+                "coord" : [100, 0, 0],
                 "value" : ["nan", "0" , "nan"]
             }
             , "2" :
             {
-                "coord" : [0, 30, 0],
+                "coord" : [0, 100, 0],
                 "value" : ["0", "nan" , "nan"]
             }
             , "3" :
             {
-                "coord" : [0, -30, 0],
+                "coord" : [0, -100, 0],
                 "value" : ["0", "nan" , "nan"]
             }
         }

@@ -4,44 +4,40 @@
 // of front and back surfaces in order to constrain
 // y displacement
 
-// pi = 3.1415926;
-// nx = 50;
-// ny = 51;
-// nz = 1;
 
 // outer domain size
-size_x = 15;
-size_y = 30;
-lfrac = 2;
+size_x = 200;
+size_y = 200;
+size_z = 10;
+lfrac = 10;
 
-nf = 20;
+nf = 8;
 h = lfrac / nf;
-size_z = h;
 
 nx = size_x / h;
 ny = size_y / h;
 nz = 1;
-// make nfy odd
-If(Floor(ny/2) == ny/2)
-  ny = ny + 1;
+
+If (nx % 2 != 0)
+    nx = nx + 1;
+EndIf
+If (ny % 2 == 0)
+    ny = ny + 1;
 EndIf
 
-// Printf("%f", nfx/nfy);
-
-
 // outer bomain points
-left  = 0;
-right = size_x;
-back  = size_y/2;
-front = -size_y/2;
-bottom = 0;
-top = size_z;
+left   = -size_x / 2;
+right  = size_x / 2;
+back   = size_y  / 2;
+front  = -size_y / 2;
+bottom = -size_z;
+top    = 0;
 
 // domain boundary
-Point(1) = {left,  back,  bottom, h};  // left top
-Point(2) = {left,  front, bottom, h};  // left bottom
-Point(3) = {right, front, bottom, h};  // right bottom
-Point(4) = {right, back,  bottom, h};  // right top
+Point(1) = {left,  back,  top, 1};  // left top
+Point(2) = {left,  front, top, 1};  // left bottom
+Point(3) = {right, front, top, 1};  // right bottom
+Point(4) = {right, back,  top, 1};  // right top
 
 // // LINES
 Line(1) = {1, 2};    // left
@@ -65,7 +61,7 @@ Transfinite Surface(1) = {1, 2, 3, 4}; // point labels
 // remesh into quadrelaterals
 Recombine Surface{1};
 
-out1[] = Extrude{0,0,size_z} { Surface{1}; Layers{nz}; Recombine; };
+out1[] = Extrude{0,0,-size_z} { Surface{1}; Layers{nz}; Recombine; };
 
 // print
 NumPoints = #out1[];

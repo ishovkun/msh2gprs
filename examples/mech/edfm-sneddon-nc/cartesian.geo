@@ -6,31 +6,38 @@
 
 
 // outer domain size
-size_x = 5;
-size_y = 5;
+size_x = 100;
+size_y = 200;
+size_z = 10;
+lfrac = 5;
 
-nx = 10;
-ny = nx;
-// nf = 4;
-hx = size_x / nx;
-hy = size_y / ny;
-size_z = 1;
+nf = 16;
+h = lfrac / nf;
 
+nx = size_x / h;
+ny = size_y / h;
 nz = 1;
 
+If (nx % 2 != 0)
+    nx = nx + 1;
+EndIf
+If (ny % 2 == 0)
+    ny = ny + 1;
+EndIf
+
 // outer bomain points
-left   = -size_x / 2;
-right  = size_x  / 2;
+left   = 0;
+right  = size_x;
 back   = size_y  / 2;
 front  = -size_y / 2;
-bottom = -size_z / 2;
-top    = size_z  / 2;
+bottom = -size_z;
+top    = 0;
 
 // domain boundary
-Point(1) = {left,  back,  bottom, 1};  // left top
-Point(2) = {left,  front, bottom, 1};  // left bottom
-Point(3) = {right, front, bottom, 1};  // right bottom
-Point(4) = {right, back,  bottom, 1};  // right top
+Point(1) = {left,  back,  top, 1};  // left top
+Point(2) = {left,  front, top, 1};  // left bottom
+Point(3) = {right, front, top, 1};  // right bottom
+Point(4) = {right, back,  top, 1};  // right top
 
 // // LINES
 Line(1) = {1, 2};    // left
@@ -49,12 +56,12 @@ Line Loop(1) = {1, 2, 3, 4};    // outer boundary
 
 Plane Surface(1) = {1};      // outer surface
 
-Transfinite Surface(1) = {1, 2, 3, 4}; // point labels
+// Transfinite Surface(1) = {1, 2, 3, 4}; // point labels
 
 // remesh into quadrelaterals
 Recombine Surface{1};
 
-out1[] = Extrude{0,0,size_z} { Surface{1}; Layers{nz}; Recombine; };
+out1[] = Extrude{0,0,-size_z} { Surface{1}; Layers{nz}; Recombine; };
 
 // print
 NumPoints = #out1[];

@@ -6,9 +6,9 @@ import re
 # case_path = "/home/ishovkun/sim/mech-tests/dfm-sneddon-32/"
 # case_path = "/home/ishovkun/sim/mech-tests/edfm-nc/16-40/"
 # case_path = "/home/ishovkun/sim/mech-tests/edfm-nc-old/"
-# case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon-nc/nc-16/"
-# case_path = "/home/ishovkun/sim/edfm-1frac/"
-case_path = "/home/ishovkun/sim/DFM-1frac-flow/new/"
+case_path = "/home/ishovkun/sim/mech-tests/edfm-sneddon-nc/nc-16-40/"
+# case_path = "/home/ishovkun/sim/edfm-1frac/edfm-1frac-400/"
+# case_path = "/home/ishovkun/sim/DFM-1frac-flow/new/dfm-800/"
 
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 edfm_mesh_file = case_path + "efrac.vtk"
@@ -97,7 +97,7 @@ try:
                 continue
         n_edfm = int(split[1])
 except FileNotFoundError:
-    pass
+    print("Do EDFM mesh file found")
 
 print("n edfm = ", n_edfm)
 
@@ -153,6 +153,7 @@ with open(results_file, "r") as f:
 sda_data = []
 sda_names = ["Jump_n", "Jump_t", "status"]
 if (n_edfm > 0 and os.path.isdir(vtk_dir)):
+    print("getting SDA jump props")
     with open (gm_sda_file, "r") as f:
         found = False
         n_sda_cells = 0

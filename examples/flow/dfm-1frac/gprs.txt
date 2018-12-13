@@ -1,0 +1,184 @@
+VERBOSE
+ALL DEBUG /
+
+--------------------------------------------  PROBLEM DESCRIPTION  --+
+FLUID
+DEADOIL
+/
+
+COUPLING
+FIM(FLOW{NATURAL},WELLS)[SUPERLU]
+-- SEQ(FIM(FLOW{NATURAL},WELLS)[SUPERLU 1e-12 150],GEOMECHANICS[SUPERLU 1e-12 150],100:1000) /
+-- FIM(FLOW{NATURAL},WELLS)[GMRES_R CPR0]
+/
+
+
+NONLINEAR
+FLOW 1e-4 50 0 APPL/
+WELLS 1e-5 /
+GEOMECHANICS 1e8  25 2 1 1 1e0 1e24 1.0 1.0 /
+/
+
+TUNING
+0.01 30 0 2.0 10.0 1* 0.2 0.1 /
+
+OUTPUT
+ASCII REPORT OUTPUT /
+-- ASCII TIME OUTPUT /
+
+-------------------------------------------  RESERVOIR DESCRIPTION  --+
+-- -- description on volume data
+-- INCLUDE
+-- fl_dimens.txt
+-- /
+
+-- INCLUDE
+-- fl_depth.txt
+-- /
+
+-- INCLUDE
+-- fl_poro.txt
+-- /
+
+-- INCLUDE
+-- fl_vol.txt
+-- /
+
+-- INCLUDE
+-- fl_tran.txt
+-- /
+
+-- INCLUDE
+-- fl_temp.txt
+-- /
+
+-- description on volume data
+INCLUDE
+./fl_cell_data.txt /
+
+-- description of face data
+INCLUDE
+./fl_face_data.txt /
+
+
+-------------------------------------------  GEOMECH DESCRIPTION  --+
+
+-- INCLUDE
+-- gm_geometry.txt
+-- /
+
+-- INCLUDE
+-- gm_bcond.txt
+-- /
+
+-- INCLUDE
+-- gm_biot.txt
+-- /
+
+-- GMCELL_BIOT_FLOW
+-- -1 /
+
+-- INCLUDE
+-- gm_fractures.txt
+-- /
+
+-- INCLUDE
+-- gm_fracprops.txt
+-- /
+
+
+-- INCLUDE
+-- gm_reference.txt
+-- /
+
+-- INCLUDE
+-- gm_elastic.txt
+-- /
+
+-- INCLUDE
+-- gm_density.txt
+-- /
+
+-- INCLUDE
+-- gm_model.txt
+-- /
+
+-------------------------------------------  WELLS DESCRIPTION  --+
+-- INCLUDE
+-- fl_wells.txt
+-- /
+WELSPECS
+I1 INJ 1 1 * /
+P1 PROD 1 1 * /
+P2 PROD 1 1 * /
+P3 PROD 1 1 * /
+-- P4 PROD 1 1 * /
+/
+
+COMPDAT
+--  (+1) + 40(shift) -- 50x50
+-- I1	 2095		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/   --   top left
+-- P1	 2853    1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 right
+-- P2	 3232		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 top		 right
+-- P3	 2474	   1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 left
+--  (+1) + 80(shift) -- 100x100
+I1	 7808			 1	 1	 1	 OPEN  1*  100.0	 4*  Z/   --   top left
+P1	 10697	 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 right
+P2	 12141		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 top		 right
+P3	 9253	   1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 left
+--  (+1) + 160(shift) -- 200x200
+-- I1	 34155			 1	 1	 1	 OPEN  1*  100.0	 4*  Z/   --   top left
+-- P1	 45465	 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 right
+-- P2	 51125		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 top		 right
+-- P3	 39808	   1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 left
+/
+
+
+WCONINJE
+I1 WATER OPEN BHP 2* 150 /
+-- W2 WATER OPEN RATE 0.2 0.2 200 /
+/
+
+WCONPROD
+P1  OPEN  BHP  5*  50  /
+P2  OPEN  BHP  5*  50  /
+P3  OPEN  BHP  5*  50  /
+/
+
+WELLSTRE
+I1 1.0 0.0 /
+/
+
+-------------------------------------  INITIALIZATION OF SIMULATION  --+
+
+SWAT
+0.0 /
+
+PRESSURE
+100.0 /
+
+------------------------------------------------  FLUID DESCRIPTION  --+
+ROCK
+100 1e-5 /
+
+PVDO
+1     1.00   1.0
+200  0.9   1.0 /
+
+PVTW
+100  1.00  5e-4 1 0.0 /
+
+SCOND
+1.0135 288.89 0.0 /
+
+SWOF
+0 0 1 0
+1 1 0 0 /
+
+----------------------------------------------------  TIME STEPPING  --+
+
+TSTEP
+200*10
+/
+
+END

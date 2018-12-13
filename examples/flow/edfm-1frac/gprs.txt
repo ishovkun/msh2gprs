@@ -1,0 +1,110 @@
+VERBOSE
+ALL DEBUG /
+
+--------------------------------------------  PROBLEM DESCRIPTION  --+
+FLUID
+DEADOIL
+/
+
+COUPLING
+FIM(FLOW{NATURAL},WELLS)[SUPERLU]
+-- FIM(FLOW{NATURAL},WELLS)[GMRES_R CPR0]
+/
+
+#DEBUG
+#MINMAX /
+
+NONLINEAR
+FLOW 1e-4 30 0 APPL /
+/
+
+TUNING
+--  min   max  first  max-mult  max-dp  max-dT  max-dS  max-dc  relax  cfl
+    0.1   2   0.05      2       1*    1*      1*     1*      1*     1* /
+
+OUTPUT
+ASCII REPORT OUTPUT /
+-- ASCII TIME OUTPUT /
+
+-------------------------------------------  RESERVOIR DESCRIPTION  --+
+-- description on volume data
+INCLUDE
+./fl_cell_data.txt /
+
+-- description of face data
+INCLUDE
+./fl_face_data.txt /
+
+
+-------------------------------------------  WELLS DESCRIPTION  --+
+
+WELSPECS
+I1 INJ 1 1 * /
+P1 PROD 1 1 * /
+P2 PROD 1 1 * /
+P3 PROD 1 1 * /
+-- P4 PROD 1 1 * /
+/
+
+COMPDAT
+-- 50x50
+-- I1	 1			 1	 1	 1	 OPEN  1*  100.0	 4*  Z/   --   top left
+-- P1	 2500	 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 right
+-- P2	 50		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 top		 right
+-- P3	 2451	   1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 left
+-- 100x100
+-- I1	 1			 1	 1	 1	 OPEN  1*  100.0	 4*  Z/   --   top left
+-- P1	 10000	 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 right
+-- P2	 100		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 top		 right
+-- P3	 9901	   1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 left
+-- 200x200
+-- I1	 1			 1	 1	 1	 OPEN  1*  100.0	 4*  Z/   --   top left
+-- P1	 40000	 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 right
+-- P2	 200		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 top		 right
+-- P3	 39801	   1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 left
+-- 400x400
+I1	 1			 1	 1	 1	 OPEN  1*  100.0	 4*  Z/   --   top left
+P1	 160000	 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 right
+P2	 400		 1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 top		 right
+P3	 159601	   1	 1	 1	 OPEN  1*  100.0	 4*  Z/		--	 bottom	 left
+/
+
+WCONINJE
+I1 WATER OPEN BHP 2* 150 /
+-- I1 WATER OPEN RATE 0.2 1* 200 /
+/
+
+WCONPROD
+P1  OPEN  BHP  5*  50  /
+P2  OPEN  BHP  5*  50  /
+P3  OPEN  BHP  5*  50  /
+/
+
+WELLSTRE
+I1 1.00 0.0 /
+/
+
+------------------------------------------------  FLUID DESCRIPTION  --+
+ROCK
+100 1e-5 /
+
+PVDO
+1     1.00   1.0
+200  0.9   1.0 /
+
+PVTW
+100  1.00  5e-4 1 0.0 /
+
+SCOND
+1.0135 288.89 0.0 /
+
+SWOF
+0 0 1 0
+1 1 0 0 /
+----------------------------------------------------  TIME STEPPING  --+
+
+TSTEP
+200*10
+/
+
+END
