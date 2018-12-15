@@ -18,9 +18,12 @@ class face_iterator
  public:
   face_iterator(const FaceMap::iterator            & it,
                 angem::PointSet<3,double>          & vertices);
+  face_iterator(const face_iterator & other);
   // comparison
   bool operator==(const face_iterator & other) const;
   bool operator!=(const face_iterator & other) const;
+  // Setters
+  face_iterator & operator=(const face_iterator & other);
   // Getters
   // get center of mass of a face
   Point center() const;

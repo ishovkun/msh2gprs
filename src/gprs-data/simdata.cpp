@@ -987,7 +987,7 @@ void SimData::splitInternalFaces()
       grid.mark_for_split(face);
   }
 
-  grid.split_faces();
+  dfm_master_grid = grid.split_faces();
 //   int counter_;
 //   cout << endl << "Create set of stick vertices (slow)" << endl;
 //   vector<set<int> > vsetGlueVerticies;
@@ -1341,17 +1341,22 @@ void SimData::handleConnections()
     }
   }
 
-  // connection between dfm gm fractures and flow cells
+  // update dfm face indices in map
+  std::unordered_set<std::size_t> face_touched;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++ face)
     if (is_fracture(face.marker()))
     {
-      GMDFMFace gm_face;
-      gm_face.ifracture = find(face.marker(), fracture_face_markers);
-      gm_face.gm_face_index = face.index();
-      const auto flow_face_it = dfm_faces.find(face.master_index());
-      gm_face.coupled = flow_face_it->second.coupled;
-      gm_face.flow_cell = flow_face_it->second.nfluid;
-      gm_dfm_faces.push_back(gm_face);
+      auto flow_face_it = dfm_faces.find(face.master_index());
+      auto & facet = flow_face_it->second;
+      if (face_touched.insert(face.master_index()).second)
+      {
+        facet.ifracture = find(face.marker(), fracture_face_markers);
+        facet.nface = face.index();
+        // only one neighbor
+        // gm_face.neighbor_cells.push_back(face.neighbors()[0]);
+      }
+      // else
+     //   gm_face.neighbor_cells.push_back(face.neighbors()[0]);
     }
 }
 
@@ -1427,13 +1432,6 @@ void SimData::definePhysicalFacets()
       }
 
       dfm_faces.insert({face.index(), facet});
-
-      // save to gmface_fracture_to_flowcell array
-      // for (const auto ineighbor : face.neighbors())
-      //   for (const auto & conf : config.domains)
-      //     if ( grid.cell_markers[ineighbor] == conf.label ) // cells
-      //       if (conf.coupled)
-      //         gm_cell_to_flow_cell[ineighbor].push_back(facet.nfluid);
 
       if (coupled)
         nfluid++;

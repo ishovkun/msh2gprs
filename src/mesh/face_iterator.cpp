@@ -13,6 +13,23 @@ face_iterator(const FaceMap::iterator            & it,
 {}
 
 
+face_iterator::
+face_iterator(const face_iterator & other)
+    :
+    face_it(other.face_it),
+    mesh_vertices(other.mesh_vertices)
+{}
+
+
+face_iterator &
+face_iterator::operator=(const face_iterator & other)
+{
+  face_it = other.face_it;
+  mesh_vertices = other.mesh_vertices;
+  return (*this);
+}
+
+
 bool face_iterator::operator==(const face_iterator & other) const
 {
   if (face_it != other.face_it)

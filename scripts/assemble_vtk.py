@@ -4,7 +4,7 @@ import numpy as np
 # case_path = "/home/ishovkun/sim/edfm-1frac/"
 # case_path = "/home/ishovkun/sim/edfm-1frac-0/"
 # case_path = "/home/ishovkun/sim/aquifer/"
-case_path = "/home/ishovkun/sim/edfm-dfm/"
+# case_path = "/home/ishovkun/sim/edfm-dfm/"
 
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 edfm_mesh_file = case_path + "efrac.vtk"

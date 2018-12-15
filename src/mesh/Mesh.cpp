@@ -265,7 +265,7 @@ void Mesh::mark_for_split(const face_iterator & face)
 }
 
 
-void Mesh::split_faces()
+SurfaceMesh<double> Mesh::split_faces()
 {
   // std::cout << "n_nodes() = " << n_vertices() << std::endl;
   // std::cout << "n_faces = " << n_faces() << std::endl;
@@ -382,6 +382,7 @@ void Mesh::split_faces()
 
   // clear marked elements vector
   marked_for_split.clear();
+  return std::move(mesh_faces);
 }
 
 
@@ -473,6 +474,16 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
     groups[it.second].push_back(it.first);
 
   return std::move(groups);
+}
+
+
+std::vector<face_iterator> Mesh::get_ordered_faces()
+{
+  std::vector<face_iterator> ordered_faces(this->n_faces(), this->begin_faces());
+  for (auto face=begin_faces(); face!=end_faces(); ++face)
+    ordered_faces[face.index()] = face;
+
+  return std::move(ordered_faces);
 }
 
 }

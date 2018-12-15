@@ -10,7 +10,8 @@ OutputData::OutputData(SimData & sim_data,
                        mesh::Mesh & grid)
     :
     data(sim_data),
-    grid(grid)
+    grid(grid),
+    ordered_faces(grid.get_ordered_faces())
 {}
 
 OutputData::~OutputData()
@@ -70,7 +71,8 @@ void OutputData::saveGeometry(const std::string & output_path)
   if (data.dfm_faces.size() > 0)
   { // DFM frac geometry
     mesh::SurfaceMesh<double> frac_msh(/* tol = */ 1e-6);
-    for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+    // for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+    for (const auto & face : ordered_faces)
       if(data.is_fracture(face.marker()))  // dfm frac
       {
         angem::Polygon<double> poly_face(grid.vertices.points,
@@ -175,9 +177,12 @@ void OutputData::saveGeometry(const std::string & output_path)
   geomechfile << "/\n\n";
 
   std::cout << "write all faces\n";
+  // create a vector of ordered faces
+  // const auto ordered_faces = grid.get_ordered_faces();
 
   geomechfile << "GMFACE_NODES\n";
-  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  for (const auto & face : ordered_faces)
   {
     const std::vector<std::size_t> ivertices = face.vertex_indices();
     geomechfile << ivertices.size() << "\t";
@@ -189,18 +194,21 @@ void OutputData::saveGeometry(const std::string & output_path)
   geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMFACE_TYPE" << std::endl;
-  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-    if (face.vtk_id() != -1)
-      geomechfile << face.vtk_id() << std::endl;
+  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  for (const auto & face : ordered_faces)
+    geomechfile << face.vtk_id() << std::endl;
+    // if (face.vtk_id() != -1)
+    //   geomechfile << face.vtk_id() << std::endl;
   geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMFACE_GMCELLS" << std::endl;
-  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  for (const auto & face : ordered_faces)
   {
     const auto & neighbors = face.neighbors();
-    geomechfile << neighbors.size() << std::endl;
+    geomechfile << neighbors.size() << "\t";
     for (const auto & neighbor : neighbors)
-      geomechfile << neighbor + 1 << std::endl;
+      geomechfile << neighbor + 1 << "\t";
+    geomechfile << std::endl;
   }
   geomechfile << "/" << std::endl << std::endl;
 
@@ -248,17 +256,11 @@ void OutputData::saveGeometry(const std::string & output_path)
 
         ielement++;
       }
-      // shift += efrac.vVertices.size();
       shift += efrac.mesh.vertices.size();
     }
 
     const std::string vtk_file = output_path + "efrac.vtk";
     IO::VTKWriter::write_vtk(efrac_verts, efrac_cells, vtk_file);
-
-    // const std::string vtk_file2 = output_path + "ababa.vtk";
-    // IO::VTKWriter::write_vtk(pSim->vEfrac[0].mesh.vertices.points,
-    //                          pSim->vEfrac[0].mesh.polygons,
-    //                          vtk_file2);
   }
 }
 
@@ -288,8 +290,6 @@ void OutputData::saveGeomechDataNewKeywords(const std::string file_name)
 
     geomechfile.close();
   }
-
-
 
   // //   geomechfile <<  "COMPDAT\n";
   // //   for ( int iw = 0; iw < pSim->nWells; iw++ )
@@ -407,7 +407,8 @@ void OutputData::saveBoundaryConditions(const std::string file_name)
   }
 
   if ( data.nDirichletFaces > 0 )
-    for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+    // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+    for (const auto & face : ordered_faces)
       if (data.is_boundary(face.marker()))
       {
         auto facet_it = data.boundary_faces.find(face.index());
@@ -499,15 +500,14 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   int nFractures_ = 0;
   cout << "write all fractured faces\n";
 
-  geomechfile << "GMFACE_FRACTURE\n";
-  for (const auto & gm_face : data.gm_dfm_faces)
+  geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
+  for (const auto & face_it : data.dfm_faces)
   {
-      geomechfile << gm_face.ifracture + 1 << "\t";
-      geomechfile << gm_face.gm_face_index + 1 << "\t";
-      if (gm_face.coupled)
-        geomechfile << gm_face.flow_cell + 1 << std::endl;
-      else
-        geomechfile << -1 << std::endl;
+    geomechfile << face_it.second.ifracture + 1 << "\t";
+    if (face_it.second.coupled)
+      geomechfile << face_it.second.nfluid + 1 << std::endl;
+    else
+      geomechfile << -1 << std::endl;
   }
   geomechfile << "/" << std::endl << std::endl;
 

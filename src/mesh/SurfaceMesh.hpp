@@ -30,6 +30,8 @@ class SurfaceMesh // : PolyGroup<Scalar>
   bool empty() const {return polygons.empty();}
 
   // GETTERS
+  // get number of elements
+  std::size_t n_polygons() const {return polygons.size();}
   // get vector of neighbor indices
   std::vector<std::size_t> get_neighbors( const std::size_t ielement ) const;
   // vector of indices of cells neighboring an edge

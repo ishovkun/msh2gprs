@@ -76,23 +76,26 @@ struct RockProps
 };
 
 
-struct GMDFMFace
-{
-  std::size_t gm_face_index;
-  std::size_t flow_cell;
-  std::size_t ifracture;
-  bool coupled = false;
-};
+// struct GMDFMFace
+// {
+//   // std::size_t gm_face_index;
+//   std::size_t flow_cell;
+//   std::size_t ifracture;
+//   bool coupled = false;
+//   std::vector<std::size_t> neighbor_cells;
+// };
 
 struct PhysicalFace
 {
   int ntype;
   int nface;
   int nmark;
+  int ifracture;
   // int nfluid;
   std::size_t nfluid;
   bool coupled;
   angem::Point<3,double> condition;
+  std::vector<std::size_t> neighbors_cells;
   double aperture;
   double conductivity;
 };
@@ -204,6 +207,7 @@ protected:
 
 public:
   mesh::Mesh & grid;
+  mesh::SurfaceMesh<double> dfm_master_grid;
 
   std::vector<RockProps> vsCellRockProps;
   std::vector<std::string> rockPropNames;
@@ -221,7 +225,8 @@ public:
   std::size_t n_flow_dfm_faces;
 
   // coupling mechanics and flow
-  std::vector<GMDFMFace> gm_dfm_faces;
+  // these are master DFM faces
+  // each dfm frac has 2 sides, but Timur thought It's a good idea to pass just one
   std::vector<std::vector<std::size_t>> gm_cell_to_flow_cell;
 
   std::set<int> fracture_face_markers;

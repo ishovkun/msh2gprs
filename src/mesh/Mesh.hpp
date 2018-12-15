@@ -24,7 +24,6 @@
 namespace mesh
 {
 
-
 using Point = angem::Point<3,double>;
 // using Polygon = angem::Polygon<double>;
 using Polyhedron = angem::Polyhedron<double>;
@@ -90,6 +89,8 @@ class Mesh
   // get cell center coordinates
   Point get_center(const std::size_t icell) const;
   std::unique_ptr<Polyhedron> get_polyhedron(const std::size_t icell) const;
+  // get vector of faces ordered by index (super expernsive -- linear O(n_faces))
+  std::vector<face_iterator> get_ordered_faces();
 
   // MANIPULATION
   // delete an element from the mesh
@@ -100,7 +101,8 @@ class Mesh
   // tell grid which faces to split before calling split_faces method
   void mark_for_split(const face_iterator & face);
   // split faces marked for splitting with mark_for_split
-  void split_faces();
+  // returns SurfaceMesh of master DFM faces
+  SurfaceMesh<double> split_faces();
 
   // ATTRIBUTES
   angem::PointSet<3,double>             vertices;
