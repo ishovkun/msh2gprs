@@ -76,22 +76,12 @@ struct RockProps
 };
 
 
-// struct GMDFMFace
-// {
-//   // std::size_t gm_face_index;
-//   std::size_t flow_cell;
-//   std::size_t ifracture;
-//   bool coupled = false;
-//   std::vector<std::size_t> neighbor_cells;
-// };
-
 struct PhysicalFace
 {
   int ntype;
-  int nface;
+  std::size_t nface;
   int nmark;
   int ifracture;
-  // int nfluid;
   std::size_t nfluid;
   bool coupled;
   angem::Point<3,double> condition;

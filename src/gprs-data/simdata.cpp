@@ -1367,8 +1367,7 @@ void SimData::definePhysicalFacets()
   n_neumann_faces = 0;
   n_dirichlet_faces = 0;
 
-  std::size_t iface = 0;
-  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++iface)
+  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
   {
     const bool is_boundary = (face.neighbors().size() < 2);
     const int marker = face.marker();
@@ -1376,14 +1375,13 @@ void SimData::definePhysicalFacets()
       if (marker == conf.label)
       {
         PhysicalFace facet;
-        facet.nface = iface;
+        facet.nface = face.index();
         facet.ntype = conf.type;
         facet.nmark = conf.label;
         facet.condition = conf.value;
         facet.coupled = false;
         boundary_faces.insert({face.index(), facet});
         boundary_face_markers.insert(marker);
-
         if (conf.type == 1)
           n_dirichlet_faces++;
         else if (conf.type == 2)
@@ -1395,7 +1393,7 @@ void SimData::definePhysicalFacets()
     if (!is_boundary and marker != 0)
     {
       PhysicalFace facet;
-      facet.nface = iface;
+      facet.nface = face.index();
       facet.ntype = 0;
       facet.nmark = marker;
       facet.neighbor_cells = face.neighbors();

@@ -95,8 +95,7 @@ void OutputData::saveGeometry(const std::string & output_path)
               << grid.n_faces();
   geomechfile << "/" << endl << endl;
 
-
-  geomechfile.precision(12);
+  geomechfile.precision(6);
   cout << "write all coordinates\n";
   geomechfile << "GMNODE_COORDS" << endl;
   for (const auto & vertex : grid.vertices)
@@ -328,6 +327,7 @@ void OutputData::saveGeomechDataNewKeywords(const std::string file_name)
   // // }
 }
 
+
 void OutputData::saveEmbeddedFractureProperties(const std::string file_name)
 {
   std::cout  << "Writing SDA props" << std::endl;
@@ -397,14 +397,15 @@ void OutputData::saveBoundaryConditions(const std::string file_name)
 {
   std::ofstream geomechfile;
   std::cout << "Computing Dirichlet nodes" << std::endl;
-  // /* this chunk of code find dirichlet nodes
-  //  * Algorithm:
-  //  * 1. First add all Dirichlet nodes specified by the user
-  //  * to the set
-  //  * 2. loop Dirichlet faces.
-  //  * loop nodes withing dirichlet faces
-  //  * add node as a part of dirichlet face
-  //  */
+
+  /* this chunk of code find dirichlet nodes
+   * Algorithm:
+   * 1. First add all Dirichlet nodes specified by the user
+   * to the set
+   * 2. loop Dirichlet faces.
+   * loop nodes withing dirichlet faces
+   * add node as a part of dirichlet face
+   */
   const int dim = 3;
   std::vector<std::unordered_set<std::size_t>> setDisp(dim);
   std::vector<std::vector<std::size_t>> vv_disp_node_ind(dim);
@@ -483,9 +484,10 @@ void OutputData::saveBoundaryConditions(const std::string file_name)
           geomechfile << "GMNODE_BCDISPZ" << std::endl;
           break;
       }
-      for(int i = 0; i < vv_disp_node_ind[j].size(); ++i)
+
+      for(std::size_t i = 0; i < vv_disp_node_ind[j].size(); ++i)
       {
-        geomechfile <<  vv_disp_node_ind[j][i] + 1 << "\t";
+        geomechfile << vv_disp_node_ind[j][i] + 1 << "\t";
         geomechfile << vv_disp_node_values[j][i] << std::endl;
       }
       geomechfile << "/" << std::endl << std::endl;
@@ -493,20 +495,17 @@ void OutputData::saveBoundaryConditions(const std::string file_name)
 
   if ( data.n_neumann_faces > 0 )
   {
-    cout << "write all Neumann faces\n";
+    std::cout << "write all Neumann faces" << std::endl;
 
-    geomechfile << "GMFACE_TRACTION_TXYZ" << endl;
-    // for ( std::size_t i = 0; i < data.nPhysicalFacets; i++ )
-    for (const auto facet_it : data.boundary_faces)
-    {
-      const auto & facet = facet_it.second;
-      if (facet.ntype == 2)  // neumann
+    geomechfile << "GMFACE_TRACTION_TXYZ" << std::endl;
+    for (const auto & facet_it : data.boundary_faces)
+      if (facet_it.second.ntype == 2)  // neumann
       {
-        geomechfile << facet.nface + 1 << "\t";
-        geomechfile << facet.condition << std::endl;
+        geomechfile << facet_it.second.nface + 1 << "\t";
+        geomechfile << facet_it.second.condition << std::endl;
       }
-    }
-    geomechfile << "/\n\n";
+
+    geomechfile << "/" << std::endl << std::endl;
   }
 
   geomechfile.close();
