@@ -119,24 +119,20 @@ protected:
   std::vector<int>		CodePolygon;
   std::vector<int>		CodePolyhedron;
 
-///// Control volume numbers /////
-
+  ///// Control volume numbers /////
   std::vector<int>		EQF;
   std::vector<int>		EQV;
 
-///// Additional polygon information /////
-
+  ///// Additional polygon information /////
   std::vector<double>		FArea;
   std::vector<double>		FXG,FYG,FZG;
   std::vector<double>		Fnx,Fny,Fnz;		// unit vector
 
-///// Additional polyhedron information /////
-
+  ///// Additional polyhedron information /////
   std::vector<double>		VVolume;
   std::vector<double>		VXG,VYG,VZG;
 
-///// Definition of the control volumes /////
-
+  ///// Definition of the control volumes /////
   double		Tolerance;
 
   std::vector<int>		CVType;

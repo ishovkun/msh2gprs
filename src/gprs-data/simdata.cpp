@@ -117,7 +117,6 @@ void SimData::defineEmbeddedFractureProperties()
         // for (const auto & ivertex : cell.vVertices)
         for (const auto & vertex : poly_cell.get_points())
         {
-          // const auto & vert = vvVrtxCoords[ivertex];
           const auto vc = poly_cell.center() - vertex;
           if ( fabs(frac_conf.body->plane.distance(vertex)/vc.norm()) < 1e-4 )
           {
@@ -1343,31 +1342,30 @@ void SimData::handleConnections()
 
   // update dfm face indices in map
   std::unordered_set<std::size_t> face_touched;
+  std::size_t counter = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++ face)
     if (is_fracture(face.marker()))
     {
+      counter++;
       auto flow_face_it = dfm_faces.find(face.master_index());
       auto & facet = flow_face_it->second;
       if (face_touched.insert(face.master_index()).second)
       {
         facet.ifracture = find(face.marker(), fracture_face_markers);
         facet.nface = face.index();
-        // only one neighbor
-        // gm_face.neighbor_cells.push_back(face.neighbors()[0]);
       }
-      // else
-     //   gm_face.neighbor_cells.push_back(face.neighbors()[0]);
     }
+
+  // std::cout << "n new dfm face = " << counter << std::endl;
 }
 
 
 void SimData::definePhysicalFacets()
 {
   std::size_t n_facets = 0;
-  nNeumannFaces = 0;
-  nDirichletFaces = 0;
-  nDirichletNodes = 0;
   int nfluid = 0;
+  n_neumann_faces = 0;
+  n_dirichlet_faces = 0;
 
   std::size_t iface = 0;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face, ++iface)
@@ -1385,6 +1383,12 @@ void SimData::definePhysicalFacets()
         facet.coupled = false;
         boundary_faces.insert({face.index(), facet});
         boundary_face_markers.insert(marker);
+
+        if (conf.type == 1)
+          n_dirichlet_faces++;
+        else if (conf.type == 2)
+          n_neumann_faces++;
+
         break;
       }
 
@@ -1394,6 +1398,7 @@ void SimData::definePhysicalFacets()
       facet.nface = iface;
       facet.ntype = 0;
       facet.nmark = marker;
+      facet.neighbor_cells = face.neighbors();
       fracture_face_markers.insert(marker);
       bool coupled = false;
       const auto neighbors = face.neighbors();

@@ -95,7 +95,7 @@ struct PhysicalFace
   std::size_t nfluid;
   bool coupled;
   angem::Point<3,double> condition;
-  std::vector<std::size_t> neighbors_cells;
+  std::vector<std::size_t> neighbor_cells;
   double aperture;
   double conductivity;
 };
@@ -216,13 +216,12 @@ public:
   FlowData flow_data;
   FlowData new_flow_data;
 
-  std::size_t nDirichletFaces;
-  std::size_t nDirichletNodes;
-  std::size_t nNeumannFaces;
-
   std::unordered_map<std::size_t, PhysicalFace> boundary_faces;
   std::unordered_map<std::size_t, PhysicalFace> dfm_faces;
   std::size_t n_flow_dfm_faces;
+
+  std::size_t n_dirichlet_faces;
+  std::size_t n_neumann_faces;
 
   // coupling mechanics and flow
   // these are master DFM faces

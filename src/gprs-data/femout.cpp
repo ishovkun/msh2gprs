@@ -33,7 +33,9 @@ void OutputData::write_output(const std::string & output_path)
     saveEmbeddedFractureProperties(output_path + data.config.efrac_file);
   }
 
-  std::cout << "save mech boundary conditions" << std::endl;
+  std::cout << "save mech boundary conditions: "
+            << output_path + data.config.bcond_file
+            << std::endl;
   saveBoundaryConditions(output_path + data.config.bcond_file);
 
   if (data.dfm_faces.size() > 0)
@@ -49,12 +51,42 @@ void OutputData::write_output(const std::string & output_path)
 
 void OutputData::saveGeometry(const std::string & output_path)
 {
-  string outstring;
+  // vtk output
+  const std::string vtk_file = output_path + "reservoir_mesh.vtk";
+  IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
+                           grid.shape_ids, vtk_file);
+  std::cout << "wrote file " << vtk_file << std::endl;
 
-  ofstream geomechfile;
+  if (data.dfm_faces.size() > 0)
+  { // DFM frac geometry
+    // mesh::SurfaceMesh<double> frac_msh(/* tol = */ 1e-6);
+    // // for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+    // for (const auto & face : ordered_faces)
+    //   if(data.is_fracture(face.marker()))  // dfm frac
+    //   {
+    //     angem::Polygon<double> poly_face(grid.vertices.points,
+    //                                      face.vertex_indices());
+    //     frac_msh.insert(poly_face);
+    //   }
+
+    const std::string vtk_dfm_file = output_path + "dfm.vtk";
+    // IO::VTKWriter::write_vtk(frac_msh.vertices.points, frac_msh.polygons,
+    //                          vtk_dfm_file);
+    IO::VTKWriter::write_vtk(data.dfm_master_grid.vertices.points,
+                             data.dfm_master_grid.polygons,
+                             vtk_dfm_file);
+    std::cout << "wrote file " << vtk_dfm_file << std::endl;
+
+  }
+
+  // gprs output
+  std::string outstring;
+  std::ofstream geomechfile;
 
   // GEOMETRY
   outstring = output_path + data.config.mechanics_domain_file;
+  std::cout << "writing file " << outstring << std::endl;
+
   geomechfile.open(outstring.c_str());
   geomechfile << "GMDIMS" << endl;
 
@@ -63,28 +95,6 @@ void OutputData::saveGeometry(const std::string & output_path)
               << grid.n_faces();
   geomechfile << "/" << endl << endl;
 
-  const std::string vtk_file = output_path + "reservoir_mesh.vtk";
-
-  IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
-                           grid.shape_ids, vtk_file);
-
-  if (data.dfm_faces.size() > 0)
-  { // DFM frac geometry
-    mesh::SurfaceMesh<double> frac_msh(/* tol = */ 1e-6);
-    // for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
-    for (const auto & face : ordered_faces)
-      if(data.is_fracture(face.marker()))  // dfm frac
-      {
-        angem::Polygon<double> poly_face(grid.vertices.points,
-                                         face.vertex_indices());
-        frac_msh.insert(poly_face);
-      }
-
-    const std::string vtk_dfm_file = output_path + "dfm.vtk";
-    IO::VTKWriter::write_vtk(frac_msh.vertices.points, frac_msh.polygons,
-                             vtk_dfm_file);
-
-  }
 
   geomechfile.precision(12);
   cout << "write all coordinates\n";
@@ -177,9 +187,6 @@ void OutputData::saveGeometry(const std::string & output_path)
   geomechfile << "/\n\n";
 
   std::cout << "write all faces\n";
-  // create a vector of ordered faces
-  // const auto ordered_faces = grid.get_ordered_faces();
-
   geomechfile << "GMFACE_NODES\n";
   // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
   for (const auto & face : ordered_faces)
@@ -194,28 +201,47 @@ void OutputData::saveGeometry(const std::string & output_path)
   geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMFACE_TYPE" << std::endl;
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
   for (const auto & face : ordered_faces)
     geomechfile << face.vtk_id() << std::endl;
-    // if (face.vtk_id() != -1)
-    //   geomechfile << face.vtk_id() << std::endl;
   geomechfile << "/" << std::endl << std::endl;
 
+  std::cout << "writing face-cell connection" << std::endl;
   geomechfile << "GMFACE_GMCELLS" << std::endl;
   for (const auto & face : ordered_faces)
   {
-    const auto & neighbors = face.neighbors();
-    geomechfile << neighbors.size() << "\t";
-    for (const auto & neighbor : neighbors)
-      geomechfile << neighbor + 1 << "\t";
-    geomechfile << std::endl;
+    if (data.is_fracture(face.marker()))  // timur want to retain neighbors of master frac face
+    {
+      if (face.index() == face.master_index())
+      {
+        const auto it_frac_face = data.dfm_faces.find(face.master_index());
+        if (it_frac_face == data.dfm_faces.end())
+        {
+          std::cout << "bug in dfm connections" << std::endl;
+          exit(0);
+        }
+        const auto & neighbors = it_frac_face->second.neighbor_cells;
+
+        geomechfile << neighbors.size() << "\t";
+        for (const auto & neighbor : neighbors)
+          geomechfile << neighbor + 1 << "\t";
+        geomechfile << std::endl;
+      }
+    }
+    else
+    {
+      const auto & neighbors = face.neighbors();
+      geomechfile << neighbors.size() << "\t";
+      for (const auto & neighbor : neighbors)
+        geomechfile << neighbor + 1 << "\t";
+      geomechfile << std::endl;
+    }
   }
   geomechfile << "/" << std::endl << std::endl;
 
     // write vtk data
-    // std::cout  << "Writing SDA props" << std::endl;
   if (!data.vEfrac.empty())
   {
+    std::cout  << "Writing SDA vtk" << std::endl;
     std::size_t n_efrac_vertices = 0;
     // make up a vector of all sda vertices
     for (const auto & efrac : data.vEfrac)
@@ -406,12 +432,11 @@ void OutputData::saveBoundaryConditions(const std::string file_name)
     }
   }
 
-  if ( data.nDirichletFaces > 0 )
-    // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  if ( data.n_dirichlet_faces > 0 )
     for (const auto & face : ordered_faces)
       if (data.is_boundary(face.marker()))
       {
-        auto facet_it = data.boundary_faces.find(face.index());
+        const auto facet_it = data.boundary_faces.find(face.master_index());
         if (facet_it != data.boundary_faces.end())
         {
           if (facet_it->second.ntype == 1) // dirichlet
@@ -466,7 +491,7 @@ void OutputData::saveBoundaryConditions(const std::string file_name)
       geomechfile << "/" << std::endl << std::endl;
     }
 
-  if ( data.nNeumannFaces > 0 )
+  if ( data.n_neumann_faces > 0 )
   {
     cout << "write all Neumann faces\n";
 
@@ -496,14 +521,12 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   geomechfile.open(file_name.c_str());
   set<int>::iterator itsetint;
 
-  int counter = 0;
-  int nFractures_ = 0;
   cout << "write all fractured faces\n";
-
   geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
   for (const auto & face_it : data.dfm_faces)
   {
-    geomechfile << face_it.second.ifracture + 1 << "\t";
+    // geomechfile << face_it.second.ifracture + 1 << "\t";
+    geomechfile << face_it.second.nface + 1 << "\t";
     if (face_it.second.coupled)
       geomechfile << face_it.second.nfluid + 1 << std::endl;
     else
