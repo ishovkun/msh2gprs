@@ -52,13 +52,23 @@ struct DiscreteFractureConfig
 };
 
 
+struct WellConfig
+{
+  std::string name;
+  double radius;
+  std::vector<angem::Point<3,double>> coordinates;
+  std::vector<bool> perforated;
+};
+
+
 struct SimdataConfig
 {
-  std::vector<EmbeddedFractureConfig> fractures;  // embedded fractures
-  std::vector<DiscreteFractureConfig> discrete_fractures;
-  std::vector<DomainConfig> domains;
-  std::vector<BCConfig> bc_faces;
-  std::vector <BCNodeConfig> bc_nodes;
+  std::vector<EmbeddedFractureConfig>  fractures;  //  embedded  fractures
+  std::vector<DiscreteFractureConfig>  discrete_fractures;
+  std::vector<DomainConfig>            domains;
+  std::vector<BCConfig>                bc_faces;
+  std::vector<BCNodeConfig>            bc_nodes;
+  std::vector<WellConfig>              wells;
 
   // all variables used for function parsing
   std::vector<std::string> all_vars = {"x", "y", "z"};
@@ -75,6 +85,7 @@ struct SimdataConfig
   std::string efrac_file            = "gm_SDA.txt";
   std::string discrete_frac_file    = "gm_DFM.txt";
   std::string bcond_file            = "bcond.txt";
+  std::string wells_file            = "wells.txt";
   // special keywords needed for computing fluid data
   // (they are not outputted)
   static constexpr double nan = -999.999;

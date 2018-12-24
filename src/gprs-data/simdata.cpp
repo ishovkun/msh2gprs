@@ -1880,3 +1880,41 @@ void SimData::computeTransBetweenDifferentEfracs()
 //   if (any_new)
 //     flow_data = std::move(new_flow_data);
 // }
+
+
+void SimData::setupWells()
+{
+  for (const auto & conf : config.wells)
+  {
+    Well well(conf);
+    std::cout << "setting up" << well.name << std::endl;
+    if (well.simple())
+      setupSimpleWell(well);
+    else
+      setupComplexWell(well);
+  }
+}
+
+
+void SimData::setupSimpleWell(Well & well)
+{
+  std::cout << "simple well " << well.name << std::endl;
+  // well assigned with a single coordinate
+  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  {
+    const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell.polyhedron();
+    if (p_poly_cell->point_inside(well.coordinate))
+      std::cout << "OK" << std::endl;
+    else
+      std::cout << "NO" << std::endl;
+  }
+  std::cout << "done" << std::endl;
+
+}
+
+
+void SimData::setupComplexWell(Well & well)
+{
+  // setup well with segments
+  std::cout << "complex well " << well.name << std::endl;
+}

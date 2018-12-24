@@ -26,6 +26,7 @@
 #include "mesh/SurfaceMesh.hpp"
 #include "mesh/Mesh.hpp"
 #include <SimdataConfig.hpp>
+#include <Well.hpp>
 
 
 struct GmConstraint
@@ -126,14 +127,6 @@ public:
   // SimData(const string & inputstream, const SimdataConfig & config);
   SimData(mesh::Mesh & grid, const SimdataConfig & config);
   ~SimData();
-  // void readSetupValues();
-  void readTotalData();
-  void readTotalTemp();
-
-  void readGmshFile();
-  void convertGmsh2Sim();
-
-  void initilizeBoundaryConditions();
 
   void defineRockProperties();
   void defineEmbeddedFractureProperties();
@@ -142,6 +135,7 @@ public:
   void definePhysicalFacets();
   void defineStressAndDispOnBoundary();
 
+  void setupWells();
   void splitInternalFaces();
 
   void handleConnections();
@@ -192,6 +186,8 @@ protected:
                                               FlowData                                    & flow_data) const;
   std::size_t get_flow_element_index(const std::size_t ifrac,
                                      const std::size_t ielement) const;
+  void setupSimpleWell(Well & well);
+  void setupComplexWell(Well & well);
 
   // renum * pRenum;
 

@@ -31,6 +31,8 @@ void YamlParser::parse_file(const std::string & fname)
       discrete_fracs(it->second);
     else if (key == "Boundary Conditions")
       boundary_conditions(it->second);
+    else if (key == "Wells")
+      section_wells(it->second);
     else
       std::cout << "Unknown key: " << key << " skipping" << std::endl;
   }
@@ -426,6 +428,88 @@ DomainConfig & YamlParser::get_domain_config(const int label)
   }
   else
     return config.domains[counter];
+}
+
+
+void YamlParser::section_wells(const YAML::Node & node)
+{
+  for (auto it = node.begin(); it!=node.end(); ++it)
+  {
+    const std::string key = it->first.as<std::string>();
+    std::cout << "\treading key " << key << std::endl;
+
+    if (key == "file")
+      config.wells_file = it->second.as<std::string>();
+    else if (key == "well")
+    {
+      config.wells.emplace_back();
+      read_well(it->second, config.wells.back());
+    }
+    else
+      std::cout << "\tSkipping unknown keyword" << std::endl;
+  }
+}
+
+
+void YamlParser::read_well(const YAML::Node & node,
+                           WellConfig       & well)
+{
+  for (auto it = node.begin(); it!=node.end(); ++it)
+  {
+    const std::string key = it->first.as<std::string>();
+    std::cout << "\t\treading entry " << key << std::endl;
+
+    if (key == "name")
+      well.name = it->second.as<std::string>();
+    else if (key == "radius")
+      well.radius = it->second.as<double>();
+    else if (key == "coord")
+    {
+      const std::string line = it->second.as<std::string>();
+      std::istringstream iss(line);
+      std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
+                                      std::istream_iterator<std::string>{}};
+      if (tokens.size() % 3 != 0)
+      {
+        std::cout << "\t\tinvalid entry" << std::endl;
+        abort();
+      }
+
+      const std::size_t n_coord = tokens.size() / 3;
+      well.coordinates.resize(n_coord);
+      for (std::size_t i=0; i<n_coord; ++i)
+        for (int d=0; d<3; ++d)
+          well.coordinates[i][d] = std::atof(tokens[3*i+d].c_str());
+
+      for (std::size_t i=0; i<n_coord; ++i)
+        std::cout << well.coordinates[i] << std::endl;
+    }
+    else if (key == "perf")
+    {
+      std::vector<int> tokens = it->second.as<std::vector<int>>();
+      for (const auto & token : tokens)
+        well.perforated.push_back(static_cast<bool>(token));
+    }
+    else
+      std::cout << "\t\tunknown key; skipping" << std::endl;
+  }
+
+  if (well.coordinates.empty())
+  {
+    std::cout << "invalid entry" << std::endl;
+    abort();
+  }
+
+  if (well.coordinates.size() > 1)
+  {
+    if (well.perforated.empty())
+      well.perforated.resize(well.coordinates.size(), true);
+    else if (well.perforated.size() != well.coordinates.size() - 1)
+    {
+      std::cout << "invalid entry" << std::endl;
+      abort();
+    }
+  }
 }
 
 }

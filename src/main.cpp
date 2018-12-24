@@ -106,6 +106,11 @@ int main(int argc, char *argv[])
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
 
+  std::cout << "Setup wells" << std::endl;
+  pSimData->setupWells();
+
+  exit(0);
+
   if (pSimData->dfm_faces.size() > 0)
   {
     cout << "Split FEM mesh on internal surfaces" << endl;
@@ -122,26 +127,26 @@ int main(int argc, char *argv[])
   std::cout << "output directory: " << output_dir << std::endl;
   output_data.write_output(output_dir);
 
-  // // if no frac remove vtk files
-  // if (pSimData->vEfrac.empty())
-  // {
-  //   const std::string efrac_vtk_file = output_dir + "efrac.vtk";
-  //   if (filesystem::exists(efrac_vtk_file))
-  //   {
-  //     std::cout << "cleanup old efrac.vtk file" << std::endl;
-  //     filesystem::remove(efrac_vtk_file);
-  //   }
-  // }
-  // if (pSimData->nDFMFracs == 0)
-  // {
-  //   const std::string dfm_vtk_file = output_dir + "dfm.vtk";
-  //   if (filesystem::exists(dfm_vtk_file))
-  //   {
-  //     std::cout << "cleanup old dfm.vtk file" << std::endl;
-  //     filesystem::remove(dfm_vtk_file);
-  //   }
-  // }
+  // if no frac remove vtk files
+  if (pSimData->vEfrac.empty())
+  {
+    const std::string efrac_vtk_file = output_dir + "efrac.vtk";
+    if (filesystem::exists(efrac_vtk_file))
+    {
+      std::cout << "cleanup old efrac.vtk file" << std::endl;
+      filesystem::remove(efrac_vtk_file);
+    }
+  }
+  if (pSimData->n_flow_dfm_faces == 0)
+  {
+    const std::string dfm_vtk_file = output_dir + "dfm.vtk";
+    if (filesystem::exists(dfm_vtk_file))
+    {
+      std::cout << "cleanup old dfm.vtk file" << std::endl;
+      filesystem::remove(dfm_vtk_file);
+    }
+  }
 
-  // delete pSimData;
-  // return 0;
+  delete pSimData;
+  return 0;
 }

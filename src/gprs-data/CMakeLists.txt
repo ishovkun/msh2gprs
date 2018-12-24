@@ -11,6 +11,7 @@ ADD_LIBRARY(gprs_data
   SimdataConfig.hpp
   FlowData.hpp
   VTKWriter.hpp
+  Well.hpp
   # IMPLEMENTATION
   element.cpp
   femout.cpp
@@ -19,6 +20,7 @@ ADD_LIBRARY(gprs_data
   FlowData.cpp
   transes.cpp
   VTKWriter.cpp
+  Well.cpp
 )
 
 SET_TARGET_PROPERTIES (

@@ -107,7 +107,6 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
 
   std::size_t n_cells, n_faces;
   std::string line;
-  // std::stringstream streamline(std::ios_base::in);
   std::vector<std::string> strings;
 
   const std::vector<int> polyhedras = {4, 5, 6, 11, 17, 18};

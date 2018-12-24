@@ -13,15 +13,19 @@ template<typename Scalar>
 class Polyhedron: public Shape<Scalar>
 {
  public:
+  // Constructors
   Polyhedron(const int vtk_id = -1);
   Polyhedron(const std::vector<Point<3,Scalar>>          & vertices,
              const std::vector<std::vector<std::size_t>> & faces,
              const int                                     vtk_id = -1);
 
+  // setter
   void set_data(const std::vector<Point<3,Scalar>>          & vertices,
                 const std::vector<std::vector<std::size_t>> & faces);
+  // getters
   int id() const {return vtk_id;}
   virtual Scalar volume() const;
+  bool point_inside(const Point<3,Scalar> & p) const;
 
   const std::vector<std::vector<std::size_t>> & get_faces() const;
   std::vector<std::vector<std::size_t>> & get_faces();
@@ -148,6 +152,23 @@ Scalar Polyhedron<Scalar>::volume() const
   }
 
   return vol;
+}
+
+
+template<typename Scalar>
+bool Polyhedron<Scalar>::point_inside(const Point<3,Scalar> & p) const
+{
+  const Point<3,Scalar> c = this->center();
+  std::cout << p << "\t" << c << std::endl;
+  for (const auto face : faces)
+  {
+    Plane<Scalar> plane(this->points[face[0]],
+                        this->points[face[1]],
+                        this->points[face[2]]);
+    if (plane.above(p) != plane.above(c))
+      return false;
+  }
+  return true;
 }
 
 }
