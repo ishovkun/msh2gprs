@@ -159,7 +159,6 @@ template<typename Scalar>
 bool Polyhedron<Scalar>::point_inside(const Point<3,Scalar> & p) const
 {
   const Point<3,Scalar> c = this->center();
-  std::cout << p << "\t" << c << std::endl;
   for (const auto face : faces)
   {
     Plane<Scalar> plane(this->points[face[0]],

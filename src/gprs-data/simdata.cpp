@@ -1899,16 +1899,38 @@ void SimData::setupWells()
 void SimData::setupSimpleWell(Well & well)
 {
   std::cout << "simple well " << well.name << std::endl;
+  const Point direction = {0, 0, -1};
   // well assigned with a single coordinate
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
     const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell.polyhedron();
     if (p_poly_cell->point_inside(well.coordinate))
-      std::cout << "OK" << std::endl;
-    else
-      std::cout << "NO" << std::endl;
+    {
+      // define sufficiantly-large artificial segment to compute intersection
+      // with cell
+      const double h = (p_poly_cell->center() -
+                        p_poly_cell->get_points()[0]).norm();
+      const Point p1 = well.coordinate - direction*h*10;
+      const Point p2 = well.coordinate + direction*h*10;
+      std::vector<Point> section_data;
+      if (angem::collision(p1, p2, *p_poly_cell, section_data, 1e-6))
+      {
+        // if cell is connected to DFM or edfm fractures connect to those
+        // bool connect_to_fracture = false;
+        // for (const auto & face : cell.faces())
+        //   if (is_fracture(face.marker()))
+        //   {
+        //     connect_to_fracture = true;
+        //   }
+        well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
+        well.segment_length.push_back(section_data[0].distance(section_data[1]));
+        well.directions.push_back(direction);
+        // std::cout << "length = " << well.segment_length[0] << std::endl;
+        break;
+      }
+
+    }
   }
-  std::cout << "done" << std::endl;
 
 }
 

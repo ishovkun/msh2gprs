@@ -14,10 +14,15 @@ class Well
   bool simple() const {return segments.empty();}
 
   // attributes
+  //
   std::vector<std::pair<angem::Point<3,double>, angem::Point<3,double>>> segments;
   std::vector<bool> perforated;
   angem::Point<3,double> coordinate;
   double radius;
   std::string name;
+
+  // well data after computing mesh collision
   std::vector<std::size_t> connected_volumes;
+  std::vector<double> segment_length;
+  std::vector<angem::Point<3,double>> directions;
 };

@@ -3,6 +3,7 @@
 #include "Point.hpp"
 #include "Plane.hpp"
 #include "Polygon.hpp"
+#include "Polyhedron.hpp"
 #include <Exceptions.hpp>
 // #include "PolyGroup.hpp"
 #include <CollisionGJK.hpp>
@@ -340,6 +341,29 @@ bool collision(const Line<3,Scalar>         & line,
   }
   else
     return false;
+}
+
+
+// collision of a line segment with a polyhedron
+template <typename Scalar>
+bool collision(const Point<3,Scalar>        & l0,
+               const Point<3,Scalar>        & l1,
+               const Polyhedron<Scalar>     & poly,
+               std::vector<Point<3,Scalar>> & intersection,
+               const double                   tol = 1e-10)
+{
+  const std::size_t init_size = intersection.size();
+  const auto & points = poly.get_points();
+  for (const auto & face : poly.get_faces())
+  {
+    Plane<Scalar> face_plane(points[face[0]], points[face[1]], points[face[2]]);
+    collision(l0, l1,  face_plane, intersection, tol);
+  }
+
+  if (intersection.size() == init_size)
+    return false;
+  else
+    return true;
 }
 
 }  // end namespace
