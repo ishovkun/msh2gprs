@@ -5,20 +5,31 @@
 namespace angem
 {
 
+/* This class implements a orthonormal basis
+ */
 template <int dim, typename Scalar>
 class Basis
 {
  public:
+  // default constructor. Creates e.g. in 3D three vectors
+  // {1,0,0}, {0,1,0}, {0,0,1}
   Basis();
+  // create basis from vector of points
+  // checks that vecs.size() == dim
   Basis(const std::vector<Point<dim,Scalar>> & vecs);
 
   // setters
+  // assign basis components from the vector of points
   void set_data(const std::vector<Point<dim,Scalar>> & vecs);
 
+  // non-constant getter
   Point<dim,Scalar> & operator[] (int i);
+  // constant getter
   const Point<dim,Scalar> & operator() (int i) const;
 
+  // get coordinates of a point in this basis
   Point<dim,Scalar> transform(const Point<dim,Scalar> & p) const;
+  // probably do not need this any more since i changed the default constructor
   bool is_empty() const;
 
  private:
@@ -30,6 +41,8 @@ template <int dim, typename Scalar>
 Basis<dim,Scalar>::Basis()
 {
   vectors.resize(dim);
+  for (int i=0; i<dim; ++i)
+    vectors[i][i] = static_cast<Scalar>(1);
 }
 
 
