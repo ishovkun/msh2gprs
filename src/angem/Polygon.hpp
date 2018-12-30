@@ -12,18 +12,28 @@ namespace angem
 
 using Edge = std::pair<std::size_t, std::size_t>;
 
+/* This class implements 2D polygons in 3D space.
+ */
 template<typename Scalar>
 class Polygon: public Shape<Scalar>
 {
  public:
+  // Default empty constructor. Use only if assigning data later
 	Polygon();
+  // Create a polygon from a vector of points.
+  // Vertices are ordered in a clock-wise manner upon creation.
   Polygon(const std::vector<Point<3,Scalar>> & points_list);
-  // construct a polygon (face) from some mesh vertices
+  // Helper constructor. Construct a polygon (face) from some mesh vertices.
+  // Vertices are ordered in a clock-wise manner upon creation.
   Polygon(const std::vector<Point<3,Scalar>> & all_mesh_vertices,
           const std::vector<std::size_t>     & indices);
+  // Helper constructor. Construct a polygon (face) from some mesh vertices.
+  // Vertices are ordered in a clock-wise manner upon creation.
   Polygon(const PointSet<3,Scalar>           & all_mesh_vertices,
           const std::vector<std::size_t>     & indices);
 
+  // helper function: get a plane that contains an edge wich the normal in the
+  // plane of the polygon
   Plane<Scalar> get_side(const Edge & edge) const;
 
   // returns true if point is inside a 3D shape formed by
@@ -32,13 +42,18 @@ class Polygon: public Shape<Scalar>
   bool point_inside(const Point<3,Scalar> & p,
                     const Scalar            tol = 1e-10) const;
 
+  // compute the area of the polygon
   Scalar area() const;
+  // helper function: get a vector of edges represented by pairs of vertex indices
   std::vector<Edge> get_edges() const;
 
-  // shift all points in direction p
+  // setter
   virtual void set_data(const std::vector<Point<3,Scalar>> & point_list) override;
+  // shift all points in direction p
   virtual void move(const Point<3,Scalar> & p) override;
+  // order vertices in a clockwise fashion
   static  void reorder(std::vector<Point<3,Scalar>> & points);
+  // order indices vector so that the corresponding points are in a clockwise fashiok
   static  void reorder_indices(const std::vector<Point<3, Scalar>> &verts,
                                std::vector<std::size_t>            &indices);
 

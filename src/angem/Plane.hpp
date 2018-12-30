@@ -12,10 +12,15 @@
 namespace angem
 {
 
+/* 3D plane class. A plane is defined by a point on the plane and
+ * a normal vector.
+ */
 template <typename Scalar>
 class Plane
 {
  public:
+  // Default empty constructor. Creates an invalid plane.
+  // use it only if set data after.
   Plane();
   // create plane from a point on the plane and a normal vector
   Plane(const Point<3,Scalar> & point,
@@ -33,13 +38,17 @@ class Plane
   void set_data(const Point<3,Scalar> & p1,
                 const Point<3,Scalar> & p2,
                 const Point<3,Scalar> & p3);
+  // If you need some custom vectors in basis, you can specify them
   void set_basis(const Basis<3,Scalar> & basis);
 
-  // shift support in direction p
+  // shift support point in direction p
   void move(const Point<3,Scalar> & p);
 
+  // get const reference to the plane normal vector
   const Point<3,Scalar> & normal() const {return basis(2);}
+  // get non-const reference to the basis object
   Basis<3,Scalar> & get_basis() {return basis;}
+  // get const reference to the basis object
   const Basis<3,Scalar> & get_basis() const {return basis;}
 
   // compute strike angle (degrees) from normal
@@ -60,11 +69,13 @@ class Plane
   bool above(const Point<3,Scalar> & p) const;
 
   // ATTRIBUTES
-  Point<3,Scalar> point;  // point on the plane
+  // point on the plane
+  Point<3,Scalar> point;
   // algebraic coefficient in ax + by + cz = d
   Scalar d;
 
  protected:
+  // compute algebraic coefficient d in ax + by + cz = d
   void compute_algebraic_coeff();
   // return two orthogonal vectors within the plane
   void compute_basis(const Point<3,Scalar> & normal);
