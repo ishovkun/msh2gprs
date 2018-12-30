@@ -6,6 +6,8 @@
 namespace mesh
 {
 
+// maximum 6-vert polygons as faces (hashing)
+// this allows hashing about (2^256)^(1/6) ≈ 7x10¹² vertices
 const int MAX_POLYGON_VETRICES = 6;
 const std::size_t MAX_HASHED_VERTICES = estimate_max_vertices(MAX_POLYGON_VETRICES);
 const int INTERNAL_FACE_ID = 0;

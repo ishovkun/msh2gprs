@@ -10,16 +10,8 @@
 #include <face_iterator.hpp>
 
 #include <algorithm> // std::sort
+#include <unordered_set>
 
-
-/*
- * This class implements a structure for unstructure grid storage
- * It features constant lookup and insertion times
- * for faces, cells, and their neighbors.
- * Due to this feature though, the order of faces is not guaranteed
- * so that unordered_map[hash]->value should be used to store
- * data related to faces
- */
 
 namespace mesh
 {
@@ -30,22 +22,25 @@ using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 // using Face = std::vector<std::size_t>;
 using FaceiVertices = std::vector<std::size_t>;
-// using hash_type = uint256_t;
-// using hash_type = vli::integer<128>;
-// using FaceMap = std::unordered_map<hash_type, Face>;
 
 
-// maximum 6-vert polygons as faces (hashing)
-// this allows hashing about (2^256)^(1/6) ≈ 7x10¹² vertices
+/* This class implements a structure for unstructure grid storage
+ * It features constant lookup and insertion times
+ * for faces, cells, and their neighbors.
+ * Due to this feature though, the order of faces is not guaranteed
+ * so that unordered_map[hash]->value should be used to store
+ * data related to faces
+ */
 class Mesh
 {
  public:
   Mesh();
-  // this method does not allow duplicates in vertices
+  // insert a cell assigned as angem::Polygon
+  // Note: this method does not allow duplicates in vertices
   // infers type by number of vertices
   void insert(const Polyhedron & poly,
               const int          marker = -1);
-  // same as above but without searching vertices
+  // insert a cell element assigned as vertex global indices
   void insert_cell(const std::vector<std::size_t> & ivertices,
                    const int                        vtk_id,
                    const int                        marker = -1);
@@ -57,15 +52,20 @@ class Mesh
                    const int                        vtk_id,
                    const int                        marker);
 
-  // iterators
-  // cell iterators
+  // ITERATORS
+
+  // Helper function to create cell iterators.
+  // Still thinking whether it should be a public method
   cell_iterator create_cell_iterator(const std::size_t icell)
   {return cell_iterator(icell, vertices, cells, map_faces,
                         shape_ids, cell_markers);}
+  // create cell iterator for the first cell
   cell_iterator begin_cells(){return create_cell_iterator(0);}
+  // end iterator for cells. Must only be used as the range indicator
   cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
 
   // face iterators
+  // A helper funciton to create face iterators
   face_iterator create_face_iterator(const FaceMap::iterator & it)
   {return face_iterator(it, vertices);}
   face_iterator begin_faces(){return create_face_iterator(map_faces.begin());}
@@ -102,15 +102,15 @@ class Mesh
   void mark_for_split(const face_iterator & face);
   // split faces marked for splitting with mark_for_split
   // returns SurfaceMesh of master DFM faces
+  // cleans marked_for_split array upon completion
   SurfaceMesh<double> split_faces();
 
   // ATTRIBUTES
-  angem::PointSet<3,double>             vertices;
-  std::vector<std::vector<std::size_t>> cells;  // vertex indices
-  // map face -> neighbor elements
-  std::unordered_map<hash_type, Face> map_faces;
-  std::vector<int> shape_ids;
-  std::vector<int> cell_markers;
+  angem::PointSet<3,double>             vertices;      // vector of vertex coordinates
+  std::vector<std::vector<std::size_t>> cells;         // vertex indices
+  std::unordered_map<hash_type, Face>   map_faces;     // map face -> neighbor elements
+  std::vector<int>                      shape_ids;     // vector of cell vtk indices
+  std::vector<int>                      cell_markers;  // vector of cell markers
 
  private:
   /* split a vertex
@@ -130,8 +130,10 @@ class Mesh
 
   // get global indices of polygon face vertices
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
-  std::vector<hash_type> marked_for_split;
 
+  // vector of faces that are markerd for split by the user via mark_for_split
+  // Note: the vector is cleared after split_faces is performed
+  std::vector<hash_type> marked_for_split;
 };
 
 

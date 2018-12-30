@@ -41,37 +41,16 @@ struct GmConstraint
 
 struct RockProps
 {
-  // int model;
   std::vector<double> v_props;
-  // double poro;
-  // double perm, perm_x, perm_y, perm_z;
-  // double thc, thc_x, thc_y, thc_z;
-  // double temp;
-  // double heat_capacity;
+  // poro; perm, perm_x, perm_y, perm_z thc, thc_x, thc_y, thc_z;
+  // temp; heat_capacity;
 
-  // double biot_plas;
-  // double biot_flow;
-  // double biot;
-  // double young;
-  // double poisson;
-  // double density;
-  // double poron;
+  // biot_plas; biot_flow; biot; young; poisson; density; poron;
+  // temperature; pressure; volmult;
 
-  // double temperature;
-  // double pressure;
-  // double volmult;
+  // ref_pres; ref_temp; ref_stres; ref_strain;
 
-  // double ref_pres;
-  // double ref_temp;
-  // double ref_stres;
-  // double ref_strain;
-
-  // double cohesion;
-  // double friction;
-  // double dilation;
-  // double thermal_expansion;
-  // double pore_thermal_expansion;
-
+  // cohesion; friction; dilation; thermal_expansion; pore_thermal_expansion;
   // vector<double> zmf;
   // vector<double> stress;
 };
