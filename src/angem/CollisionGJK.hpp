@@ -14,15 +14,19 @@
 namespace angem
 {
 
+/* This class implements GJK algorithm for fast collision detection */
 template<typename Scalar>
 class CollisionGJK
 {
 public:
+  // default empty constructor
 	CollisionGJK();
+  // returns true if andgem shapes collide
 	bool check(const Shape<Scalar> & shape1,
              const Shape<Scalar> & shape2);
 
  private:
+  // get farthest point in the direction
 	Point<3,Scalar> support(Point<3,Scalar> & direction);
 	Point<3,Scalar> update_direction();
 

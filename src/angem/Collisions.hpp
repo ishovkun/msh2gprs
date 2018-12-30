@@ -8,9 +8,23 @@
 // #include "PolyGroup.hpp"
 #include <CollisionGJK.hpp>
 
+
+/* This module contains various algorithms for simple shape intersections.
+ * As opposed to CollisionGJK module, here we actually compute the section
+ * data. These algorithms can be combined and utilized to get intersection data
+ * of complex shape e.g. a mesh with a fracture.
+ *
+ * All functions in this module are boolean and return true in the case of
+ * collision. The resulting section data is written into the last input argument.
+ * If the last aregument is a vector, the data is appended.
+ */
+
 namespace angem
 {
 
+// get intersection of two planes
+// returns true if the planes are not parallel
+// the result of the intersection is saved into Line intersection.
 template <typename Scalar>
 bool collision(const Plane<Scalar> & pl1,
                const Plane<Scalar> & pl2,
