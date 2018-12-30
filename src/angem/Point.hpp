@@ -15,35 +15,53 @@ template<int dim=3, typename Scalar=double>
 class Point
 {
  public:
-  // constructors
+  // CONSTRUCTORS
+  // Default constructor. Creates a point with all components equal to zero
   Point();
-  Point(const Point<dim, Scalar> & p);
+  // Copy constructor
+  Point(const Point<dim,Scalar> & p);
+  // Convenience constructor.
+  // Creates a point from std::vector. Asserts that vector.size() == dim
   Point(const std::vector<Scalar> & v);
+  // Constructor for a 2D Point (dim=2) only.
+  // Creates a point with the coordinates equal to x and y, respectively.
   Point(const Scalar x, const Scalar y);                  // 2D only
+  // Constructor for a 3D Point (dim=3) only.
+  // Creates a point with the coordinates equal to x, y, and z, respectively.
   Point(const Scalar x, const Scalar y, const Scalar z);  // 3D only
-  // This also works !!!
-  // Point<3, double> p = {1, 2, 3}
 
-  // assign
+  // assignment operator
   void operator=(std::vector<Scalar> & v);
+  // set all component to zero
   void clear();
 
   // getters (non-const)
+  // Get a non-const reference to x component
   Scalar & x();
+  // Get a non-const reference to y component (dim=2 || dim=3 only)
   Scalar & y();
+  // Get a non-const reference to z component (dim=3 only)
   Scalar & z();
+  // Get a non-const reference to  i-th coordinate. checks that i < dim
   Scalar & operator[] (int i);
 
   // getters (const)
+  // Get a const reference to x component
   Scalar x() const;
+  // Get a const reference to y component (dim=2 || dim=3 only)
   Scalar y() const;
+  // Get a const reference to z component (dim=3 only)
   Scalar z() const;
+  // Get a const reference to  i-th coordinate. checks that i < dim
   Scalar operator() (int i) const;
+  // Get a const reference to  i-th coordinate. checks that i < dim
   const Scalar & operator[] (int i) const;
 
   // operations
   // comparison
+  // returns true if all components are the same
   bool operator==(const Point<dim, Scalar> & p) const;
+  // returns true if nay components are different
   bool operator!=(const Point<dim, Scalar> & p) const;
   // compares the norms, can be used for sorting
   bool operator< (const Point<dim, Scalar> & other) const;
@@ -115,7 +133,7 @@ class Point
 
 
  protected:
-  Scalar coords[dim];
+  Scalar coords[dim];  // array of coordinate components
 };
 
 
@@ -173,8 +191,7 @@ void Point<dim,Scalar>::clear()
 template<int dim, typename Scalar>
 Point<dim,Scalar>::Point(const Scalar x, const Scalar y)
 {
-  static_assert(dim == 2,
-                "Only 2d objects can be initialized this way");
+  static_assert(dim == 2, "Only 2d objects can be initialized this way");
   this->coords[0] = x;
   this->coords[1] = y;
 }

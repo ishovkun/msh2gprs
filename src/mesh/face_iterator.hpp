@@ -16,17 +16,22 @@ using FaceMap = std::unordered_map<hash_type, Face>;
 class face_iterator
 {
  public:
+  // Default constructor
   face_iterator(const FaceMap::iterator            & it,
                 angem::PointSet<3,double>          & vertices);
+  // Copy constructor
   face_iterator(const face_iterator & other);
+
   // comparison
   // returns true if both iterators point to the same cell
   bool operator==(const face_iterator & other) const;
   // returns true if the iterators point to different cells
   bool operator!=(const face_iterator & other) const;
+
   // SETTERS
   // assignment operator
   face_iterator & operator=(const face_iterator & other);
+
   // GETTERS
   // get center of mass of a face
   Point center() const;
