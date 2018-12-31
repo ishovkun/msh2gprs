@@ -23,3 +23,9 @@ SET_TARGET_PROPERTIES (
     angem
     PROPERTIES LINKER_LANGUAGE CXX
 )
+
+if(Boost_FOUND)
+  TARGET_LINK_LIBRARIES(angem ${Boost_LIBRARIES})
+else()
+  TARGET_LINK_LIBRARIES(angem uint256)
+endif()

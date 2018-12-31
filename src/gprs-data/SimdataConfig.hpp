@@ -101,7 +101,7 @@ std::size_t find(const T & item, const std::vector<T> & vec)
     if (vec[i] == item)
       return i;
   return vec.size();
-};
+}
 
 
 template<typename iterable>
@@ -115,4 +115,4 @@ std::size_t find(const typename iterable::value_type & item,
     else
       counter++;
   return counter;
-};
+}

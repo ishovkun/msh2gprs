@@ -8,8 +8,8 @@ PointSet<3,double>::PointSet(const double tol)
     :
     tol(tol)
 {
-  __int128 nx = static_cast<__int128>
-      (  std::cbrt( std::numeric_limits<__int128>::max() )  );
+  const pset_hash_type max_value = std::numeric_limits<pset_hash_type>::max();
+  const double nx = std::cbrt( static_cast<double>(max_value) );
 
   upper = {tol*nx / 2, tol*nx / 2, tol*nx / 2};
   lower = -upper;

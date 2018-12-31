@@ -44,7 +44,7 @@ namespace std {  // This is probably not a good idea
     template <> struct is_arithmetic <uint256_t> : std::true_type {};
     template <> struct is_integral   <uint256_t> : std::true_type {};
     template <> struct is_unsigned   <uint256_t> : std::true_type {};
-};
+}
 
 class uint256_t{
     private:
@@ -66,9 +66,9 @@ class uint256_t{
             : UPPER(upper_rhs), LOWER(lower_rhs)
         {}
        template <typename R, typename S, typename T, typename U,
-                typename = typename std::enable_if<std::is_integral<R>::value && 
-                std::is_integral<S>::value && 
-                std::is_integral<T>::value && 
+                typename = typename std::enable_if<std::is_integral<R>::value &&
+                std::is_integral<S>::value &&
+                std::is_integral<T>::value &&
                 std::is_integral<U>::value, void>::type>
         uint256_t(const R & upper_lhs, const S & lower_lhs, const T & upper_rhs, const U & lower_rhs)
             : UPPER(upper_lhs, lower_lhs), LOWER(upper_rhs, lower_rhs)

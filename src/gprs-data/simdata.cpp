@@ -797,7 +797,7 @@ std::size_t SimData::n_default_vars() const
 
 
 void SimData::
-compute_frac_frac_intersection_transes(const std::vector<Point>                    & verts,
+compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
                                        const std::vector<std::vector<std::size_t>> & polys,
                                        const std::vector<int>                      & markers,
                                        FlowData                                    & flow_data) const

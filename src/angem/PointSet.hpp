@@ -4,8 +4,22 @@
 #include <unordered_map>
 #include <algorithm>
 
+// 128 ints for point hashing
+#ifdef USE_BOOST
+#include <boost/multiprecision/cpp_int.hpp>
+#else
+#include <uint256/uint128_t.h>
+#endif
+
 namespace angem
 {
+
+#ifdef USE_BOOST
+using pset_hash_type = boost::multiprecision::uint128_t;
+#else
+using pset_hash_type = uint128_t;
+#endif
+
 
 /* Set of points
  * Lookup and insertion in O(1) time due to hashing
@@ -45,12 +59,12 @@ class PointSet
   // variables
   std::vector<Point<dim,Scalar>> points;
  private:
-  __int128 hash_value(const Point<dim,Scalar> &) const;
+  pset_hash_type hash_value(const Point<dim,Scalar> &) const;
 
   // variables
   // bounds
   Point<dim,long double> lower, upper;
-  std::unordered_map<__int128,std::size_t> index_map;
+  std::unordered_map<pset_hash_type,std::size_t> index_map;
   // search tolerance
   double tol;
 };
@@ -59,8 +73,8 @@ class PointSet
 template<int dim, typename Scalar>
 std::size_t PointSet<dim,Scalar>::find(const Point<dim,Scalar> &p) const
 {
-  const __int128 ha = hash_value(p);
-  const std::unordered_map<__int128,std::size_t>::const_iterator it = index_map.find(ha);
+  const pset_hash_type ha = hash_value(p);
+  const std::unordered_map<pset_hash_type,std::size_t>::const_iterator it = index_map.find(ha);
 
   if (it == index_map.end())
     return size();
@@ -72,8 +86,8 @@ std::size_t PointSet<dim,Scalar>::find(const Point<dim,Scalar> &p) const
 template<int dim, typename Scalar>
 std::size_t PointSet<dim,Scalar>::insert(const Point<dim,Scalar> &p)
 {
-  const __int128 ha = hash_value(p);
-  const std::unordered_map<__int128,std::size_t>::const_iterator it = index_map.find(ha);
+  const pset_hash_type ha = hash_value(p);
+  const std::unordered_map<pset_hash_type,std::size_t>::const_iterator it = index_map.find(ha);
   if (it == index_map.end())
   {
     const std::size_t ind = size();
@@ -135,9 +149,9 @@ typename std::vector<Point<dim,Scalar>>::const_iterator PointSet<dim,Scalar>::en
 }
 
 
-// helper function for __int128 output (debugging)
+// helper function for pset_hash_type output (debugging)
 // std::ostream&
-// operator<<( std::ostream& dest, __int128_t value )
+// operator<<( std::ostream& dest, pset_hash_type_t value )
 // {
 //   std::ostream::sentry s( dest );
 //   if ( s ) {
@@ -164,12 +178,12 @@ typename std::vector<Point<dim,Scalar>>::const_iterator PointSet<dim,Scalar>::en
 
 
 template<int dim, typename Scalar>
-__int128 PointSet<dim,Scalar>::hash_value(const Point<dim,Scalar> &p) const
+pset_hash_type PointSet<dim,Scalar>::hash_value(const Point<dim,Scalar> &p) const
 {
   assert((upper-lower).norm() > tol);
 
-  __int128 result = 0;
-  __int128 mult = 1;
+  pset_hash_type result = 0;
+  pset_hash_type mult = 1;
 
   for (short i=0; i<dim; ++i)
   {
@@ -186,11 +200,11 @@ __int128 PointSet<dim,Scalar>::hash_value(const Point<dim,Scalar> &p) const
       throw std::out_of_range("Point cannot be added to set");
     }
 
-    const __int128 ix = static_cast<__int128> (std::round(ixd));
+    const pset_hash_type ix = static_cast<pset_hash_type> (std::round(ixd));
 
     result += ix * mult;
 
-    const __int128 nx = static_cast<__int128>((upper[i] - lower[i]) / tol);
+    const pset_hash_type nx = static_cast<pset_hash_type>((upper[i] - lower[i]) / tol);
     mult *= nx;
   }
 

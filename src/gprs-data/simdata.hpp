@@ -171,21 +171,36 @@ protected:
   // renum * pRenum;
 
 public:
+  // user-defined program config defined in json or yaml files
+  SimdataConfig config;
+  // class that handles mesh (cells, faces, neighbors, face-splitting)
   mesh::Mesh & grid;
+  // class that stores dfm grid for vtk output
   mesh::SurfaceMesh<double> dfm_master_grid;
 
+  // container for cell properties (user-defined)
   std::vector<RockProps> vsCellRockProps;
+  // ass user-defined names for rock properties
   std::vector<std::string> rockPropNames;
 
+  // stores embedded fracture mechanics data
   vector<EmbeddedFracture> vEfrac;
+  // stores flow cell volumes, trances, etc.
   FlowData flow_data;
+  // might be different from flow_data if the user requests to mesh
+  // embedded fractures independently
   FlowData new_flow_data;
 
+  // stores faces with mechanics neumann and dirichlet boundary conditions
   std::unordered_map<std::size_t, PhysicalFace> boundary_faces;
+  // stores faces that represent dfm fractures
   std::unordered_map<std::size_t, PhysicalFace> dfm_faces;
+  // number of flow dfm faces (before split)
   std::size_t n_flow_dfm_faces;
 
+  // number of faces with dirichlet mechanics conditions
   std::size_t n_dirichlet_faces;
+  // number of faces with neumann mechanics conditions
   std::size_t n_neumann_faces;
 
   // coupling mechanics and flow
@@ -193,13 +208,13 @@ public:
   // each dfm frac has 2 sides, but Timur thought It's a good idea to pass just one
   std::vector<std::vector<std::size_t>> gm_cell_to_flow_cell;
 
+  // set of markers for dfm faces (used in is_fracture)
   std::set<int> fracture_face_markers;
+  // set of markers for boundary faces (used in is_boundary)
   std::unordered_set<int> boundary_face_markers;
 
-  //wells
-  vector<SimpleWell> vsWell;
-
-  SimdataConfig config;
+  // old timur wells: rewrute
+  // vector<SimpleWell> vsWell;
 
 protected:
   StandardElements * pStdElement;
