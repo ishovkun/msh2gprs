@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
   mesh::Mesh msh;
   Parsers::GmshReader::read_input(filesystem::absolute(path_gmsh), msh);
 
-  SimData * pSimData;
-  pSimData = new SimData(msh, config);
+  gprs_data::SimData * pSimData;
+  pSimData = new gprs_data::SimData(msh, config);
 
   cout << "Fill 3D rock properties" << endl;
   pSimData->defineRockProperties();
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
   pSimData->handleConnections();
 
   cout << "Write Output data\n";
-  OutputData output_data(*pSimData, msh);
+  gprs_data::OutputData output_data(*pSimData, msh);
 
   const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";
   std::cout << "output directory: " << output_dir << std::endl;

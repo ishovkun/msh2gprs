@@ -25,6 +25,8 @@ const int MARKER_BELOW_FRAC = 0;
 const int MARKER_ABOVE_FRAC = 1;
 const int MARKER_FRAC = 2;
 
+namespace gprs_data
+{
 
 // SimData::SimData(const string & inputstream, const SimdataConfig & config)
 SimData::SimData(mesh::Mesh & grid, const SimdataConfig & config)
@@ -1940,3 +1942,5 @@ void SimData::setupComplexWell(Well & well)
   // setup well with segments
   std::cout << "complex well " << well.name << std::endl;
 }
+
+}  // end namespace

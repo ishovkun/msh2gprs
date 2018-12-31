@@ -18,7 +18,7 @@
 #include "element.hpp"
 #include "renum.hpp"
 #include "transes.hpp"
-#include "GElement.hpp"
+// #include "GElement.hpp"
 
 #include "angem/Point.hpp"
 #include "angem/PolyGroup.hpp"
@@ -28,6 +28,9 @@
 #include <SimdataConfig.hpp>
 #include <Well.hpp>
 
+
+namespace gprs_data
+{
 
 struct RockProps
 {
@@ -229,3 +232,5 @@ protected:
   // class that performs vertex renumbering  after dfm split for faster computation
   // renum * pRenum;
 };
+
+}

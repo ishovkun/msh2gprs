@@ -3,6 +3,9 @@
 
 #include <sys/stat.h>
 
+namespace gprs_data
+{
+
 const int n_entries_per_line = 10;
 
 
@@ -578,4 +581,6 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   geomechfile << "/" << std::endl << std::endl;
 
   geomechfile.close();
+}
+
 }

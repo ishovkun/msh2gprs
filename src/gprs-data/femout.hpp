@@ -3,6 +3,8 @@
 #include "simdata.hpp"
 #include "transes.hpp"
 
+namespace gprs_data
+{
 
 class OutputData
 {
@@ -23,3 +25,5 @@ protected:
   mesh::Mesh & grid;
   std::vector<mesh::face_iterator> ordered_faces;
 };
+
+}
