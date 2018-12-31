@@ -300,50 +300,50 @@ void SimData::computeCellClipping()
 }
 
 
-// void SimData::mergeSmallFracCells()
-// {
-//   for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
-//   {
-//     auto & msh = vEfrac[ifrac].mesh;
+void SimData::mergeSmallFracCells()
+{
+  for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
+  {
+    auto & msh = vEfrac[ifrac].mesh;
 
-//     double max_area = 0;
-//     for (const auto & element : msh.polygons)
-//     {
-//       angem::Polygon<double> poly(msh.vertices.points, element);
-//       const double area = poly.area();
-//       max_area = std::max(area, max_area);
-//     }
+    double max_area = 0;
+    for (const auto & element : msh.polygons)
+    {
+      angem::Polygon<double> poly(msh.vertices.points, element);
+      const double area = poly.area();
+      max_area = std::max(area, max_area);
+    }
 
-//     // merge tiny cells
-//     std::size_t ielement = 0;
-//     std::size_t n_frac_elements = msh.polygons.size();
+    // merge tiny cells
+    std::size_t ielement = 0;
+    std::size_t n_frac_elements = msh.polygons.size();
 
-//     // loop is with variable upper limit since elements can be
-//     // merged and deleted
-//     while (ielement < n_frac_elements)
-//     {
-//       angem::Polygon<double> poly(msh.vertices.points,
-//                                   msh.polygons[ielement]);
-//       const double area_factor = poly.area() / max_area;
+    // loop is with variable upper limit since elements can be
+    // merged and deleted
+    while (ielement < n_frac_elements)
+    {
+      angem::Polygon<double> poly(msh.vertices.points,
+                                  msh.polygons[ielement]);
+      const double area_factor = poly.area() / max_area;
 
-//       if (area_factor < config.frac_cell_elinination_factor)
-//       {
-//         const std::size_t global_ielement = get_flow_element_index(ifrac, ielement);
-//         const std::size_t new_element = msh.merge_element(ielement);
-//         // update flow data
-//         flow_data.merge_elements(get_flow_element_index(ifrac, new_element),
-//                                  global_ielement);
+      if (area_factor < config.frac_cell_elinination_factor)
+      {
+        const std::size_t global_ielement = get_flow_element_index(ifrac, ielement);
+        const std::size_t new_element = msh.merge_element(ielement);
+        // update flow data
+        flow_data.merge_elements(get_flow_element_index(ifrac, new_element),
+                                 global_ielement);
 
-//         n_frac_elements = msh.polygons.size();
-//         if (ielement >= n_frac_elements)
-//           break;
-//         continue;
-//       }
-//       ielement++;
-//     }
+        n_frac_elements = msh.polygons.size();
+        if (ielement >= n_frac_elements)
+          break;
+        continue;
+      }
+      ielement++;
+    }
 
-//   }
-// }
+  }
+}
 
 
 void SimData::computeReservoirTransmissibilities()

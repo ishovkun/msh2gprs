@@ -94,6 +94,7 @@ struct SimdataConfig
 };
 
 
+// find an item in a vector
 template<typename T>
 std::size_t find(const T & item, const std::vector<T> & vec)
 {
@@ -104,6 +105,7 @@ std::size_t find(const T & item, const std::vector<T> & vec)
 }
 
 
+// more generic implement of the previous func
 template<typename iterable>
 std::size_t find(const typename iterable::value_type & item,
                  const iterable & container)
