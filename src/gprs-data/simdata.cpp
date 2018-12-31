@@ -1894,6 +1894,8 @@ void SimData::setupWells()
       setupSimpleWell(well);
     else
       setupComplexWell(well);
+
+    computeWellIndex(well);
   }
 }
 
@@ -1941,6 +1943,69 @@ void SimData::setupComplexWell(Well & well)
 {
   // setup well with segments
   std::cout << "complex well " << well.name << std::endl;
+  std::cout << "not implemented" << std::endl;
+  abort();
+}
+
+
+angem::Point<3,double> SimData::get_dx_dy_dz(const std::size_t icell) const
+{
+  const auto cell_poly = grid.create_cell_iterator(icell).polyhedron();
+  angem::Point<3,double> dir, neg_dir, result;
+  dir = {1, 0, 0}; neg_dir = - dir;
+  result[0] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
+  dir = {0, 1, 0}; neg_dir = - dir;
+  result[1] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
+  dir = {0, 0, 1}; neg_dir = - dir;
+  result[2] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
+  return result;
+}
+
+
+double compute_productivity(const double k1, const double k2,
+                            const double dx1, const double dx2,
+                            const double length, const double radius,
+                            const double skin = 0)
+{
+  // pieceman radius
+  const double r =
+      0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 + std::sqrt(k1/k2)*dx2*dx2) /
+      (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
+  double j_ind =
+      2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
+  // std::cout << "pieceman, rwell " << r << "\t" << radius << std::endl << std::flush;
+  // std::cout << "length " << length << std::endl << std::flush;
+  // std::cout << "other "<< 2*M_PI*std::sqrt(k1*k2)*length << std::endl;
+  assert(j_ind >= 0);
+  return j_ind;
+
+
+}
+
+
+void SimData::computeWellIndex(Well & well)
+{
+  well.indices.resize(well.connected_volumes.size());
+  for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
+  {
+    const std::size_t icell = well.connected_volumes[i];
+    const angem::Point<3,double> perm = get_permeability(icell);
+    angem::Point<3,double> dx_dy_dz = get_dx_dy_dz(icell);
+    angem::Point<3,double> productivity;
+    productivity[0] =
+        compute_productivity(perm[1], perm[2], dx_dy_dz[1], dx_dy_dz[2],
+                             well.segment_length[i]*fabs(well.directions[i][0]),
+                             well.radius);
+    productivity[1] =
+        compute_productivity(perm[0], perm[2], dx_dy_dz[0], dx_dy_dz[2],
+                             well.segment_length[i]*fabs(well.directions[i][1]),
+                             well.radius);
+    productivity[2] =
+        compute_productivity(perm[0], perm[1], dx_dy_dz[0], dx_dy_dz[1],
+                             well.segment_length[i]*fabs(well.directions[i][2]),
+                             well.radius);
+    well.indices[i] = productivity.norm();
+  }
 }
 
 }  // end namespace

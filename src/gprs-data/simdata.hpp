@@ -180,6 +180,11 @@ protected:
   void setupSimpleWell(Well & well);
   // create a complex well that occupies multiple cells and is arbitrarily-oriented
   void setupComplexWell(Well & well);
+  // compute productivities of all well segments
+  void computeWellIndex(Well & well);
+  // get dimensions of a cell bounding box
+  angem::Point<3,double> get_dx_dy_dz(const std::size_t icell) const;
+
 public:
   // user-defined program config defined in json or yaml files
   SimdataConfig config;

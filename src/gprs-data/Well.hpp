@@ -25,4 +25,5 @@ class Well
   std::vector<std::size_t> connected_volumes;
   std::vector<double> segment_length;
   std::vector<angem::Point<3,double>> directions;
+  std::vector<double> indices;
 };
