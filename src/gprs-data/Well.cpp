@@ -8,6 +8,7 @@ Well::Well(const WellConfig & config)
     perforated(config.perforated)
 {
   assert(!config.coordinates.empty());
+  assert(config.radius > 0 );
 
   if (config.coordinates.size() == 1)
     coordinate = config.coordinates[0];

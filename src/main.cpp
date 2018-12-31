@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
   pSimData->defineEmbeddedFractureProperties();
 
   cout << "Create physical facets" << endl;
-  cout << " ( bnd & frac faces )" << endl;
   pSimData->definePhysicalFacets();
 
   std::cout << "computing reservoir transes" << std::endl;
@@ -108,8 +107,6 @@ int main(int argc, char *argv[])
 
   std::cout << "Setup wells" << std::endl;
   pSimData->setupWells();
-
-  exit(0);
 
   if (pSimData->dfm_faces.size() > 0)
   {

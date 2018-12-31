@@ -387,15 +387,6 @@ SurfaceMesh<double> Mesh::split_faces()
       map_faces.erase(face_it);
   }
 
-  for (auto & face : map_faces)
-  {
-    std::cout << "face.index() = " << face.second.index << ":\t";
-    for (auto n : face.second.neighbors)
-      std::cout << n << "\t";
-    std::cout << std::endl;
-  }
-  // abort();
-
   // clear marked elements vector
   marked_for_split.clear();
   return std::move(mesh_faces);

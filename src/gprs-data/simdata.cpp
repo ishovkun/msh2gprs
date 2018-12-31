@@ -676,7 +676,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       else
       {
         std::cout << "unknown split market " << split.markers[ipoly] << std::endl;
-        exit(0);
+        exit(-1);
       }
     }
 
@@ -1896,6 +1896,7 @@ void SimData::setupWells()
       setupComplexWell(well);
 
     computeWellIndex(well);
+    wells.push_back(std::move(well));
   }
 }
 
@@ -1971,8 +1972,7 @@ double compute_productivity(const double k1, const double k2,
   const double r =
       0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 + std::sqrt(k1/k2)*dx2*dx2) /
       (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
-  double j_ind =
-      2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
+  const double j_ind = 2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
   // std::cout << "pieceman, rwell " << r << "\t" << radius << std::endl << std::flush;
   // std::cout << "length " << length << std::endl << std::flush;
   // std::cout << "other "<< 2*M_PI*std::sqrt(k1*k2)*length << std::endl;

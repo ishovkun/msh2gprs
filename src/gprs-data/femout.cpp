@@ -47,6 +47,12 @@ void OutputData::write_output(const std::string & output_path)
     saveDiscreteFractureProperties(output_path + data.config.discrete_frac_file);
   }
 
+  if (!data.wells.empty())
+  {
+    std::cout << "save wells" << std::endl;
+    saveWells(output_path + data.config.wells_file);
+  }
+
   std::cout << "save flow data" << std::endl;
   CalcTranses::save_output(data.flow_data, output_path);
 }
@@ -581,6 +587,39 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
   geomechfile << "/" << std::endl << std::endl;
 
   geomechfile.close();
+}
+
+
+void OutputData::saveWells(const std::string file_name)
+{
+  std::ofstream file;
+  file.open(file_name.c_str());
+
+  file << "WELSPECS" << std::endl;
+  for (const auto & well : data.wells)
+  {
+    file << well.name << "\tGROUP1\t";
+    file << well.connected_volumes[0] << "\t* /" << std::endl;
+  }
+  file << "/" << std::endl << std::endl;
+
+  file << "COMPDAT" << std::endl;
+  for (const auto & well : data.wells)
+  {
+    for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
+    {
+      file << well.name << "\t";
+      file << well.connected_volumes[i] << "\t";
+      // j, k1:k2 open sat_table_number
+      file << "1\t1\t1\tOPEN\t1*\t";
+      file << well.indices[i] << "\t";
+      file << 2*well.radius << "\t";
+      file << "/" << std::endl;
+    }
+  }
+  file << "/" << std::endl << std::endl;
+
+  file.close();
 }
 
 }

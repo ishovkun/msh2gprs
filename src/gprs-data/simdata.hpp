@@ -205,6 +205,8 @@ public:
   // might be different from flow_data if the user requests to mesh
   // embedded fractures independently
   FlowData new_flow_data;
+  // wells
+  std::vector<Well> wells;
 
   // stores faces with mechanics neumann and dirichlet boundary conditions
   std::unordered_map<std::size_t, PhysicalFace> boundary_faces;

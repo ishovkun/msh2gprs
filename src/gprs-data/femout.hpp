@@ -19,6 +19,7 @@ public:
   void saveEmbeddedFractureProperties(const std::string file_name);
   void saveBoundaryConditions(const std::string file_name);
   void saveDiscreteFractureProperties(const std::string file_name);
+  void saveWells(const std::string file_name);
 
 protected:
   SimData & data;
