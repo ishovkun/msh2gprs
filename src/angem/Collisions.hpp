@@ -7,6 +7,7 @@
 #include <Exceptions.hpp>
 // #include "PolyGroup.hpp"
 #include <CollisionGJK.hpp>
+#include <utils.hpp>
 
 
 /* This module contains various algorithms for simple shape intersections.
@@ -334,20 +335,6 @@ bool collision(const Line<3,Scalar>         & line,
   if (colinear)
     return false;
 
-  // // check that intersection point is within the polygon
-  // // algorithm: if section point is on the same side of the faces as the
-  // // mass center, then the point is inside of the polygon
-  // // const auto & poly_verts = poly.get_points();
-  // Point<3,Scalar> cm = poly.center();
-  // const auto & normal = poly.plane.normal();
-
-  // for (const auto & edge : poly.get_edges())
-  // {
-  //   Point<3,Scalar> p_perp = edge.first + normal * (edge.second - edge.first).norm();
-  //   Plane<Scalar> side(edge.first, edge.second, p_perp);
-  //   if (side.above(p) != side.above(cm))
-  //     return false;
-  // }
   if (poly.point_inside(p), 1e-4)
   {
     intersection.push_back(p);
@@ -366,15 +353,25 @@ bool collision(const Point<3,Scalar>        & l0,
                std::vector<Point<3,Scalar>> & intersection,
                const double                   tol = 1e-10)
 {
-  const std::size_t init_size = intersection.size();
+  std::vector<Point<3,Scalar>> new_section;
   const auto & points = poly.get_points();
   for (const auto & face : poly.get_faces())
   {
-    Plane<Scalar> face_plane(points[face[0]], points[face[1]], points[face[2]]);
-    collision(l0, l1,  face_plane, intersection, tol);
+    const std::size_t ibegin = intersection.size();
+
+    Polygon<Scalar> poly_face(points, face);
+    collision(l0, l1,  poly_face.plane, new_section, tol);
+
+    for (std::size_t i=ibegin; i<intersection.size(); ++i)
+      if (!poly_face.point_inside(intersection[i], tol))
+        intersection.erase(intersection.begin() + i);
   }
 
-  if (intersection.size() == init_size)
+  remove_duplicates(new_section, tol);
+  for (const auto & p : new_section)
+    intersection.push_back(p);
+
+  if (new_section.empty())
     return false;
   else
     return true;

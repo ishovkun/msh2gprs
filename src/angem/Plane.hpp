@@ -139,7 +139,6 @@ void Plane<Scalar>::set_data(const Point<3,Scalar> & p1,
                              const Point<3,Scalar> & p3)
 {
   assert(p1 != p2 and p2 != p3 and p1 != p3);
-
   point = p1;
   // define two tangent vectors
   const Point<3> t1 = p1 - p2;

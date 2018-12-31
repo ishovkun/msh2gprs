@@ -14,7 +14,6 @@ Well::Well(const WellConfig & config)
     coordinate = config.coordinates[0];
   else
   {
-    std::cout << "simple" << std::endl;
     segments.reserve(perforated.size());
     segments.emplace_back();
     bool segment_open = false;
@@ -32,6 +31,7 @@ Well::Well(const WellConfig & config)
       {
         segment.second = config.coordinates[i];
         segment_open = false;
+        segments.emplace_back();
       }
     }
   }

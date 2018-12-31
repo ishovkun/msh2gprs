@@ -111,6 +111,7 @@ Polygon<Scalar>::set_data(const std::vector<Point<3,Scalar>> & point_list)
   this->points = point_list;
   reorder(this->points);
   const Point<3, Scalar> cm = compute_center_mass(point_list);
+
   /* i'd like the plane support point (first argument) to be
      the center of the poly
      to create the plane I need to pass three points that are not
@@ -141,14 +142,19 @@ Polygon<Scalar>::move(const Point<3,Scalar> & p)
 
 template<typename Scalar>
 void
-Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > &points)
+Polygon<Scalar>::reorder(std::vector<Point<3, Scalar> > & points)
 {
   const std::size_t n_points = points.size();
   assert(n_points > 2);
   if (n_points == 3)
     return;
 
-  Plane<Scalar> plane(points[0], points[1], points[2]);
+  Plane<Scalar> plane;
+  const Point<3,Scalar> cm = compute_center_mass(points);
+  if ( ((points[0] - cm).cross(points[1] - cm)).norm() > 1e-16 )
+    plane.set_data(cm, points[0], points[1]);
+  else
+    plane.set_data(cm, points[0], points[2]);
   Point<3,Scalar> normal = plane.normal();
 
   std::vector<Point<3, Scalar> > v_points;
@@ -317,10 +323,12 @@ Plane<Scalar> Polygon<Scalar>::get_side(const Edge & edge) const
   if (edge.first >= this->points.size() or edge.second >= this->points.size())
     throw std::out_of_range("Edge does not exist");
 
+  Point<3,Scalar> point3 =
+      this->points[edge.first] + plane.normal() * (this->points[edge.first] -
+                                                   this->points[edge.second]).norm();
   Plane<Scalar> side(this->points[edge.first],
                      this->points[edge.second],
-                     plane.normal() *
-                     (this->points[edge.first] - this->points[edge.second]).norm() );
+                     point3);
   return std::move(side);
 }
 

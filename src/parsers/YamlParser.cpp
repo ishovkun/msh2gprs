@@ -481,8 +481,8 @@ void YamlParser::read_well(const YAML::Node & node,
         for (int d=0; d<3; ++d)
           well.coordinates[i][d] = std::atof(tokens[3*i+d].c_str());
 
-      for (std::size_t i=0; i<n_coord; ++i)
-        std::cout << well.coordinates[i] << std::endl;
+      // for (std::size_t i=0; i<n_coord; ++i)
+      //   std::cout << well.coordinates[i] << std::endl;
     }
     else if (key == "perf")
     {

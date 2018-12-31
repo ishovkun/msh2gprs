@@ -1889,7 +1889,7 @@ void SimData::setupWells()
   for (const auto & conf : config.wells)
   {
     Well well(conf);
-    std::cout << "setting up" << well.name << std::endl;
+    std::cout << "setting up " << well.name << std::endl;
     if (well.simple())
       setupSimpleWell(well);
     else
@@ -1899,6 +1899,7 @@ void SimData::setupWells()
     computeWellIndex(well);
     wells.push_back(std::move(well));
   }
+  exit(0);
 }
 
 
@@ -1921,17 +1922,9 @@ void SimData::setupSimpleWell(Well & well)
       std::vector<Point> section_data;
       if (angem::collision(p1, p2, *p_poly_cell, section_data, 1e-6))
       {
-        // if cell is connected to DFM or edfm fractures connect to those
-        // bool connect_to_fracture = false;
-        // for (const auto & face : cell.faces())
-        //   if (is_fracture(face.marker()))
-        //   {
-        //     connect_to_fracture = true;
-        //   }
         well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
         well.segment_length.push_back(section_data[0].distance(section_data[1]));
         well.directions.push_back(direction);
-        // std::cout << "length = " << well.segment_length[0] << std::endl;
         break;
       }
     }
@@ -1941,31 +1934,41 @@ void SimData::setupSimpleWell(Well & well)
 
 void SimData::setupComplexWell(Well & well)
 {
-  std::cout << "not implemented" << std::endl;
-  abort();
   // setup well with segments
   std::cout << "complex well " << well.name << std::endl;
   for (std::size_t isegment=0; isegment<well.segments.size(); ++isegment)
   {
-    const auto segment = well.segments[isegment];
+    std::cout << "isegment = " << isegment << std::endl;
+    auto segment = well.segments[isegment];
     std::vector<Point> section_data;
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
     {
+   recompute_cell:
       const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell.polyhedron();
+      std::cout << "icell = " << cell.index() << std::endl;
       if (angem::collision(segment.first, segment.second,
                            *p_poly_cell, section_data, 1e-6))
       {
         well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
-        std::cout << "section data" << std::endl;
-        for (auto sec : section_data)
-          std::cout << sec << std::endl;
-        std::cout << "end section data" << std::endl;
+        if (section_data.size() == 1)
+        {
+          segment.first = section_data[0] - 5*(segment.second - segment.first);
+          segment.second = section_data[0] + 5*(segment.second - segment.first);
+          section_data.clear();
+          std::cout << "ooops: recompute well segment collision" << std::endl;
+          std::cout << "this is not tested" << std::endl;
+          goto recompute_cell;
+        }
+
         well.segment_length.push_back(section_data[0].distance(section_data[1]));
         well.directions.push_back(segment.second - segment.first);
         section_data.clear();
+        std::cout << "well.segment_length.back() = "
+                  << well.segment_length.back() << std::endl;
       }
     }
   }
+  exit(0);
 }
 
 
@@ -2011,8 +2014,8 @@ void SimData::computeWellIndex(Well & well)
     const std::size_t icell = well.connected_volumes[i] - n_flow_dfm_faces;
     const angem::Point<3,double> perm = get_permeability(icell);
     angem::Point<3,double> dx_dy_dz = get_dx_dy_dz(icell);
-    std::cout << "dx_dy_dz = " << dx_dy_dz << std::endl;
-    std::cout << "perm = " << perm << std::endl;
+    // std::cout << "dx_dy_dz = " << dx_dy_dz << std::endl;
+    // std::cout << "perm = " << perm << std::endl;
     std::cout << "well.segment_length[i] = " << well.segment_length[i] << std::endl;
     angem::Point<3,double> productivity;
     productivity[0] =
