@@ -17,7 +17,8 @@ namespace angem
 #ifdef USE_BOOST
 using pset_hash_type = boost::multiprecision::uint128_t;
 #else
-using pset_hash_type = uint128_t;
+// using pset_hash_type = uint128_t;
+using pset_hash_type = __int128;
 #endif
 
 
