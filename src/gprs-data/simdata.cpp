@@ -1,4 +1,4 @@
-﻿#include "simdata.hpp"
+﻿#include <simdata.hpp>
 
 // library for analytical geometry
 #include <angem/Point.hpp>
@@ -12,10 +12,6 @@
 // parser for user-defined expressions for reservoir data
 #include <muparser/muParser.h>
 
-// profiling
-// #include <ctime>
-
-#define SPECIAL_CELL = 999
 #include <algorithm>
 #include <exception>
 #include <unordered_set>
@@ -1938,37 +1934,30 @@ void SimData::setupComplexWell(Well & well)
   std::cout << "complex well " << well.name << std::endl;
   for (std::size_t isegment=0; isegment<well.segments.size(); ++isegment)
   {
-    std::cout << "isegment = " << isegment << std::endl;
+    std::cout << "isegment = " << isegment << ":\t";
     auto segment = well.segments[isegment];
+    std::cout << segment.first << " | " << segment.second << std::endl;
     std::vector<Point> section_data;
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
     {
-   recompute_cell:
       const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell.polyhedron();
-      std::cout << "icell = " << cell.index() << std::endl;
       if (angem::collision(segment.first, segment.second,
                            *p_poly_cell, section_data, 1e-6))
       {
-        well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
-        if (section_data.size() == 1)
+        if (section_data.size() != 2)
         {
-          segment.first = section_data[0] - 5*(segment.second - segment.first);
-          segment.second = section_data[0] + 5*(segment.second - segment.first);
+          std::cout << "something is wrong with segment" << std::endl;
           section_data.clear();
-          std::cout << "ooops: recompute well segment collision" << std::endl;
-          std::cout << "this is not tested" << std::endl;
-          goto recompute_cell;
+          continue;
         }
+        well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
 
         well.segment_length.push_back(section_data[0].distance(section_data[1]));
         well.directions.push_back(segment.second - segment.first);
         section_data.clear();
-        std::cout << "well.segment_length.back() = "
-                  << well.segment_length.back() << std::endl;
       }
     }
   }
-  exit(0);
 }
 
 

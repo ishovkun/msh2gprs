@@ -365,14 +365,14 @@ bool collision(const Point<3,Scalar>        & l0,
     const auto & points = poly.get_points();
     for (const auto & face : poly.get_faces())
     {
-      const std::size_t ibegin = intersection.size();
+      const std::size_t ibegin = new_section.size();
 
       Polygon<Scalar> poly_face(points, face);
       collision(l0, l1,  poly_face.plane, new_section, tol);
 
-      for (std::size_t i=ibegin; i<intersection.size(); ++i)
-        if (!poly_face.point_inside(intersection[i], tol))
-          intersection.erase(intersection.begin() + i);
+      for (std::size_t i=ibegin; i<new_section.size(); ++i)
+        if (!poly_face.point_inside(new_section[i], tol))
+          new_section.erase(new_section.begin() + i);
     }
 
     remove_duplicates(new_section, tol);
