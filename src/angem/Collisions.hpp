@@ -354,20 +354,30 @@ bool collision(const Point<3,Scalar>        & l0,
                const double                   tol = 1e-10)
 {
   std::vector<Point<3,Scalar>> new_section;
-  const auto & points = poly.get_points();
-  for (const auto & face : poly.get_faces())
+
+  if (poly.point_inside(l0))
+    new_section.push_back(l0);
+  if (poly.point_inside(l1))
+    new_section.push_back(l1);
+
+  if (new_section.size() < 2)
   {
-    const std::size_t ibegin = intersection.size();
+    const auto & points = poly.get_points();
+    for (const auto & face : poly.get_faces())
+    {
+      const std::size_t ibegin = intersection.size();
 
-    Polygon<Scalar> poly_face(points, face);
-    collision(l0, l1,  poly_face.plane, new_section, tol);
+      Polygon<Scalar> poly_face(points, face);
+      collision(l0, l1,  poly_face.plane, new_section, tol);
 
-    for (std::size_t i=ibegin; i<intersection.size(); ++i)
-      if (!poly_face.point_inside(intersection[i], tol))
-        intersection.erase(intersection.begin() + i);
+      for (std::size_t i=ibegin; i<intersection.size(); ++i)
+        if (!poly_face.point_inside(intersection[i], tol))
+          intersection.erase(intersection.begin() + i);
+    }
+
+    remove_duplicates(new_section, tol);
   }
 
-  remove_duplicates(new_section, tol);
   for (const auto & p : new_section)
     intersection.push_back(p);
 

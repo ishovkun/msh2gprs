@@ -20,6 +20,10 @@ Well::Well(const WellConfig & config)
     std::size_t i = 0;
     while (i < config.coordinates.size())
     {
+      // std::cout << "segments.size() = " << segments.size() << std::endl;
+      // if (i == config.coordinates.size() - 1 and !segment_open)
+      //   break;
+
       auto & segment = segments.back();
       if (!segment_open)
       {
@@ -31,7 +35,11 @@ Well::Well(const WellConfig & config)
       {
         segment.second = config.coordinates[i];
         segment_open = false;
-        segments.emplace_back();
+
+        if (i < config.coordinates.size() - 1)
+          segments.emplace_back();
+        else
+          break;
       }
     }
   }
