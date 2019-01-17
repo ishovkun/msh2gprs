@@ -1291,7 +1291,7 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
     outfile = outputPath_ + "fl_tran.txt";
     poutfile=fopen( outfile.c_str(),"w");
     fprintf(poutfile,"%s\n","TPFACONNS");
-    fprintf(poutfile,"%d\n",NbTransmissibility);
+    fprintf(poutfile,"%zu\n",NbTransmissibility);
 
     for (i=0;i<NbTransmissibility;i++)
       fprintf(poutfile,
@@ -1305,7 +1305,7 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
     outfile = outputPath_ + "fl_tran_n.txt";
     poutfile=fopen( outfile.c_str(),"w");
     fprintf(poutfile,"%s\n","TPFACONNSN");
-    fprintf(poutfile,"%d\n",NbTransmissibility);
+    fprintf(poutfile,"%zu\n",NbTransmissibility);
 
     for (i=0;i<NbTransmissibility;i++)
       fprintf(poutfile,
