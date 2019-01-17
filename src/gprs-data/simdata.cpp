@@ -4,8 +4,9 @@
 #include <angem/Point.hpp>
 #include <angem/Rectangle.hpp>
 #include <angem/PointSet.hpp>
-#include "angem/CollisionGJK.hpp"
+#include <angem/CollisionGJK.hpp>
 #include <angem/Collisions.hpp>
+#include <angem/PolyGroup.hpp>
 #include <angem/utils.hpp>
 #include <mesh/utils.hpp> // to remesh embedded fractures
 #include <mesh/Mesh.hpp> // 3D mesh format

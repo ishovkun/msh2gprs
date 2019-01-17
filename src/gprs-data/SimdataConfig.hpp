@@ -1,7 +1,8 @@
 #pragma once
-#include <Polygon.hpp>
-#include <map>
 
+#include <Polygon.hpp>
+
+#include <map>
 #include <memory> // shared / unique_ptr
 
 struct DomainConfig

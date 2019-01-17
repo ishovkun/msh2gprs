@@ -8,13 +8,6 @@
 #include <cstring>
 #include <map>
 
-#include <algorithm>
-#include <cmath>
-#include <iterator>
-#include <vector>
-#include <set>
-#include <unordered_set>
-
 #include "element.hpp"
 #include "renum.hpp"
 #include "transes.hpp"
@@ -25,8 +18,15 @@
 #include "angem/Collisions.hpp"
 #include "mesh/SurfaceMesh.hpp"
 #include "mesh/Mesh.hpp"
-#include <SimdataConfig.hpp>
+#include "SimdataConfig.hpp"
 #include <Well.hpp>
+
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <vector>
+#include <set>
+#include <unordered_set>
 
 
 namespace gprs_data
