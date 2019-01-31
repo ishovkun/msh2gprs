@@ -58,7 +58,7 @@ bool cell_iterator::operator!=(const cell_iterator & other) const
 
 Point cell_iterator::center() const
 {
-  return std::move(get_element_center(mesh_vertices, cells[icell]));
+  return get_element_center(mesh_vertices, cells[icell]);
 }
 
 
@@ -93,7 +93,7 @@ std::vector<face_iterator> cell_iterator::faces() const
     face_iterator face(it_face, mesh_vertices);
     faces.push_back(face);
   }
-  return std::move(faces);
+  return faces;
 }
 
 

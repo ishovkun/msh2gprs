@@ -329,7 +329,7 @@ Plane<Scalar> Polygon<Scalar>::get_side(const Edge & edge) const
   Plane<Scalar> side(this->points[edge.first],
                      this->points[edge.second],
                      point3);
-  return std::move(side);
+  return side;
 }
 
 }

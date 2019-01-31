@@ -109,7 +109,7 @@ Hexahedron<Scalar>::get_faces(const std::vector<std::size_t>     & indices)
   global_faces[3] = {indices[3], indices[7], indices[6], indices[2]};
   global_faces[4] = {indices[0], indices[4], indices[7], indices[3]};
   global_faces[5] = {indices[1], indices[5], indices[6], indices[2]};
-  return std::move(global_faces);
+  return global_faces;
 }
 
 

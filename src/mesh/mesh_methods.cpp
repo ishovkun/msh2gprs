@@ -26,8 +26,7 @@ std::size_t estimate_max_vertices(const int n_polygon_vertices)
 Point get_element_center(const angem::PointSet<3,double> & vertices,
                          const std::vector<std::size_t>  & ivertices)
 {
-  return std::move(angem::compute_center_mass
-                   (get_vertex_coordinates(vertices, ivertices)));
+  return angem::compute_center_mass(get_vertex_coordinates(vertices, ivertices));
 }
 
 
@@ -37,7 +36,7 @@ std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> & vert
   std::vector<Point> element_vertices(ivertices.size());
   for (std::size_t i=0; i<ivertices.size(); ++i)
     element_vertices[i] = vertices[ivertices[i]];
-  return std::move(element_vertices);
+  return element_vertices;
 }
 
 
@@ -85,7 +84,7 @@ std::vector<std::size_t> invert_hash(const hash_type & hash)
     vertices_sorted[ind] = v;
     ind--;
   }
-  return std::move(vertices_sorted);
+  return vertices_sorted;
 }
 
 
@@ -121,19 +120,9 @@ get_face_indices(const angem::Polyhedron<double> & poly,
       face_glob.push_back(indices[ivert]);
     faces.push_back(face_glob);
   }
-  return std::move(faces);
+  return faces;
 
 }
-
-
-// angem::Polyhedron<double> get_polyhedron(const std::size_t icell,
-//                                          const angem::PointSet<3,double> & vertices,
-//                                          const std::vector<int>          & shape_ids)
-// {
-//   return std::move(angem::PolyhedronFactory::create<double>(vertices.points,
-//                                                             cells[icell],
-//                                                             shape_ids[icell]));
-// }
 
 
 std::unordered_set<std::size_t> find_internal_vertices(const SurfaceMesh<double> & msh)
@@ -152,7 +141,7 @@ std::unordered_set<std::size_t> find_internal_vertices(const SurfaceMesh<double>
       internal_points.insert(ivertices.second);
     }
   }
-  return std::move(internal_points);
+  return internal_points;
 }
 
 }

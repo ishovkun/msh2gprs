@@ -131,13 +131,13 @@ Mesh::get_neighbors( const std::size_t icell ) const
       if (jcell != icell)
         neighbors.push_back(jcell);
   }
-  return std::move(neighbors);
+  return neighbors;
 }
 
 
 std::vector<std::vector<std::size_t>> Mesh::get_faces(const Polyhedron & poly) const
 {
-  return std::move(get_face_indices(poly, vertices));
+  return get_face_indices(poly, vertices);
 }
 
 
@@ -181,7 +181,7 @@ void Mesh::insert_face(const std::vector<std::size_t> & ivertices,
 
 Point Mesh::get_center(const std::size_t icell) const
 {
-  return std::move(get_element_center(vertices, cells[icell]));
+  return get_element_center(vertices, cells[icell]);
 }
 
 
@@ -301,7 +301,7 @@ SurfaceMesh<double> Mesh::split_faces()
       {
         auto it = create_face_iterator
             (map_faces.find(map_2d_3d.find(neighbor)->second));
-        vertex_faces.push_back(std::move(it));
+        vertex_faces.push_back(it);
       }
 
       const auto edge_vertices = edge.vertices();
@@ -389,7 +389,7 @@ SurfaceMesh<double> Mesh::split_faces()
 
   // clear marked elements vector
   marked_for_split.clear();
-  return std::move(mesh_faces);
+  return mesh_faces;
 }
 
 
@@ -480,7 +480,7 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
   for (auto it : map_cell_group)
     groups[it.second].push_back(it.first);
 
-  return std::move(groups);
+  return groups;
 }
 
 
@@ -490,7 +490,7 @@ std::vector<face_iterator> Mesh::get_ordered_faces()
   for (auto face=begin_faces(); face!=end_faces(); ++face)
     ordered_faces[face.index()] = face;
 
-  return std::move(ordered_faces);
+  return ordered_faces;
 }
 
 }

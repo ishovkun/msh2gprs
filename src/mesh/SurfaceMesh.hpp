@@ -172,7 +172,7 @@ SurfaceMesh<Scalar>::get_neighbors( const std::size_t ielement ) const
         v_neighbors.push_back(ineighbor);
     }
   }
-  return std::move(v_neighbors);
+  return v_neighbors;
 }
 
 
@@ -299,7 +299,7 @@ SurfaceMesh<Scalar>::get_vertices(const std::vector<Edge> & edges)
     v_vertices.push_back(edge.first);
   if (edges.back().second != edges.front().first)
     v_vertices.push_back(edges.back().second);
-  return std::move(v_vertices);
+  return v_vertices;
 }
 
 
@@ -377,7 +377,7 @@ SurfaceMesh<Scalar>::get_edges( const std::size_t ielement ) const
     edges.push_back({i1, i2});
 
   }
-  return std::move(edges);
+  return edges;
 }
 
 

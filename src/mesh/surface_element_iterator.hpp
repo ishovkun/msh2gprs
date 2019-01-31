@@ -111,7 +111,7 @@ surface_element_iterator<Scalar>::edges() const
     const auto hash = hash_value({i1, i2});
     edges.push_back(edge_iterator<Scalar>(map_edges.find(hash), mesh_vertices));
   }
-  return std::move(edges);
+  return edges;
 }
 
 }

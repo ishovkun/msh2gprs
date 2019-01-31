@@ -61,13 +61,12 @@ int face_iterator::marker() const
 std::vector<Point> face_iterator::vertices() const
 {
   std::vector<std::size_t> ivertices(invert_hash(face_it->first));
-  return std::move(get_vertex_coordinates(mesh_vertices, ivertices));
+  return get_vertex_coordinates(mesh_vertices, ivertices);
 }
 
 
 std::vector<std::size_t> face_iterator::vertex_indices() const
 {
-  // return std::move(invert_hash(face_it->first));
   return face_it->second.ordered_indices;
 }
 

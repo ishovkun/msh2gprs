@@ -118,7 +118,7 @@ Wedge<Scalar>::get_faces(const std::vector<std::size_t>     & indices)
   global_faces[2] = {indices[0], indices[3], indices[4], indices[1]};
   global_faces[3] = {indices[1], indices[2], indices[5], indices[4]};
   global_faces[4] = {indices[0], indices[3], indices[5], indices[2]};
-  return std::move(global_faces);
+  return global_faces;
 }
 
 

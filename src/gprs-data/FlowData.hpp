@@ -82,5 +82,5 @@ FlowData::invert_hash(const std::size_t hash) const
   if (map_connection.find(hash) == map_connection.end())
     throw std::runtime_error("element does not exist");
 
-  return std::move(pair);
+  return pair;
 }
