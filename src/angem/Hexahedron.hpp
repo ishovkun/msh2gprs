@@ -29,7 +29,6 @@ class Hexahedron: public Polyhedron<Scalar>
 {
   public:
   // CONSTRICTORS
-  Hexahedron();
   Hexahedron(const std::vector<Point<3,Scalar>> & vertices,
              const std::vector<std::size_t>     & indices);
   // SETTERS
@@ -43,13 +42,6 @@ class Hexahedron: public Polyhedron<Scalar>
   static std::vector<std::vector<std::size_t>>
   get_faces(const std::vector<std::size_t>     & indices);
 };
-
-
-template<typename Scalar>
-Hexahedron<Scalar>::Hexahedron()
-    :
-    Polyhedron<Scalar>(12)
-{}
 
 
 template<typename Scalar>
@@ -100,7 +92,7 @@ Hexahedron<Scalar>::set_data(const std::vector<Point<3,Scalar>> & vertices,
 
 template<typename Scalar>
 std::vector<std::vector<std::size_t>>
-Hexahedron<Scalar>::get_faces(const std::vector<std::size_t>     & indices)
+Hexahedron<Scalar>::get_faces(const std::vector<std::size_t> & indices)
 {
   std::vector<std::vector<std::size_t>> global_faces(6);
   global_faces[0] = {indices[0], indices[1], indices[2], indices[3]};

@@ -36,7 +36,6 @@ class Wedge: public Polyhedron<Scalar>
 {
  public:
   // CONSTRICTORS
-  Wedge();
   // input given with vtk numbering
   Wedge(const std::vector<Point<3,Scalar>> & vertices,
         const std::vector<std::size_t>     & indices);
@@ -54,13 +53,6 @@ class Wedge: public Polyhedron<Scalar>
   virtual Scalar volume() const override;
 
 };
-
-
-template<typename Scalar>
-Wedge<Scalar>::Wedge()
-    :
-    Polyhedron<Scalar>(13)
-{}
 
 
 template<typename Scalar>

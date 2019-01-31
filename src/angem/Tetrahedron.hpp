@@ -35,7 +35,6 @@ class Tetrahedron: public Polyhedron<Scalar>
 {
  public:
   // CONSTRICTORS
-  Tetrahedron();
   // input given with vtk numbering
   Tetrahedron(const std::vector<Point<3,Scalar>> & vertices,
               const std::vector<std::size_t>     & indices);
@@ -55,13 +54,6 @@ class Tetrahedron: public Polyhedron<Scalar>
   static std::vector<std::vector<std::size_t>>
   get_faces(const std::vector<std::size_t>  & indices);
 };
-
-
-template<typename Scalar>
-Tetrahedron<Scalar>::Tetrahedron()
-    :
-    Polyhedron<Scalar>(10)
-{}
 
 
 template<typename Scalar>

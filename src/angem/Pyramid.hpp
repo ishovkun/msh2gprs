@@ -31,7 +31,6 @@ class Pyramid : public Polyhedron<Scalar>
 {
  public:
   // CONSTRICTORS
-  Pyramid();
   // input given with vtk numbering
   Pyramid(const std::vector<Point<3,Scalar>> & vertices,
           const std::vector<std::size_t>     & indices);
@@ -45,13 +44,6 @@ class Pyramid : public Polyhedron<Scalar>
   static std::vector<std::vector<std::size_t>>
   get_faces(const std::vector<std::size_t>     & indices);
 };
-
-
-template<typename Scalar>
-Pyramid<Scalar>::Pyramid()
-    :
-    Polyhedron<Scalar>(14)
-{}
 
 
 template<typename Scalar>
