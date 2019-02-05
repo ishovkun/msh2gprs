@@ -62,29 +62,17 @@ void OutputData::saveGeometry(const std::string & output_path)
 {
   // vtk output
   const std::string vtk_file = output_path + "reservoir_mesh.vtk";
+  std::cout << "Saving reservoir mesh file: " << vtk_file << std::endl;
   IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
                            grid.shape_ids, vtk_file);
-  std::cout << "wrote file " << vtk_file << std::endl;
 
   if (data.dfm_faces.size() > 0)
   { // DFM frac geometry
-    // mesh::SurfaceMesh<double> frac_msh(/* tol = */ 1e-6);
-    // // for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
-    // for (const auto & face : ordered_faces)
-    //   if(data.is_fracture(face.marker()))  // dfm frac
-    //   {
-    //     angem::Polygon<double> poly_face(grid.vertices.points,
-    //                                      face.vertex_indices());
-    //     frac_msh.insert(poly_face);
-    //   }
-
     const std::string vtk_dfm_file = output_path + "dfm.vtk";
-    // IO::VTKWriter::write_vtk(frac_msh.vertices.points, frac_msh.polygons,
-    //                          vtk_dfm_file);
+    std::cout << "Saving DFM mesh file: " << vtk_dfm_file << std::endl;
     IO::VTKWriter::write_vtk(data.dfm_master_grid.vertices.points,
                              data.dfm_master_grid.polygons,
                              vtk_dfm_file);
-    std::cout << "wrote file " << vtk_dfm_file << std::endl;
 
   }
 
@@ -249,7 +237,7 @@ void OutputData::saveGeometry(const std::string & output_path)
     // write vtk data
   if (!data.vEfrac.empty())
   {
-    std::cout  << "Writing SDA vtk" << std::endl;
+    std::cout  << "Writing EDFM vtk" << std::endl;
     std::size_t n_efrac_vertices = 0;
     // make up a vector of all sda vertices
     for (const auto & efrac : data.vEfrac)
@@ -269,9 +257,6 @@ void OutputData::saveGeometry(const std::string & output_path)
 
     for (const auto & efrac : data.vEfrac)
     {
-      // n_efrac_elements += efrac.vIndices.size();
-      // for (const auto & vec : efrac.vIndices)
-      //   vind_size_total += vec.size();
       n_efrac_elements += efrac.mesh.polygons.size();
       for (const auto & poly : efrac.mesh.polygons)
         vind_size_total += poly.size();

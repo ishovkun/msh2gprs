@@ -259,13 +259,8 @@ void SimData::computeCellClipping()
       angem::remove_duplicates(section_points, set_points, tol);
 
       // correct ordering for quads
-      // if (set_points.size() > 3)
-      // {
-      //   angem::Polygon<double>::reorder(set_points);
-      // }
       angem::Polygon<double> poly_section(set_points);
       vvSection[i] = poly_section.get_points();
-      frac_msh.insert(poly_section);
 
       // remove cell if number of points < 3 <=> area = 0
       if (set_points.size() < 3)
@@ -279,6 +274,8 @@ void SimData::computeCellClipping()
         i--;
         continue;
       }
+
+      frac_msh.insert(poly_section);
 
       // add fracture polygon to splits to compute transes
       splits[i].add(angem::Polygon<double>(set_points), MARKER_FRAC);
@@ -529,9 +526,7 @@ std::size_t SimData::get_flow_element_index(const std::size_t ifrac,
 {
   std::size_t result = n_flow_dfm_faces + grid.n_cells();
   for (std::size_t i=0; i<ifrac; ++i)
-  {
     result += vEfrac[i].mesh.polygons.size();
-  }
 
   result += ielement;
   return result;
@@ -1896,7 +1891,6 @@ void SimData::setupWells()
     computeWellIndex(well);
     wells.push_back(std::move(well));
   }
-  exit(0);
 }
 
 

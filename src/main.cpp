@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
   std::cout << "computing reservoir transes" << std::endl;
   pSimData->computeReservoirTransmissibilities();
 
-  // cout << "Compute cell clipping and EDFM transmissibilities" << endl;
-  // pSimData->computeCellClipping();
+  cout << "Compute cell clipping and EDFM transmissibilities" << endl;
+  pSimData->computeCellClipping();
 
   // // cout << "Merge small edfm cells" << endl;
   // // pSimData->mergeSmallFracCells();
