@@ -1,0 +1,97 @@
+{
+    "Mesh file" : "cartesian.msh",
+
+    "Embedded Fractures" :
+    {
+        "file" : "efrac.txt",
+		    "1":
+        {
+            "type"				 : "Rectangle",
+            "center"			 : [0,  0,  0],
+            "length"			 : 160,
+            "height"			 : 10,
+						"_comment_"		 : [1, 300],
+            "dip"					 : 90,
+            "strike"			 : 140,
+            "aperture"		 : 5e-3,
+            "conductivity" : 500
+        }
+		    , "_comment_":
+        {
+            "type": "Rectangle",
+            "center" : [0,  0,  0],
+            "length":  80,
+            "height":  10,
+            "dip":     90,
+            "strike":  30,
+            "aperture": 5e-3,
+            "conductivity": 20
+        }
+    }
+    , "Domain Flow Properties" :
+    {
+        "_comment_" : "sort is the order of evaluation!",
+        "file" : "domain.txt",
+        "9999992": [
+            {"_comment_"                     : "SDA"},
+            {"RTEMP"                         : "343.15"},
+            {"THCROCK"                       : "2.8"},
+            {"PORO"                          : "0.2"},
+            {"PERM"                          : "10"},
+            {"SWAT"                          : "0.0"},
+            {"PRESSURE"                      : "100"}
+        ]
+    }
+    , "Boundary conditions" :
+    {
+        "file" : "bcond.txt",
+        "Faces" :
+        {
+            "-1111111" : {
+                "_comment_": "left",
+                "type" : 2,
+                "value": ["-100", "0", "0"]
+            }
+            , "-1111112" : {
+                "_comment_": "right",
+                "type" : 2,
+                "value": ["100", "0", "0"]
+            }
+            , "-3333331" : {
+                "_comment_": "Bottom",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+            , "-3333332" : {
+                "_comment_": "Top",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+        }
+        , "Dirichlet nodes" : {
+            "_comment_" : "assign specific points to be fixed",
+            "search tolerance" : 1e-4,
+            "0" :
+            {
+                "coord" : [-30, 0, 0],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "1" :
+            {
+                "coord" : [30, 0, 0],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "2" :
+            {
+                "coord" : [0, 30, 0],
+                "value" : ["0", "nan" , "nan"]
+            }
+            , "3" :
+            {
+                "coord" : [0, -30, 0],
+                "value" : ["0", "nan" , "nan"]
+            }
+        }
+
+    }
+}

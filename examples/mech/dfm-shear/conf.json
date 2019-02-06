@@ -1,0 +1,98 @@
+{
+    "Mesh file" : "geom.msh",
+
+		"Discrete Fractures" :
+		{
+				"1":
+				{
+						"aperture": 5e-3,
+						"conductivity": 200
+				}
+		}
+
+    , "Domain Flow Properties" :
+    {
+        "_comment_" : "sort is the order of evaluation!",
+        "file" : "domain.txt",
+        "9999992": [
+            {"_comment_"                     : "SDA"},
+            {"RTEMP"                         : "343.15"},
+            {"THCROCK"                       : "2.8"},
+            {"PORO"                          : "0.2"},
+            {"PERM"                          : "10"},
+            {"SWAT"                          : "0.0"},
+            {"PRESSURE"                      : "2"}
+        ]
+    }
+    , "Domain Mechanics Properties" :
+    {
+        "9999992": [
+            {"_comment_" : "example of assigning coupling (GMCELL_TO_FLOWCELL)"},
+            {"_comment_" : "True by default"},
+            {"Coupled"                       : "0"},
+            {"GMCELL_MODEL"                  : "0"},
+            {"GMCELL_DENSITY"                : "1000"},
+            {"GMCELL_YOUNG"                  : "1"},
+            {"GMCELL_BIOT"                   : "0.25"},
+            {"GMREF_TEMPERATURE"             : "343.15"},
+            {"GMCELL_HEAT_CAPACITY"          : "2626.0605"},
+            {"GMCELL_THERMAL_EXPANSION"      : "0"},
+            {"GMCELL_PORE_THERMAL_EXPANSION" : "0"},
+            {"GMCELL_POISSON"                : "0.25"},
+            {"GMREF_PRESSURE"                : "2"}
+
+        ]
+    }
+    , "Boundary conditions" :
+    {
+        "file" : "bcond.txt",
+        "Faces" :
+        {
+            "1111111" : {
+                "_comment_": "left",
+                "type" : 2,
+                "value": ["-100", "0", "0"]
+            }
+            , "1111112" : {
+                "_comment_": "right",
+                "type" : 2,
+                "value": ["100", "0", "0"]
+            }
+            , "3333331" : {
+                "_comment_": "Bottom",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+            , "3333332" : {
+                "_comment_": "Top",
+                "type" : 1,
+                "value": ["nan", "nan", "0"]
+            }
+        }
+        , "Dirichlet nodes" : {
+            "_comment_" : "assign specific points to be fixed",
+            "search tolerance" : 1e-4,
+            "0" :
+            {
+                "coord" : [-100, 0, 0],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "1" :
+            {
+                "coord" : [100, 0, 0],
+                "value" : ["nan", "0" , "nan"]
+            }
+            , "2" :
+            {
+                "coord" : [0, 100, 0],
+                "value" : ["0", "nan" , "nan"]
+            }
+            , "3" :
+            {
+                "coord" : [0, -100, 0],
+                "value" : ["0", "nan" , "nan"]
+            }
+        }
+
+    }
+}

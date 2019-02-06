@@ -1,0 +1,33 @@
+{
+    "Mesh file" : "cross_edfm_test.msh",
+
+		"Discrete Fractures" :
+    {
+		    "2":
+        {
+            "type"				 : "Rectangle",
+            "center"			 : [0,  0,  0],
+            "length"			 : 160,
+            "height"			 : 10,
+						"_comment_"		 : [1, 300],
+            "dip"					 : 90,
+            "strike"			 : 140,
+            "aperture"		 : 5e-3,
+            "conductivity" : 500
+        }
+    }
+    , "Domain Flow Properties" :
+    {
+        "_comment_" : "sort is the order of evaluation!",
+        "file" : "domain.txt",
+        "9999991": [
+            {"_comment_"                     : "SDA"},
+            {"RTEMP"                         : "343.15"},
+            {"THCROCK"                       : "2.8"},
+            {"PORO"                          : "0.2"},
+            {"PERM"                          : "10"},
+            {"SWAT"                          : "0.0"},
+            {"PRESSURE"                      : "100"}
+        ]
+    }
+}

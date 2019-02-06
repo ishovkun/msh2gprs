@@ -1435,6 +1435,9 @@ void SimData::definePhysicalFacets()
     }  //  end DFM fracture face case
   }
   n_flow_dfm_faces = static_cast<std::size_t>(nfluid);
+
+  std::cout << "Number of Neumann faces = " << n_neumann_faces << std::endl;
+  std::cout << "Number of Dirichlet faces = " << n_dirichlet_faces << std::endl;
 }
 
 

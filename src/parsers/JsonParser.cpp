@@ -247,8 +247,8 @@ JsonParser::boundary_conditions_faces(nlohmann::json::iterator it,
     config.bc_faces.emplace_back();
     auto & conf = config.bc_faces.back();
     conf.label = std::atoi(it.key().c_str());
-    // if (conf.label >= 0)
-    //   throw std::invalid_argument("boundary labels should be negative");
+    if (conf.label < 0)
+      throw std::invalid_argument("boundary labels should be positive");
 
     boundary_conditions_face((*it).begin(), (*it).end(), conf);
   }
