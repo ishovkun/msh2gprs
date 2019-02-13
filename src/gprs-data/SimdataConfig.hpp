@@ -25,6 +25,7 @@ struct BCNodeConfig
 };
 
 
+// Structure that holds info on mechanical user-defined boundary conditions
 struct BCConfig
 {
   int label;

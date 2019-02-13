@@ -17,10 +17,8 @@ namespace mesh
 {
 
 using Point = angem::Point<3,double>;
-// using Polygon = angem::Polygon<double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
-// using Face = std::vector<std::size_t>;
 using FaceiVertices = std::vector<std::size_t>;
 
 
@@ -117,7 +115,7 @@ class Mesh
    * retults in adding new vertices (pushed to the back of vertices set)
    * modifies elements of cells array
    */
-  void split_vertex(const std::size_t                            ivertex,
+  void split_vertex(const std::size_t                              ivertex,
                     const std::vector<face_iterator>             & vertex_faces,
                     std::unordered_map<std::size_t, std::size_t> & map_old_new_cells,
                     std::vector<std::vector<std::size_t>>        & new_cells);
