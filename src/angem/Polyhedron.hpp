@@ -3,6 +3,7 @@
 #include <Shape.hpp>
 #include <Plane.hpp>
 #include <PointSet.hpp>
+#include <Polygon.hpp>
 #include <typeinfo>
 #include <exception>
 
@@ -99,60 +100,76 @@ Polyhedron<Scalar>::get_faces() const
 template<typename Scalar>
 Scalar Polyhedron<Scalar>::volume() const
 {
-  std::cout << "wrong class" << std::endl;
-  abort();
-  // i don't know how it works
-  // ask mohammad
-  const std::size_t n_faces = faces.size();
-  std::vector<Scalar> face_area(n_faces);
-  // no idea what those are
-  std::vector<Point<3,Scalar>> FG(n_faces), Fn(n_faces);
-
-  // compute some face area quantities
-  for (std::size_t i=0; i<n_faces; ++i)
-  {
-    const auto & face = faces[i];
-    const Point<3,Scalar> p0 = this->points[face[0]];
-    for (std::size_t j=1; j<face.size(); ++j)
-    {
-      const Point<3,Scalar> & p1 = this->points[face[j]];
-      const Point<3,Scalar> & p2 = this->points[face[j+1]];
-      const Point<3,Scalar> u = p1 - p0;
-      const Point<3,Scalar> v = p2 - p0;
-      const Scalar nx = (u[0]*v[2] - v[1]*u[0]);
-      const Scalar ny = (v[0]*u[2] - u[0]*v[2]);
-      const Scalar nz = (u[0]*v[1] - u[1]*v[0]);
-      const Scalar area_tmp = .5*sqrt(nx*nx + ny*ny + nz*nz);
-
-      face_area[i] += area_tmp;
-
-      FG[i] += area_tmp * (p0 + p1 + p2) / 3.;
-      Fn[i][0] += 0.5 * nx;
-      Fn[i][1] += 0.5 * ny;
-      Fn[i][2] += 0.5 * nz;
-    }
-
-    FG[i] /= face_area[i];
-    Fn[i] /= face_area[i];
-
-    Scalar nl = std::sqrt(Fn[i].norm());
-    Fn[i] /= nl;
-  }
-
-  // finally compute volume
-  Scalar vol = 0;
   const Point<3,Scalar> c = this->center();
-  for (std::size_t j=0; j<n_faces; ++j)
+  Scalar vol = 0;
+  for (auto face_indices : get_faces())
   {
-    Scalar h;
-    for (int d = 0; d < 3; ++d)
-      h += Fn[j][d]*(FG[j][d] - c[d]);
-
-    vol += fabs(h*face_area[j]) / 3.;
+    const auto face_poly = Polygon<Scalar>(this->points,
+                                           face_indices);
+    const Scalar face_area = face_poly.area();
+    const Scalar h = c.distance(face_poly.center());
+    vol += 1./3. * face_area*h;
   }
-
   return vol;
 }
+
+// template<typename Scalar>
+// Scalar Polyhedron<Scalar>::volume() const
+// {
+//   std::cout << "wrong class" << std::endl;
+//   abort();
+//   // i don't know how it works
+//   // ask mohammad
+//   const std::size_t n_faces = faces.size();
+//   std::vector<Scalar> face_area(n_faces);
+//   // no idea what those are
+//   std::vector<Point<3,Scalar>> FG(n_faces), Fn(n_faces);
+
+//   // compute some face area quantities
+//   for (std::size_t i=0; i<n_faces; ++i)
+//   {
+//     const auto & face = faces[i];
+//     const Point<3,Scalar> p0 = this->points[face[0]];
+//     for (std::size_t j=1; j<face.size(); ++j)
+//     {
+//       const Point<3,Scalar> & p1 = this->points[face[j]];
+//       const Point<3,Scalar> & p2 = this->points[face[j+1]];
+//       const Point<3,Scalar> u = p1 - p0;
+//       const Point<3,Scalar> v = p2 - p0;
+//       const Scalar nx = (u[0]*v[2] - v[1]*u[0]);
+//       const Scalar ny = (v[0]*u[2] - u[0]*v[2]);
+//       const Scalar nz = (u[0]*v[1] - u[1]*v[0]);
+//       const Scalar area_tmp = .5*sqrt(nx*nx + ny*ny + nz*nz);
+
+//       face_area[i] += area_tmp;
+
+//       FG[i] += area_tmp * (p0 + p1 + p2) / 3.;
+//       Fn[i][0] += 0.5 * nx;
+//       Fn[i][1] += 0.5 * ny;
+//       Fn[i][2] += 0.5 * nz;
+//     }
+
+//     FG[i] /= face_area[i];
+//     Fn[i] /= face_area[i];
+
+//     Scalar nl = std::sqrt(Fn[i].norm());
+//     Fn[i] /= nl;
+//   }
+
+//   // finally compute volume
+//   Scalar vol = 0;
+//   const Point<3,Scalar> c = this->center();
+//   for (std::size_t j=0; j<n_faces; ++j)
+//   {
+//     Scalar h;
+//     for (int d = 0; d < 3; ++d)
+//       h += Fn[j][d]*(FG[j][d] - c[d]);
+
+//     vol += fabs(h*face_area[j]) / 3.;
+//   }
+
+//   return vol;
+// }
 
 
 template<typename Scalar>
