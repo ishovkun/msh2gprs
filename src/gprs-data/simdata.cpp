@@ -96,10 +96,8 @@ void SimData::defineEmbeddedFractureProperties()
     auto & frac = vEfrac.back();
     Point total_shift = {0, 0, 0};
 
+    std::cout << "computing EDFM collisions for mechanics" << std::endl;
  redo_collision:
-    std::cout << "fracture polygon" << std::endl;
-    std::cout << *(frac_conf.body) << std::endl;
-
     // find cells intersected by the fracture
     frac.cells.clear();
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
@@ -164,6 +162,22 @@ void SimData::defineEmbeddedFractureProperties()
     ef_ind++;
   }  // end efracs loop
 
+}
+
+
+void SimData::handleEmbeddedFractures()
+{
+  cout << "Compute cell clipping and EDFM transmissibilities" << endl;
+  computeCellClipping();
+
+  // // cout << "Merge small edfm cells" << endl;
+  // // pSimData->mergeSmallFracCells();
+
+  // // std::cout << "mesh fractures" << std::endl;
+  // // pSimData->meshFractures();
+
+  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
+  computeTransBetweenDifferentEfracs();
 }
 
 
@@ -324,10 +338,10 @@ void SimData::mergeSmallFracCells()
 
       if (area_factor < config.frac_cell_elinination_factor)
       {
-        const std::size_t global_ielement = get_flow_element_index(ifrac, ielement);
+        const std::size_t global_ielement = efrac_flow_index(ifrac, ielement);
         const std::size_t new_element = msh.merge_element(ielement);
         // update flow data
-        flow_data.merge_elements(get_flow_element_index(ifrac, new_element),
+        flow_data.merge_elements(efrac_flow_index(ifrac, new_element),
                                  global_ielement);
 
         n_frac_elements = msh.polygons.size();
@@ -521,8 +535,8 @@ void SimData::computeReservoirTransmissibilities()
 }
 
 
-std::size_t SimData::get_flow_element_index(const std::size_t ifrac,
-                                            const std::size_t ielement) const
+std::size_t SimData::efrac_flow_index(const std::size_t ifrac,
+                                      const std::size_t ielement) const
 {
   std::size_t result = n_flow_dfm_faces + grid.n_cells();
   for (std::size_t i=0; i<ifrac; ++i)
@@ -531,6 +545,7 @@ std::size_t SimData::get_flow_element_index(const std::size_t ifrac,
   result += ielement;
   return result;
 }
+
 
 
 void SimData::computeFracFracTran(const std::size_t                 frac,
@@ -737,14 +752,17 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
       const double t2 = matrix_fracture_flow_data.trans_ij[1];
       const double v1 = matrix_fracture_flow_data.volumes[1];
       const double v2 = matrix_fracture_flow_data.volumes[2];
-      f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);
-      // f_m_tran = (v1 + v2) / (v1/t1 + v2/t2);
+      f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);  // arithmetic
+      // f_m_tran = (v1 + v2) / (v1/t1 + v2/t2);  // harmonic
       // f_m_tran = std::min(t1, t2);
     }
 
     flow_data.trans_ij.push_back(f_m_tran);
-    flow_data.insert_connection(get_flow_element_index(frac_ind, ecell),
-                                n_flow_dfm_faces + icell);
+    flow_data.insert_connection(efrac_flow_index(frac_ind, ecell),
+                                res_cell_flow_index(icell));
+
+    if (config.edfm_method == EDFMMethod::projection)
+      apply_projection_edfm(frac_ind, ecell, icell);
 
     ecell++;
   }  // end splits loop
@@ -766,8 +784,8 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   {
     const std::size_t iconn = conn.second;
     const auto element_pair = frac_flow_data.invert_hash(conn.first);
-    flow_data.insert_connection(get_flow_element_index(frac_ind, element_pair.first),
-                                get_flow_element_index(frac_ind, element_pair.second));
+    flow_data.insert_connection(efrac_flow_index(frac_ind, element_pair.first),
+                                efrac_flow_index(frac_ind, element_pair.second));
     flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
   }
 
@@ -787,6 +805,67 @@ std::size_t SimData::n_default_vars() const
 {
   SimdataConfig dummy;
   return dummy.all_vars.size();
+}
+
+
+void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded frac index ndex of embedded fracture
+                                    const std::size_t ielement,  // frac element index  / fracture element index
+                                    const std::size_t icell)     // reservoir cell index
+{
+  const mesh::cell_iterator cell = grid.create_cell_iterator(icell);
+  const std::vector<Point> frac_element_vertices =
+      vEfrac[ifrac].mesh.create_poly_iterator(ielement).vertices();
+  const Point frac_normal = angem::Polygon(frac_element_vertices).plane.normal();
+
+  for (const auto & face : cell.faces())
+  {
+    // don't connect to cells that are perpendicular to the fracture
+    if (fabs(frac_normal.dot(face.normal())) < 1e-10)
+      continue;
+
+    // compute projection
+    const auto face_poly = face.polygon();
+    const std::vector<Point> projected_frac_vertices =
+        face_poly.plane.project_points(frac_element_vertices);
+    const double projection_area = angem::Polygon(projected_frac_vertices).area();
+
+    // modify neighbor map
+    const auto neighbor = cell.neighbor_by_face(face);
+
+    const double k_cell_n = get_permeability(cell.index()) * face.normal();
+    const double k_neighbor_n = get_permeability(neighbor.index()) * face.normal();
+    const double volume_cell = cell.volume();
+    const double volume_neighbor = neighbor.volume();
+    const double k_face = (volume_cell + volume_neighbor) /
+                          (volume_cell/k_cell_n + volume_neighbor/k_neighbor_n);
+    // new face trans
+    const double T_face_mm = (face_poly.area() - projection_area) /
+                             (neighbor.center() - cell.center()).norm() *
+                             CalcTranses::transmissibility_conversion_factor;
+    // std::cout << "T_face_mm = " << T_face_mm << std::endl;
+
+    // old matrix-matrix transmissibility
+    std::size_t con = flow_data.connection_index(res_cell_flow_index(icell),
+                                                 res_cell_flow_index(neighbor.index()));
+    const double T_face_mm_old = flow_data.trans_ij[con];
+
+    if (T_face_mm / T_face_mm_old < 1e-4)
+      flow_data.remove_connection(con);
+    else
+      flow_data.trans_ij[con] = T_face_mm;
+
+    // compute projection connection
+
+    // double T_mm = flow_data.trans_ij[con];
+    // double T_if =
+    //     face_poly.area() / (neighbor.center() - cell.center()).norm() * 10;
+    // std::cout << "trans = " << trans*0.0085267146719160104986876640419948 << std::endl;
+    // std::size_t con = flow_data.connection_index(res_cell_flow_index(icell),
+    //                                              res_cell_flow_index(neighbor.index()));
+    // const double t1 = flow_data.trans_ij[con];
+    // std::cout << "t1 = " << t1 << std::endl;
+  }
+  abort();
 }
 
 
@@ -981,325 +1060,6 @@ void SimData::splitInternalFaces()
   }
 
   dfm_master_grid = grid.split_faces();
-//   int counter_;
-//   cout << endl << "Create set of stick vertices (slow)" << endl;
-//   vector<set<int> > vsetGlueVerticies;
-//   counter_ = 0;
-//   for ( int icell = 0; icell < nCells; icell++ )
-//   {
-//     counter_ += vsCellCustom[icell].nVertices;
-//   }
-//   vsetGlueVerticies.resize(counter_);
-//   for(int i = 0; i < counter_; i++) vsetGlueVerticies[i].insert(i);
-
-//   // TODO
-//   // vector<bool> exlude_some_verticies(nNodes,false);
-//   // for ( int iface = 0; iface < nFaces; iface++ )
-//   // {
-//   //     // vector<int>::iterator it_face_vrtx;
-//   //     // for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
-//   //   for (const auto & vert : vsFaceCustom[ iface ].vVertices)
-//   //     {
-//   //       if(vsFaceCustom[ iface ].nMarker == -3333332 || vsFaceCustom[ iface ].nMarker == -3333331)
-//   //         // exlude_some_verticies[*it_face_vrtx] = true;
-//   //         exlude_some_verticies[vert] = true;
-//   //     }
-//   // }
-
-//   vector<double> vVerticesPair; vVerticesPair.resize(2, 0);
-//   for ( int iface = 0; iface < nFaces; iface++ )
-//   {
-//     int job_percent = int ( ( 100. * iface ) / ( nFaces ) );
-//     cout << "\r    " << job_percent << "%";
-//     /// non physical face
-//     if ( vsFaceCustom[ iface ].nMarker == 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
-//     {
-//       /// loop by all face vertices
-//       // for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx)
-//       for (const auto & face_vertex : vsFaceCustom[ iface ].vVertices)
-//       {
-//         /// loop by neighbor cells
-//         std::size_t n_polyhedron = 0;
-//         // set<int>::iterator it_polyhedron;
-//         // for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++)
-//         for (const auto & polyhedron : vsetPolygonPolyhedron[iface] )
-//         {
-//           /// loop by all cell vertices
-//           // int ncell = *it_polyhedron;
-//           std::size_t ncell = polyhedron;
-//           std::size_t ivrtx = 0;
-
-//           // vector<int>::iterator it_cell_vrtx;
-//           // for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
-//           for (const auto & cell_vertex : vsCellCustom[ncell].vVertices)
-//           {
-//             // if ( *it_cell_vrtx == *it_face_vrtx )
-//             if ( cell_vertex == face_vertex )
-//               break;
-//             ivrtx++;
-//           }
-//           vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
-//           n_polyhedron++;
-//         }
-//        vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
-//        vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
-//      }
-//     }
-//     /*
-//     if ( vsFaceCustom[ iface ].nMarker > 0 && vsFaceCustom[ iface ].nNeighbors == 2 )
-//     {
-//       vector<int>::iterator it_face_vrtx;
-
-//       /// loop by all face vertices
-//       for ( it_face_vrtx = vsFaceCustom[ iface ].vVertices.begin();  it_face_vrtx != vsFaceCustom[ iface ].vVertices.end(); ++it_face_vrtx )
-//       {
-//         if ( exlude_some_verticies[*it_face_vrtx] == true)
-//         {
-//           /// loop by neighbor cells
-//           int n_polyhedron = 0;
-//           set<int>::iterator it_polyhedron;
-//           for ( it_polyhedron = vsetPolygonPolyhedron[iface].begin(); it_polyhedron != vsetPolygonPolyhedron[iface].end(); ++it_polyhedron, n_polyhedron++ )
-//           {
-//             /// loop by all cell vertices
-//             int ncell = *it_polyhedron;
-//             int ivrtx = 0;
-
-//             vector<int>::iterator it_cell_vrtx;
-//             for ( it_cell_vrtx = vsCellCustom[ncell].vVertices.begin() ; it_cell_vrtx < vsCellCustom[ncell].vVertices.end(); ++it_cell_vrtx, ivrtx++ )
-//             {
-//               if ( *it_cell_vrtx == *it_face_vrtx )
-//                 break;
-//             }
-//             vVerticesPair[n_polyhedron] = vsCellCustom[ncell].vVerticesNewnum[ivrtx];
-//           }
-//           vsetGlueVerticies[ vVerticesPair[0] ].insert ( vVerticesPair[1] );
-//           vsetGlueVerticies[ vVerticesPair[1] ].insert ( vVerticesPair[0] );
-//         }
-//      }
-//     } */
-//   }
-
-//   cout << endl << "Distinguish authenic vertices (might be very slow)" << endl;
-//   int n_possible_verticies = vsetGlueVerticies.size();
-//   vector<int> v_buf_storage;
-//   int total_size_old = 0;
-//   int total_size_new = 1;
-//   int cycle = 0;
-//   while ( total_size_old != total_size_new )
-//   {
-//     total_size_old = total_size_new;
-//     total_size_new = 0;
-//     cout << endl << "cycle   :" << cycle << "\t \t Hopefully < 10"; cycle++;
-
-//     for ( int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++ )
-//     {
-//       int job_percent = int ( ( 100. * ivrtx ) / ( n_possible_verticies ) );
-//       cout << "\r    " << job_percent << "%";
-//       v_buf_storage.clear();
-//       set<int>::iterator it_set;
-
-//       for ( it_set = vsetGlueVerticies[ivrtx].begin(); it_set != vsetGlueVerticies[ivrtx].end(); ++it_set )
-//       {
-//         set<int>::iterator it_set_down;
-
-//         for ( it_set_down = vsetGlueVerticies[ *it_set ].begin(); it_set_down != vsetGlueVerticies[ *it_set ].end(); ++it_set_down )
-//         {
-//           v_buf_storage.push_back ( *it_set_down );
-//         }
-//       }
-
-//       vector<int>::iterator it_vec;
-
-//       for ( it_vec = v_buf_storage.begin(); it_vec != v_buf_storage.end(); it_vec++ )
-//       {
-//         vsetGlueVerticies[ivrtx].insert ( *it_vec );
-//       }
-//       total_size_new += vsetGlueVerticies[ivrtx].size();
-//     }
-//   }
-
-//   cout << endl << "Renumber vector of stick vertices" << endl;
-//   vector<int> vRenumVerticies;
-//   vRenumVerticies.resize(n_possible_verticies);
-
-//   /// take first cell
-//   for(int ivrtx = 0; ivrtx < vsCellCustom[0].nVertices; ivrtx++)
-//   {
-//     vRenumVerticies[ivrtx] = ivrtx;
-//   }
-
-//   counter_ = vsCellCustom[0].nVertices;
-//   for(int ivrtx = vsCellCustom[0].nVertices; ivrtx < n_possible_verticies; ivrtx++)
-//   {
-//     if( *vsetGlueVerticies[ivrtx].begin() == ivrtx )
-//     {
-//       // this vertex is not stick
-//       vRenumVerticies[ivrtx] = counter_;
-//       counter_++;
-//     }
-//     else
-//     {
-//       // this vertex is stick
-//       // set is sorted by c++ defaults, and we take minimum value
-//       vRenumVerticies[ivrtx] = vRenumVerticies[ *vsetGlueVerticies[ivrtx].begin() ];
-//     }
-//   }
-
-//   for(int icell = 0; icell < nCells; icell++)
-//   {
-//     for(int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++)
-//     {
-//       vsCellCustom[icell].vVerticesNewnum[ ivrtx ] = vRenumVerticies[ vsCellCustom[icell].vVerticesNewnum[ ivrtx ] ];
-//     }
-//   }
-//   int nTotalNodes = counter_;
-
-//   cout << "\t check renumbering consistency " << endl;
-//   vector<double> vStatus;
-//   vStatus.resize(counter_, false);
-//   for ( int icell = 0; icell < nCells; icell++ )
-//   {
-//     for ( int ivrtx = 0; ivrtx < vsCellCustom[icell].nVertices; ivrtx++ )
-//       vStatus[ vsCellCustom[icell].vVerticesNewnum[ivrtx] ] = true;
-//   }
-
-//   cout << "\t change face numbering" << endl;
-//   for(int iface = 0; iface < nFaces; iface++)
-//   {
-//     vsFaceCustom[iface].vVerticesNewnum.resize( vsFaceCustom[iface].nVertices, -1);
-//     // we take always [0] - support cell
-//     int icell = vsFaceCustom[iface].vNeighbors[0];
-//     for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
-//     {
-//       for(int inode = 0; inode < vsCellCustom[icell].nVertices; inode++)
-//       {
-//         if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[icell].vVertices[inode] )
-//         {
-//           vsFaceCustom[iface].vVerticesNewnum[ivrtx] = vsCellCustom[icell].vVerticesNewnum[inode];
-//           break;
-//         }
-//       }
-//     }
-//   }
-
-//   cout << "\t create atoms list" << endl;
-//   set<int>::iterator itintset;
-//   vector<int> vTempAtoms;
-//   vTempAtoms.resize( nTotalNodes, -999 );
-//   for (itintset = setIdenticalInternalMarker.begin(); itintset != setIdenticalInternalMarker.end(); ++itintset)
-//   {
-//     for(int iface = 0; iface < nFaces; iface++)
-//     {
-//       int ncell = vsFaceCustom[iface].vNeighbors[1];
-//       if( vsFaceCustom[iface].nMarker == *itintset)
-//       {
-//         for(int ivrtx = 0; ivrtx < vsFaceCustom[iface].nVertices; ivrtx++)
-//         {
-//           for(int inode = 0; inode < vsCellCustom[ncell].nVertices; inode++)
-//           {
-//             if( vsFaceCustom[iface].vVertices[ivrtx] == vsCellCustom[ncell].vVertices[inode] )
-//             {
-//               vTempAtoms[ vsCellCustom[ncell].vVerticesNewnum[inode] ] = vsFaceCustom[iface].vVerticesNewnum[ivrtx];
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-
-//   cout << endl << "Change coordanates vector" << endl;
-//   // vector<vector<double> > vvNewCoordinates;
-//   vector<Point> vvNewCoordinates;
-//   vvNewCoordinates.resize( nTotalNodes, vector<double>(3,0) );
-//   for(std::size_t icell = 0; icell < nCells; icell++)
-//   {
-//     vector<std::size_t>::iterator it_old, it_new;
-//     it_new = vsCellCustom[icell].vVerticesNewnum.begin();
-//     for(it_old = vsCellCustom[icell].vVertices.begin(); it_old != vsCellCustom[icell].vVertices.end(); ++it_old, ++it_new)
-//     {
-//       vvNewCoordinates[ *it_new ] = vvVrtxCoords[ *it_old ];
-//     }
-//   }
-
-//   vvVrtxCoords.resize(nTotalNodes, vector<double>(3,0));
-//   for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-//   {
-//     vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
-//   }
-
-//   cout << endl << "Unify previous and splitted data" << endl;
-//   cout << "Verticies : " << nNodes << "\t \t After splitting : " << nTotalNodes << endl;
-//   nNodes = nTotalNodes;
-//   for(int icell = 0; icell < nCells; icell++)
-//   {
-//     vsCellCustom[icell].vVertices = vsCellCustom[icell].vVerticesNewnum;
-//   }
-
-//   for(int iface = 0; iface < nFaces; iface++)
-//   {
-//     vsFaceCustom[iface].vVertices = vsFaceCustom[iface].vVerticesNewnum;
-//   }
-
-//   vvAtoms.resize(nNodes, vector<int>(2,0) );
-//   nAtoms = 0;
-//   for(int iatom = 0; iatom < nNodes; iatom++)
-//   {
-//     if(vTempAtoms[iatom] >= 0)
-//     {
-//       vvAtoms[nAtoms][0] = iatom;
-//       vvAtoms[nAtoms][1] = vTempAtoms[iatom];
-//       nAtoms++;
-//     }
-//   }
-
-//   return;
-//   cout << endl << "Smart verticies renumbering" << endl;
-//   vector<int> vNodesID;
-//   vector<int> vIA;
-//   vector<int> vJA;
-//   vector<int> vRCM;
-
-//   vIA.push_back(0);
-//   for(int ic = 0; ic < nCells; ++ic)
-//   {
-//     int n = vsCellCustom[ic].vVertices.size();
-//     for(int iv = 0; iv < n; ++iv)
-//     {
-//       vJA.push_back( vsCellCustom[ic].vVertices[iv] );
-//     }
-//     n += vIA[ic];
-//     vIA.push_back(n);
-//   }
-
-//   vRCM.assign(nNodes,-1);
-//   pRenum->convert(nCells, nNodes, vIA, vJA, vRCM);
-
-//   for(int icell = 0; icell < nCells; icell++)
-//   {
-//     for(int iv = 0; iv < vsCellCustom[icell].vVertices.size(); iv++)
-//       vsCellCustom[icell].vVertices[iv] = vRCM[vsCellCustom[icell].vVertices[iv]];
-//   }
-
-//   for(int iface = 0; iface < nFaces; iface++)
-//   {
-//     for(int iv = 0; iv < vsFaceCustom[iface].vVertices.size(); iv++)
-//       vsFaceCustom[iface].vVertices[iv] = vRCM[vsFaceCustom[iface].vVertices[iv]];
-//   }
-
-//   for(int iatom = 0; iatom < nNodes; iatom++)
-//   {
-//     if(vTempAtoms[iatom] >= 0)
-//     {
-//       vvAtoms[nAtoms][0] = vRCM[vvAtoms[nAtoms][0]];
-//       vvAtoms[nAtoms][1] = vRCM[vvAtoms[nAtoms][1]];
-//     }
-//   }
-
-//   for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-//     vvNewCoordinates[vRCM[ivrtx]] = vvVrtxCoords[ivrtx];
-
-//   for(int ivrtx = 0; ivrtx < nTotalNodes; ivrtx++)
-//     vvVrtxCoords[ivrtx] = vvNewCoordinates[ivrtx];
 }
 
 
@@ -1330,7 +1090,7 @@ void SimData::handleConnections()
       const std::size_t icell = efrac.cells[i];
       for (const auto & conf: config.domains)
         if (grid.cell_markers[icell] == conf.label and conf.coupled)
-          gm_cell_to_flow_cell[icell].push_back(get_flow_element_index(ifrac, i));
+          gm_cell_to_flow_cell[icell].push_back(efrac_flow_index(ifrac, i));
     }
   }
 
@@ -1666,8 +1426,8 @@ void SimData::computeTransBetweenDifferentEfracs()
                 }
 
                 flow_data.trans_ij.push_back(trans);
-                flow_data.insert_connection(get_flow_element_index(i, ielement),
-                                            get_flow_element_index(j, jelement));
+                flow_data.insert_connection(efrac_flow_index(i, ielement),
+                                            efrac_flow_index(j, jelement));
               }
 
             }
@@ -1679,204 +1439,231 @@ void SimData::computeTransBetweenDifferentEfracs()
 }
 
 
-// void SimData::meshFractures()
-// {
-//   bool should_do_remeshing = false;
-//   for (std::size_t f=0; f<vEfrac.size(); ++f)
-//     if (config.fractures[f].n1 > 0)
-//       should_do_remeshing = true;
-//   if (!should_do_remeshing)
-//     return;
+void SimData::meshFractures()
+{
+  bool should_do_remeshing = false;
+  for (std::size_t f=0; f<vEfrac.size(); ++f)
+    if (config.fractures[f].n1 > 0)
+      should_do_remeshing = true;
+  if (!should_do_remeshing)
+    return;
 
-//   std::vector<mesh::SurfaceMesh<double>> new_frac_meshes(vEfrac.size());
-//   std::size_t old_shift = nDFMFracs + nCells;
-//   std::size_t new_shift = nDFMFracs + nCells;
+  std::vector<mesh::SurfaceMesh<double>> new_frac_meshes(vEfrac.size());
+  std::size_t old_shift = n_flow_dfm_faces + grid.n_cells();
+  std::size_t new_shift = n_flow_dfm_faces + grid.n_cells();
 
-//   for (std::size_t f=0; f<vEfrac.size(); ++f)
-//   {
-//     auto & efrac = vEfrac[f];
-//     const auto & frac_rect = *(config.fractures[f].body);
-//     const angem::Basis<3,double> frac_basis = frac_rect.plane.get_basis();
-//     Point t1 = frac_basis(0);
-//     Point t2 = frac_basis(1);
+  for (std::size_t f=0; f<vEfrac.size(); ++f)
+  {
+    auto & efrac = vEfrac[f];
+    const auto & frac_rect = *(config.fractures[f].body);
+    const angem::Basis<3,double> frac_basis = frac_rect.plane.get_basis();
+    Point t1 = frac_basis(0);
+    Point t2 = frac_basis(1);
 
-//     const auto & points = frac_rect.get_points();
-//     const double length = (points[1] - points[0]).norm();
-//     const double width = (points[2] - points[1]).norm();
+    const auto & points = frac_rect.get_points();
+    const double length = (points[1] - points[0]).norm();
+    const double width = (points[2] - points[1]).norm();
 
-//     t1 *= length;
-//     t2 *= width;
+    t1 *= length;
+    t2 *= width;
 
-//     const std::size_t n1 = config.fractures[f].n1;
-//     const std::size_t n2 = config.fractures[f].n2;
+    const std::size_t n1 = config.fractures[f].n1;
+    const std::size_t n2 = config.fractures[f].n2;
 
-//     if ( n1 > 0 and n2 > 0)  // do remeshing
-//     {
-//       mesh::SurfaceMesh<double> new_frac_mesh =
-//           mesh::make_surface_mesh(t1, t2, points[0], n1, n2);
+    if ( n1 > 0 and n2 > 0)  // do remeshing
+    {
+      mesh::SurfaceMesh<double> new_frac_mesh =
+          mesh::make_surface_mesh(t1, t2, points[0], n1, n2);
 
-//       const double tol = std::min(new_frac_mesh.minimum_edge_size() / 3,
-//                                   efrac.mesh.minimum_edge_size() / 3);
+      const double tol = std::min(new_frac_mesh.minimum_edge_size() / 3,
+                                  efrac.mesh.minimum_edge_size() / 3);
 
-//       for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
-//         for (std::size_t j=0; j<efrac.mesh.polygons.size(); ++j)
-//         {
-//           const angem::Polygon<double> poly_i(new_frac_mesh.vertices,
-//                                               new_frac_mesh.polygons[i]);
-//           const angem::Polygon<double> poly_j(efrac.mesh.vertices,
-//                                               efrac.mesh.polygons[j]);
-//           std::vector<Point> section;
-//           if (angem::collision(poly_i, poly_j, section, tol))
-//           {
-//             if (section.size() == 2) // only touching sides
-//               continue;
+      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+        for (std::size_t j=0; j<efrac.mesh.polygons.size(); ++j)
+        {
+          const angem::Polygon<double> poly_i(new_frac_mesh.vertices,
+                                              new_frac_mesh.polygons[i]);
+          const angem::Polygon<double> poly_j(efrac.mesh.vertices,
+                                              efrac.mesh.polygons[j]);
+          std::vector<Point> section;
+          if (angem::collision(poly_i, poly_j, section, tol))
+          {
+            if (section.size() == 2) // only touching sides
+              continue;
 
-//             std::cout << "collision " << i << " " << j << std::endl;
-//             const angem::Polygon<double> poly_section(section);
+            std::cout << "collision " << i << " " << j << std::endl;
+            const angem::Polygon<double> poly_section(section);
 
-//             // const std::size_t old_element = get_flow_element_index(f, j);
-//             const std::size_t old_element = old_shift + j;
-//             const auto neighbors = flow_data.v_neighbors[old_element];
-//             for (const auto & neighbor : neighbors)
-//             {
-//               if (neighbor < nDFMFracs + nCells and neighbor > nDFMFracs)
-//               {
-//                 std::size_t new_conn;
-//                 if (new_flow_data.connection_exists(new_shift + i, neighbor))
-//                   new_conn = new_flow_data.connection_index(new_shift + i, neighbor);
-//                 else
-//                   new_conn = new_flow_data.insert_connection(new_shift + i, neighbor);
+            const std::size_t old_element = old_shift + j;
+            const auto neighbors = flow_data.v_neighbors[old_element];
+            for (const auto & neighbor : neighbors)
+            {
+              if (neighbor < n_flow_dfm_faces + grid.n_cells() and neighbor > n_flow_dfm_faces)
+              {
+                std::size_t new_conn;
+                if (new_flow_data.connection_exists(new_shift + i, neighbor))
+                  new_conn = new_flow_data.connection_index(new_shift + i, neighbor);
+                else
+                  new_conn = new_flow_data.insert_connection(new_shift + i, neighbor);
 
-//                 const std::size_t old_conn = flow_data.connection_index(old_element, neighbor);
-//                 const double factor = poly_section.area() / poly_j.area();
-//                 const double T_ij = flow_data.trans_ij[old_conn];
-//                 if (new_conn >= new_flow_data.trans_ij.size())
-//                   new_flow_data.trans_ij.push_back(T_ij * factor);
-//                 else
-//                   new_flow_data.trans_ij[new_conn] += T_ij * factor;
-//               }
-//             }
-//           }
-//           else
-//           {
-//             // std::cout << "no collision " << i << " " << j << std::endl;
-//           }
-//         }  // end frac element loop
+                const std::size_t old_conn = flow_data.connection_index(old_element, neighbor);
+                const double factor = poly_section.area() / poly_j.area();
+                const double T_ij = flow_data.trans_ij[old_conn];
+                if (new_conn >= new_flow_data.trans_ij.size())
+                  new_flow_data.trans_ij.push_back(T_ij * factor);
+                else
+                  new_flow_data.trans_ij[new_conn] += T_ij * factor;
+              }
+            }
+          }
+          else
+          {
+            // std::cout << "no collision " << i << " " << j << std::endl;
+          }
+        }  // end frac element loop
 
-//       FlowData frac_flow_data;
-//       computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
+      FlowData frac_flow_data;
+      computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
 
-//       for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
-//       {
-//         new_flow_data.volumes.push_back(frac_flow_data.volumes[i]);
-//         new_flow_data.poro.push_back(frac_flow_data.poro[i]);
-//         new_flow_data.depth.push_back(frac_flow_data.depth[i]);
-//       }
+      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+      {
+        new_flow_data.volumes.push_back(frac_flow_data.volumes[i]);
+        new_flow_data.poro.push_back(frac_flow_data.poro[i]);
+        new_flow_data.depth.push_back(frac_flow_data.depth[i]);
+      }
 
-//       for (const auto & conn : frac_flow_data.map_connection)
-//       {
-//         const std::size_t iconn = conn.second;
-//         const auto element_pair = frac_flow_data.invert_hash(conn.first);
-//         const std::size_t i = new_shift + element_pair.first;
-//         const std::size_t j = new_shift + element_pair.second;
-//         new_flow_data.insert_connection(i, j);
-//         new_flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
-//       }
+      for (const auto & conn : frac_flow_data.map_connection)
+      {
+        const std::size_t iconn = conn.second;
+        const auto element_pair = frac_flow_data.invert_hash(conn.first);
+        const std::size_t i = new_shift + element_pair.first;
+        const std::size_t j = new_shift + element_pair.second;
+        new_flow_data.insert_connection(i, j);
+        new_flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
+      }
 
-//       // save custom cell data
-//       const std::size_t n_vars = rockPropNames.size();
-//       std::size_t n_flow_vars = 0;
-//       for (std::size_t j=0; j<n_vars; ++j)
-//         if (config.expression_type[j] == 0)
-//           n_flow_vars++;
+      // save custom cell data
+      const std::size_t n_vars = rockPropNames.size();
+      std::size_t n_flow_vars = 0;
+      for (std::size_t j=0; j<n_vars; ++j)
+        if (config.expression_type[j] == 0)
+          n_flow_vars++;
 
-//       for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
-//       {
-//         std::vector<double> new_custom_data(n_flow_vars);
-//         const std::size_t ielement = new_shift + i;
-//         const auto & neighbors = new_flow_data.v_neighbors[ielement];
-//         std::vector<std::size_t> rock_cell_neighbors;
-//         for (const auto & neighbor : neighbors)
-//           if (neighbor < nCells)
-//             rock_cell_neighbors.push_back(neighbor);
+      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+      {
+        std::vector<double> new_custom_data(n_flow_vars);
+        const std::size_t ielement = new_shift + i;
+        const auto & neighbors = new_flow_data.v_neighbors[ielement];
+        std::vector<std::size_t> rock_cell_neighbors;
+        for (const auto & neighbor : neighbors)
+          if (neighbor < grid.n_cells())
+            rock_cell_neighbors.push_back(neighbor);
 
-//         for (const auto & neighbor : rock_cell_neighbors)
-//         {
-//           std::size_t counter = 0;
-//           for (std::size_t j=0; j<n_vars; ++j)
-//             if (config.expression_type[j] == 0)
-//             {
-//               new_custom_data[counter] += vsCellRockProps[neighbor].v_props[j];
-//               counter++;
-//             }
-//         }
-//         // divide by number of neighbors
-//         for (double & value : new_custom_data)
-//           value /= static_cast<double>(rock_cell_neighbors.size());
+        for (const auto & neighbor : rock_cell_neighbors)
+        {
+          std::size_t counter = 0;
+          for (std::size_t j=0; j<n_vars; ++j)
+            if (config.expression_type[j] == 0)
+            {
+              new_custom_data[counter] += vsCellRockProps[neighbor].v_props[j];
+              counter++;
+            }
+        }
+        // divide by number of neighbors
+        for (double & value : new_custom_data)
+          value /= static_cast<double>(rock_cell_neighbors.size());
 
-//         new_flow_data.custom_data.push_back(new_custom_data);
-//       }
+        new_flow_data.custom_data.push_back(new_custom_data);
+      }
 
-//       new_frac_meshes[f] = std::move(new_frac_mesh);
-//     }
-//     else  // copy old efrac data
-//     {
-//       std::pair<std::size_t,std::size_t> range =
-//           {old_shift, old_shift + vEfrac[f].mesh.polygons.size()};
+      new_frac_meshes[f] = std::move(new_frac_mesh);
+    }
+    else  // copy old efrac data
+    {
+      std::pair<std::size_t,std::size_t> range =
+          {old_shift, old_shift + vEfrac[f].mesh.polygons.size()};
 
-//       for (const auto & conn : flow_data.map_connection)
-//       {
-//         const auto elements = flow_data.invert_hash(conn.first);
-//         if (elements.second >= range.first and elements.second < range.second)
-//         {
-//           const double Tij = flow_data.trans_ij[conn.second];
-//           std::size_t ielement = elements.first;
-//           std::size_t jelement = elements.second;
-//           if (ielement >= nCells)
-//             ielement = ielement - old_shift + new_shift;
-//           if (jelement >= nCells)
-//             jelement = jelement - old_shift + new_shift;
-//           new_flow_data.insert_connection(ielement, jelement);
-//           new_flow_data.trans_ij.push_back(Tij);
-//         }
-//       }
+      for (const auto & conn : flow_data.map_connection)
+      {
+        const auto elements = flow_data.invert_hash(conn.first);
+        if (elements.second >= range.first and elements.second < range.second)
+        {
+          const double Tij = flow_data.trans_ij[conn.second];
+          std::size_t ielement = elements.first;
+          std::size_t jelement = elements.second;
+          if (ielement >= grid.n_cells())
+            ielement = ielement - old_shift + new_shift;
+          if (jelement >= grid.n_cells())
+            jelement = jelement - old_shift + new_shift;
+          new_flow_data.insert_connection(ielement, jelement);
+          new_flow_data.trans_ij.push_back(Tij);
+        }
+      }
 
-//       for (std::size_t i=0; i<efrac.mesh.polygons.size(); ++i)
-//       {
-//         new_flow_data.volumes.push_back(flow_data.volumes[old_shift + i]);
-//         new_flow_data.poro.push_back(flow_data.poro[old_shift + i]);
-//         new_flow_data.depth.push_back(flow_data.depth[old_shift + i]);
-//         new_flow_data.custom_data.push_back(flow_data.custom_data[old_shift + i]);
-//       }
-//     }
+      for (std::size_t i=0; i<efrac.mesh.polygons.size(); ++i)
+      {
+        new_flow_data.volumes.push_back(flow_data.volumes[old_shift + i]);
+        new_flow_data.poro.push_back(flow_data.poro[old_shift + i]);
+        new_flow_data.depth.push_back(flow_data.depth[old_shift + i]);
+        new_flow_data.custom_data.push_back(flow_data.custom_data[old_shift + i]);
+      }
+    }
 
-//     old_shift += vEfrac[f].mesh.polygons.size();
-//     if (new_frac_meshes[f].empty())
-//       new_shift = old_shift;
-//     else
-//       new_shift += new_frac_meshes[f].polygons.size();
-//   }  // end efrac loop
+    old_shift += vEfrac[f].mesh.polygons.size();
+    if (new_frac_meshes[f].empty())
+      new_shift = old_shift;
+    else
+      new_shift += new_frac_meshes[f].polygons.size();
+  }  // end efrac loop
 
 //   // const std::string vtk_file2 = "./ababa.vtk";
 //   // IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
 //   //                          new_frac_mesh.polygons,
 //   //                          vtk_file2);
 
-//   std::cout << "saving frac meshes" << std::endl;
+  std::cout << "saving frac meshes" << std::endl;
 
-//   bool any_new = false;
-//   for (std::size_t f=0; f<vEfrac.size(); ++f)
-//   {
-//     if (!new_frac_meshes[f].empty())
-//     {
-//       vEfrac[f].mesh = std::move(new_frac_meshes[f]);
-//       any_new = true;
-//     }
-//   }
+  bool any_new = false;
+  for (std::size_t f=0; f<vEfrac.size(); ++f)
+  {
+    if (!new_frac_meshes[f].empty())
+    {
+      vEfrac[f].mesh = std::move(new_frac_meshes[f]);
+      any_new = true;
+    }
+  }
 
-//   if (any_new)
-//     flow_data = std::move(new_flow_data);
-// }
+  if (any_new)
+    flow_data = std::move(new_flow_data);
+
+  std::cout << "need to restore. aborting" << std::endl;
+  abort();
+}
+
+
+bool SimData::is_embedded_fracture(const std::size_t flow_element_index) const
+{
+  if (flow_element_index > grid.n_cells() + n_flow_dfm_faces)
+    return true;
+  return false;
+}
+
+
+bool SimData::is_discrete_fracture(const std::size_t flow_element_index) const
+{
+  if (flow_element_index < n_flow_dfm_faces)
+    return true;
+  return false;
+}
+
+
+bool SimData::is_reservoir_element(const std::size_t flow_element_index) const
+{
+  if (!is_embedded_fracture(flow_element_index) and !is_discrete_fracture(flow_element_index))
+    return true;
+  return false;
+}
+
 
 
 void SimData::setupWells()

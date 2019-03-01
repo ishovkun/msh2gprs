@@ -114,4 +114,18 @@ surface_element_iterator<Scalar>::edges() const
   return edges;
 }
 
+
+template <typename Scalar>
+std::vector<angem::Point<3,Scalar>> surface_element_iterator<Scalar>::vertices() const
+{
+  std::vector<angem::Point<3,Scalar>> result;
+  result.reserve(polygons[ielement].size());
+
+  for (std::size_t ivertex : polygons[ielement])
+    result.push_back(mesh_vertices[ivertex]);
+
+  return result;
 }
+
+
+}  // end namespace

@@ -14,6 +14,7 @@ using Path = filesystem::path;
 
 int main(int argc, char *argv[])
 {
+  // process cmd arguments
   if (argc < 2)
   {
     std::cout << "please specify a config file."
@@ -31,7 +32,8 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  const std::string fname_config = argv[1];  // config file
+  // config file
+  const std::string fname_config = argv[1];
   const Path path_config(fname_config);
   if (!filesystem::exists(path_config))
   {
@@ -57,6 +59,7 @@ int main(int argc, char *argv[])
     config = parser.get_config();
   }
 
+  // MESH
   // get path of the config file -- mesh is searched for in relative path
   const Path config_dir_path = path_config.parent_path();
   Path path_gmsh = config_dir_path / config.mesh_file;
@@ -73,7 +76,13 @@ int main(int argc, char *argv[])
   std::cout << filesystem::absolute(path_gmsh) << std::endl;
   mesh::Mesh msh;
   Parsers::GmshReader::read_input(filesystem::absolute(path_gmsh), msh);
+  if (msh.n_cells() == 0)
+  {
+    std::cout << "mesh has not cells. aborting" << std::endl;
+    return 0;
+  }
 
+  // do preprocessing
   gprs_data::SimData * pSimData;
   pSimData = new gprs_data::SimData(msh, config);
 
@@ -89,18 +98,10 @@ int main(int argc, char *argv[])
   std::cout << "computing reservoir transes" << std::endl;
   pSimData->computeReservoirTransmissibilities();
 
-  cout << "Compute cell clipping and EDFM transmissibilities" << endl;
-  pSimData->computeCellClipping();
+  std::cout << "Handle flow embedded fractures" << std::endl;
+  pSimData->handleEmbeddedFractures();
 
-  // // cout << "Merge small edfm cells" << endl;
-  // // pSimData->mergeSmallFracCells();
-
-  // // std::cout << "mesh fractures" << std::endl;
-  // // pSimData->meshFractures();
-
-  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  pSimData->computeTransBetweenDifferentEfracs();
-
+  // timur's legacy
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
 
@@ -116,6 +117,7 @@ int main(int argc, char *argv[])
   std::cout << "compute connections between mech and flow elements" << std::endl;
   pSimData->handleConnections();
 
+  // OUPUT
   cout << "Write Output data\n";
   gprs_data::OutputData output_data(*pSimData, msh);
 

@@ -31,6 +31,7 @@ class cell_iterator
   bool operator!=(const cell_iterator & other) const;
   // GETTERS
   inline std::vector<std::size_t> & vertices() {return cells[icell];}
+  cell_iterator neighbor_by_face(const face_iterator & face) const;
   inline std::size_t index() const {return icell;}
   inline int shape_id() const {return shape_ids[icell];}
   inline int marker() const {return cell_markers[icell];}

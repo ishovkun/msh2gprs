@@ -9,7 +9,6 @@
 #include <const_edge_iterator.hpp>
 #include <surface_element_iterator.hpp>
 
-// #include <unordered_set>
 
 
 namespace mesh
@@ -58,7 +57,9 @@ class SurfaceMesh // : PolyGroup<Scalar>
   {
     return const_edge_iterator<Scalar>(it, vertices);
   }
+  // create edge iterator starting from first edge in hash_map
   const_edge_iterator<Scalar> begin_edges() const {return create_edge_iterator(map_edges.begin());}
+  // create end iterator; @TODO: should be const iterator?
   const_edge_iterator<Scalar> end_edges() const {return create_edge_iterator(map_edges.end());}
 
   surface_element_iterator<Scalar> create_poly_iterator(const std::size_t ielement)

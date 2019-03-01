@@ -127,6 +127,8 @@ public:
   void handleConnections();
   // compute flow data without edfm fracs (reservoir and dfm only)
   void computeReservoirTransmissibilities();
+  // high-level method that combines everything related to embedded frac flow
+  void handleEmbeddedFractures();
   // compute flow data withich a single edfm fracture
   void computeFracFracTran(const std::size_t                 frac,
                            const EmbeddedFracture          & efrac,
@@ -184,6 +186,21 @@ protected:
   void computeWellIndex(Well & well);
   // get dimensions of a cell bounding box
   angem::Point<3,double> get_dx_dy_dz(const std::size_t icell) const;
+
+  // is given flow element an embedded fracture
+  bool is_embedded_fracture(const std::size_t flow_element_index) const;
+  // is given flow element a discrete fracture
+  bool is_discrete_fracture(const std::size_t flow_element_index) const;
+  // is given flow element a reservoir cell
+  bool is_reservoir_element(const std::size_t flow_element_index) const;
+  // return global flow index of an ielement element of embedded fracture i
+  std::size_t efrac_flow_index(const std::size_t ifrac,
+                               const std::size_t ielement) const;
+  std::size_t res_cell_flow_index(const std::size_t icell) const {return n_flow_dfm_faces + icell;}
+
+  void apply_projection_edfm(const std::size_t ifrac,     // embedded frac index
+                             const std::size_t ielement,  // frac element index
+                             const std::size_t icell);    // reservoir cell index
 
 public:
   // user-defined program config defined in json or yaml files

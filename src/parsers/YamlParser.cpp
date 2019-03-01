@@ -49,6 +49,16 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
 
     if (key == "file")
       config.efrac_file = it->second.as<std::string>();
+    else if (key == "method")
+    {
+      const std::string str_method = it->second.as<std::string>();
+      if (str_method == "simple")
+        config.edfm_method = EDFMMethod::simple;
+      else if (str_method == "projection")
+        config.edfm_method = EDFMMethod::projection;
+      else
+        throw std::invalid_argument(str_method);
+    }
     else if (key == "fracture")
     {
       config.fractures.emplace_back();

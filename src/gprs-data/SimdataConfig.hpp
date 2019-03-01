@@ -34,6 +34,13 @@ struct BCConfig
 };
 
 
+enum EDFMMethod
+{
+  simple,  // old and frankly shitty but default by Li and Lee 2008
+  projection  // pEDFM by Tene 2017
+};
+
+
 struct EmbeddedFractureConfig
 {
   std::shared_ptr<angem::Polygon<double>> body;  // embedded fractures
@@ -71,6 +78,8 @@ struct SimdataConfig
   std::vector<BCConfig>                bc_faces;
   std::vector<BCNodeConfig>            bc_nodes;
   std::vector<WellConfig>              wells;
+
+  EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
 
   // all variables used for function parsing
   std::vector<std::string> all_vars = {"x", "y", "z"};

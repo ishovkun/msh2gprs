@@ -57,7 +57,9 @@ class Plane
   Scalar dip_angle() const;
 
   // get point projection on the plane (in global coordinates)
-  Point<3,Scalar> project(const Point<3,Scalar> & p) const;
+  Point<3,Scalar> project_point(const Point<3,Scalar> & p) const;
+  // get points projection on the plane. convenient wrapper around previous method
+  std::vector<Point<3,Scalar>> project_points(const std::vector<Point<3,Scalar>> & points) const;
   Point<3,Scalar> local_coordinates(const Point<3,Scalar> & p) const;
   // project vector (no account for plane location)
   Point<3,Scalar> project_vector(const Point<3,Scalar> & p) const;
@@ -262,7 +264,7 @@ Plane<Scalar>::project_vector(const Point<3,Scalar> & p) const
 template <typename Scalar>
 inline
 Point<3, Scalar>
-Plane<Scalar>::project(const Point<3,Scalar> & p) const
+Plane<Scalar>::project_point(const Point<3,Scalar> & p) const
 {
   // 1: translate p' = p - s  (s - plane support point)
   // 2. project on normal p'n = p' · n
@@ -272,6 +274,18 @@ Plane<Scalar>::project(const Point<3,Scalar> & p) const
   return point + j_prime;
 }
 
+
+template <typename Scalar>
+inline
+std::vector<Point<3,Scalar>>
+Plane<Scalar>::project_points(const std::vector<Point<3,Scalar>> & points) const
+{
+  std::vector<Point<3,Scalar>> result;
+  result.reserve(points.size());
+  for (const auto p : points)
+    result.push_back(project_point(p));
+  return result;
+}
 
 // get point projection on the plane (in both global coordinates and local basis)
 template <typename Scalar>

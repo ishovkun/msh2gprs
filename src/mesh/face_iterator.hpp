@@ -55,6 +55,8 @@ class face_iterator
   std::vector<Point> vertices() const;
   // get vector of face vertex indices
   std::vector<std::size_t> vertex_indices() const;
+  // get angem::Polygon from vertices
+  angem::Polygon<double> polygon() const;
   // incrementing
   // increment operator
   face_iterator & operator++();

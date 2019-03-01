@@ -129,4 +129,18 @@ double cell_iterator::volume() const
   return poly->volume();
 }
 
+
+cell_iterator cell_iterator::neighbor_by_face(const face_iterator & face) const
+{
+  if (face.neighbors().size() == 1)
+    throw std::invalid_argument("no neighbors by boundary face");
+
+  for (std::size_t cell_index : face.neighbors())
+    if (cell_index != icell)
+      return cell_iterator(cell_index, mesh_vertices, cells,
+                           map_faces, shape_ids, cell_markers);
+
+  throw std::invalid_argument("cannot be here");
+}
+
 }
