@@ -815,7 +815,8 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
   const mesh::cell_iterator cell = grid.create_cell_iterator(icell);
   const std::vector<Point> frac_element_vertices =
       vEfrac[ifrac].mesh.create_poly_iterator(ielement).vertices();
-  const Point frac_normal = angem::Polygon(frac_element_vertices).plane.normal();
+  const auto frac_poly = angem::Polygon(frac_element_vertices);
+  const Point frac_normal = frac_poly.plane.normal();
 
   for (const auto & face : cell.faces())
   {
@@ -850,22 +851,26 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
     const double T_face_mm_old = flow_data.trans_ij[con];
 
     if (T_face_mm / T_face_mm_old < 1e-4)
-      flow_data.remove_connection(con);
+      flow_data.clear_connection(res_cell_flow_index(icell),
+                                 res_cell_flow_index(neighbor.index()));
     else
       flow_data.trans_ij[con] = T_face_mm;
 
     // compute projection connection
+    const double k_f = vEfrac[ifrac].conductivity / vEfrac[ifrac].aperture;
+    const double volume_frac = frac_poly.area() * vEfrac[ifrac].aperture;
+    const double k_mf = (volume_frac + volume_neighbor) /
+                        (volume_frac/k_mf + volume_neighbor/k_neighbor_n);
+    const double T_fm_projection = frac_poly.area() /
+                                   frac_poly.center().distance(neighbor.center()) *
+                                   CalcTranses::transmissibility_conversion_factor;
 
-    // double T_mm = flow_data.trans_ij[con];
-    // double T_if =
-    //     face_poly.area() / (neighbor.center() - cell.center()).norm() * 10;
-    // std::cout << "trans = " << trans*0.0085267146719160104986876640419948 << std::endl;
-    // std::size_t con = flow_data.connection_index(res_cell_flow_index(icell),
-    //                                              res_cell_flow_index(neighbor.index()));
-    // const double t1 = flow_data.trans_ij[con];
-    // std::cout << "t1 = " << t1 << std::endl;
+    const std::size_t new_con =
+        flow_data.insert_connection(res_cell_flow_index(neighbor.index()),
+                                    efrac_flow_index(ifrac, ielement));
+
+    flow_data.trans_ij[new_con] = T_fm_projection;
   }
-  abort();
 }
 
 

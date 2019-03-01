@@ -19,8 +19,6 @@ class FlowData
                                const std::size_t jelement) const;
   bool connection_exists(const std::size_t ielement,
                          const std::size_t jelement) const;
-  // get connection index
-  // std::size_t connection()
   // get two elements from hash value
   std::pair<std::size_t,std::size_t>
   invert_hash(const std::size_t hash) const;
