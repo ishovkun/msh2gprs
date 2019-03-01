@@ -823,6 +823,8 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
     // don't connect to cells that are perpendicular to the fracture
     if (fabs(frac_normal.dot(face.normal())) < 1e-10)
       continue;
+    if (face.neighbors().size() < 2)  // is boundary
+        continue;
 
     // compute projection
     const auto face_poly = face.polygon();
