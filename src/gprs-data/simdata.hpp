@@ -133,7 +133,7 @@ public:
   void computeFracFracTran(const std::size_t                 frac,
                            const EmbeddedFracture          & efrac,
                            const mesh::SurfaceMesh<double> & mesh,
-                           FlowData                        & frac_flow_data);
+                           flow::FlowData                  & frac_flow_data);
   // compute flow data for edfm fractures
   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
                                      const int   frac_ind);
@@ -172,10 +172,10 @@ protected:
   void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
                                               const std::vector<std::vector<std::size_t>> & polys,
                                               const std::vector<int>                      & markers,
-                                              FlowData                                    & flow_data) const;
+                                              flow::FlowData                              & flow_data) const;
   // get flow volume index of an edfm element
-  std::size_t get_flow_element_index(const std::size_t ifrac,
-                                     const std::size_t ielement) const;
+  // std::size_t get_flow_element_index(const std::size_t ifrac,
+  //                                    const std::size_t ielement) const;
   // create a well that occupies a single cell in z direction
   void setupSimpleWell(Well & well);
   // create a complex well that occupies multiple cells and is arbitrarily-oriented
@@ -216,10 +216,10 @@ public:
   // stores embedded fracture mechanics data
   vector<EmbeddedFracture> vEfrac;
   // stores flow cell volumes, trances, etc.
-  FlowData flow_data;
+  flow::FlowData flow_data;
   // might be different from flow_data if the user requests to mesh
   // embedded fractures independently
-  FlowData new_flow_data;
+  flow::FlowData new_flow_data;
   // wells
   std::vector<Well> wells;
 

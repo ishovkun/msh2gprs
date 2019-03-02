@@ -5,6 +5,27 @@
 #include <unordered_map>
 #include <iostream>  // debug
 
+
+namespace flow
+{
+
+
+struct CellData
+{
+  double volume;
+  double porosity;
+  double depth;
+  std::vector<double> custom;
+};
+
+
+struct FaceData
+{
+  double transmissibility;
+  double thermal_conductivity;
+};
+
+
 class FlowData
 {
  public:
@@ -12,11 +33,13 @@ class FlowData
   void reserve_extra(const std::size_t n_elements,
                      const std::size_t n_connections);
   // returns the connection index
-  std::size_t insert_connection(const std::size_t ielement,
-                                const std::size_t jelement);
+  FaceData & insert_connection(const std::size_t ielement,
+                             const std::size_t jelement);
   // throws std::out_of_range if connection does not exist
-  std::size_t connection_index(const std::size_t ielement,
-                               const std::size_t jelement) const;
+  // std::size_t connection_index(const std::size_t ielement,
+  //                              const std::size_t jelement) const;
+  FaceData & get_connection(const std::size_t ielement,
+                            const std::size_t jelement);
   bool connection_exists(const std::size_t ielement,
                          const std::size_t jelement) const;
   // get two elements from hash value
@@ -34,20 +57,24 @@ class FlowData
                          const std::size_t jelement) const;
 
  public:
-  std::vector<double> volumes, poro, depth;
+  // std::vector<double> volumes, poro, depth;
   // regular transmissibilities
   // std::vector<std::size_t> ielement, jelement;
-  std::unordered_map<std::size_t, std::size_t> map_connection;
+  // std::unordered_map<std::size_t, std::size_t> map_connection;
+  std::unordered_map<std::size_t, FaceData> map_connection;
   // std::unordered_map<std::size_t, std::vector<std::size_t>> element_connection;
   std::vector<std::vector<std::size_t>> v_neighbors;
 
-  std::vector<double>      trans_ij, conduct_ij;
+  std::vector<CellData> cells;
+  std::vector<FaceData> faces;
+  // std::vector<double>      trans_ij, conduct_ij;
   // connections
   // std::vector<int> connection_type;
   // std::vector<int> connection_n;
 
   // user-defined cell data
-  std::vector<std::vector<double>> custom_data;
+  // std::vector<std::vector<double>> custom_data;
+  // std::vector<std::vector<double>> custom_data;
   std::vector<std::string>         custom_names;
 
  private:
@@ -81,4 +108,6 @@ FlowData::invert_hash(const std::size_t hash) const
     throw std::runtime_error("element does not exist");
 
   return pair;
+}
+
 }

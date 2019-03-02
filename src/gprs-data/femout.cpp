@@ -54,7 +54,7 @@ void OutputData::write_output(const std::string & output_path)
   }
 
   std::cout << "save flow data" << std::endl;
-  CalcTranses::save_output(data.flow_data, output_path);
+  flow::CalcTranses::save_output(data.flow_data, output_path);
 }
 
 

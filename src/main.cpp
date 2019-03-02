@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
   std::cout << "output directory: " << output_dir << std::endl;
 
   std::cout << "FLOOOOOOOW DATA!!!!!" << std::endl;
-  std::cout << preprocessor.flow_data.trans_ij[238] << std::endl;
-  std::cout << preprocessor.flow_data.connection_index(110, 111) << std::endl;
+  // std::cout << preprocessor.flow_data.trans_ij[238] << std::endl;
+  // std::cout << preprocessor.flow_data.connection_index(110, 111) << std::endl;
 
   output_data.write_output(output_dir);
 

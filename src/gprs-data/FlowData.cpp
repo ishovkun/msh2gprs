@@ -4,6 +4,9 @@
 #include <iostream>  // debug
 
 
+namespace flow
+{
+
 FlowData::FlowData(const std::size_t max_connections)
     :
     max_connections(max_connections)
@@ -32,41 +35,50 @@ void FlowData::merge_elements(const std::size_t updated_element,
       d = merged_element;
 
   // update cell data
-  const double v0 = volumes[u];
-  const double v1 = volumes[d];
-  volumes[u] += v1;
-  poro[u] += (v0*poro[u] + v1*poro[d]) / (v0 + v1);
-  depth[u] += (v0*depth[u] + v1*depth[d]) / (v0 + v1);
+  // const double v0 = volumes[u];
+  // const double v1 = volumes[d];
+  // volumes[u] += v1;
+  // poro[u] += (v0*poro[u] + v1*poro[d]) / (v0 + v1);
+  // depth[u] += (v0*depth[u] + v1*depth[d]) / (v0 + v1);
 
-  for (std::size_t i=0; i<custom_data[u].size(); ++i)
-    custom_data[u][i] = (v0*custom_data[u][i] + v1*custom_data[d][i]) / (v0 + v1);
+  // for (std::size_t i=0; i<custom_data[u].size(); ++i)
+  //   custom_data[u][i] = (v0*custom_data[u][i] + v1*custom_data[d][i]) / (v0 + v1);
+
+  const double v0 = cells[u].volume;
+  const double v1 = cells[d].volume;
+  cells[u].volume += v1;
+  cells[u].porosity += (v0*cells[u].porosity + v1*cells[d].porosity) / (v0 + v1);
+  cells[u].depth += (v0*cells[u].depth + v1*cells[d].depth) / (v0 + v1);
+
+  for (std::size_t i=0; i<cells[u].custom.size(); ++i)
+    cells[u].custom[i] = (v0*cells[u].custom[i] + v1*cells[d].custom[i]) / (v0 + v1);
 
   // update face data
   // connections and transes with other elements
-  // auto it = element_connection.find(d);
-  // if (it == element_connection.end())
-  //   throw std::runtime_error("connection apparently does not exist");
-  // const std::vector<std::size_t> neighbors = it->second;
-
-  // auto it = element_connection.find(d);
   if (d > v_neighbors.size())
     throw std::runtime_error("connection apparently does not exist");
   const std::vector<std::size_t> neighbors = v_neighbors[d];
 
   for (const std::size_t neighbor : neighbors)
   {
-    const std::size_t dead_conn = connection_index(d, neighbor);
+    // const std::size_t dead_conn = connection_index(d, neighbor);
+    flow::FaceData dead_connection = get_connection(d, neighbor);
     if (neighbor != u)
     {
       if (!connection_exists(u, neighbor))
       {
-        std::size_t new_conn = insert_connection(u, neighbor);
-        trans_ij.push_back(trans_ij[dead_conn]);
+        // std::size_t new_conn = insert_connection(u, neighbor);
+        // faces.emplace_back();
+        // faces.back().transmissibility = faces[dead_conn].transmissibility;
+        // trans_ij.push_back(trans_ij[dead_conn]);
+        flow::FaceData new_face = insert_connection(d, neighbor);
       }
       else
       {
-        const std::size_t conn = connection_index(u, neighbor);
-        trans_ij[conn] += trans_ij[dead_conn];
+        // const std::size_t conn = connection_index(u, neighbor);
+        // trans_ij[conn] += trans_ij[dead_conn];
+        flow::FaceData modified_face = get_connection(u, neighbor);
+        modified_face.transmissibility += dead_connection.transmissibility;
       }
     }
   }
@@ -104,15 +116,13 @@ void FlowData::clear_connection(const std::size_t ielement,
   // clear other container
   const std::size_t hash = hash_value(ielement, jelement);
   auto it_dead_conn = map_connection.find(hash);
-  std::size_t dead_conn = it_dead_conn->second;
   map_connection.erase(it_dead_conn);
-  trans_ij.erase(trans_ij.begin() + dead_conn);
 
   // shift connection indices
-  for (auto iter = map_connection.begin();
-       iter != map_connection.end(); ++iter)
-    if (iter->second > dead_conn)
-      iter->second--;
+  // for (auto iter = map_connection.begin();
+  //      iter != map_connection.end(); ++iter)
+  //   if (iter->second > dead_conn)
+  //     iter->second--;
 }
 
 
@@ -130,57 +140,54 @@ void FlowData::delete_element(const std::size_t element)
 
   // shift indices
   // in v_neighbors
-  for (auto & neighbors : v_neighbors)
-    for (std::size_t i=0; i<neighbors.size(); ++i)
-      if (neighbors[i] > element)
-        neighbors[i]--;
+  // for (auto & neighbors : v_neighbors)
+  //   for (std::size_t i=0; i<neighbors.size(); ++i)
+  //     if (neighbors[i] > element)
+  //       neighbors[i]--;
 
   // rebuild hash in map_connection
-  std::vector<std::size_t> keys;
-  keys.reserve(map_connection.size());
-  for (auto it : map_connection)
-    keys.push_back(it.first);
-  std::sort(keys.begin(), keys.end());
-  for (const auto & key : keys)
-  {
-    std::size_t conn = map_connection[key];
-    std::pair<std::size_t,std::size_t> elements = invert_hash(key);
-    if (elements.first > element and elements.second < element)
-    {
-      std::size_t new_hash = hash_value(elements.first-1, elements.second);
-      map_connection.erase(key);
-      map_connection.insert({ new_hash, conn });
-    }
-    else if (elements.first < element and elements.second > element)
-    {
-      std::size_t new_hash = hash_value(elements.first, elements.second-1);
-      map_connection.erase(key);
-      map_connection.insert({ new_hash, conn });
-    }
-    else if (elements.first > element and elements.second > element)
-    {
-      std::size_t new_hash = hash_value(elements.first-1, elements.second-1);
-      map_connection.erase(key);
-      map_connection.insert({ new_hash, conn });
-    }
-    else if (elements.first == element or elements.second == element)
-    {
-      throw std::runtime_error("DEBUG: this should be already deleted");
-      map_connection.erase(key);
-    }
-  }
+  // std::vector<std::size_t> keys;
+  // keys.reserve(map_connection.size());
+  // for (auto it : map_connection)
+    // keys.push_back(it.first);
+
+  // std::sort(keys.begin(), keys.end());
+  // for (const auto & key : keys)
+  // {
+  //   // std::size_t conn = map_connection[key];
+  //   std::pair<std::size_t,std::size_t> elements = invert_hash(key);
+  //   if (elements.first > element and elements.second < element)
+  //   {
+  //     std::size_t new_hash = hash_value(elements.first-1, elements.second);
+  //     map_connection.erase(key);
+  //     map_connection.insert({ new_hash, conn });
+  //   }
+  //   else if (elements.first < element and elements.second > element)
+  //   {
+  //     std::size_t new_hash = hash_value(elements.first, elements.second-1);
+  //     map_connection.erase(key);
+  //     map_connection.insert({ new_hash, conn });
+  //   }
+  //   else if (elements.first > element and elements.second > element)
+  //   {
+  //     std::size_t new_hash = hash_value(elements.first-1, elements.second-1);
+  //     map_connection.erase(key);
+  //     map_connection.insert({ new_hash, conn });
+  //   }
+  //   else if (elements.first == element or elements.second == element)
+  //   {
+  //     throw std::runtime_error("DEBUG: this should be already deleted");
+  //     map_connection.erase(key);
+  //   }
+  // }
 
   // delete cell data
-  volumes.erase(volumes.begin() + element);
-  poro.erase(poro.begin() + element);
-  depth.erase(depth.begin() + element);
-  custom_data.erase(custom_data.begin() + element);
-
+  cells.erase(cells.begin() + element);
 }
 
 
-std::size_t FlowData::connection_index(const std::size_t ielement,
-                                       const std::size_t jelement) const
+FaceData & FlowData::get_connection(const std::size_t ielement,
+                                    const std::size_t jelement)
 {
   const std::size_t hash = hash_value(ielement, jelement);
   auto it = map_connection.find(hash);
@@ -202,14 +209,15 @@ bool FlowData::connection_exists(const std::size_t ielement,
 }
 
 
-std::size_t FlowData::insert_connection(const std::size_t ielement,
-                                        const std::size_t jelement)
+FaceData & FlowData::insert_connection(const std::size_t ielement,
+                                       const std::size_t jelement)
 {
   const std::size_t hash = hash_value(ielement, jelement);
-  const std::size_t conn = map_connection.size();
+
   if (map_connection.find(hash) != map_connection.end())
     throw std::runtime_error("connection exists");
-  map_connection.insert({hash, conn});
+
+  auto it = map_connection.insert({hash, FaceData()});
 
   if (std::max(ielement, jelement) >= v_neighbors.size())
   {
@@ -220,5 +228,8 @@ std::size_t FlowData::insert_connection(const std::size_t ielement,
   v_neighbors[ielement].push_back(jelement);
   v_neighbors[jelement].push_back(ielement);
 
-  return conn;
+  // return conn;
+  return it.first->second;
+}
+
 }

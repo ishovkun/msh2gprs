@@ -41,6 +41,9 @@
 //   std::vector<std::string>         custom_names;
 // };
 
+namespace flow
+{
+
 
 class CalcTranses
 {
@@ -187,3 +190,5 @@ protected:
   static constexpr double transmissibility_conversion_factor =
       0.0085267146719160104986876640419948;
 };
+
+}

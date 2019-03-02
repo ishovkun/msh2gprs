@@ -2,7 +2,10 @@
 #include "transes.hpp"
 #include "simdata.hpp"
 #include <random>
-// class SimData;
+
+namespace flow
+{
+
 
 CalcTranses::CalcTranses()
 {}
@@ -1385,26 +1388,23 @@ void CalcTranses::extractData(FlowData & data) const
 {
   // std::cout << "extracting volume data" << std::endl;
   // Extract Volumes, porosity, depth
-  data.volumes.resize(NbCVs);
-  data.poro.resize(NbCVs);
-  data.depth.resize(NbCVs);
+  data.cells.resize(NbCVs);
+  // data.volumes.resize(NbCVs);
+  // data.poro.resize(NbCVs);
+  // data.depth.resize(NbCVs);
   for (std::size_t i=0; i<NbCVs; i++ )
   {
-    data.volumes[i] = CVVolume[i];
-    data.poro[i]    = ZPorosity[CVZone[i]];
-    data.depth[i]   = -CVz[i];
+    data.cells[i].volume   = CVVolume[i];
+    data.cells[i].porosity = ZPorosity[CVZone[i]];
+    data.cells[i].depth    = -CVz[i];
   }
 
   // Transmissibility
   for (std::size_t i=0;i<NbTransmissibility; i++)
   {
-    // cout << "(" << iTr[i] << ", " << jTr[i] << ") " << Tij[i] << std::endl;
-    // if (iTr[i] < 0 or jTr[i] < 0)
-    //   continue;
-
-    data.insert_connection(iTr[i], jTr[i]);
-    data.trans_ij.push_back( Tij[i] );
-    data.conduct_ij.push_back( TConductionIJ[i]);
+    auto & face = data.insert_connection(iTr[i], jTr[i]);
+    face.transmissibility = Tij[i];
+    face.thermal_conductivity = TConductionIJ[i];
   }
 
   // Geomechanics
@@ -1419,7 +1419,6 @@ void CalcTranses::extractData(FlowData & data) const
 void CalcTranses::save_output(const FlowData    & data,
                               const std::string & output_dir)
 {
-  std::cout << data.trans_ij[238] << std::endl;
   const std::string fname_cell_data = "fl_cell_data.txt";
   const std::string fname_face_data = "fl_face_data.txt";
 
@@ -1429,37 +1428,38 @@ void CalcTranses::save_output(const FlowData    & data,
 
     ///// OUTPUT Dimensions /////
     out << "DIMENS" << std::endl;
-    out << data.volumes.size() << "\t"
+    out << data.cells.size() << "\t"
         << 1 << "\t" << 1 << "\t"
         << std::endl;
     out << "/" << std::endl << std::endl;
 
     ///// OUTPUT Volumes /////
     out << "VOLUME" << std::endl;
-    for (const auto & v : data.volumes)
-      out << v << std::endl;
+    for (const auto & v : data.cells)
+      out << v.volume << std::endl;
     out << "/" << std::endl << std::endl;
 
     ///// OUTPUT Porosity /////
     out << "PORO" << std::endl;
-    for (const auto & v : data.poro)
-      out << v << std::endl;
+    for (const auto & v : data.cells)
+      out << v.porosity << std::endl;
     out << "/" << std::endl << std::endl;
 
     ///// OUTPUT Depth  /////
     out << "DEPTH" << std::endl;
-    for (const auto & v : data.depth)
-      out << v << std::endl;
+    for (const auto & v : data.cells)
+      out << v.depth << std::endl;
     out << "/" << std::endl << std::endl;
 
     // additional data (if any)
     for (std::size_t i=0; i<data.custom_names.size(); ++i)
     {
       out << data.custom_names[i] << std::endl;
-      for (const auto & values : data.custom_data)
+      for (const auto & cell : data.cells)
       {
-        assert(values.size() == data.custom_names.size());
-        out << values[i] << std::endl;
+        if (cell.custom.size() != data.custom_names.size())
+          assert(cell.custom.size() == data.custom_names.size());
+        out << cell.custom[i] << std::endl;
       }
       out << "/" << std::endl << std::endl;
     }
@@ -1478,30 +1478,32 @@ void CalcTranses::save_output(const FlowData    & data,
     out << n_connections << std::endl;
     for (const auto & conn : data.map_connection)
     {
-      const std::size_t iconn = conn.second;
+      // const std::size_t iconn = conn.second;
       const auto element_pair = data.invert_hash(conn.first);
+      const auto face = conn.second;
       out << element_pair.first << "\t"
           << element_pair.second << "\t"
           << std::scientific
-          << data.trans_ij[iconn] * transmissibility_conversion_factor
+          << face.transmissibility * transmissibility_conversion_factor
           << std::defaultfloat << std::endl;
 
-      if (iconn == 192)
-      {
-        std::cout << "outtran("
-                  << element_pair.first
-                  <<", "
-                  << element_pair.second
-                  <<") = "
-                  << data.trans_ij[iconn]
-                  << "\t iconn = "<< iconn
-                  << std::endl;
-        abort();
-      }
+      // if (element_pair.first == 110)
+      // {
+      //   std::cout << "outtran("
+      //             << element_pair.first
+      //             <<", "
+      //             << element_pair.second
+      //             <<") = "
+      //             << face.transmissibility
+      //             << std::endl;
+      //   // abort();
+      // }
     }
     out << "/" << std::endl;
 
     out.close();
   }
+
+}
 
 }
