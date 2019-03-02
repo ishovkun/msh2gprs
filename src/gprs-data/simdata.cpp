@@ -170,14 +170,14 @@ void SimData::handleEmbeddedFractures()
   cout << "Compute cell clipping and EDFM transmissibilities" << endl;
   computeCellClipping();
 
-  // // cout << "Merge small edfm cells" << endl;
-  // // pSimData->mergeSmallFracCells();
+  // cout << "Merge small edfm cells" << endl;
+  // mergeSmallFracCells();
 
-  // // std::cout << "mesh fractures" << std::endl;
-  // // pSimData->meshFractures();
+  // std::cout << "mesh fractures" << std::endl;
+  // meshFractures();
 
-  std::cout << "Compute transmissibilities between edfm fracs" << std::endl;
-  computeTransBetweenDifferentEfracs();
+  std::cout << "Compute transmissibilities embedded frac intersection" << std::endl;
+  computeTransEfracIntersection();
 }
 
 
@@ -787,6 +787,12 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     flow_data.insert_connection(efrac_flow_index(frac_ind, element_pair.first),
                                 efrac_flow_index(frac_ind, element_pair.second));
     flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
+    std::cout << "f-f-tran("
+              << efrac_flow_index(frac_ind, element_pair.first)
+              <<", "
+              << efrac_flow_index(frac_ind, element_pair.second)
+              << ") = "
+              << frac_flow_data.trans_ij[iconn] << std::endl;
   }
 
   // save custom cell data
@@ -843,8 +849,7 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
                           (volume_cell/k_cell_n + volume_neighbor/k_neighbor_n);
     // new face trans
     const double T_face_mm = (face_poly.area() - projection_area) /
-                             (neighbor.center() - cell.center()).norm() *
-                             CalcTranses::transmissibility_conversion_factor;
+                             (neighbor.center() - cell.center()).norm();
     // std::cout << "T_face_mm = " << T_face_mm << std::endl;
 
     // old matrix-matrix transmissibility
@@ -853,8 +858,15 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
     const double T_face_mm_old = flow_data.trans_ij[con];
 
     if (T_face_mm / T_face_mm_old < 1e-4)
+    {
+      // std::cout << "killing connection "
+      //           << res_cell_flow_index(icell)
+      //           << "-"
+      //           << res_cell_flow_index(neighbor.index())
+                // << std::endl;
       flow_data.clear_connection(res_cell_flow_index(icell),
                                  res_cell_flow_index(neighbor.index()));
+    }
     else
       flow_data.trans_ij[con] = T_face_mm;
 
@@ -864,12 +876,16 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
     const double k_mf = (volume_frac + volume_neighbor) /
                         (volume_frac/k_mf + volume_neighbor/k_neighbor_n);
     const double T_fm_projection = frac_poly.area() /
-                                   frac_poly.center().distance(neighbor.center()) *
-                                   CalcTranses::transmissibility_conversion_factor;
+                                   frac_poly.center().distance(neighbor.center());
 
     const std::size_t new_con =
         flow_data.insert_connection(res_cell_flow_index(neighbor.index()),
                                     efrac_flow_index(ifrac, ielement));
+    // std::cout << "adding connection "
+    //           << res_cell_flow_index(neighbor.index())
+    //           << "-"
+    //           << efrac_flow_index(ifrac, ielement)
+    //           << std::endl;
 
     flow_data.trans_ij[new_con] = T_fm_projection;
   }
@@ -1382,7 +1398,7 @@ double SimData::get_volume_factor(const std::size_t cell) const
 }
 
 
-void SimData::computeTransBetweenDifferentEfracs()
+void SimData::computeTransEfracIntersection()
 {
   for (std::size_t i=0; i<vEfrac.size(); ++i)
     for (std::size_t j=i+1; j<vEfrac.size(); ++j)

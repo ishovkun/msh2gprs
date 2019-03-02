@@ -1403,7 +1403,7 @@ void CalcTranses::extractData(FlowData & data) const
     //   continue;
 
     data.insert_connection(iTr[i], jTr[i]);
-    data.trans_ij.push_back( Tij[i] * transmissibility_conversion_factor );
+    data.trans_ij.push_back( Tij[i] );
     data.conduct_ij.push_back( TConductionIJ[i]);
   }
 
@@ -1481,9 +1481,9 @@ void CalcTranses::save_output(const FlowData    & data,
       const auto element_pair = data.invert_hash(conn.first);
       out << element_pair.first << "\t"
           << element_pair.second << "\t"
-          << std::scientific << data.trans_ij[iconn]
+          << std::scientific
+          << data.trans_ij[iconn] * transmissibility_conversion_factor
           << std::defaultfloat << std::endl;
-
     }
     out << "/" << std::endl;
 

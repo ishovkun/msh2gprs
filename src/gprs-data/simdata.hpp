@@ -140,7 +140,7 @@ public:
   // compute flow data between two edfm fractures --may be old impl
   void computeInterEDFMTransmissibilities();
   // compute flow data between two edfm fractures --may be old impl
-  void computeTransBetweenDifferentEfracs();
+  void computeTransEfracIntersection();
   // number of default variables (such as cell x,y,z) for rock properties
   std::size_t n_default_vars() const;
   // get property from cell->v_props by key
