@@ -138,8 +138,6 @@ public:
   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
                                      const int   frac_ind);
   // compute flow data between two edfm fractures --may be old impl
-  void computeInterEDFMTransmissibilities();
-  // compute flow data between two edfm fractures --may be old impl
   void computeTransEfracIntersection();
   // number of default variables (such as cell x,y,z) for rock properties
   std::size_t n_default_vars() const;

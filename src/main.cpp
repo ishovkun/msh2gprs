@@ -83,50 +83,54 @@ int main(int argc, char *argv[])
   }
 
   // do preprocessing
-  gprs_data::SimData * pSimData;
-  pSimData = new gprs_data::SimData(msh, config);
+  gprs_data::SimData preprocessor = gprs_data::SimData(msh, config);
 
   cout << "Fill 3D rock properties" << endl;
-  pSimData->defineRockProperties();
+  preprocessor.defineRockProperties();
 
   cout << "Make SDA properties" << endl;
-  pSimData->defineEmbeddedFractureProperties();
+  preprocessor.defineEmbeddedFractureProperties();
 
   cout << "Create physical facets" << endl;
-  pSimData->definePhysicalFacets();
+  preprocessor.definePhysicalFacets();
 
   std::cout << "computing reservoir transes" << std::endl;
-  pSimData->computeReservoirTransmissibilities();
+  preprocessor.computeReservoirTransmissibilities();
 
   std::cout << "Handle flow embedded fractures" << std::endl;
-  pSimData->handleEmbeddedFractures();
+  preprocessor.handleEmbeddedFractures();
 
   // timur's legacy
   // cout << "Create simple wells" << endl;
   // pSimData->createSimpleWells();
 
   std::cout << "Setup wells" << std::endl;
-  pSimData->setupWells();
+  preprocessor.setupWells();
 
-  if (pSimData->dfm_faces.size() > 0)
+  if (preprocessor.dfm_faces.size() > 0)
   {
     cout << "Split FEM mesh on internal surfaces" << endl;
-    pSimData->splitInternalFaces();
+    preprocessor.splitInternalFaces();
   }
 
   std::cout << "compute connections between mech and flow elements" << std::endl;
-  pSimData->handleConnections();
+  preprocessor.handleConnections();
 
   // OUPUT
   cout << "Write Output data\n";
-  gprs_data::OutputData output_data(*pSimData, msh);
+  gprs_data::OutputData output_data(preprocessor, msh);
 
   const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";
   std::cout << "output directory: " << output_dir << std::endl;
+
+  std::cout << "FLOOOOOOOW DATA!!!!!" << std::endl;
+  std::cout << preprocessor.flow_data.trans_ij[238] << std::endl;
+  std::cout << preprocessor.flow_data.connection_index(110, 111) << std::endl;
+
   output_data.write_output(output_dir);
 
   // if no frac remove vtk files
-  if (pSimData->vEfrac.empty())
+  if (preprocessor.vEfrac.empty())
   {
     const std::string efrac_vtk_file = output_dir + "efrac.vtk";
     if (filesystem::exists(efrac_vtk_file))
@@ -135,7 +139,7 @@ int main(int argc, char *argv[])
       filesystem::remove(efrac_vtk_file);
     }
   }
-  if (pSimData->n_flow_dfm_faces == 0)
+  if (preprocessor.n_flow_dfm_faces == 0)
   {
     const std::string dfm_vtk_file = output_dir + "dfm.vtk";
     if (filesystem::exists(dfm_vtk_file))
@@ -145,6 +149,5 @@ int main(int argc, char *argv[])
     }
   }
 
-  delete pSimData;
   return 0;
 }

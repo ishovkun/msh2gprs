@@ -10,7 +10,7 @@ size_x = 200;
 size_y = 200;
 size_z = 10;
 
-nx = 50;
+nx = 10;
 ny = nx;
 // nf = 4;
 hx = size_x / nx;

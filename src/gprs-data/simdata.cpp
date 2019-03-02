@@ -175,6 +175,11 @@ void SimData::handleEmbeddedFractures()
 
   // std::cout << "mesh fractures" << std::endl;
   // meshFractures();
+  std::cout << "FLOOOOOOOW DATA!!!!!" << std::endl;
+  std::cout << flow_data.trans_ij[238] << std::endl;
+  std::cout << flow_data.connection_index(110, 111) << std::endl;
+  // abort();
+
 
   std::cout << "Compute transmissibilities embedded frac intersection" << std::endl;
   computeTransEfracIntersection();
@@ -792,7 +797,12 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
               <<", "
               << efrac_flow_index(frac_ind, element_pair.second)
               << ") = "
-              << frac_flow_data.trans_ij[iconn] << std::endl;
+              << flow_data.trans_ij.back()
+              << "\t iconn = "<< flow_data.connection_index(efrac_flow_index(frac_ind, element_pair.first),
+                                                            efrac_flow_index(frac_ind, element_pair.second))
+              <<" size - 1  = "
+              << flow_data.trans_ij.size() - 1
+              << std::endl;
   }
 
   // save custom cell data
@@ -859,11 +869,14 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
 
     if (T_face_mm / T_face_mm_old < 1e-4)
     {
-      // std::cout << "killing connection "
-      //           << res_cell_flow_index(icell)
-      //           << "-"
-      //           << res_cell_flow_index(neighbor.index())
-                // << std::endl;
+      std::cout << "killing connection "
+                << res_cell_flow_index(icell)
+                << "-"
+                << res_cell_flow_index(neighbor.index())
+                << "\t conn "
+                << flow_data.connection_index(res_cell_flow_index(icell),
+                                              res_cell_flow_index(neighbor.index()))
+                << std::endl;
       flow_data.clear_connection(res_cell_flow_index(icell),
                                  res_cell_flow_index(neighbor.index()));
     }
@@ -881,13 +894,12 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
     const std::size_t new_con =
         flow_data.insert_connection(res_cell_flow_index(neighbor.index()),
                                     efrac_flow_index(ifrac, ielement));
+    flow_data.trans_ij[new_con] = T_fm_projection;
     // std::cout << "adding connection "
     //           << res_cell_flow_index(neighbor.index())
     //           << "-"
     //           << efrac_flow_index(ifrac, ielement)
     //           << std::endl;
-
-    flow_data.trans_ij[new_con] = T_fm_projection;
   }
 }
 

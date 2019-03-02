@@ -1419,6 +1419,7 @@ void CalcTranses::extractData(FlowData & data) const
 void CalcTranses::save_output(const FlowData    & data,
                               const std::string & output_dir)
 {
+  std::cout << data.trans_ij[238] << std::endl;
   const std::string fname_cell_data = "fl_cell_data.txt";
   const std::string fname_face_data = "fl_face_data.txt";
 
@@ -1484,6 +1485,19 @@ void CalcTranses::save_output(const FlowData    & data,
           << std::scientific
           << data.trans_ij[iconn] * transmissibility_conversion_factor
           << std::defaultfloat << std::endl;
+
+      if (iconn == 192)
+      {
+        std::cout << "outtran("
+                  << element_pair.first
+                  <<", "
+                  << element_pair.second
+                  <<") = "
+                  << data.trans_ij[iconn]
+                  << "\t iconn = "<< iconn
+                  << std::endl;
+        abort();
+      }
     }
     out << "/" << std::endl;
 
