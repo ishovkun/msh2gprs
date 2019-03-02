@@ -175,15 +175,12 @@ void SimData::handleEmbeddedFractures()
 
   // std::cout << "mesh fractures" << std::endl;
   // meshFractures();
-  // std::cout << "FLOOOOOOOW DATA!!!!!" << std::endl;
-  // std::cout << flow_data.trans_ij[238] << std::endl;
-  auto con =  flow_data.get_connection(110, 111);
-  std::cout << "t_100_111 = " << con.transmissibility << std::endl;
-  // abort();
 
-
-  std::cout << "Compute transmissibilities embedded frac intersection" << std::endl;
-  computeTransEfracIntersection();
+  if (vEfrac.size() > 1)
+  {
+    std::cout << "Compute transmissibilities embedded frac intersection" << std::endl;
+    computeTransEfracIntersection();
+  }
 }
 
 
@@ -488,7 +485,7 @@ void SimData::computeReservoirTransmissibilities()
   flow_data.cells.reserve(n_volumes);
   for (std::size_t i=0; i<n_volumes; ++i)
   {
-    auto cell = flow_data.cells.emplace_back();
+    auto & cell = flow_data.cells.emplace_back();
     cell.volume = matrix_flow_data.cells[i].volume;
     cell.porosity = matrix_flow_data.cells[i].porosity;
     cell.depth = matrix_flow_data.cells[i].depth;
@@ -496,15 +493,13 @@ void SimData::computeReservoirTransmissibilities()
 
   for (const auto & conn : matrix_flow_data.map_connection)
   {
-    // const std::size_t iconn = conn.second;
     const auto element_pair = matrix_flow_data.invert_hash(conn.first);
-    auto face = flow_data.insert_connection(element_pair.first, element_pair.second);
+    auto & face = flow_data.insert_connection(element_pair.first, element_pair.second);
     face.transmissibility = conn.second.transmissibility;
   }
 
   // save custom user-defined cell data for flow output
   const std::size_t n_vars = rockPropNames.size();
-
   // save flow variable names
   flow_data.custom_names.clear();
   for (std::size_t j=0; j<n_vars; ++j)
