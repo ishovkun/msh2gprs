@@ -853,36 +853,69 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
     // modify neighbor map
     const auto neighbor = cell.neighbor_by_face(face);
 
-    const double k_cell_n = get_permeability(cell.index()) * face.normal();
-    const double k_neighbor_n = get_permeability(neighbor.index()) * face.normal();
+    const double k_cell_n = fabs(get_permeability(cell.index()) * face.normal());
+    const double k_neighbor_n = fabs(get_permeability(neighbor.index()) * face.normal());
     const double volume_cell = cell.volume();
     const double volume_neighbor = neighbor.volume();
-    const double k_face = (volume_cell + volume_neighbor) /
-                          (volume_cell/k_cell_n + volume_neighbor/k_neighbor_n);
+    // const double k_face = (volume_cell + volume_neighbor) /
+    //                       (volume_cell/k_cell_n + volume_neighbor/k_neighbor_n);
+    const double k_face = k_cell_n * k_neighbor_n * (volume_cell + volume_neighbor) /
+                          (k_cell_n*volume_neighbor + k_neighbor_n*volume_cell);
     // new face trans
     const double T_face_mm = (face_poly.area() - projection_area) /
-                             (neighbor.center() - cell.center()).norm();
-    // std::cout << "T_face_mm = " << T_face_mm << std::endl;
+                             (neighbor.center() - cell.center()).norm() *
+                             k_face;
 
     // old matrix-matrix transmissibility
-    // std::size_t con = flow_data.connection_index(res_cell_flow_index(icell),
-    //                                              res_cell_flow_index(neighbor.index()));
     auto & con = flow_data.get_connection(res_cell_flow_index(icell),
                                           res_cell_flow_index(neighbor.index()));
     const double T_face_mm_old = con.transmissibility;
+    if (res_cell_flow_index(icell))
+    {
+      std::cout << std::endl;
+      std::cout << "k_cell_n = " << k_cell_n << std::endl;
+      std::cout << "k_neighbor_n = " << k_neighbor_n << std::endl;
+      std::cout << "get_permeability(cell.index()) = " << get_permeability(cell.index()) << std::endl;
+      std::cout << "projection_area = " << projection_area << std::endl;
+      std::cout << "area = " << face_poly.area() << std::endl;
+      std::cout << "k_face = " << k_face << std::endl;
+      std::cout << "distance = " << (neighbor.center() - cell.center()).norm() << std::endl;
+      std::cout << "T_face_mm = " << T_face_mm << std::endl;
+      std::cout << "T_face_mm_old = " << T_face_mm_old << std::endl;
+      std::cout << "T_old_mine = "
+                << face_poly.area() / (neighbor.center() - cell.center()).norm() * k_face
+                << std::endl;
+    }
 
+    // figure out way to avoid double connections
     if (T_face_mm / T_face_mm_old < 1e-4)
     {
       std::cout << "killing connection "
                 << res_cell_flow_index(icell)
                 << "-"
                 << res_cell_flow_index(neighbor.index())
+                << "\t percentage = " << T_face_mm / T_face_mm_old * 100
                 << std::endl;
       flow_data.clear_connection(res_cell_flow_index(icell),
                                  res_cell_flow_index(neighbor.index()));
     }
     else
+    {
+      std::cout << "replacing connection "
+                << res_cell_flow_index(icell)
+                << "-"
+                << res_cell_flow_index(neighbor.index())
+                << "\t portion = " << T_face_mm / T_face_mm_old * 100
+                << " %"
+                << std::endl;
       con.transmissibility = T_face_mm;
+
+      if (T_face_mm / T_face_mm_old > 1.0)
+      {
+        std::cout << "implement physical connections by jiamin" << std::endl;
+        abort();
+      }
+    }
 
     // compute projection connection
     const double k_f = vEfrac[ifrac].conductivity / vEfrac[ifrac].aperture;
