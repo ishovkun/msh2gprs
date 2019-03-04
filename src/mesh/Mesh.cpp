@@ -354,10 +354,7 @@ SurfaceMesh<double> Mesh::split_faces()
           if (old_ind_touched.insert(it_face_old->second.index).second)
             new_face.index = it_face_old->second.index;
           else
-          {
-            std::cout << "i am a shark" << std::endl;
             new_face.index = map_faces.size();
-          }
 
           new_face.old_index = it_face_old->second.old_index;
           new_face.vtk_id = it_face_old->second.vtk_id;
