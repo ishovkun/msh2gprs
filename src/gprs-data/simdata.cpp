@@ -913,6 +913,7 @@ void SimData::apply_projection_edfm(const std::size_t ifrac,     // embedded fra
       if (T_face_mm / T_face_mm_old > 1.0)
       {
         std::cout << "implement physical connections by jiamin" << std::endl;
+        std::cout << "connect faces only on positive side of a frac" << std::endl;
         abort();
       }
     }
