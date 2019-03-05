@@ -838,8 +838,6 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
   const auto frac_poly = angem::Polygon(frac_element_vertices);
   const Point frac_normal = frac_poly.plane.normal();
 
-  std::cout << "cell = " << cell.index() << std::endl;
-  std::cout << "pedfm_select_faces(cell, split).size() = " << pedfm_select_faces(cell, split).size() << std::endl;
   for (const auto & face : pedfm_select_faces(cell, split))
   {
     // don't connect to cells that are perpendicular to the fracture
@@ -881,12 +879,12 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     // figure out way to avoid double connections
     if (T_face_mm_new / T_face_mm_old < 1e-4)
     {
-      // std::cout << "killing connection "
-      //           << res_cell_flow_index(icell)
-      //           << "-"
-      //           << res_cell_flow_index(neighbor.index())
-      //           << "\t percentage = " << T_face_mm_new / T_face_mm_old * 100
-      //           << std::endl;
+      std::cout << "killing connection "
+                << res_cell_flow_index(icell)
+                << "-"
+                << res_cell_flow_index(neighbor.index())
+                << "\t percentage = " << T_face_mm_new / T_face_mm_old * 100
+                << std::endl;
       flow_data.clear_connection(res_cell_flow_index(icell),
                                  res_cell_flow_index(neighbor.index()));
     }
@@ -913,7 +911,7 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     const double volume_frac = frac_poly.area() * vEfrac[ifrac].aperture;
     const double k_mf = (volume_frac + volume_neighbor) /
                         (volume_frac/k_mf + volume_neighbor/k_neighbor_n);
-    const double T_fm_projection = frac_poly.area() /
+    const double T_fm_projection = k_mf * frac_poly.area() /
                                    frac_poly.center().distance(neighbor.center());
 
     auto & new_connection =
