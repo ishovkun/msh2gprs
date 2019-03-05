@@ -274,7 +274,6 @@ SurfaceMesh<double> Mesh::split_faces()
   * 2. find internal vertices (not on boundary)
   * 3. split each internal vertex
   * 4. modify neighbors map */
-
   SurfaceMesh<double> mesh_faces(1e-6);
   // map 2d-element : 3d face hash
   std::unordered_map<std::size_t, hash_type> map_2d_3d;
@@ -301,24 +300,27 @@ SurfaceMesh<double> Mesh::split_faces()
       {
         auto it = create_face_iterator
             (map_faces.find(map_2d_3d.find(neighbor)->second));
-        vertex_faces.push_back(it);
+        vertex_faces.push_back(std::move(it));
       }
 
       const auto edge_vertices = edge.vertices();
-      // std::cout << "splitting vertex = " << edge_vertices.first << std::endl;
+      std::cout << "splitting vertex = " << edge_vertices.first << std::endl;
       split_vertex(vertices.find(edge_vertices.first), vertex_faces,
                    map_old_new_cells, new_cells);
-      // std::cout << "splitting vertex = " << edge_vertices.second << std::endl;
+      std::cout << "splitting vertex = " << edge_vertices.second << std::endl;
       split_vertex(vertices.find(edge_vertices.second), vertex_faces,
                    map_old_new_cells, new_cells);
     }
   }
 
-  // std::cout << "modifying face map" << std::endl;
+  std::cout << "modifying face map" << std::endl;
 
   // modify face map
   std::unordered_set<std::size_t> old_ind_touched;
   std::unordered_set<hash_type> faces_to_delete;
+  // store it since new faces are added first and then old faces are deleted
+  // which may cause wrong indexing
+  std::size_t num_faces = map_faces.size();
   for (const auto it_cell : map_old_new_cells)
   {
     const std::size_t icell = it_cell.first;
@@ -333,14 +335,12 @@ SurfaceMesh<double> Mesh::split_faces()
 
     assert(old_poly_faces.size() == new_poly_faces.size());
 
-    for (int i=0; i<old_poly_faces.size(); ++i)
+    for (std::size_t i=0; i<old_poly_faces.size(); ++i)
     {
       const hash_type old_hash = hash_value(old_poly_faces[i]);
       const hash_type new_hash = hash_value(new_poly_faces[i]);
 
-      if (new_hash == old_hash) // face did not change:
-        continue;
-      else  // face changed
+      if (new_hash != old_hash) // face changed
       {
         auto it_face = map_faces.find(new_hash);
         auto it_face_old = map_faces.find(old_hash);
@@ -351,12 +351,12 @@ SurfaceMesh<double> Mesh::split_faces()
           new_face.marker = it_face_old->second.marker;
           new_face.ordered_indices = new_poly_faces[i];
 
-          if (old_ind_touched.insert(it_face_old->second.index).second)
+          if (old_ind_touched.insert(it_face_old->second.index).second) // if not touched
             new_face.index = it_face_old->second.index;
           else
           {
-            std::cout << "i am a shark" << std::endl;
-            new_face.index = map_faces.size();
+            new_face.index = num_faces;
+            num_faces++;
           }
 
           new_face.old_index = it_face_old->second.old_index;
@@ -365,10 +365,6 @@ SurfaceMesh<double> Mesh::split_faces()
         }
         else
           it_face->second.neighbors.push_back(icell);
-
-        // std::cout << "new_old "
-        //           << map_faces.find(new_hash)->second.index <<"\t"
-        //           << it_face_old->second.index << std::endl;
 
         // mark old faces for delete
         faces_to_delete.insert(old_hash);
@@ -489,7 +485,6 @@ std::vector<face_iterator> Mesh::get_ordered_faces()
   std::vector<face_iterator> ordered_faces(this->n_faces(), this->begin_faces());
   for (auto face=begin_faces(); face!=end_faces(); ++face)
     ordered_faces[face.index()] = face;
-
   return ordered_faces;
 }
 

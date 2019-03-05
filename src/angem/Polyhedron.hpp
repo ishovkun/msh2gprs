@@ -4,6 +4,7 @@
 #include <Plane.hpp>
 #include <PointSet.hpp>
 #include <Polygon.hpp>
+#include <PolyGroup.hpp>
 #include <typeinfo>
 #include <exception>
 
@@ -19,7 +20,6 @@ class Polyhedron: public Shape<Scalar>
   Polyhedron(const std::vector<Point<3,Scalar>>          & vertices,
              const std::vector<std::vector<std::size_t>> & faces,
              const int                                     vtk_id = -1);
-
   // setter
   void set_data(const std::vector<Point<3,Scalar>>          & vertices,
                 const std::vector<std::vector<std::size_t>> & faces);
@@ -62,7 +62,9 @@ Polyhedron<Scalar>::set_data(const std::vector<Point<3,Scalar>>          & verti
                              const std::vector<std::vector<std::size_t>> & faces)
 {
   assert(vertices.size() > 3);
-  PointSet<3,Scalar> pset(distance(vertices[0], vertices[1]));
+  this->faces.resize(faces.size());
+
+  PointSet<3,Scalar> pset;
   std::size_t iface = 0;
   for (const auto & face : faces)
   {
@@ -102,13 +104,12 @@ Scalar Polyhedron<Scalar>::volume() const
 {
   const Point<3,Scalar> c = this->center();
   Scalar vol = 0;
-  for (auto face_indices : get_faces())
+  for (const auto & face_indices : get_faces())
   {
-    const auto face_poly = Polygon<Scalar>(this->points,
-                                           face_indices);
+    const auto face_poly = Polygon<Scalar>(this->points, face_indices);
     const Scalar face_area = face_poly.area();
-    const Scalar h = c.distance(face_poly.center());
-    vol += 1./3. * face_area*h;
+    const Scalar h = c.distance(face_poly.plane.project_point(c));
+    vol += 1./3. * h * face_area;
   }
   return vol;
 }
@@ -116,8 +117,8 @@ Scalar Polyhedron<Scalar>::volume() const
 // template<typename Scalar>
 // Scalar Polyhedron<Scalar>::volume() const
 // {
-//   std::cout << "wrong class" << std::endl;
-//   abort();
+//   // std::cout << "wrong class" << std::endl;
+//   // abort();
 //   // i don't know how it works
 //   // ask mohammad
 //   const std::size_t n_faces = faces.size();
@@ -187,4 +188,24 @@ bool Polyhedron<Scalar>::point_inside(const Point<3,Scalar> & p) const
   return true;
 }
 
+
+template<typename Scalar>
+std::ostream &operator<<(std::ostream             & os,
+                         const Polyhedron<Scalar> & poly)
+{
+  const auto & points = poly.get_points();
+  const auto & faces = poly.get_faces();
+  os << points.size() << " vertices:" << std::endl;
+  os << points;
+  os << faces.size() << " faces:" << std::endl;
+  for (const auto & face : faces)
+  {
+    for (const auto ivertex: face)
+      os << ivertex << "\t";
+    os << std::endl;
+  }
+  return os;
 }
+
+
+}  // end namespace

@@ -196,9 +196,15 @@ protected:
                                const std::size_t ielement) const;
   std::size_t res_cell_flow_index(const std::size_t icell) const {return n_flow_dfm_faces + icell;}
 
-  void apply_projection_edfm(const std::size_t ifrac,     // embedded frac index
-                             const std::size_t ielement,  // frac element index
-                             const std::size_t icell);    // reservoir cell index
+  // connect embedded fractures to cells in a physical way
+  void apply_projection_edfm(const std::size_t                ifrac,     // embedded frac index ndex of embedded fracture
+                             const std::size_t                ielement,  // frac element index  / fracture element index
+                             const std::size_t                icell,     // reservoir cell index
+                             const angem::PolyGroup<double> & split);    // reservoir cell index
+  // face selection method for pedfm
+  std::vector<mesh::face_iterator> pedfm_select_faces(const mesh::cell_iterator      & cell,
+                                                      const angem::PolyGroup<double> & split) const;
+
 
 public:
   // user-defined program config defined in json or yaml files
