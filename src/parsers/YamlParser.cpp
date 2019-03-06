@@ -473,7 +473,7 @@ void YamlParser::read_well(const YAML::Node & node,
       well.name = it->second.as<std::string>();
     else if (key == "radius")
       well.radius = it->second.as<double>();
-    else if (key == "coord")
+    else if (key == "nodes")
     {
       const std::string line = it->second.as<std::string>();
       std::istringstream iss(line);
@@ -494,7 +494,7 @@ void YamlParser::read_well(const YAML::Node & node,
       // for (std::size_t i=0; i<n_coord; ++i)
       //   std::cout << well.coordinates[i] << std::endl;
     }
-    else if (key == "perf")
+    else if (key == "perforations")
     {
       std::vector<int> tokens = it->second.as<std::vector<int>>();
       for (const auto & token : tokens)
