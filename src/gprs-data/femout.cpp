@@ -594,10 +594,10 @@ void OutputData::saveWells(const std::string file_name)
     for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
     {
       file << well.name << "\t";
-      file << well.connected_volumes[i] << "\t";
+      file << well.connected_volumes[i] + 1 << "\t";
       // j, k1:k2 open sat_table_number
       file << "1\t1\t1\tOPEN\t1*\t";
-      file << well.indices[i] << "\t";
+      file << well.indices[i] * flow::CalcTranses::transmissibility_conversion_factor << "\t";
       file << 2*well.radius << "\t";
       file << "/" << std::endl;
     }

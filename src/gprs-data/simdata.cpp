@@ -1876,10 +1876,10 @@ void SimData::setupComplexWell(Well & well)
           section_data.clear();
           continue;
         }
-        well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
-
+        well.connected_volumes.push_back(res_cell_flow_index(cell.index()));
         well.segment_length.push_back(section_data[0].distance(section_data[1]));
         well.directions.push_back(segment.second - segment.first);
+        well.directions.back().normalize();
         section_data.clear();
       }
     }
@@ -1887,16 +1887,26 @@ void SimData::setupComplexWell(Well & well)
 }
 
 
+inline
+double get_bounding_interval(const angem::Point<3,double>     & direction,
+                             const angem::Polyhedron<double> * poly)
+{
+  assert(fabs(direction.norm() - 1) < 1e-8);
+  angem::Point<3,double> neg_direction = - direction;
+  return fabs((poly->support(direction) - poly->support(neg_direction)).dot(direction));
+}
+
+
 angem::Point<3,double> SimData::get_dx_dy_dz(const std::size_t icell) const
 {
   const auto cell_poly = grid.create_cell_iterator(icell).polyhedron();
-  angem::Point<3,double> dir, neg_dir, result;
-  dir = {1, 0, 0}; neg_dir = - dir;
-  result[0] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
-  dir = {0, 1, 0}; neg_dir = - dir;
-  result[1] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
-  dir = {0, 0, 1}; neg_dir = - dir;
-  result[2] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
+  angem::Point<3,double> dir, result;
+  dir = {1, 0, 0};
+  result[0] = get_bounding_interval(dir, cell_poly.get());
+  dir = {0, 1, 0};
+  result[1] = get_bounding_interval(dir, cell_poly.get());
+  dir = {0, 0, 1};
+  result[2] = get_bounding_interval(dir, cell_poly.get());
   return result;
 }
 
@@ -1906,17 +1916,24 @@ double compute_productivity(const double k1, const double k2,
                             const double length, const double radius,
                             const double skin = 0)
 {
+  if (length > 1e-4)
+  {
+    std::cout << "dx1 = " << dx1 << std::endl;
+    std::cout << "dx2 = " << dx2 << std::endl;
+    std::cout << "k1 = " << k1 << std::endl;
+    std::cout << "k2 = " << k2 << std::endl;
+    std::cout << "length = " << length << std::endl;
+  }
   // pieceman radius
-  const double r =
-      0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 + std::sqrt(k1/k2)*dx2*dx2) /
-      (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
+  const double r = 0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 +
+                                  std::sqrt(k1/k2)*dx2*dx2) /
+                   (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
   const double j_ind = 2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
   // std::cout << "pieceman, rwell " << r << "\t" << radius << std::endl << std::flush;
   // std::cout << "length " << length << std::endl << std::flush;
   // std::cout << "other "<< 2*M_PI*std::sqrt(k1*k2)*length << std::endl;
   assert(j_ind >= 0);
   return j_ind;
-
 
 }
 
@@ -1929,9 +1946,6 @@ void SimData::computeWellIndex(Well & well)
     const std::size_t icell = well.connected_volumes[i] - n_flow_dfm_faces;
     const angem::Point<3,double> perm = get_permeability(icell);
     angem::Point<3,double> dx_dy_dz = get_dx_dy_dz(icell);
-    // std::cout << "dx_dy_dz = " << dx_dy_dz << std::endl;
-    // std::cout << "perm = " << perm << std::endl;
-    std::cout << "well.segment_length[i] = " << well.segment_length[i] << std::endl;
     angem::Point<3,double> productivity;
     productivity[0] =
         compute_productivity(perm[1], perm[2], dx_dy_dz[1], dx_dy_dz[2],
@@ -1946,7 +1960,6 @@ void SimData::computeWellIndex(Well & well)
                              well.segment_length[i]*fabs(well.directions[i][2]),
                              well.radius);
     well.indices[i] = productivity.norm();
-    std::cout << "productivity.norm() " << productivity.norm() << std::endl;
   }
 }
 
