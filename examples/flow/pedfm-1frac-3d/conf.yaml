@@ -4,9 +4,9 @@ Embedded Fractures :
   method: projection
   fracture:
     type: Rectangle
-    center: [0, 0, 0]
+    center: [0, 0, -500]
     length: 160
-    width: 10
+    width: 70
     dip: 60
     strike: 140
     aperture: 5e-3
@@ -30,11 +30,11 @@ Wells:
     name: INJ1
     radius: 0.1
     nodes:
-      1 1 100
-      1 1 0
+      -95 -95 -470
+      -95 +95 -500
   well:
     name: PROD1
     radius: 0.1
     nodes:
-      195 195 100
-      195 195 0
+      95 -95 -390
+      95 -95 -510

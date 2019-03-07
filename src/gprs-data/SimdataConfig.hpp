@@ -97,6 +97,7 @@ struct SimdataConfig
   std::string discrete_frac_file    = "gm_DFM.txt";
   std::string bcond_file            = "bcond.txt";
   std::string wells_file            = "wells.txt";
+  std::string wells_vtk_file        = "wells.vtk";
   // special keywords needed for computing fluid data
   // (they are not outputted)
   static constexpr double nan = -999.999;

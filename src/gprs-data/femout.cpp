@@ -50,7 +50,8 @@ void OutputData::write_output(const std::string & output_path)
   if (!data.wells.empty())
   {
     std::cout << "save wells" << std::endl;
-    saveWells(output_path + data.config.wells_file);
+    saveWells(output_path + data.config.wells_file,
+              output_path + data.config.wells_vtk_file);
   }
 
   std::cout << "save flow data" << std::endl;
@@ -575,7 +576,8 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
 }
 
 
-void OutputData::saveWells(const std::string file_name)
+void OutputData::saveWells(const std::string file_name,
+                           const std::string vtk_file_name)
 {
   std::ofstream file;
   file.open(file_name.c_str());
@@ -584,7 +586,10 @@ void OutputData::saveWells(const std::string file_name)
   for (const auto & well : data.wells)
   {
     file << well.name << "\tGROUP1\t";
-    file << well.connected_volumes[0] << "\t* /" << std::endl;
+    // connected volume + j + k empty
+    file << well.connected_volumes[0] << " 1 1 ";
+    // reference depth
+    file << -well.reference_depth << " /" << std::endl;
   }
   file << "/" << std::endl << std::endl;
 
@@ -605,6 +610,12 @@ void OutputData::saveWells(const std::string file_name)
   file << "/" << std::endl << std::endl;
 
   file.close();
+
+
+  // vtk well geometry
+  IO::VTKWriter::write_well_trajectory(data.well_vertices.points,
+                                       data.well_vertex_indices,
+                                       vtk_file_name);
 }
 
 }

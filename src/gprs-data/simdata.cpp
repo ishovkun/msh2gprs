@@ -1872,18 +1872,36 @@ void SimData::setupComplexWell(Well & well)
       {
         if (section_data.size() != 2)
         {
-          std::cout << "something is wrong with segment" << std::endl;
+          std::cout << "just touching cell " << cell.index() << std::endl;
           section_data.clear();
           continue;
         }
+        std::cout << "fully occupying cell " << cell.index() << std::endl;
+
         well.connected_volumes.push_back(res_cell_flow_index(cell.index()));
         well.segment_length.push_back(section_data[0].distance(section_data[1]));
         well.directions.push_back(segment.second - segment.first);
         well.directions.back().normalize();
+
+        // for visulatization
+        well_vertex_indices.emplace_back();
+        well_vertex_indices.back().first = well_vertices.insert(section_data[0]);
+        well_vertex_indices.back().second = well_vertices.insert(section_data[1]);
+
+        // auto-detect reference depth for bhp
+        if (!well.reference_depth_set)
+          if(cell.center()[2] < well.reference_depth)
+            well.reference_depth = cell.center()[2];
         section_data.clear();
       }
     }
   }
+
+  well.reference_depth_set = true;
+
+  // error if no connected volumes
+  if (well.connected_volumes.empty())
+    throw std::invalid_argument("well " + well.name + " outside of the domain. aborting");
 }
 
 
@@ -1916,22 +1934,11 @@ double compute_productivity(const double k1, const double k2,
                             const double length, const double radius,
                             const double skin = 0)
 {
-  if (length > 1e-4)
-  {
-    std::cout << "dx1 = " << dx1 << std::endl;
-    std::cout << "dx2 = " << dx2 << std::endl;
-    std::cout << "k1 = " << k1 << std::endl;
-    std::cout << "k2 = " << k2 << std::endl;
-    std::cout << "length = " << length << std::endl;
-  }
   // pieceman radius
   const double r = 0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 +
                                   std::sqrt(k1/k2)*dx2*dx2) /
                    (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
   const double j_ind = 2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
-  // std::cout << "pieceman, rwell " << r << "\t" << radius << std::endl << std::flush;
-  // std::cout << "length " << length << std::endl << std::flush;
-  // std::cout << "other "<< 2*M_PI*std::sqrt(k1*k2)*length << std::endl;
   assert(j_ind >= 0);
   return j_ind;
 

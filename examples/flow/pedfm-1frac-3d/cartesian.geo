@@ -9,10 +9,11 @@
 size_x = 200;
 size_y = 200;
 size_z = 100;
+depth = -500;
 
 nx = 50;
 ny = nx;
-nz = 50;
+nz = 25;
 // nf = 4;
 hx = size_x / nx;
 hy = size_y / ny;
@@ -23,8 +24,8 @@ left   = -size_x / 2;
 right  = size_x  / 2;
 back   = size_y  / 2;
 front  = -size_y / 2;
-bottom = -size_z / 2;
-top    = size_z  / 2;
+bottom = depth - size_z / 2;
+top    = depth + size_z  / 2;
 
 // domain boundary
 Point(1) = {left,  back,  bottom, 1};  // left top

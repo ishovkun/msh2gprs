@@ -213,4 +213,38 @@ void VTKWriter::write_vtk(const std::vector<Point>                    & vertices
 
   out.close();
 }
+
+
+// this function is used to write line segments to show wells in paraview
+void VTKWriter::write_well_trajectory(const std::vector<Point>                              & vertices,
+                                      const std::vector<std::pair<std::size_t,std::size_t>> & indices,
+                                      const std::string                                     & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "Wells \n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  // points
+  const std::size_t n_points = vertices.size();
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+  for (const auto & p : vertices)
+    out << p << std::endl;
+
+  // 3 because n_cells + 2 points per cell
+  out << "CELLS" << "\t" << indices.size() << "\t" << 3*indices.size() << std::endl;
+
+  for (const auto & segment : indices)
+    out << 2 << "\t" << segment.first << "\t" << segment.second << std::endl;
+
+  out << "CELL_TYPES" << "\t" << indices.size() << std::endl;
+  for (std::size_t i=0; i<indices.size(); ++i)
+    out << 3 << std::endl;
+
+  out.close();
+}
+
 }  // end namespace

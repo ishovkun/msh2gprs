@@ -228,6 +228,9 @@ public:
   flow::FlowData new_flow_data;
   // wells
   std::vector<Well> wells;
+  // pureply for visulalization // vtk_segments;
+  angem::PointSet<3,double> well_vertices;
+  std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
 
   // stores faces with mechanics neumann and dirichlet boundary conditions
   std::unordered_map<std::size_t, PhysicalFace> boundary_faces;

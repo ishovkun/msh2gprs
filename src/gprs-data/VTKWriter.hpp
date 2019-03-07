@@ -23,6 +23,10 @@ class VTKWriter
                         const std::vector<Gelement> & elements,
                         const std::string           & fname);
 
+  static void write_well_trajectory(const std::vector<Point>                              & vertices,
+                                    const std::vector<std::pair<std::size_t,std::size_t>> & indices,
+                                    const std::string                                     & fname);
+
 };
 
 }  // end namespace
