@@ -1970,4 +1970,10 @@ void SimData::computeWellIndex(Well & well)
   }
 }
 
+
+void SimData::partition_mechanics()
+{
+  const auto * metis_data = mesh.get_METIS_connections();
+}
+
 }  // end namespace

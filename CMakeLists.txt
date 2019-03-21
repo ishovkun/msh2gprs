@@ -25,6 +25,17 @@ else()
   ADD_SUBDIRECTORY(src/uint256)
 ENDIF()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+find_package(METIS)
+if(METIS_FOUND)
+  set(GLOBAL_INCLUDE_DIRS ${GLOBAL_INCLUDE_DIRS} ${METIS_INCLUDE_DIRS})
+  message("-- METIS found")
+  add_definitions(-DWITH_METIS)
+else()
+  message("-- METIS not found")
+endif()
+
+
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
 ADD_SUBDIRECTORY(src/angem)
