@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -32,20 +32,10 @@
 namespace gprs_data
 {
 
+// TODO: replace with just a vector of properties
 struct RockProps
 {
   std::vector<double> v_props;
-  // poro; perm, perm_x, perm_y, perm_z thc, thc_x, thc_y, thc_z;
-  // temp; heat_capacity;
-
-  // biot_plas; biot_flow; biot; young; poisson; density; poron;
-  // temperature; pressure; volmult;
-
-  // ref_pres; ref_temp; ref_stres; ref_strain;
-
-  // cohesion; friction; dilation; thermal_expansion; pore_thermal_expansion;
-  // vector<double> zmf;
-  // vector<double> stress;
 };
 
 
@@ -64,33 +54,28 @@ struct PhysicalFace
 };
 
 
-// struct SimpleWell
-// {
-//   vector<double> vRadiusPoisk;
-//   vector<double> vWellCoordinate;
-//   vector<int> vID;
-//   vector<int> vWi;
-//   double datum;
-//   string Type;
-//   double radius_poisk;
-// };
-
-
+/* contrains data for embedded fracture geometry,
+ * mechanical and flow parameters
+ */
 struct EmbeddedFracture
 {
-  std::vector<std::size_t>            cells;
+  // cells that the fracture crosses
+  std::vector<std::size_t>  cells;
+  // points in the frac plane within the intersected cells
   std::vector<angem::Point<3,double>> points;
-  std::vector<double>                 dip;
-  std::vector<double>                 strike;
-  double                              cohesion;
-  double                              friction_angle;
-  double                              dilation_angle;
-  mesh::SurfaceMesh<double>           mesh;
-  double                              aperture;     // m
-  double                              conductivity;  // md-m
+  // for mechanics: fracture dip angle in a cell
+  std::vector<double>       dip;
+  // for mechanics: fracture strike angle in a cell
+  std::vector<double>       strike;
+  // mechanical paramters
+  double                    cohesion;       // fracture cohesive strength
+  double                    friction_angle; // fracture friction angle
+  double                    dilation_angle; // fracture dilation angle
+  // combined grid discretization of all embedded fractures
+  mesh::SurfaceMesh<double> mesh;
+  double                    aperture;       // hydfraulic aperture [m]
+  double                    conductivity;   // hydraulic conductivity [md-m]
 };
-
-
 
 
 /* This class is the body of the preprocessor.
@@ -174,8 +159,6 @@ protected:
                                               const std::vector<int>                      & markers,
                                               flow::FlowData                              & flow_data) const;
   // get flow volume index of an edfm element
-  // std::size_t get_flow_element_index(const std::size_t ifrac,
-  //                                    const std::size_t ielement) const;
   // create a well that occupies a single cell in z direction
   void setupSimpleWell(Well & well);
   // create a complex well that occupies multiple cells and is arbitrarily-oriented
@@ -186,25 +169,55 @@ protected:
   angem::Point<3,double> get_dx_dy_dz(const std::size_t icell) const;
 
   // is given flow element an embedded fracture
+  // Params [in]
+  // flow_element_index: index of the flow control volume
+  //
+  // Note:
+  // edfm control volumes span from 0 to n_edfm_intersections
+  // reservoir control volumes space from n_edfm to n_edfm + n_cells
+  // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
   bool is_embedded_fracture(const std::size_t flow_element_index) const;
-  // is given flow element a discrete fracture
+  // whether given flow element a discrete fracture
+  // Params [in]
+  // flow_element_index: index of the flow control volume
+  //
+  // Note:
+  // edfm control volumes span from 0 to n_edfm_intersections
+  // reservoir control volumes space from n_edfm to n_edfm + n_cells
+  // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
   bool is_discrete_fracture(const std::size_t flow_element_index) const;
   // is given flow element a reservoir cell
+  //
+  // Note:
+  // edfm control volumes span from 0 to n_edfm_intersections
+  // reservoir control volumes space from n_edfm to n_edfm + n_cells
+  // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
   bool is_reservoir_element(const std::size_t flow_element_index) const;
   // return global flow index of an ielement element of embedded fracture i
   std::size_t efrac_flow_index(const std::size_t ifrac,
                                const std::size_t ielement) const;
-  std::size_t res_cell_flow_index(const std::size_t icell) const {return n_flow_dfm_faces + icell;}
+  std::size_t res_cell_flow_index(const std::size_t icell) const
+  {return n_flow_dfm_faces + icell;}
 
   // connect embedded fractures to cells in a physical way
-  void apply_projection_edfm(const std::size_t                ifrac,     // embedded frac index ndex of embedded fracture
-                             const std::size_t                ielement,  // frac element index  / fracture element index
-                             const std::size_t                icell,     // reservoir cell index
-                             const angem::PolyGroup<double> & split);    // reservoir cell index
+  // Params [in]
+  // ifrac: embedded frac index ndex of embedded fracture
+  // ielement: frac element index  / fracture element index
+  // icell: reservoir cell index
+  // split: result of dissecting a cell with a fracture polygon
+  void apply_projection_edfm(const std::size_t                ifrac,
+                             const std::size_t                ielement,
+                             const std::size_t                icell,
+                             const angem::PolyGroup<double> & split);
   // face selection method for pedfm
-  std::vector<mesh::face_iterator> pedfm_select_faces(const mesh::cell_iterator      & cell,
-                                                      const angem::PolyGroup<double> & split) const;
-
+  // pedfm projects fracture onto the smaller faces of the
+  // intersected cell
+  // Params [in]
+  // cell: iterator pointing to the intersecting cell
+  // split: result of dissecting a cell with a fracture polygon
+  std::vector<mesh::face_iterator>
+  pedfm_select_faces(const mesh::cell_iterator      & cell,
+                     const angem::PolyGroup<double> & split) const;
 
 public:
   // user-defined program config defined in json or yaml files
@@ -250,9 +263,6 @@ public:
   std::set<int> fracture_face_markers;
   // set of markers for boundary faces (used in is_boundary)
   std::unordered_set<int> boundary_face_markers;
-
-  // old timur wells: rewrute
-  // vector<SimpleWell> vsWell;
 
 protected:
   // i'm not sure if it's even used

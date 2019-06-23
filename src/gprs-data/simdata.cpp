@@ -1837,7 +1837,7 @@ void SimData::setupSimpleWell(Well & well)
     const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell.polyhedron();
     if (p_poly_cell->point_inside(well.coordinate))
     {
-      // define sufficiantly-large artificial segment to compute intersection
+      //  define sufficiantly-large artificial segment to compute intersection
       // with cell
       const double h = (p_poly_cell->center() -
                         p_poly_cell->get_points()[0]).norm();
@@ -1860,11 +1860,9 @@ void SimData::setupComplexWell(Well & well)
 {
   // setup well with segments
   std::cout << "complex well " << well.name << std::endl;
-  for (std::size_t isegment=0; isegment<well.segments.size(); ++isegment)
+  for (std::size_t isegment = 0; isegment < well.segments.size(); ++isegment)
   {
-    std::cout << "isegment = " << isegment << ":\t";
     auto segment = well.segments[isegment];
-    std::cout << segment.first << " | " << segment.second << std::endl;
     std::vector<Point> section_data;
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
     {
@@ -1879,7 +1877,6 @@ void SimData::setupComplexWell(Well & well)
           continue;
         }
         well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
-
         well.segment_length.push_back(section_data[0].distance(section_data[1]));
         well.directions.push_back(segment.second - segment.first);
         section_data.clear();
@@ -1926,14 +1923,11 @@ double compute_productivity(const double k1, const double k2,
 void SimData::computeWellIndex(Well & well)
 {
   well.indices.resize(well.connected_volumes.size());
-  for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
+  for (std::size_t i = 0; i<well.connected_volumes.size(); ++i)
   {
     const std::size_t icell = well.connected_volumes[i] - n_flow_dfm_faces;
     const angem::Point<3,double> perm = get_permeability(icell);
     angem::Point<3,double> dx_dy_dz = get_dx_dy_dz(icell);
-    // std::cout << "dx_dy_dz = " << dx_dy_dz << std::endl;
-    // std::cout << "perm = " << perm << std::endl;
-    std::cout << "well.segment_length[i] = " << well.segment_length[i] << std::endl;
     angem::Point<3,double> productivity;
     productivity[0] =
         compute_productivity(perm[1], perm[2], dx_dy_dz[1], dx_dy_dz[2],
@@ -1948,7 +1942,6 @@ void SimData::computeWellIndex(Well & well)
                              well.segment_length[i]*fabs(well.directions[i][2]),
                              well.radius);
     well.indices[i] = productivity.norm();
-    std::cout << "productivity.norm() " << productivity.norm() << std::endl;
   }
 }
 
