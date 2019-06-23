@@ -24,8 +24,9 @@ class Well
   // whether a segment is perforated
   std::vector<bool> perforated;
   angem::Point<3,double> coordinate;
-  double radius;
+  double radius, reference_depth;
   std::string name;
+  bool reference_depth_set = false;
 
   // well data after computing mesh collision
   // flow volumes: cells and fractures intersected by the well

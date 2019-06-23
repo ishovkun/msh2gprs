@@ -25,7 +25,7 @@ class Shape
     // check if empty
     bool empty() const;
     // support function for gjk collision algorithm
-    virtual Point<3,Scalar> support(Point<3, Scalar> & direction) const;
+    virtual Point<3,Scalar> support(const Point<3, Scalar> & direction) const;
     // center mass
     virtual Point<3,Scalar> center() const;
     // shift all points in direction p
@@ -79,7 +79,7 @@ Shape<Scalar>::empty() const
 
 template<typename Scalar>
 Point<3,Scalar>
-Shape<Scalar>::support(Point<3,Scalar> & direction) const
+Shape<Scalar>::support(const Point<3,Scalar> & direction) const
 {
   assert(!empty());
 

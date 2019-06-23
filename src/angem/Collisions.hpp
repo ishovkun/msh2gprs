@@ -355,6 +355,7 @@ bool collision(const Point<3,Scalar>        & l0,
 {
   std::vector<Point<3,Scalar>> new_section;
 
+  // points that are inside poly
   if (poly.point_inside(l0))
     new_section.push_back(l0);
   if (poly.point_inside(l1))

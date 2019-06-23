@@ -2,8 +2,8 @@ import os
 import numpy as np
 import re
 
-case_path = "/home/ishovkun/sim/pedfm-comp/pEDFM"
-# case_path = "/home/ishovkun/sim/pedfm-comp/EDFM"
+# case_path = "/home/ishovkun/sim/pedfm-comp/EDFM-horizontal"
+case_path = os.getcwd()
 
 if (case_path[-1] != "/"):
     case_path += "/"
@@ -231,7 +231,7 @@ if (n_edfm > 0 and os.path.isdir(vtk_dir)):
 print("n_volumes = ",                n_volumes,
       "|| n_dfm + n_edfm + n_cells = ", n_dfm + n_edfm + n_cells)
 if (n_volumes != n_dfm + n_edfm + n_cells):
-    print("bug # volumes")
+    print("Wrong # volumes. have some wrong files in directory?")
     exit(0)
 
 print("reading reservoir geometry")

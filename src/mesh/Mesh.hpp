@@ -70,6 +70,7 @@ class Mesh
   face_iterator end_faces()  {return create_face_iterator(map_faces.end());}
 
   // GETTERS
+  std::vector<angem::Point<3,double>> & get_vertices() {return vertices.points;}
   // get vector of neighbor cell indices
   std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
   // vector of indices of cells neighboring a face

@@ -838,8 +838,6 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
   const auto frac_poly = angem::Polygon(frac_element_vertices);
   const Point frac_normal = frac_poly.plane.normal();
 
-  std::cout << "cell = " << cell.index() << std::endl;
-  std::cout << "pedfm_select_faces(cell, split).size() = " << pedfm_select_faces(cell, split).size() << std::endl;
   for (const auto & face : pedfm_select_faces(cell, split))
   {
     // don't connect to cells that are perpendicular to the fracture
@@ -881,12 +879,12 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     // figure out way to avoid double connections
     if (T_face_mm_new / T_face_mm_old < 1e-4)
     {
-      // std::cout << "killing connection "
-      //           << res_cell_flow_index(icell)
-      //           << "-"
-      //           << res_cell_flow_index(neighbor.index())
-      //           << "\t percentage = " << T_face_mm_new / T_face_mm_old * 100
-      //           << std::endl;
+      std::cout << "killing connection "
+                << res_cell_flow_index(icell)
+                << "-"
+                << res_cell_flow_index(neighbor.index())
+                << "\t percentage = " << T_face_mm_new / T_face_mm_old * 100
+                << std::endl;
       flow_data.clear_connection(res_cell_flow_index(icell),
                                  res_cell_flow_index(neighbor.index()));
     }
@@ -913,7 +911,7 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     const double volume_frac = frac_poly.area() * vEfrac[ifrac].aperture;
     const double k_mf = (volume_frac + volume_neighbor) /
                         (volume_frac/k_mf + volume_neighbor/k_neighbor_n);
-    const double T_fm_projection = frac_poly.area() /
+    const double T_fm_projection = k_mf * frac_poly.area() /
                                    frac_poly.center().distance(neighbor.center());
 
     auto & new_connection =
@@ -1872,30 +1870,59 @@ void SimData::setupComplexWell(Well & well)
       {
         if (section_data.size() != 2)
         {
-          std::cout << "something is wrong with segment" << std::endl;
+          std::cout << "just touching cell " << cell.index() << std::endl;
           section_data.clear();
           continue;
         }
-        well.connected_volumes.push_back(n_flow_dfm_faces + cell.index());
+        std::cout << "fully occupying cell " << cell.index() << std::endl;
+
+        well.connected_volumes.push_back(res_cell_flow_index(cell.index()));
         well.segment_length.push_back(section_data[0].distance(section_data[1]));
         well.directions.push_back(segment.second - segment.first);
+        well.directions.back().normalize();
+
+        // for visulatization
+        well_vertex_indices.emplace_back();
+        well_vertex_indices.back().first = well_vertices.insert(section_data[0]);
+        well_vertex_indices.back().second = well_vertices.insert(section_data[1]);
+
+        // auto-detect reference depth for bhp
+        if (!well.reference_depth_set)
+          if(cell.center()[2] < well.reference_depth)
+            well.reference_depth = cell.center()[2];
         section_data.clear();
       }
     }
   }
+
+  well.reference_depth_set = true;
+
+  // error if no connected volumes
+  if (well.connected_volumes.empty())
+    throw std::invalid_argument("well " + well.name + " outside of the domain. aborting");
+}
+
+
+inline
+double get_bounding_interval(const angem::Point<3,double>     & direction,
+                             const angem::Polyhedron<double> * poly)
+{
+  assert(fabs(direction.norm() - 1) < 1e-8);
+  angem::Point<3,double> neg_direction = - direction;
+  return fabs((poly->support(direction) - poly->support(neg_direction)).dot(direction));
 }
 
 
 angem::Point<3,double> SimData::get_dx_dy_dz(const std::size_t icell) const
 {
   const auto cell_poly = grid.create_cell_iterator(icell).polyhedron();
-  angem::Point<3,double> dir, neg_dir, result;
-  dir = {1, 0, 0}; neg_dir = - dir;
-  result[0] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
-  dir = {0, 1, 0}; neg_dir = - dir;
-  result[1] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
-  dir = {0, 0, 1}; neg_dir = - dir;
-  result[2] = (cell_poly->support(dir) - cell_poly->support(neg_dir)).norm();
+  angem::Point<3,double> dir, result;
+  dir = {1, 0, 0};
+  result[0] = get_bounding_interval(dir, cell_poly.get());
+  dir = {0, 1, 0};
+  result[1] = get_bounding_interval(dir, cell_poly.get());
+  dir = {0, 0, 1};
+  result[2] = get_bounding_interval(dir, cell_poly.get());
   return result;
 }
 
@@ -1906,16 +1933,12 @@ double compute_productivity(const double k1, const double k2,
                             const double skin = 0)
 {
   // pieceman radius
-  const double r =
-      0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 + std::sqrt(k1/k2)*dx2*dx2) /
-      (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
+  const double r = 0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 +
+                                  std::sqrt(k1/k2)*dx2*dx2) /
+                   (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
   const double j_ind = 2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
-  // std::cout << "pieceman, rwell " << r << "\t" << radius << std::endl << std::flush;
-  // std::cout << "length " << length << std::endl << std::flush;
-  // std::cout << "other "<< 2*M_PI*std::sqrt(k1*k2)*length << std::endl;
   assert(j_ind >= 0);
   return j_ind;
-
 
 }
 

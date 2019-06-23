@@ -1,0 +1,40 @@
+Mesh file: cartesian.msh
+
+Embedded Fractures :
+  method: projection
+  fracture:
+    type: Rectangle
+    center: [0, 0, -500]
+    length: 160
+    width: 70
+    dip: 60
+    strike: 140
+    aperture: 5e-3
+    conductivity: 500
+
+
+Domain Flow Properties:
+  file: domain.txt
+  # domain id is matched with the physical volume id in gmsh
+  domain:
+    label: 9999992
+    Coupled: true                  # true/false on by default
+    RTEMP: 340
+    PORO: 0.2
+    PERM: 10
+    SWAT: 0.0
+    PRESSURE: 100
+
+Wells:
+  well:
+    name: INJ1
+    radius: 0.1
+    nodes:
+      -95 -95 -470
+      -95 +95 -500
+  well:
+    name: PROD1
+    radius: 0.1
+    nodes:
+      95 -95 -390
+      95 -95 -510
