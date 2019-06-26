@@ -25,56 +25,11 @@ const int MARKER_FRAC = 2;
 namespace gprs_data
 {
 
-// SimData::SimData(const string & inputstream, const SimdataConfig & config)
 SimData::SimData(mesh::Mesh & grid, const SimdataConfig & config)
     :
     grid(grid),
     config(config)
 {
-//   nNodes = 0;
-//   nCells = 0;
-// //
-//   dNotNumber = -999.999;
-
-//   vPointPass.push_back(0);
-//   vPointPass.push_back(2);
-//   vPointPass.push_back(1);
-
-//   vPointCoord.resize(3, 0.0);
-
-//   vvPlate.resize(3);
-//   for (int i = 0; i < 3; i++) vvPlate[i].resize(3, 0.0);
-
-//   // Boundary conditions and initial state
-//   Sxx = 0.0;// 399.0= 0.748 * Szz bar [default: 0]
-//   Syy = 0.0; // 424.0 = 0.795 * Szz bar [default: 300.0]
-//   Szz = 0.0; // 533 = 2172*9.81*2500*1e-5 (rho*g*h) bar [default: 600]
-//   Syz = 0.0;
-//   Sxz = 0.0;
-//   Sxy = 0.0;
-
-//   //wells
-//   nWells = 2;
-//   vsWell.resize(nWells);
-
-//   // well 1 at the footwall block
-//   vsWell[0].vWellCoordinate.clear();
-//   vsWell[0].vWellCoordinate.push_back(-250.0); // x
-//   vsWell[0].vWellCoordinate.push_back(-0.0); // 45-30-90 model
-//   vsWell[0].vWellCoordinate.push_back(-1450.0); // z0
-//   vsWell[0].vWellCoordinate.push_back(-1550.0); // z1
-//   vsWell[0].Type = "WCONPROD";
-//   vsWell[0].radius_poisk = 6.0; // m
-
-//   // well 2 at the hangingwall block
-//   vsWell[1].vWellCoordinate.clear();
-//   vsWell[1].vWellCoordinate.push_back(250.0); // x
-//   vsWell[1].vWellCoordinate.push_back(-0.0); // 45-30-90 model
-//   vsWell[1].vWellCoordinate.push_back(-1450.0); // z0
-//   vsWell[1].vWellCoordinate.push_back(-1550.0); // z1
-//   vsWell[1].Type = "WCONPROD";
-//   vsWell[1].radius_poisk = 6.0; // m
-
   // Kirill's renumbering
   // pRenum = new renum();
 }

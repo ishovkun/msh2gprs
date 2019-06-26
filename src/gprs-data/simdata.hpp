@@ -39,24 +39,35 @@ struct RockProps
 };
 
 
+/* structure hold data about dfm fractures and
+ * faces with mechanical boundary conditions */
 struct PhysicalFace
 {
+  //  dirichlet or neumann
   int ntype;
+  // face index
   std::size_t nface;
+  // gmsh face marker
   int nmark;
+  // index of dfm fracture the frace belongs to
   int ifracture;
+  // index of fluid control volume
   std::size_t nfluid;
+  // whether to map fracture face to reservoir mechanical cell
   bool coupled;
+  // boundary condition components
   angem::Point<3,double> condition;
+  // faces that the face belongs to (1 or 2)
   std::vector<std::size_t> neighbor_cells;
+  // hydraulic aperture of dfm fracture
   double aperture;
+  // hydraulic conductivity of dfm fracture
   double conductivity;
 };
 
 
 /* contrains data for embedded fracture geometry,
- * mechanical and flow parameters
- */
+ * mechanical and flow parameters */
 struct EmbeddedFracture
 {
   // cells that the fracture crosses
@@ -64,17 +75,17 @@ struct EmbeddedFracture
   // points in the frac plane within the intersected cells
   std::vector<angem::Point<3,double>> points;
   // for mechanics: fracture dip angle in a cell
-  std::vector<double>       dip;
+  std::vector<double> dip;
   // for mechanics: fracture strike angle in a cell
-  std::vector<double>       strike;
+  std::vector<double> strike;
   // mechanical paramters
-  double                    cohesion;       // fracture cohesive strength
+  double                    cohesion;   // fracture cohesive strength
   double                    friction_angle; // fracture friction angle
   double                    dilation_angle; // fracture dilation angle
   // combined grid discretization of all embedded fractures
   mesh::SurfaceMesh<double> mesh;
-  double                    aperture;       // hydfraulic aperture [m]
-  double                    conductivity;   // hydraulic conductivity [md-m]
+  double                    aperture;   // hydfraulic aperture [m]
+  double                    conductivity; // hydraulic conductivity [md-m]
 };
 
 
@@ -90,7 +101,7 @@ public:
   // destructor
   ~SimData();
 
-  // distribute user-defined properties over cells
+  //  distribute user-defined properties over cells
   void defineRockProperties();
   // determine which cells are touched by embedded fractures
   // and set mechanical SDA properties
@@ -112,7 +123,7 @@ public:
   void handleConnections();
   // compute flow data without edfm fracs (reservoir and dfm only)
   void computeReservoirTransmissibilities();
-  // high-level method that combines everything related to embedded frac flow
+  //  high-level method that combines everything related to embedded frac flow
   void handleEmbeddedFractures();
   // compute flow data withich a single edfm fracture
   void computeFracFracTran(const std::size_t                 frac,
@@ -268,9 +279,11 @@ public:
   std::unordered_set<int> boundary_face_markers;
 
 protected:
-  // i'm not sure if it's even used
+  // it might be used in older timur's version for 2nd order elements but not
+  // in this version
   StandardElements * pStdElement;
-  // class that performs vertex renumbering  after dfm split for faster computation
+  // class that performs vertex renumbering  after dfm split for
+  // linear solver operation
   // renum * pRenum;
 };
 
