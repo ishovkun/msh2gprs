@@ -6,6 +6,7 @@
 #include <Face.hpp>
 #include <cell_iterator.hpp>
 #include <face_iterator.hpp>
+#include <const_face_iterator.hpp>
 // external
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
@@ -66,10 +67,23 @@ class Mesh
 
   // face iterators
   // A helper funciton to create face iterators
+ private:
   face_iterator create_face_iterator(const FaceMap::iterator & it)
   {return face_iterator(it, vertices);}
+ public:
+  // create a face iterator
   face_iterator begin_faces(){return create_face_iterator(map_faces.begin());}
+  // create a end iterator for faces
   face_iterator end_faces()  {return create_face_iterator(map_faces.end());}
+
+ private:
+  const_face_iterator create_const_face_iterator(FaceMap::const_iterator & it) const
+  {return const_face_iterator(it, vertices);}
+ public:
+  // create a face const_iterator
+  const_face_iterator begin_faces() const {return const_face_iterator(map_faces.cbegin(), vertices);}
+  // create a end const_iterator for faces
+  const_face_iterator end_faces()  const {return const_face_iterator(map_faces.cend(), vertices);}
 
   // GETTERS
   std::vector<angem::Point<3,double>> & get_vertices() {return vertices.points;}

@@ -537,7 +537,7 @@ void YamlParser::section_multiscale(const YAML::Node & node)
     if (key == "Mech file")
       config.mech_ms_file = it->second.as<std::string>();
     else if (key == "blocks")
-      config.n_blocks = it->second.as<std::size_t>();
+      config.n_multiscale_blocks = it->second.as<std::size_t>();
     else if (key == "flow")
     {
       const auto value = it->second.as<std::string>();

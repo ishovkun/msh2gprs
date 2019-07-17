@@ -40,6 +40,16 @@ std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> & vert
 }
 
 
+std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> * vertices,
+                                          const std::vector<std::size_t>  & ivertices)
+{
+  std::vector<Point> element_vertices(ivertices.size());
+  for (std::size_t i=0; i<ivertices.size(); ++i)
+    element_vertices[i] = (*vertices)[ivertices[i]];
+  return element_vertices;
+}
+
+
 hash_type hash_value(const std::vector<std::size_t> & face)
 {
   std::vector<std::size_t> face_sorted = face;

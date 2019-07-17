@@ -105,7 +105,7 @@ struct SimdataConfig
   double frac_cell_elinination_factor = 0.2;
 
   // multiscale
-  size_t n_blocks;
+  size_t n_multiscale_blocks;
   int multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do shit
   int multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do shit
 

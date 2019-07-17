@@ -41,6 +41,9 @@ Point get_element_center(const angem::PointSet<3,double> & vertices,
 std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> & vertices,
                                           const std::vector<std::size_t>  & ivertices);
 
+std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> * p_vertices,
+                                          const std::vector<std::size_t>  & ivertices);
+
 hash_type hash_value(const std::vector<std::size_t> & ivertices);
 
 std::vector<std::size_t> invert_hash(const hash_type & hash);

@@ -14,6 +14,7 @@ ADD_LIBRARY(mesh
   Mesh.cpp
   cell_iterator.cpp
   face_iterator.cpp
+  const_face_iterator.cpp
   mesh_methods.cpp
   surface_mesh_methods.cpp
 )

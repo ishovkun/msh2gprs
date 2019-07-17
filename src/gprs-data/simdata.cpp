@@ -10,7 +10,6 @@
 #include <angem/utils.hpp>
 #include <mesh/utils.hpp> // to remesh embedded fractures
 #include <mesh/Mesh.hpp> // 3D mesh format
-#include "MetisInterface.hpp"
 // parser for user-defined expressions for reservoir data
 #include <muparser/muParser.h>
 
@@ -32,50 +31,6 @@ SimData::SimData(mesh::Mesh & grid, const SimdataConfig & config)
     grid(grid),
     config(config)
 {
-//   nNodes = 0;
-//   nCells = 0;
-// //
-//   dNotNumber = -999.999;
-
-//   vPointPass.push_back(0);
-//   vPointPass.push_back(2);
-//   vPointPass.push_back(1);
-
-//   vPointCoord.resize(3, 0.0);
-
-//   vvPlate.resize(3);
-//   for (int i = 0; i < 3; i++) vvPlate[i].resize(3, 0.0);
-
-//   // Boundary conditions and initial state
-//   Sxx = 0.0;// 399.0= 0.748 * Szz bar [default: 0]
-//   Syy = 0.0; // 424.0 = 0.795 * Szz bar [default: 300.0]
-//   Szz = 0.0; // 533 = 2172*9.81*2500*1e-5 (rho*g*h) bar [default: 600]
-//   Syz = 0.0;
-//   Sxz = 0.0;
-//   Sxy = 0.0;
-
-//   //wells
-//   nWells = 2;
-//   vsWell.resize(nWells);
-
-//   // well 1 at the footwall block
-//   vsWell[0].vWellCoordinate.clear();
-//   vsWell[0].vWellCoordinate.push_back(-250.0); // x
-//   vsWell[0].vWellCoordinate.push_back(-0.0); // 45-30-90 model
-//   vsWell[0].vWellCoordinate.push_back(-1450.0); // z0
-//   vsWell[0].vWellCoordinate.push_back(-1550.0); // z1
-//   vsWell[0].Type = "WCONPROD";
-//   vsWell[0].radius_poisk = 6.0; // m
-
-//   // well 2 at the hangingwall block
-//   vsWell[1].vWellCoordinate.clear();
-//   vsWell[1].vWellCoordinate.push_back(250.0); // x
-//   vsWell[1].vWellCoordinate.push_back(-0.0); // 45-30-90 model
-//   vsWell[1].vWellCoordinate.push_back(-1450.0); // z0
-//   vsWell[1].vWellCoordinate.push_back(-1550.0); // z1
-//   vsWell[1].Type = "WCONPROD";
-//   vsWell[1].radius_poisk = 6.0; // m
-
   // Kirill's renumbering
   // pRenum = new renum();
 }
@@ -1977,34 +1932,22 @@ void SimData::prepare_multiscale_data()
   if (config.multiscale_flow != MSPartitioning::no_partitioning or
       config.multiscale_mechanics != MSPartitioning::no_partitioning)
   {
-    std::cout << "building connection map" << std::endl;
-    //  build partitioning
-    PureConnectionMap cell_connections;
-    for (auto it = grid.begin_faces(); it != grid.end_faces(); ++it)
+    if (config.multiscale_flow == method_mrst_flow)
     {
-      const auto & neighbors = it.neighbors();
-      if (neighbors.size() == 2)  // not a boundary face
-        cell_connections.insert_connection( neighbors[0], neighbors[1] );
+      throw std::invalid_argument("Jaques' code aint merged yet");
     }
-    // partitioning = multiscale::MetisInterface<hash_algorithms::empty>
-    //     ::build_partitioning(cell_connections, config.n_blocks, grid.n_cells());
-    std::cout << "built connection map for partitioning" << std::endl;
+    else if (config.multiscale_flow == method_msrsb or
+            config.multiscale_mechanics == method_msrsb)  // poor option
+    {
+      multiscale::MultiScaleDataMSRSB ms_data(grid, config.n_multiscale_blocks);
+      throw std::invalid_argument("Igor's code aint merged yet");
+    }
+    else if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
+    {
+      throw std::invalid_argument("Will write this code this week");
+    }
   }
   else return;
-
-  if (config.multiscale_flow == method_mrst_flow)
-  {
-    throw std::invalid_argument("Jaques' code aint merged yet");
-  }
-  else if (config.multiscale_flow == method_msrsb or
-           config.multiscale_mechanics == method_msrsb)  // poor option
-  {
-    throw std::invalid_argument("Igor's code aint merged yet");
-  }
-  else if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
-  {
-    throw std::invalid_argument("Will write this code this week");
-  }
   exit(0);
 }
 

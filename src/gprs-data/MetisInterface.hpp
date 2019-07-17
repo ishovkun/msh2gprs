@@ -106,7 +106,7 @@ class MetisInterface
   MetisInterface();
 
   // computes number of unique elements in connection map
-  size_t count_elements(const ConnectionMap<ConnType> & connections)
+  static size_t count_elements(const ConnectionMap<ConnType> & connections)
   {
     std::unordered_set<size_t> uniques;
     for (auto it = connections.begin(); it != connections.end(); ++it)
