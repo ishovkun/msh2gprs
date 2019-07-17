@@ -116,6 +116,9 @@ int main(int argc, char *argv[])
   std::cout << "compute connections between mech and flow elements" << std::endl;
   preprocessor.handleConnections();
 
+  // multiscale
+  preprocessor.prepare_multiscale_data();
+
   // OUPUT
   cout << "Write Output data\n";
   gprs_data::OutputData output_data(preprocessor, msh);

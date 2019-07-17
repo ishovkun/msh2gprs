@@ -19,6 +19,7 @@
 #include "mesh/SurfaceMesh.hpp"
 #include "mesh/Mesh.hpp"
 #include "SimdataConfig.hpp"
+#include "MetisInterface.hpp"
 #include <Well.hpp>
 
 #include <algorithm>
@@ -159,7 +160,7 @@ public:
   }
 
   // Multiscale
-  void partition_mechanics();
+  void prepare_multiscale_data();
 
 protected:
   // number of default variables (such as cell x,y,z) for rock properties
@@ -259,6 +260,12 @@ public:
 
   // old timur wells: rewrute
   // vector<SimpleWell> vsWell;
+
+  // multiscale
+  std::vector<std::size_t> partitioning;
+
+  // different from partitioning cause of DFM and EDFM fracs and wells
+  std::vector<std::size_t> fluid_partitioning;
 
 protected:
   // i'm not sure if it's even used

@@ -6,7 +6,6 @@
 #include <Face.hpp>
 #include <cell_iterator.hpp>
 #include <face_iterator.hpp>
-#include <MetisData.hpp>
 // external
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
@@ -106,10 +105,6 @@ class Mesh
   // returns SurfaceMesh of master DFM faces
   // cleans marked_for_split array upon completion
   SurfaceMesh<double> split_faces();
-
-  // Converters
-
-  MetisData * get_METIS_connections() const;
 
   // ATTRIBUTES
   angem::PointSet<3,double>             vertices;      // vector of vertex coordinates

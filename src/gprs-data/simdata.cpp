@@ -10,6 +10,7 @@
 #include <angem/utils.hpp>
 #include <mesh/utils.hpp> // to remesh embedded fractures
 #include <mesh/Mesh.hpp> // 3D mesh format
+#include "MetisInterface.hpp"
 // parser for user-defined expressions for reservoir data
 #include <muparser/muParser.h>
 
@@ -1971,9 +1972,25 @@ void SimData::computeWellIndex(Well & well)
 }
 
 
-void SimData::partition_mechanics()
+void SimData::prepare_multiscale_data()
 {
-  const auto * metis_data = mesh.get_METIS_connections();
+  if (config.multiscale_flow != MSPartitioning::no_partitioning or
+      config.multiscale_mechanics != MSPartitioning::no_partitioning)
+  {
+    // build partitioning
+    PureConnectionMap cell_connections;
+    for (auto it = grid.begin_faces(); it != grid.end_faces(); ++it)
+    {
+      const auto & neighbors = it.neighbors();
+      if (neighbors.size() == 2)  // not a boundary face
+        cell_connections.insert_connection( neighbors[0], neighbors[1] );
+    }
+    // partitioning = multiscale::MetisInterface<hash_algorithms::empty>
+    //     ::build_partitioning(cell_connections, config.n_blocks, grid.n_cells());
+  }
+  else return;
+
+  //  if (config.multiscale_flow == MSPartitioning::)
 }
 
 }  // end namespace
