@@ -33,6 +33,8 @@ void YamlParser::parse_file(const std::string & fname)
       boundary_conditions(it->second);
     else if (key == "Wells")
       section_wells(it->second);
+    else if (key == "Multiscale")
+      section_multiscale(it->second);
     else
       std::cout << "Unknown key: " << key << " skipping" << std::endl;
   }
@@ -522,4 +524,55 @@ void YamlParser::read_well(const YAML::Node & node,
   }
 }
 
+
+void YamlParser::section_multiscale(const YAML::Node & node)
+{
+  for (auto it = node.begin(); it!=node.end(); ++it)
+  {
+    const std::string key = it->first.as<std::string>();
+    std::cout << "\treading key " << key << std::endl;
+
+    if (key == "Flow file")
+      config.flow_ms_file = it->second.as<std::string>();
+    if (key == "Mech file")
+      config.mech_ms_file = it->second.as<std::string>();
+    else if (key == "blocks")
+      config.n_blocks = it->second.as<std::size_t>();
+    else if (key == "flow")
+    {
+      const auto value = it->second.as<std::string>();
+      if (value == "no")
+        config.multiscale_flow = MSPartitioning::no_partitioning;
+      else if (value == "msrsb")
+        config.multiscale_flow = MSPartitioning::method_msrsb_flow;
+      else if (value == "mrst")
+        config.multiscale_flow = MSPartitioning::method_mrst_flow;
+      else
+      {
+        std::cout << "\tunknown keyword aborting" << std::endl;
+        abort();
+      }
+    }
+    else if (key == "mechanics")
+    {
+      const auto value = it->second.as<std::string>();
+      if (value == "no")
+        config.multiscale_mechanics = MSPartitioning::no_partitioning;
+      else if (value == "msrsb")
+        config.multiscale_flow = MSPartitioning::method_msrsb_flow;
+      else if (value == "srfem")
+        config.multiscale_flow = MSPartitioning::method_mechanics;
+      else
+      {
+        std::cout << "\tunknown keyword aborting" << std::endl;
+        abort();
+      }
+
+    }
+    else
+      std::cout << "\tSkipping unknown keyword" << std::endl;
+  }
+  exit(0);
 }
+
+}  // end namespace

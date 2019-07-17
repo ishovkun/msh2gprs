@@ -5,6 +5,7 @@
 #include <map>
 #include <memory> // shared / unique_ptr
 
+
 enum MSPartitioning : int
 {
   no_partitioning = 0,
@@ -117,6 +118,8 @@ struct SimdataConfig
   std::string bcond_file            = "bcond.txt";
   std::string wells_file            = "wells.txt";
   std::string wells_vtk_file        = "wells.vtk";
+  std::string mech_ms_file          = "ms_mech.txt";
+  std::string flow_ms_file          = "ms_flow.txt";
 };
 
 
