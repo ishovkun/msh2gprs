@@ -8,8 +8,8 @@
 
 enum MSPartitioning : int
 {
-  no_partitioning = 0,
-  method_msrsb_flow = 1,  // igor's inspired by olav's paper
+  no_partitioning  = 0,
+  method_msrsb     = 1,  // igor's inspired by olav's paper, doesn't work for mech
   method_mrst_flow = 2,   // jacques' inspired by mrst and cgal
   method_mechanics = 3  // igor's mechanics method
 };

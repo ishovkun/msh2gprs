@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
   preprocessor.handleConnections();
 
   // multiscale
+  std::cout << "build multiscale data" << std::endl;
   preprocessor.prepare_multiscale_data();
 
   // OUPUT

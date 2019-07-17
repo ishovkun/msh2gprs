@@ -1977,7 +1977,8 @@ void SimData::prepare_multiscale_data()
   if (config.multiscale_flow != MSPartitioning::no_partitioning or
       config.multiscale_mechanics != MSPartitioning::no_partitioning)
   {
-    // build partitioning
+    std::cout << "building connection map" << std::endl;
+    //  build partitioning
     PureConnectionMap cell_connections;
     for (auto it = grid.begin_faces(); it != grid.end_faces(); ++it)
     {
@@ -1987,10 +1988,24 @@ void SimData::prepare_multiscale_data()
     }
     // partitioning = multiscale::MetisInterface<hash_algorithms::empty>
     //     ::build_partitioning(cell_connections, config.n_blocks, grid.n_cells());
+    std::cout << "built connection map for partitioning" << std::endl;
   }
   else return;
 
-  //  if (config.multiscale_flow == MSPartitioning::)
+  if (config.multiscale_flow == method_mrst_flow)
+  {
+    throw std::invalid_argument("Jaques' code aint merged yet");
+  }
+  else if (config.multiscale_flow == method_msrsb or
+           config.multiscale_mechanics == method_msrsb)  // poor option
+  {
+    throw std::invalid_argument("Igor's code aint merged yet");
+  }
+  else if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
+  {
+    throw std::invalid_argument("Will write this code this week");
+  }
+  exit(0);
 }
 
 }  // end namespace

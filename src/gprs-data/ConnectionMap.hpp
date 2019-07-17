@@ -245,14 +245,14 @@ std::size_t ConnectionMap<DataType>::insert_connection(const std::size_t ielemen
   if (std::max(ielement, jelement) >= v_neighbors.size())
   {
     const std::size_t new_size = 2 * std::max(ielement, jelement);
-    if (sizeof(DataType) > sizeof(empty))  // don't waste space if hash_algorithms::empty
-      v_neighbors.resize(new_size);
+    v_neighbors.resize(new_size);
   }
 
   v_neighbors[ielement].push_back(jelement);
   v_neighbors[jelement].push_back(ielement);
 
-  data.resize(data.size() + 1);
+  if (sizeof(DataType) > sizeof(empty))  // don't waste space if hash_algorithms::empty
+    data.resize(data.size() + 1);
 
   return conn;
 }

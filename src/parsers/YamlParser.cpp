@@ -544,7 +544,7 @@ void YamlParser::section_multiscale(const YAML::Node & node)
       if (value == "no")
         config.multiscale_flow = MSPartitioning::no_partitioning;
       else if (value == "msrsb")
-        config.multiscale_flow = MSPartitioning::method_msrsb_flow;
+        config.multiscale_flow = MSPartitioning::method_msrsb;
       else if (value == "mrst")
         config.multiscale_flow = MSPartitioning::method_mrst_flow;
       else
@@ -559,7 +559,7 @@ void YamlParser::section_multiscale(const YAML::Node & node)
       if (value == "no")
         config.multiscale_mechanics = MSPartitioning::no_partitioning;
       else if (value == "msrsb")
-        config.multiscale_flow = MSPartitioning::method_msrsb_flow;
+        config.multiscale_flow = MSPartitioning::method_msrsb;
       else if (value == "srfem")
         config.multiscale_flow = MSPartitioning::method_mechanics;
       else
@@ -572,7 +572,6 @@ void YamlParser::section_multiscale(const YAML::Node & node)
     else
       std::cout << "\tSkipping unknown keyword" << std::endl;
   }
-  exit(0);
 }
 
 }  // end namespace
