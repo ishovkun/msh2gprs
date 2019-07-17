@@ -83,4 +83,17 @@ angem::Polygon<double> face_iterator::polygon() const
   return angem::Polygon<double>(vertices());
 }
 
+
+angem::Point<3,double> face_iterator::center() const
+{
+  const auto verts = vertex_indices();
+  angem::Point<3,double> c = {0, 0, 0};
+  for (const size_t vert : verts)
+    c += (*p_mesh_vertices)[vert];
+
+  for (int comp = 0; comp < 3; comp++)
+    c[comp] /= verts.size();
+  return c;
+}
+
 }
