@@ -5,6 +5,7 @@
 #include <ShapeID.hpp>
 #include <Face.hpp>
 #include <cell_iterator.hpp>
+#include <const_cell_iterator.hpp>
 #include <face_iterator.hpp>
 #include <const_face_iterator.hpp>
 // external
@@ -64,6 +65,15 @@ class Mesh
   cell_iterator begin_cells(){return create_cell_iterator(0);}
   // end iterator for cells. Must only be used as the range indicator
   cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
+  // CONST_ITERATORS
+  // Helper function to create cell const_iterators.
+  const_cell_iterator create_const_cell_iterator(const std::size_t icell) const
+  {return const_cell_iterator(icell, vertices, cells, map_faces,
+                              shape_ids, cell_markers);}
+  // create cell iterator for the first cell
+  const_cell_iterator begin_cells() const {return create_const_cell_iterator(0);}
+  // end iterator for cells. Must only be used as the range indicator
+  const_cell_iterator end_cells() const {return create_const_cell_iterator(cells.size());}
 
   // face iterators
   // A helper funciton to create face iterators

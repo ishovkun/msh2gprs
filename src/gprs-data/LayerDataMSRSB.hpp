@@ -39,8 +39,8 @@ struct LayerDataMSRSB
   std::vector<angem::Point<3,double>> ghost_cell_directions;
   std::vector<std::string> ghost_cell_names;
 
-  std::shared_ptr< std::vector<angem::Point<3,double>> > p_cell_centroids;
-  std::shared_ptr< std::vector<angem::Point<3,double>> > p_block_centroids;
+  // std::shared_ptr< std::vector<angem::Point<3,double>> > p_cell_centroids;
+  std::vector<angem::Point<3,double>>  block_centroids;
   // ---------------- Flowe     ( fvm ) stuff ----------------------------- //
   std::shared_ptr< std::vector<angem::Point<3,double>> > p_cell_centroids_flow;
   std::shared_ptr< std::vector<angem::Point<3,double>> > p_block_centroids_flow;

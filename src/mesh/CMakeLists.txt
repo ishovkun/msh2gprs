@@ -13,6 +13,7 @@ ADD_LIBRARY(mesh
   ShapeID.cpp
   Mesh.cpp
   cell_iterator.cpp
+  const_cell_iterator.cpp
   face_iterator.cpp
   const_face_iterator.cpp
   mesh_methods.cpp

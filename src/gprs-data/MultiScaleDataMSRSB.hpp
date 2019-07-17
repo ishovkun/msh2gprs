@@ -21,12 +21,25 @@ class MultiScaleDataMSRSB
   MultiScaleDataMSRSB(mesh::Mesh  & grid,
                       const size_t  n_blocks);
   // get reference to the active layer
+  inline
   LayerDataMSRSB & active_layer(){return layers[active_layer_index];}
 
  protected:
-  void build_partitioning();
 
  private:
+  // call to metis to obtain partitioning
+  void build_partitioning();
+  // main method that identifies regions where shape functions exist
+  void build_support_regions();
+  // find geometric centers of coarse blocks
+  void find_centroids();
+  // find geometric centers of coarse block faces
+  std::vector<angem::Point<3,double>> find_block_face_centroids();
+
+
+
+
+  // members
   const mesh::Mesh & grid;
   vector<LayerDataMSRSB> layers;
   size_t active_layer_index;
