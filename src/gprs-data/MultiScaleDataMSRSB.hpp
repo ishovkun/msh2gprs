@@ -2,6 +2,8 @@
 
 #include "mesh/Mesh.hpp"
 #include "LayerDataMSRSB.hpp"
+#include "UnionFindWrapper.hpp"
+#include "tuple_hash.hpp"
 #include <algorithm>  // std::max_element
 #include <vector>
 
@@ -23,6 +25,7 @@ class MultiScaleDataMSRSB
   // get reference to the active layer
   inline
   LayerDataMSRSB & active_layer(){return layers[active_layer_index];}
+  const LayerDataMSRSB & active_layer() const {return layers[active_layer_index];}
 
  protected:
 
@@ -33,10 +36,35 @@ class MultiScaleDataMSRSB
   void build_support_regions();
   // find geometric centers of coarse blocks
   void find_centroids();
-  // find geometric centers of coarse block faces
-  std::vector<angem::Point<3,double>> find_block_face_centroids();
+  // build connection map that stores faces between blocks and their centers
+  void build_block_connections();
+  // identify ghost blocks, find block face centroids,
+  // find block edge centroids
+  void build_block_face_data();
+  // find ghost coarse blocks
+  // Note: ghost cells are like top, bottom, etc.
+  // their indices start from layer.n_blocks and go up
+  void build_ghost_block_faces();
+  // check whether two faces share an edge
+  bool share_edge(const mesh::const_face_iterator &face1,
+                  const mesh::const_face_iterator &face2);
+  // build a structure that diistinguishes between boundary face groups
+  // this is done to find ghost blocks
+  algorithms::UnionFindWrapper<size_t> build_external_face_disjoint();
 
+  bool is_ghost_block(const size_t block) const;
 
+  void find_block_face_centroids(algorithms::UnionFindWrapper<size_t> & face_disjoint,
+                                 std::unordered_map<size_t, size_t>   & map_block_group);
+
+  //  get map cell_vertex (corner of block) -> blocks that have it
+  std::unordered_map<std::size_t, std::vector<std::size_t>>
+  build_map_vertex_blocks(algorithms::UnionFindWrapper<size_t> & face_disjoint,
+                          std::unordered_map<size_t, size_t>   & map_block_group);
+
+  //this method inverts a map obtained in the previous method
+  std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>, std::vector<std::size_t>>
+  build_block_corners(const std::unordered_map<std::size_t, std::vector<std::size_t>> & map_block_vertices);
 
 
   // members

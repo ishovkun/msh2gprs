@@ -21,6 +21,8 @@ class connection_map_iterator : public std::iterator<std::forward_iterator_tag, 
   connection_map_iterator operator++() {map_it++; return *this;}
   // data access operator
   DataType & operator*() const {return data[map_it->second];}
+  // data access operator
+  DataType * operator->() {return &data[map_it->second];}
   // get element indices from connection iterator
   inline std::pair<std::size_t,std::size_t> elements() const
   {return invert_hash(map_it->first);}
