@@ -977,8 +977,6 @@ compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>
   for(int ipoly = 0; ipoly < polys.size(); ipoly++)
   {
     tran.vvFNodes.push_back( polys[ipoly] );
-    // tran.vNbFNodes.push_back( polys[ipoly].size() );
-
     tran.vCodePolygon.push_back( code_polygon );
     code_polygon++;
     vConductivity.push_back(vEfrac[markers[ipoly]].conductivity);

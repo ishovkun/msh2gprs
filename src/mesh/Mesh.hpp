@@ -59,7 +59,7 @@ class Mesh
                         shape_ids, cell_markers);}
   // create cell iterator for the first cell
   cell_iterator begin_cells(){return create_cell_iterator(0);}
-  // end iterator for cells. Must only be used as the range indicator
+  // Returns an iterator referring to the past-the-end element in the cell container
   cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
 
   // face iterators

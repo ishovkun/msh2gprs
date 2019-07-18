@@ -57,21 +57,6 @@ CalcTranses::~CalcTranses()
   // free (VFaces);
 }
 /********************************************************************/
-double CalcTranses::ABS(double v)
-{
-    if (v>=0.) return(v);
-    return(-v);
-}
-/********************************************************************/
-void CalcTranses::CheckIt(int TEST)
-{
-  if (TEST == 1)
-  {
-    printf("Memory Allocation Problem.\n");
-    exit(0);
-  }
-}
-/********************************************************************/
 void CalcTranses::ProjectionA( double mx,double my,double mz,
                                double px,double py,double pz,
                                double ix,double iy,double iz,
@@ -195,7 +180,7 @@ void CalcTranses::ComputeBasicGeometry()
               Fny[k]*(FYG[k]-yi) +
               Fnz[k]*(FZG[k]-zi);
 
-          volumetmp = ABS(h*FArea[k]) / 3.;
+          volumetmp = fabs(h*FArea[k]) / 3.;
 
           if (std::isnan(volumetmp))
           {
@@ -930,7 +915,7 @@ void CalcTranses::ComputeTransmissibilityPart()
         fy = fy/fl;
         fz = fz/fl;
 
-        //    ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*ABS(nx*fx+ny*fy+nz*fz)/fl;
+        //    ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*fabs(nx*fx+ny*fy+nz*fz)/fl;
         ConTr[i][0]   = ConArea[i][0]*ConPerm[i][0] * 1./fl;
         ConGeom[i][0] = ConArea[i][0]*ConMult[i][0] * 1./fl;
 
@@ -947,7 +932,7 @@ void CalcTranses::ComputeTransmissibilityPart()
         fy = fy/fl;
         fz = fz/fl;
 
-        //    ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*ABS(nx*fx+ny*fy+nz*fz)/fl;
+        //    ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*fabs(nx*fx+ny*fy+nz*fz)/fl;
         ConTr[i][1]   = ConArea[i][1] * ConPerm[i][1] * 1./fl;
         ConGeom[i][1] = ConArea[i][1] * ConMult[i][1] * 1./fl;
       }

@@ -4,7 +4,8 @@
 /* March 2007, Stanford, CA.                                            */
 /*                                                                      */
 /* December 2012. Modifications by Timur Garipov                        */
-/* Geomechanical interface. Convert Tetgen data to Karimi data           */
+/* Geomechanical interface. Convert Tetgen data to Karimi data          */
+/* September 2018 - porting into C++ by Igor Shovkun                    */
 /************************************************************************/
 #pragma once
 
@@ -26,25 +27,15 @@
 #include <time.h>
 
 
-// struct FlowData
-// {
-//   std::vector<double> volumes, poro, depth;
-//   // regular transmissibilities
-//   std::vector<std::size_t> ielement, jelement;
-//   std::vector<double>      trans_ij, conduct_ij;
-//   // connections
-//   std::vector<int> connection_type;
-//   std::vector<int> connection_n;
-
-//   // user-defined cell data
-//   std::vector<std::vector<double>> custom_data;
-//   std::vector<std::string>         custom_names;
-// };
-
 namespace flow
 {
 
 
+/* This is a class for computing flow properties.
+ * It compute transmissibilities and volumes.
+ * It features fracture transmissibilities and
+ * fracture-fracture transmissibilities through the
+ * start-delta transformation.*/
 class CalcTranses
 {
 public:
@@ -68,28 +59,31 @@ public:
   int NbOptions;
   //coordinates
   std::vector<double>	X,Y,Z;
-  // std::vector<double> vCoordinatesX;
-  // std::vector<double> vCoordinatesY;
-  // std::vector<double> vCoordinatesZ;
   //faces
   std::vector<std::vector<std::size_t> > vvVFaces;
   std::vector<int> vCodePolygon;
-  //elements
-  // std::vector<int> vNbFNodes;
+  /* vector of face polygons: v_cells[cell].v_vertices[vertex] */
   std::vector<std::vector<std::size_t> > vvFNodes;
+  // polyhedron code is the index of a cell
   std::vector<int> vCodePolyhedron;
-  //properties
+  // -------
+  //  PROPERTIES
+  // region from which the properties are taken
   std::vector<int> vZoneCode;
+  // volume factor for each zone
   std::vector<double> vZVolumeFactor;
+  // modify conenction area
   std::vector<double> vTimurConnectionFactor;
+  // porosity
   std::vector<double> vZPorosity;
+  // not actually used as a matter of fact i think
   std::vector<int> vZPermCode;
+  // permeability
   std::vector<double> vZPermeability;
+  // thermal conductivity
   std::vector<double> vZConduction;
 
 protected:
-  double ABS(double v);
-  void CheckIt(int TEST);
   void ProjectionA(double mx,double my,double mz,
                    double px,double py,double pz,
                    double ix,double iy,double iz,
@@ -110,8 +104,6 @@ protected:
   void ComputeTransmissibilityList();
 
 protected:
-// SimData * pSim;
-
   std::size_t	NbCVs,NbVolumes,NbInterfaces,NbEquations,NbFeatures,NbCF,NbConnections,NbIntersections;
   std::size_t	NbTransmissibility,NbMetric;
   int		OptionVC,OptionGO,OptionMC;
