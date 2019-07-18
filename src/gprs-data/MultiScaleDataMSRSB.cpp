@@ -257,4 +257,15 @@ bool MultiScaleDataMSRSB::is_ghost_block(const size_t block) const
   else return true;
 }
 
+
+std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>, std::vector<std::size_t>>
+MultiScaleDataMSRSB::
+build_block_corners(const std::unordered_map<std::size_t, std::vector<std::size_t>> & map_block_vertices)
+{
+
+  std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>,
+                     std::vector<std::size_t>> block_corners;
+  return block_corners;
+}
+
 }  // end namespace

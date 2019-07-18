@@ -16,7 +16,7 @@ h = lfrac / nf;
 
 nx = 20;
 ny = 20;
-nz = 10;
+nz = 2;
 
 If (nx % 2 != 0)
     nx = nx + 1;
@@ -88,3 +88,9 @@ Physical Surface(Back) = {out1[5]};
 
 
 Physical Volume(9999991) = {1};
+
+Geometry.Tolerance = size_x / nx / 1e3;
+Geometry.AutoCoherence = 2;
+Mesh 3;  // Generalte 3D mesh
+Coherence Mesh;  // Remove duplicate entities
+Save "cartesian.msh";  // Save mesh in MSH format

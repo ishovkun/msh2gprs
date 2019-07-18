@@ -20,8 +20,11 @@ class GmshReader
   GmshReader();
   static void read_gmsh2_input(std::fstream & mesh_file,
                                mesh::Mesh   & mesh);
+  static void read_gmsh4_input(std::fstream & mesh_file,
+                               mesh::Mesh   & mesh);
   // variables
   static MapIntInt map_gmsh_vtk;
+  static MapIntInt map_vtk_element_size;
 };
 
 

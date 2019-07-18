@@ -1,5 +1,5 @@
-# Mesh file: cartesian.msh
-Mesh file: geom.msh
+Mesh file: cartesian.msh
+# Mesh file: geom.msh
 
 Domain Mechanical Properties:
   domain:
