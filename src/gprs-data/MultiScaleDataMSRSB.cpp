@@ -19,14 +19,15 @@ MultiScaleDataMSRSB::MultiScaleDataMSRSB(mesh::Mesh  & grid,
   layer.n_blocks = n_blocks;
   layer.n_cells = grid.n_cells();
 
+  std::cout << "building METIS partitioning...";
   build_partitioning();
+  std::cout << "OK" << std::endl;
   build_support_regions();
 }
 
 
 void MultiScaleDataMSRSB::build_partitioning()
 {
-    std::cout << "building connection map" << std::endl;
     auto & layer = active_layer();
     PureConnectionMap cell_connections;
 
@@ -44,9 +45,17 @@ void MultiScaleDataMSRSB::build_partitioning()
 
 void MultiScaleDataMSRSB::build_support_regions()
 {
+  std::cout << "finding block centroids...";
   find_centroids();
+  std::cout << "OK" << std::endl;
+
+  std::cout << "building block connections...";
   build_block_connections();
+  std::cout << "OK" << std::endl;
+
+  std::cout << "build block face data..." << std::flush;
   build_block_face_data();
+  std::cout << "OK" << std::endl;
 }
 
 
@@ -88,7 +97,9 @@ void MultiScaleDataMSRSB::build_block_connections()
 
 void MultiScaleDataMSRSB::build_block_face_data()
 {
+  std::cout << "building disjoints..." << std::flush;
   algorithms::UnionFindWrapper<size_t> face_disjoint = build_external_face_disjoint();
+  std::cout << "OK" << std::endl;
 
   size_t ghost_block = active_layer().n_blocks;
   std::unordered_map<size_t, size_t> map_block_group;
@@ -96,9 +107,18 @@ void MultiScaleDataMSRSB::build_block_face_data()
     if (map_block_group.find(it_face.first) == map_block_group.end())
       map_block_group.insert({ it_face.first, ghost_block++});
 
+  std::cout << "building face centroids...";
   find_block_face_centroids(face_disjoint, map_block_group);
+  std::cout << "OK" << std::endl;
+  std::cout << "building map vert blocks ...";
   const auto map_vertex_blocks = build_map_vertex_blocks(face_disjoint, map_block_group);
-  const auto map_block_vertices = build_block_corners(map_vertex_blocks);
+  std::cout << "OK" << std::endl;
+  std::cout << "finding blocks corners ...";
+  const auto map_block_edge_vertices = build_block_edges(map_vertex_blocks);
+  std::cout << "OK" << std::endl;
+  std::cout << "find block edge centers...";
+  find_block_edge_centroids(map_block_edge_vertices);
+  std::cout << "OK" << std::endl;
 }
 
 
@@ -146,7 +166,7 @@ bool MultiScaleDataMSRSB::share_edge(const mesh::const_face_iterator &face1,
   for (const auto &v1 : face1.vertex_indices())
     for (const auto &v2 : face2.vertex_indices())
       if (v1 == v2)
-      shared_verts.insert(v1);
+        shared_verts.insert(v1);
 
   return (shared_verts.size() > 1);
 }
@@ -168,35 +188,36 @@ algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_di
       for (size_t & v : face.vertex_indices() )
       {
         auto it = map_vertex_face.find(v);
-        if (it == map_vertex_face.end()) map_vertex_face.insert({v, {face}});
-        else it->second.push_back(face);
+        if (it == map_vertex_face.end()) map_vertex_face.insert({v, {std::move( face )}});
+        else it->second.push_back(std::move( face ));
       }
     }
 
-  // create external face groups
+  face_disjoint.finalize();
+
+  //  create external face groups
   for (const auto & it : map_vertex_face)
   {
     const auto & faces = it.second;
     for (std::size_t i=0; i<faces.size(); ++i)
     {
-      const auto face1 = faces[i];
+      const auto & face1 = faces[i];
       const size_t cell1 = face1.neighbors()[0];
       for (std::size_t j=i+1; j<faces.size(); ++j)
       {
-        const auto face2 = faces[j];
+        const auto & face2 = faces[j];
         const size_t cell2 = face2.neighbors()[0];
         // if (face1 != face2) // they are created different
 
-        if (cell1 != cell2)  // criterion 1 for groups
+        /* criteria for uniting faces into groups to identify
+         * ghost blocks:
+         * (1) two boundary face do not belong to the  same cell
+         * (2) their normals don't have a crazy angle between 'em
+         * (3) two faces share an edge (two connected vertices) */
+        if (cell1 != cell2)                                      // criterion 1
           if ( abs(dot(face1.normal(), face2.normal())) > 1e-4 ) // criterion 2
-            // note: share not just vertex but an edge
             if ( share_edge(face1, face2) )                      // criterion 3
-          {
-            const size_t block1 = layer.partitioning[cell1];
-            const size_t block2 = layer.partitioning[cell2];
             face_disjoint.merge(face1.index(), face2.index());
-          }
-
       }
     }
   }
@@ -209,6 +230,7 @@ MultiScaleDataMSRSB::
 build_map_vertex_blocks(algorithms::UnionFindWrapper<size_t> & face_disjoint,
                         std::unordered_map<size_t, size_t>   & map_block_group)
 {
+  /* collect vertices from faces that are on block-block interfaces */
   auto & layer = active_layer();
   std::unordered_map<std::size_t, std::vector<std::size_t>> vertex_blocks;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
@@ -260,12 +282,58 @@ bool MultiScaleDataMSRSB::is_ghost_block(const size_t block) const
 
 std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>, std::vector<std::size_t>>
 MultiScaleDataMSRSB::
-build_block_corners(const std::unordered_map<std::size_t, std::vector<std::size_t>> & map_block_vertices)
+build_block_edges(const std::unordered_map<std::size_t, std::vector<std::size_t>> & map_block_vertices)
 {
-
   std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>,
-                     std::vector<std::size_t>> block_corners;
-  return block_corners;
+                     std::vector<std::size_t>> block_triplet_vertices;
+
+  for (auto & it_vertex : map_block_vertices)
+    if (it_vertex.second.size() > 2)  // on edge
+    {
+      // copy cause modifying
+      auto blocks = it_vertex.second;
+      // build block triplets with ascending ordering
+      std::sort(blocks.begin(), blocks.end());
+
+      for (std::size_t i = 0; i < blocks.size(); ++i)
+        for (std::size_t j = i+1; j < blocks.size(); ++j)
+          for (std::size_t k = j+1; k < blocks.size(); ++k)
+          {
+            const auto block_triplet = std::make_tuple(blocks[i], blocks[j], blocks[k]);
+            auto it_blocks = block_triplet_vertices.find(block_triplet);
+            if (it_blocks != block_triplet_vertices.end())
+              it_blocks->second.push_back(it_vertex.first);
+            else
+              block_triplet_vertices.insert({std::move( block_triplet ), {it_vertex.first}});
+          }
+    }
+
+  return block_triplet_vertices;
+}
+
+
+void MultiScaleDataMSRSB::find_block_edge_centroids(
+      const std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>, std::vector<std::size_t>>
+      &map_block_edge_vertices)
+{
+  for (const auto & block_edge : map_block_edge_vertices)
+  {
+    // find block edge center
+    angem::Point<3,double> block_edge_center = {0, 0, 0};
+    for (const auto & vertex : block_edge.second)
+      block_edge_center += grid.vertex_coordinates(vertex);
+    block_edge_center /= block_edge.second.size();
+
+    // move this point to lie on the edge
+    // make this point lie on edge
+    // block_edge_center = grid.vertex_coordinates(
+    //     angem::find_closest_vertex(block_edge_center,
+    //           /* all_vertices = */ grid.get_vertices(),
+    //                 /* subset = */ block_edge.second));
+
+    // std::pair<std::size_t, std::size_t> face_blocks;
+    // std::size_t edging_block;
+  }
 }
 
 }  // end namespace

@@ -52,13 +52,14 @@ class PointSet
   typename std::vector<Point<dim,Scalar>>::iterator end();
   typename std::vector<Point<dim,Scalar>>::const_iterator begin() const;
   typename std::vector<Point<dim,Scalar>>::const_iterator end() const;
-
   // size methods. returns size of vector points
   std::size_t size() const;
+  // return true if the set is empty
   bool empty() const {return points.empty();}
 
-  // variables
+  // vector of pointset point coodinates
   std::vector<Point<dim,Scalar>> points;
+
  private:
   pset_hash_type hash_value(const Point<dim,Scalar> &) const;
 

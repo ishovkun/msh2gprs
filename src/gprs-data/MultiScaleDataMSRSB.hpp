@@ -57,14 +57,23 @@ class MultiScaleDataMSRSB
   void find_block_face_centroids(algorithms::UnionFindWrapper<size_t> & face_disjoint,
                                  std::unordered_map<size_t, size_t>   & map_block_group);
 
-  //  get map cell_vertex (corner of block) -> blocks that have it
+  /* collect vertices from faces that are on block-block interfaces */
   std::unordered_map<std::size_t, std::vector<std::size_t>>
   build_map_vertex_blocks(algorithms::UnionFindWrapper<size_t> & face_disjoint,
                           std::unordered_map<size_t, size_t>   & map_block_group);
 
   //this method inverts a map obtained in the previous method
+  // build a map (triplet of block in ascending order) -> (vertex)
+  // this map essentially stores block edges and corners
   std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>, std::vector<std::size_t>>
-  build_block_corners(const std::unordered_map<std::size_t, std::vector<std::size_t>> & map_block_vertices);
+  build_block_edges(const std::unordered_map<std::size_t, std::vector<std::size_t>> & map_block_vertices);
+
+  // find centers of block edges and modify layer.block_faces structure
+  void find_block_edge_centroids(
+      const
+      std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>, std::vector<std::size_t>>
+      &map_block_vertices);
+
 
 
   // members

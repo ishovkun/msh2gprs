@@ -96,7 +96,14 @@ class Mesh
   const_face_iterator end_faces()  const {return const_face_iterator(map_faces.cend(), vertices);}
 
   // GETTERS
+  // get vector of all the grid vertex node coordinates
   std::vector<angem::Point<3,double>> & get_vertices() {return vertices.points;}
+  // get const vector of all the grid vertex node coordinates
+  const std::vector<angem::Point<3,double>> & get_vertices() const {return vertices.points;}
+  // get vertex coordinates
+  const angem::Point<3,double> & vertex_coordinates(const std::size_t i) const;
+  // get vertex coordinates
+  angem::Point<3,double> & vertex_coordinates(const std::size_t i);
   // get vector of neighbor cell indices
   std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
   // vector of indices of cells neighboring a face

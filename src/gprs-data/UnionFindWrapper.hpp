@@ -20,7 +20,7 @@ class UnionFindWrapper
 
  private:
   std::unordered_map<T, size_t> storage;
-  std::shared_ptr<UnionFind> p_uf;
+  std::unique_ptr<UnionFind> p_uf;
   bool is_finalized;
 };
 
@@ -38,7 +38,7 @@ void UnionFindWrapper<T>::finalize()
   if (is_finalized)
     throw std::runtime_error("union_find already finalized");
 
-  p_uf = std::make_shared<UnionFind>(storage.size());
+  p_uf = std::make_unique<UnionFind>(storage.size());
   is_finalized = true;
 }
 
@@ -57,6 +57,7 @@ template <typename T>
 void UnionFindWrapper<T>::merge(const T & item1,
                                 const T & item2)
 {
+  assert(is_finalized);
   p_uf->merge(storage[item1], storage[item2]);
 }
 
