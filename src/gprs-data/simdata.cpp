@@ -1,17 +1,17 @@
 ﻿#include <simdata.hpp>
 
 // library for analytical geometry
-#include <angem/Point.hpp>
-#include <angem/Rectangle.hpp>
-#include <angem/PointSet.hpp>
-#include <angem/CollisionGJK.hpp>
-#include <angem/Collisions.hpp>
-#include <angem/PolyGroup.hpp>
-#include <angem/utils.hpp>
-#include <mesh/utils.hpp> // to remesh embedded fractures
-#include <mesh/Mesh.hpp> // 3D mesh format
+#include "angem/Point.hpp"
+#include "angem/Rectangle.hpp"
+#include "angem/PointSet.hpp"
+#include "angem/CollisionGJK.hpp"
+#include "angem/Collisions.hpp"
+#include "angem/PolyGroup.hpp"
+#include "angem/utils.hpp"
+#include "mesh/utils.hpp" // to remesh embedded fractures
+#include "mesh/Mesh.hpp" // 3D mesh format
 // parser for user-defined expressions for reservoir data
-#include <muparser/muParser.h>
+#include "muparser/muParser.h"
 
 #include <algorithm>
 #include <exception>
@@ -229,7 +229,7 @@ void SimData::computeCellClipping()
       // are duplicated since two adjacent faces intersecting a plane
       // have one point in common
       std::vector<Point> set_points;
-      angem::remove_duplicates(section_points, set_points, tol);
+      angem::remove_duplicates_slow(section_points, set_points, tol);
 
       // correct ordering for quads
       angem::Polygon<double> poly_section(set_points);

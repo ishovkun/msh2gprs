@@ -1,15 +1,6 @@
 # mesh/CMakeLists.txt
 
 ADD_LIBRARY(mesh
-  SurfaceMesh.hpp
-  utils.hpp
-  Mesh.hpp
-  ShapeID.hpp
-  cell_iterator.hpp
-  face_iterator.hpp
-  mesh_methods.hpp
-  surface_mesh_methods.hpp
-  # implementation
   ShapeID.cpp
   Mesh.cpp
   cell_iterator.cpp
@@ -26,8 +17,8 @@ SET_TARGET_PROPERTIES (
 )
 
 TARGET_INCLUDE_DIRECTORIES(mesh PUBLIC
-	${CMAKE_SOURCE_DIR}/src
-	${CMAKE_SOURCE_DIR}/src/uint256
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/uint256
 )
 
 

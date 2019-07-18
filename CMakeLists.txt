@@ -1,3 +1,5 @@
+# msh2gprs_root/CMakeLists.txt
+
 cmake_minimum_required (VERSION 3.8)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -39,6 +41,8 @@ endif()
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
 ADD_SUBDIRECTORY(src/angem)
+message("angem: ${angem_include_dirs}")
+INCLUDE_DIRECTORIES(${angem_include_dirs})
 
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
@@ -69,7 +73,6 @@ TARGET_INCLUDE_DIRECTORIES(msh2gprs PRIVATE
 
 if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra")
-    # target_compile_options(msh2gprs PUBLIC "-Wall -Wextra -pedantic")
 endif()
 
 # memory leak debugging

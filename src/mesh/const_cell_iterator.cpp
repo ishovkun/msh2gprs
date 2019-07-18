@@ -1,6 +1,6 @@
 #include <const_cell_iterator.hpp>
 #include <mesh_methods.hpp>
-#include <PolyhedronFactory.hpp>
+#include "angem/PolyhedronFactory.hpp"
 
 namespace mesh
 {

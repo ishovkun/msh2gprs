@@ -24,8 +24,6 @@ TARGET_INCLUDE_DIRECTORIES(gprs_data PUBLIC
 
 set(grps_data_libs ${grps_data_libs} angem muparser mesh)
 
-message("need libraries: ${grps_data_libs}")
-
 if(METIS_FOUND)
   set(grps_data_libs ${grps_data_libs} ${METIS_LIBRARIES})
 endif()

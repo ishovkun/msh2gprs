@@ -1,7 +1,7 @@
 #include <Mesh.hpp>
 #include <SurfaceMesh.hpp>
 
-#include <angem/PolyhedronFactory.hpp>
+#include "angem/PolyhedronFactory.hpp"
 
 namespace mesh
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <PointSet.hpp>
+#include "angem/PointSet.hpp"
 #include <edge_iterator.hpp>
 #include <surface_mesh_methods.hpp>
 
