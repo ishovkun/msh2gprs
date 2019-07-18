@@ -19,7 +19,15 @@ SET_TARGET_PROPERTIES (
 )
 
 TARGET_INCLUDE_DIRECTORIES(gprs_data PUBLIC
-	${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src
 )
 
-TARGET_LINK_LIBRARIES(gprs_data angem muparser mesh metis)
+set(grps_data_libs ${grps_data_libs} angem muparser mesh)
+
+message("need libraries: ${grps_data_libs}")
+
+if(METIS_FOUND)
+  set(grps_data_libs ${grps_data_libs} ${METIS_LIBRARIES})
+endif()
+
+TARGET_LINK_LIBRARIES(gprs_data ${grps_data_libs})
