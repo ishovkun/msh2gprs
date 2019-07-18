@@ -52,7 +52,7 @@ void GmshReader::read_input(const std::string & filename,
   if (!mesh_file)
     throw std::out_of_range(filename + " does not exist");
 
-  std::string line;
+    std::string line;
   // read mesh format
   std::getline(mesh_file, line);
   float version;
@@ -62,7 +62,10 @@ void GmshReader::read_input(const std::string & filename,
   if (version >= 2 and version < 3)
     read_gmsh2_input(mesh_file, mesh);
   else if (version > 4.0)  // works for 4.1
+  {
+    std::cout << "warning, gmsh 4 files not tested" << std::endl;
     read_gmsh4_input(mesh_file, mesh);
+  }
   else
   {
     mesh_file.close();
@@ -179,6 +182,114 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
 {
   std::string entry;
 
+  //  read until entities
+  while(entry != "$Entities") mesh_file >> entry;
+
+  /* entities describe tags that we need in some cases
+   * We primarily interested in surface tags (bc's, fracs)
+   * and volume tags (reservoir subdomains)
+   *
+   * numPoints(size_t) numCurves(size_t)
+   * numSurfaces(size_t) numVolumes(size_t)
+   *
+   * pointTag(int) X(double) Y(double) Z(double)
+   *      numPhysicalTags(size_t) physicalTag(int) ...
+   *
+   * curveTag(int) minX(double) minY(double) minZ(double)
+   *     maxX(double) maxY(double) maxZ(double)
+   *     numPhysicalTags(size_t) physicalTag(int) ...
+   *     numBoundingPoints(size_t) pointTag(int) ...  //
+   *
+   * surfaceTag(int) minX(double) minY(double) minZ(double)
+   *     maxX(double) maxY(double) maxZ(double)
+   *     numPhysicalTags(size_t) physicalTag(int) ...
+   *     numBoundingCurves(size_t) curveTag(int) ...
+   *
+   * volumeTag(int) minX(double) minY(double) minZ(double)
+   *     maxX(double) maxY(double) maxZ(double)
+   *     numPhysicalTags(size_t) physicalTag(int) ...
+   *     numBoundngSurfaces(size_t) surfaceTag(int) ...
+   */
+
+  std::string line;
+  std::vector<std::string> tokens;
+  while (tokens.empty())
+  {
+    getline(mesh_file, line);
+    std::istringstream iss(line);
+    tokens = {std::istream_iterator<std::string>{iss},
+              std::istream_iterator<std::string>{}};
+  }
+  if (tokens.size() != 4)
+  {
+    std::cout << line << std::endl;
+    throw std::invalid_argument("invalid mesh format");
+  }
+
+  std::size_t n_points, n_curves, n_surfaces, n_volumes;
+  {std::stringstream st(tokens[0]); st >> n_points;}
+  {std::stringstream st(tokens[1]); st >> n_curves;}
+  {std::stringstream st(tokens[2]); st >> n_surfaces;}
+  {std::stringstream st(tokens[3]); st >> n_volumes;}
+
+  std::cout << "n_points = " << n_points << std::endl;
+  std::cout << "n_curves = " << n_curves << std::endl;
+  std::cout << "n_physical_surfaces = " << n_surfaces << std::endl;
+  std::cout << "n_subdomains = " << n_volumes << std::endl;
+
+  for (std::size_t i = 0; i < n_points; i++)  // skip points
+  {
+    getline(mesh_file, line);
+    // std::cout << line << std::endl;
+  }
+  for (std::size_t i = 0; i < n_curves; i++)  // skip curves
+  {
+    getline(mesh_file, line);
+    // std::cout << line << std::endl;
+  }
+
+  //  read surfaces
+  std::unordered_map<int, int> surface_tags;
+  for (std::size_t i = 0; i < n_surfaces; i++)
+  {
+   /* surfaceTag(int) minX(double) minY(double) minZ(double)
+   *     maxX(double) maxY(double) maxZ(double)
+   *     numPhysicalTags(size_t) physicalTag(int) ...
+   *     numBoundingCurves(size_t) curveTag(int) ...
+   */
+    getline(mesh_file, line);
+    std::istringstream iss(line);
+    std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
+                                    std::istream_iterator<std::string>{}};
+    const int entity = std::atoi(tokens[0].c_str());
+    const int n_physical_tags = std::atoi(tokens[7].c_str());
+    const int tag = std::atoi(tokens[8].c_str());
+    if (n_physical_tags != 1)
+    {
+      std::cout << "error in line: " << line << std::endl;
+      std::cout << "n_physical_tags = " << n_physical_tags << std::endl;
+      throw std::invalid_argument("more than one physical tag per surface not supported");
+    }
+
+    surface_tags.insert({entity, tag});
+  }
+
+  // read volumes
+  std::unordered_map<int, int> volume_tags;
+  for (std::size_t i = 0; i < n_volumes; i++)
+  {
+    getline(mesh_file, line);
+    std::istringstream iss(line);
+    std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
+                                    std::istream_iterator<std::string>{}};
+    const int entity = std::atoi(tokens[0].c_str());
+    const int n_physical_tags = std::atoi(tokens[7].c_str());
+    if (n_physical_tags != 1)
+      throw std::invalid_argument("more than one physical tag per volume not supported");
+    const int tag = std::atoi(tokens[8].c_str());
+    volume_tags.insert({entity, tag});
+  }
+
   //  read until nodes
   while(entry != "$Nodes")
     mesh_file >> entry;
@@ -189,6 +300,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
   // read number of vertices
   std::size_t n_vertices;
   mesh_file >> n_vertices;
+
   std::cout << "\tn_vertices = " << n_vertices << std::endl;
   mesh.vertices.points.reserve(n_vertices);
 
@@ -234,7 +346,6 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
   //  max element tag
   mesh_file >> entry;
 
-  std::string line;
   size_t element = 0;
   while (element < n_elements)
   {
@@ -249,9 +360,15 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
       continue;
 
     const int entity_dim = std::atoi(tokens[0].c_str());
+    const int entity_tag = std::atoi(tokens[1].c_str());
     const int element_type = std::atoi(tokens[2].c_str());
     const int vtk_id = get_vtk_index(element_type);
     const int n_element_vertices = map_vtk_element_size[vtk_id];
+    int physical_tag;
+    if (entity_dim == 2)
+      physical_tag = surface_tags[entity_tag];
+    if (entity_dim == 3)
+      physical_tag = volume_tags[entity_tag];
 
     std::size_t n_elements_in_block;
     std::stringstream sstream(tokens[3]);
@@ -261,31 +378,30 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
     if (entity_dim == 3)
       mesh.cells.reserve(mesh.cells.capacity() + n_elements);
 
-    for (size_t i=0; i< n_elements_in_block; i++)
+    for (size_t i = 0; i < n_elements_in_block; i++)
     {
+      // std::cout << "element = " << element << " " << n_elements << std::endl;
       // line 3: element tag, element nodes
       getline(mesh_file, line);
-      if (entity_dim == 2)  // fuck 2d elements
-      {}
-      if (entity_dim == 3)  // fuck 2d elements
-      {
-        std::istringstream iss(line);
-        std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
-                                        std::istream_iterator<std::string>{}};
-        static const int vert_shift = 1;  // index of first vertex in line
-        for (int j=vert_shift; j<tokens.size(); ++j)
-          vertices[j] = std::atoi(tokens[j].c_str()) - 1;
+      std::istringstream iss(line);
+      std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
+                                      std::istream_iterator<std::string>{}};
+      static const int vert_shift = 1;  // index of first vertex in line
 
-        mesh.insert_cell(vertices, vtk_id, 0);
-      }
+      // fill node indices
+      for (int j = vert_shift; j<tokens.size(); j++)
+        vertices[j-vert_shift] = std::atoi(tokens[j].c_str()) - 1;
+
+      if (entity_dim == 2)  // faces
+        mesh.insert_face(vertices, vtk_id, physical_tag);
+      if (entity_dim == 3)  // cells
+        mesh.insert_cell(vertices, vtk_id, physical_tag);
 
       element++;
     }
   }
 
   std::cout << "n_cells = " << mesh.n_cells() << std::endl;
-
-  throw std::invalid_argument("reading gmsh v.4 not implemented yet");
 }
 
 }
