@@ -41,7 +41,6 @@ endif()
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
 ADD_SUBDIRECTORY(src/angem)
-message("angem: ${angem_include_dirs}")
 INCLUDE_DIRECTORIES(${angem_include_dirs})
 
 # angem
