@@ -1,0 +1,45 @@
+Mesh file: cartesian.msh
+# Mesh file: geom.msh
+
+Domain Mechanical Properties:
+  domain:
+    label: 9999991
+    GMREF_PRESSURE: 100
+    GMCELL_DENSITY: 0
+    GMCELL_BIOT: 1
+    GMREF_TEMPERATURE: 100
+    GMCELL_MODEL: 0
+    GMCELL_YOUNG: 1
+    GMCELL_POISSON: 0.25
+
+Domain Flow Properties:
+  domain:
+    label: 9999991
+    Coupled: false                  # true/false on by default
+    RTEMP: 0
+    PORO: 0.1
+    PERM: 10
+
+Boundary Conditions:            # geomechanical bc's
+  Faces:
+    face:
+      label: 1111111            # left
+      type: 1                   # dirichlet
+      value: [0, 0, 0]
+    face:
+      label: 1111112            # right
+      type: 2                   # neumann
+      value: [100, 0, 0]
+    # face:                       # bottom
+    #   label: 3333331
+    #   type: 1                     # dirichlet
+    #   value: [nan, nan, 0]
+    # face:                       # top?
+    #   label: 3333332
+    #   type: 1                     # dirichlet
+    #   value: [nan, nan, 0]
+
+Multiscale:
+  blocks : 10
+  flow: no
+  mechanics: msrsb

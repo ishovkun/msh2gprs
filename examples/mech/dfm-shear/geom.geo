@@ -3,11 +3,12 @@ alpha = 30 * Pi / 180;
 
 domain_size = 200; // outer
 /* l = domain_size / 30; */
-lfrac = 10;
-inner_size = 5*lfrac;
+lfrac = 30;
+inner_size = 4*lfrac;
 thickness = -10;
+nz = 1;
 
-nf = 4;
+nf = 8;
 h = lfrac / nf;  // outer boundary element size
 hf = lfrac / nf;   // fracture element size - width
 
@@ -153,13 +154,13 @@ Recombine Surface(5);
 Recombine Surface(6);
 Recombine Surface(7);
 
-out1[] = Extrude{0,0,thickness} { Surface{1}; Layers{1}; Recombine;};
-out2[] = Extrude{0,0,thickness} { Surface{2}; Layers{1}; Recombine;};
-out3[] = Extrude{0,0,thickness} { Surface{3}; Layers{1}; Recombine;};
-out4[] = Extrude{0,0,thickness} { Surface{4}; Layers{1}; Recombine;};
-out5[] = Extrude{0,0,thickness} { Surface{5}; Layers{1}; Recombine;};
-out6[] = Extrude{0,0,thickness} { Surface{6}; Layers{1}; Recombine;};
-out7[] = Extrude{0,0,thickness} { Surface{7}; Layers{1}; Recombine;};
+out1[] = Extrude{0,0,thickness} { Surface{1}; Layers{nz}; Recombine;};
+out2[] = Extrude{0,0,thickness} { Surface{2}; Layers{nz}; Recombine;};
+out3[] = Extrude{0,0,thickness} { Surface{3}; Layers{nz}; Recombine;};
+out4[] = Extrude{0,0,thickness} { Surface{4}; Layers{nz}; Recombine;};
+out5[] = Extrude{0,0,thickness} { Surface{5}; Layers{nz}; Recombine;};
+out6[] = Extrude{0,0,thickness} { Surface{6}; Layers{nz}; Recombine;};
+out7[] = Extrude{0,0,thickness} { Surface{7}; Layers{nz}; Recombine;};
 
 // Labels
 Left = 1111111;
@@ -186,3 +187,12 @@ SDA_DRIVER = 9999992;
 Physical Volume(SDA_DRIVER) = {1, 2, 3, 4, 5, 6, 7};
 
 Mesh.Algorithm = 8;
+
+Geometry.Tolerance = size_x / nx / 1e3;
+Geometry.AutoCoherence = 2;
+// Mesh.MshFileVersion = 2.2;
+Mesh.MshFileVersion = 4.1;
+
+Mesh 3;  // Generalte 3D mesh
+Coherence Mesh;  // Remove duplicate entities
+Save "geom.msh";  // Save mesh in MSH format

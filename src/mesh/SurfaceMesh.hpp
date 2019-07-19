@@ -30,7 +30,7 @@ class SurfaceMesh // : PolyGroup<Scalar>
 
   // GETTERS
   // get number of elements
-  std::size_t n_polygons() const {return polygons.size();}
+  inline std::size_t n_polygons() const {return polygons.size();}
   // get vector of neighbor indices
   std::vector<std::size_t> get_neighbors( const std::size_t ielement ) const;
   // vector of indices of cells neighboring an edge
@@ -72,14 +72,28 @@ class SurfaceMesh // : PolyGroup<Scalar>
   surface_element_iterator<Scalar> end_polygons() {return create_poly_iterator(polygons.size());}
 
 
-  PointSet<3,Scalar>                    vertices;
-  std::vector<std::vector<std::size_t>> polygons;  // indices
+  // return the vector of all mesh vertices
+  inline std::vector<angem::Point<3,Scalar>> & get_vertices() {return vertices.points;}
+  // return the vector of all mesh vertices
+  inline const std::vector<angem::Point<3,Scalar>> & get_vertices() const {return vertices.points;}
+  // get the numer of vertices
+  inline std::size_t n_vertices() const {return vertices.size();}
+
+  // return indices of verticing comprising the cells
+  const std::vector<std::vector<std::size_t>> & get_polygons() const {return polygons;}
+  // return indices of verticing comprising the cells
+  inline std::vector<std::vector<std::size_t>> & get_polygons() {return polygons;}
 
   // hash of two vert indices -> vector polygons
   // essentially edge -> neighbor elements
   std::unordered_map<std::size_t, std::vector<std::size_t>> map_edges;
 
  private:
+  // mesh vertex coordinates
+  PointSet<3,Scalar>                    vertices;
+  // indices of vertices that constitute polygonal elements
+  std::vector<std::vector<std::size_t>> polygons;  // indices
+
   // merge two elements haaving a comon edge
   // the edge is vertex indices
   // private cause no check if they are neighbors

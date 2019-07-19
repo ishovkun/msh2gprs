@@ -20,6 +20,7 @@
 #include "mesh/Mesh.hpp"
 #include "SimdataConfig.hpp"
 #include <Well.hpp>
+#include "MultiScaleDataMSRSB.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -135,15 +136,6 @@ public:
                                      const int   frac_ind);
   // compute flow data between two edfm fractures --may be old impl
   void computeTransEfracIntersection();
-  // number of default variables (such as cell x,y,z) for rock properties
-  std::size_t n_default_vars() const;
-  // get property from cell->v_props by key
-  double get_property(const std::size_t cell,
-                      const std::string & key) const;
-  // wrapper around get_property that aborts if no perm data available
-  angem::Point<3,double> get_permeability(const std::size_t cell) const;
-  // wrapper around get_property that aborts if no perm data available
-  double get_volume_factor(const std::size_t cell) const;
 
   // helper: check if face is a fracture
   bool is_fracture (const int marker)
@@ -163,7 +155,19 @@ public:
     else return false;
   }
 
+  // Multiscale
+  void prepare_multiscale_data();
+
 protected:
+  // number of default variables (such as cell x,y,z) for rock properties
+  std::size_t n_default_vars() const;
+  // get property from cell->v_props by key
+  double get_property(const std::size_t cell,
+                      const std::string & key) const;
+  // wrapper around get_property that aborts if no perm data available
+  angem::Point<3,double> get_permeability(const std::size_t cell) const;
+  // wrapper around get_property that aborts if no perm data available
+  double get_volume_factor(const std::size_t cell) const;
   // compute flow data between two edfm fracs
   void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
                                               const std::vector<std::vector<std::size_t>> & polys,
@@ -277,6 +281,11 @@ public:
   std::set<int> fracture_face_markers;
   // set of markers for boundary faces (used in is_boundary)
   std::unordered_set<int> boundary_face_markers;
+
+  // multiscale
+  std::vector<std::size_t> partitioning;
+  // different from partitioning cause of DFM and EDFM fracs and wells
+  std::vector<std::size_t> fluid_partitioning;
 
 protected:
   // it might be used in older timur's version for 2nd order elements but not

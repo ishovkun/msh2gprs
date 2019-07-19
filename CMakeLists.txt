@@ -1,3 +1,5 @@
+# msh2gprs_root/CMakeLists.txt
+
 cmake_minimum_required (VERSION 3.8)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -25,9 +27,21 @@ else()
   ADD_SUBDIRECTORY(src/uint256)
 ENDIF()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+find_package(METIS)
+if(METIS_FOUND)
+  set(GLOBAL_INCLUDE_DIRS ${GLOBAL_INCLUDE_DIRS} ${METIS_INCLUDE_DIRS})
+  message("-- METIS found")
+  add_definitions(-DWITH_METIS)
+else()
+  message("-- METIS not found")
+endif()
+
+
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
 ADD_SUBDIRECTORY(src/angem)
+INCLUDE_DIRECTORIES(${angem_include_dirs})
 
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
@@ -53,12 +67,11 @@ ADD_SUBDIRECTORY(src/parsers)
 ADD_EXECUTABLE(msh2gprs ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 TARGET_INCLUDE_DIRECTORIES(msh2gprs PRIVATE
-	${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src
 )
 
 if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra")
-    # target_compile_options(msh2gprs PUBLIC "-Wall -Wextra -pedantic")
 endif()
 
 # memory leak debugging

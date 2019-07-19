@@ -71,8 +71,8 @@ void OutputData::saveGeometry(const std::string & output_path)
   { // DFM frac geometry
     const std::string vtk_dfm_file = output_path + "dfm.vtk";
     std::cout << "Saving DFM mesh file: " << vtk_dfm_file << std::endl;
-    IO::VTKWriter::write_vtk(data.dfm_master_grid.vertices.points,
-                             data.dfm_master_grid.polygons,
+    IO::VTKWriter::write_vtk(data.dfm_master_grid.get_vertices(),
+                             data.dfm_master_grid.get_polygons(),
                              vtk_dfm_file);
 
   }
@@ -242,12 +242,12 @@ void OutputData::saveGeometry(const std::string & output_path)
     std::size_t n_efrac_vertices = 0;
     // make up a vector of all sda vertices
     for (const auto & efrac : data.vEfrac)
-      n_efrac_vertices += efrac.mesh.vertices.size();
+      n_efrac_vertices += efrac.mesh.n_vertices();
 
     std::vector<angem::Point<3,double>> efrac_verts(n_efrac_vertices);
     std::size_t ivertex = 0;
     for (const auto & efrac : data.vEfrac)
-      for (const auto & p : efrac.mesh.vertices)
+      for (const auto & p : efrac.mesh.get_vertices())
       {
         efrac_verts[ivertex] = p;
         ivertex++;
@@ -258,8 +258,8 @@ void OutputData::saveGeometry(const std::string & output_path)
 
     for (const auto & efrac : data.vEfrac)
     {
-      n_efrac_elements += efrac.mesh.polygons.size();
-      for (const auto & poly : efrac.mesh.polygons)
+      n_efrac_elements += efrac.mesh.n_polygons();
+      for (const auto & poly : efrac.mesh.get_polygons())
         vind_size_total += poly.size();
     }
 
@@ -268,7 +268,7 @@ void OutputData::saveGeometry(const std::string & output_path)
     std::size_t shift = 0;
     for (const auto & efrac : data.vEfrac)
     {
-      for (const auto & cell : efrac.mesh.polygons)
+      for (const auto & cell : efrac.mesh.get_polygons())
       {
         efrac_cells[ielement].resize(cell.size());
         for (short v=0; v<cell.size(); ++v)
@@ -276,7 +276,7 @@ void OutputData::saveGeometry(const std::string & output_path)
 
         ielement++;
       }
-      shift += efrac.mesh.vertices.size();
+      shift += efrac.mesh.n_vertices();
     }
 
     const std::string vtk_file = output_path + "efrac.vtk";

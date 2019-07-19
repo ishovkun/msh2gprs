@@ -161,6 +161,7 @@ void CalcTranses::ComputeBasicGeometry()
     {
         VVolume[i] = VXG[i] = VYG[i] = VZG[i] = 0;
         xi = yi = zi = 0;
+
         for (std::size_t j=0; j<vvVFaces[i].size(); j++) // Defining a node inside the polyhedron
         {
             xi += FXG[vvVFaces[i][j]];
@@ -176,15 +177,28 @@ void CalcTranses::ComputeBasicGeometry()
         for (std::size_t j=0; j<vvVFaces[i].size(); j++)
         {
           k = vvVFaces[i][j];
-          h = Fnx[k]*(FXG[k]-xi) +
-              Fny[k]*(FYG[k]-yi) +
-              Fnz[k]*(FZG[k]-zi);
+          h = Fnx[k] * (FXG[k]-xi) +
+              Fny[k] * (FYG[k]-yi) +
+              Fnz[k] * (FZG[k]-zi);
 
           volumetmp = fabs(h*FArea[k]) / 3.;
 
           if (std::isnan(volumetmp))
           {
-            std::cout << "found nan volume = " << volumetmp << std::endl;
+            std::cout << "found nan volume" << std::endl;
+            std::cout << "Polyhedron = " << i << std::endl;
+            std::cout << "k = " << k << std::endl;
+            std::cout << "h = " << h << std::endl;
+            std::cout << "xi = " << xi << std::endl;
+            std::cout << "yi = " << yi << std::endl;
+            std::cout << "zi = " << zi << std::endl;
+            std::cout << "n_element_nodes = " << n_element_nodes << std::endl;
+            for (std::size_t j=0; j<vvVFaces[i].size(); j++) // Defining a node inside the polyhedron
+            {
+              std::cout << "FXG[vvVFaces[i][j]]; = " << FXG[vvVFaces[i][j]] << std::endl;
+              std::cout << "FYG[vvVFaces[i][j]]; = " << FYG[vvVFaces[i][j]] << std::endl;
+              std::cout << "FzG[vvVFaces[i][j]]; = " << FZG[vvVFaces[i][j]] << std::endl;
+            }
             abort();
           }
 

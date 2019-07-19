@@ -1,20 +1,18 @@
 #pragma once
 
-#include <angem/Point.hpp>
-#include <angem/PointSet.hpp>
-#include <angem/Polyhedron.hpp>
-#include <SurfaceMesh.hpp>
-#include <Face.hpp>
+#include "angem/Point.hpp"
+#include "angem/PointSet.hpp"
+#include "angem/Polyhedron.hpp"
+#include "SurfaceMesh.hpp"
+#include "Face.hpp"
+
+#include <unordered_set>
 
 #ifdef USE_BOOST
 #include <boost/multiprecision/cpp_int.hpp>
 #else
 #include <uint256/uint256_t.h>
 #endif
-
-
-#include <unordered_set>
-
 
 namespace mesh
 {
@@ -39,6 +37,9 @@ Point get_element_center(const angem::PointSet<3,double> & vertices,
                          const std::vector<std::size_t>  & ivertices);
 
 std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> & vertices,
+                                          const std::vector<std::size_t>  & ivertices);
+
+std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> * p_vertices,
                                           const std::vector<std::size_t>  & ivertices);
 
 hash_type hash_value(const std::vector<std::size_t> & ivertices);

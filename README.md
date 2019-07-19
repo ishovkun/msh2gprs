@@ -18,7 +18,7 @@ by a lot).
 
 To build mshgprs use the following commands.
 ```
-git clone https://github.com/ishovkun/msh2gprs
+git clone --recursive https://github.com/ishovkun/msh2gprs
 cd msh2gprs
 mkdir build; cd build
 cmake ..
@@ -29,3 +29,4 @@ for 256-bit integers (used for hashing).
 
 ## Examples
 The example models are located in examples directory.
+Check out the Wiki of the project to get a handle on the usage.

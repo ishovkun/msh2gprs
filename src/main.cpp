@@ -75,7 +75,17 @@ int main(int argc, char *argv[])
   std::cout << "reading ";
   std::cout << filesystem::absolute(path_gmsh) << std::endl;
   mesh::Mesh msh;
-  Parsers::GmshReader::read_input(filesystem::absolute(path_gmsh), msh);
+  try
+  {
+    Parsers::GmshReader::read_input(filesystem::absolute(path_gmsh), msh);
+  }
+  catch (std::exception & e)
+  {
+    std::cout << "error while reading gmsh file:" << std::endl;
+    std::cout << e.what() << std::endl;
+    exit(1);
+  }
+
   if (msh.n_cells() == 0)
   {
     std::cout << "mesh has not cells. aborting" << std::endl;
@@ -115,6 +125,10 @@ int main(int argc, char *argv[])
 
   std::cout << "compute connections between mech and flow elements" << std::endl;
   preprocessor.handleConnections();
+
+  // multiscale
+  std::cout << "build multiscale data" << std::endl;
+  preprocessor.prepare_multiscale_data();
 
   // OUPUT
   cout << "Write Output data\n";

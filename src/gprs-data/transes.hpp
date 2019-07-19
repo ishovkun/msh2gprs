@@ -57,12 +57,12 @@ public:
   int NbZones;
   int NbFracs;
   int NbOptions;
-  //coordinates
+  // coordinates
   std::vector<double>	X,Y,Z;
-  //faces
+  // faces
   std::vector<std::vector<std::size_t> > vvVFaces;
   std::vector<int> vCodePolygon;
-  /* vector of face polygons: v_cells[cell].v_vertices[vertex] */
+  // elements
   std::vector<std::vector<std::size_t> > vvFNodes;
   // polyhedron code is the index of a cell
   std::vector<int> vCodePolyhedron;
@@ -93,6 +93,7 @@ protected:
                    double ix,double iy,double iz,
                    double ux,double uy,double uz,
                    double *hx,double *hy,double *hz);
+
   void ComputeBasicGeometry();
   void ComputeControlVolumeList();
   void PrepareConnectionList();

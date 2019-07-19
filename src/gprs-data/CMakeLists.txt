@@ -1,18 +1,6 @@
 # gprs-data/CMakeLists.txt
 
 ADD_LIBRARY(gprs_data
-  # HEADERS
-  element.hpp
-  femout.hpp
-  renum.hpp
-  transes.hpp
-  simdata.hpp
-  utils.hpp
-  SimdataConfig.hpp
-  FlowData.hpp
-  VTKWriter.hpp
-  Well.hpp
-  # IMPLEMENTATION
   element.cpp
   femout.cpp
   renum.cpp
@@ -21,6 +9,8 @@ ADD_LIBRARY(gprs_data
   transes.cpp
   VTKWriter.cpp
   Well.cpp
+  MultiScaleDataMSRSB.cpp
+  UnionFind.cpp
 )
 
 SET_TARGET_PROPERTIES (
@@ -29,7 +19,13 @@ SET_TARGET_PROPERTIES (
 )
 
 TARGET_INCLUDE_DIRECTORIES(gprs_data PUBLIC
-	${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src
 )
 
-TARGET_LINK_LIBRARIES(gprs_data angem muparser mesh)
+set(grps_data_libs ${grps_data_libs} angem muparser mesh)
+
+if(METIS_FOUND)
+  set(grps_data_libs ${grps_data_libs} ${METIS_LIBRARIES})
+endif()
+
+TARGET_LINK_LIBRARIES(gprs_data ${grps_data_libs})

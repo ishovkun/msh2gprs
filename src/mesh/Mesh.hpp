@@ -1,26 +1,30 @@
 #pragma once
 
-#include <angem/Point.hpp>
-#include <angem/Polyhedron.hpp>
-#include <angem/Polygon.hpp>
+// internal
 #include <mesh_methods.hpp>
 #include <ShapeID.hpp>
 #include <Face.hpp>
 #include <cell_iterator.hpp>
+#include <const_cell_iterator.hpp>
 #include <face_iterator.hpp>
-
+#include <const_face_iterator.hpp>
+// external
+#include <angem/Point.hpp>
+#include <angem/Polyhedron.hpp>
+#include <angem/Polygon.hpp>
+// standard
 #include <algorithm> // std::sort
 #include <unordered_set>
 
 
 namespace mesh
 {
+static const int default_face_marker = -1;
 
 using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 using FaceiVertices = std::vector<std::size_t>;
-
 
 /* This class implements a structure for unstructure grid storage
  * It features constant lookup and insertion times
@@ -41,7 +45,7 @@ class Mesh
   // insert a cell element assigned as vertex global indices
   void insert_cell(const std::vector<std::size_t> & ivertices,
                    const int                        vtk_id,
-                   const int                        marker = -1);
+                   const int                        marker = default_face_marker);
   // insert marker into map_physical_faces
   void insert(const Polygon & poly,
               const int       marker);
@@ -61,16 +65,45 @@ class Mesh
   cell_iterator begin_cells(){return create_cell_iterator(0);}
   // Returns an iterator referring to the past-the-end element in the cell container
   cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
+  // CONST_ITERATORS
+  // Helper function to create cell const_iterators.
+  const_cell_iterator create_const_cell_iterator(const std::size_t icell) const
+  {return const_cell_iterator(icell, vertices, cells, map_faces,
+                              shape_ids, cell_markers);}
+  // create cell iterator for the first cell
+  const_cell_iterator begin_cells() const {return create_const_cell_iterator(0);}
+  // end iterator for cells. Must only be used as the range indicator
+  const_cell_iterator end_cells() const {return create_const_cell_iterator(cells.size());}
 
   // face iterators
   // A helper funciton to create face iterators
+ private:
   face_iterator create_face_iterator(const FaceMap::iterator & it)
   {return face_iterator(it, vertices);}
+ public:
+  // create a face iterator
   face_iterator begin_faces(){return create_face_iterator(map_faces.begin());}
+  // create a end iterator for faces
   face_iterator end_faces()  {return create_face_iterator(map_faces.end());}
 
+ private:
+  const_face_iterator create_const_face_iterator(FaceMap::const_iterator & it) const
+  {return const_face_iterator(it, vertices);}
+ public:
+  // create a face const_iterator
+  const_face_iterator begin_faces() const {return const_face_iterator(map_faces.cbegin(), vertices);}
+  // create a end const_iterator for faces
+  const_face_iterator end_faces()  const {return const_face_iterator(map_faces.cend(), vertices);}
+
   // GETTERS
+  // get vector of all the grid vertex node coordinates
   std::vector<angem::Point<3,double>> & get_vertices() {return vertices.points;}
+  // get const vector of all the grid vertex node coordinates
+  const std::vector<angem::Point<3,double>> & get_vertices() const {return vertices.points;}
+  // get vertex coordinates
+  const angem::Point<3,double> & vertex_coordinates(const std::size_t i) const;
+  // get vertex coordinates
+  angem::Point<3,double> & vertex_coordinates(const std::size_t i);
   // get vector of neighbor cell indices
   std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
   // vector of indices of cells neighboring a face
@@ -130,6 +163,10 @@ class Mesh
   // get global indices of polygon face vertices
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
 
+  // everything we need to know to perform a vertex split
+  std::vector<face_iterator> &
+  find_split_data(const std::size_t vertex,
+  std::unordered_map<std::size_t, std::vector<face_iterator>> &vertices_to_split);
   // vector of faces that are markerd for split by the user via mark_for_split
   // Note: the vector is cleared after split_faces is performed
   std::vector<hash_type> marked_for_split;

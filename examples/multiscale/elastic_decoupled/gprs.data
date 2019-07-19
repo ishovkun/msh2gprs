@@ -1,0 +1,100 @@
+VERBOSE
+ALL DEBUG /
+
+--------------------------------------------  PROBLEM DESCRIPTION  --+
+FLUID
+DEADOIL
+/
+
+COUPLING
+-- FIM(GEOMECHANICS[SUPERLU 1e-12 150])
+MULTISCALE(GEOMECHANICS)
+/
+
+
+NONLINEAR
+FLOW 1e-4 50 0 APPL/
+WELLS 1e-5 /
+GEOMECHANICS 1e-8  25 2 1 1 1e0 1e24 1.0 1.0 /
+/
+
+TUNING
+0.01 30 0 2.0 10.0 1* 0.2 0.1 /
+
+OUTPUT
+-- ASCII REPORT OUTPUT /
+ASCII TIME OUTPUT /
+
+-------------------------------------------  FLOW DATA ----------+
+-- description on volume data (pressure, volume, saturation, etc)
+INCLUDE
+./fl_cell_data.txt /
+
+-- description of face data (transes)
+INCLUDE
+./fl_face_data.txt /
+
+-------------------------------------------  GEOMECH DESCRIPTION  --+
+
+-- FEM geometry
+INCLUDE
+gm_geometry.txt
+/
+
+-- GM (mechanics keywords)
+INCLUDE
+./domain.txt /
+
+-- Boundary conditions
+INCLUDE
+./bcond.txt /
+
+
+GMCELL_BIOT_FLOW
+-1 /
+
+-- INCLUDE
+-- gm_SDA.txt
+-- /
+
+-- INCLUDE
+-- gm_fractures.txt
+-- /
+
+-- INCLUDE
+-- gm_fracprops.txt
+-- /
+
+-------------------------------------  INITIALIZATION OF SIMULATION  --+
+
+SWAT
+0.0 /
+
+PRESSURE
+100.0 /
+
+------------------------------------------------  FLUID DESCRIPTION  --+
+ROCK
+100 1e-5 /
+
+PVDO
+1     1.00   1.0
+200  0.9   1.0 /
+
+PVTW
+100  1.00  5e-4 1 0.0 /
+
+SCOND
+1.0135 288.89 0.0 /
+
+SWOF
+0 0 1 0
+1 1 0 0 /
+
+----------------------------------------------------  TIME STEPPING  --+
+
+TSTEP
+1*1e-2
+/
+
+END

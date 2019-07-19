@@ -1,0 +1,3 @@
+[submodule "src/angem"]
+	path = src/angem
+	url = https://github.com/ishovkun/angem

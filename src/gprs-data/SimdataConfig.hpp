@@ -1,9 +1,19 @@
 #pragma once
 
-#include <Polygon.hpp>
+#include "angem/Polygon.hpp"
 
 #include <map>
 #include <memory> // shared / unique_ptr
+
+
+enum MSPartitioning : int
+{
+  no_partitioning  = 0,
+  method_msrsb     = 1,  // igor's inspired by olav's paper, doesn't work for mech
+  method_mrst_flow = 2,   // jacques' inspired by mrst and cgal
+  method_mechanics = 3  // igor's mechanics method
+};
+
 
 struct DomainConfig
 {
@@ -88,6 +98,16 @@ struct SimdataConfig
   {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
   static constexpr double default_permeability = 1;
   static constexpr double default_volume_factor = 1;
+  // special keywords needed for computing fluid data
+  // (they are not outputted)
+  static constexpr double nan = -999.999;
+  double node_search_tolerance = 1e-10;
+  double frac_cell_elinination_factor = 0.2;
+
+  // multiscale
+  size_t n_multiscale_blocks;
+  int multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do shit
+  int multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do shit
 
   // output file names
   std::string mesh_file;
@@ -98,11 +118,8 @@ struct SimdataConfig
   std::string bcond_file            = "bcond.txt";
   std::string wells_file            = "wells.txt";
   std::string wells_vtk_file        = "wells.vtk";
-  // special keywords needed for computing fluid data
-  // (they are not outputted)
-  static constexpr double nan = -999.999;
-  double node_search_tolerance = 1e-10;
-  double frac_cell_elinination_factor = 0.2;
+  std::string mech_ms_file          = "ms_mech.txt";
+  std::string flow_ms_file          = "ms_flow.txt";
 };
 
 

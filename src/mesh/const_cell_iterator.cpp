@@ -1,17 +1,17 @@
-#include <cell_iterator.hpp>
+#include <const_cell_iterator.hpp>
 #include <mesh_methods.hpp>
 #include "angem/PolyhedronFactory.hpp"
 
 namespace mesh
 {
 
-cell_iterator::
-cell_iterator(const std::size_t                       icell,
-              angem::PointSet<3,double>             & vertices,
-              std::vector<std::vector<std::size_t>> & cells,
-              std::unordered_map<hash_type, Face>   & map_faces,
-              std::vector<int>                      & shape_ids,
-              std::vector<int>                      & cell_markers)
+const_cell_iterator::
+const_cell_iterator(const std::size_t                             icell,
+                    const angem::PointSet<3,double>             & vertices,
+                    const std::vector<std::vector<std::size_t>> & cells,
+                    const std::unordered_map<hash_type, Face>   & map_faces,
+                    const std::vector<int>                      & shape_ids,
+                    const std::vector<int>                      & cell_markers)
 
     :
     icell(icell),
@@ -23,7 +23,7 @@ cell_iterator(const std::size_t                       icell,
 {}
 
 
-bool cell_iterator::operator==(const cell_iterator & other) const
+bool const_cell_iterator::operator==(const const_cell_iterator & other) const
 {
   // compare cell index
   if (icell != other.icell)
@@ -50,26 +50,26 @@ bool cell_iterator::operator==(const cell_iterator & other) const
 }
 
 
-bool cell_iterator::operator!=(const cell_iterator & other) const
+bool const_cell_iterator::operator!=(const const_cell_iterator & other) const
 {
   return !(*this == other);
 }
 
 
-Point cell_iterator::center() const
+Point const_cell_iterator::center() const
 {
   return get_element_center(mesh_vertices, cells[icell]);
 }
 
 
-cell_iterator & cell_iterator::operator++()
+const_cell_iterator & const_cell_iterator::operator++()
 {
   icell++;
   return (*this);
 }
 
 
-std::unique_ptr<Polyhedron<double>> cell_iterator::polyhedron() const
+std::unique_ptr<Polyhedron<double>> const_cell_iterator::polyhedron() const
 {
   return angem::PolyhedronFactory::create<double>(mesh_vertices.points,
                                                   cells[icell],
@@ -77,27 +77,27 @@ std::unique_ptr<Polyhedron<double>> cell_iterator::polyhedron() const
 }
 
 
-std::vector<face_iterator> cell_iterator::faces() const
+std::vector<const_face_iterator> const_cell_iterator::faces() const
 {
   const std::vector<std::vector<std::size_t>> face_vertex_indices =
       angem::PolyhedronFactory::get_global_faces<double>(cells[icell],
                                                          shape_ids[icell]);
 
-  std::vector<face_iterator> faces;
+  std::vector<const_face_iterator> faces;
   for (const auto & ivertices : face_vertex_indices)
   {
     const auto hash = hash_value(ivertices);
     auto it_face = map_faces.find(hash);
     if (it_face == map_faces.end())
       throw std::out_of_range("face does not exist");
-    face_iterator face(it_face, mesh_vertices);
+    const_face_iterator face(it_face, mesh_vertices);
     faces.push_back(face);
   }
   return faces;
 }
 
 
-bool cell_iterator::has_vertex( const std::size_t ivertex ) const
+bool const_cell_iterator::has_vertex( const std::size_t ivertex ) const
 {
   for (auto & jvertex : cells[icell])
     if (jvertex == ivertex)
@@ -107,7 +107,7 @@ bool cell_iterator::has_vertex( const std::size_t ivertex ) const
 }
 
 
-std::vector<std::size_t> cell_iterator::neighbor_indices() const
+std::vector<std::size_t> const_cell_iterator::neighbor_indices() const
 {
   std::vector<std::size_t> neighbors;
   const auto v_faces = faces();
@@ -119,7 +119,7 @@ std::vector<std::size_t> cell_iterator::neighbor_indices() const
 }
 
 
-double cell_iterator::volume() const
+double const_cell_iterator::volume() const
 {
   const auto poly =
       angem::PolyhedronFactory::create<double>(mesh_vertices.points,
@@ -130,14 +130,14 @@ double cell_iterator::volume() const
 }
 
 
-cell_iterator cell_iterator::neighbor_by_face(const face_iterator & face) const
+const_cell_iterator const_cell_iterator::neighbor_by_face(const const_face_iterator & face) const
 {
   if (face.neighbors().size() == 1)
     throw std::invalid_argument("no neighbors by boundary face");
 
   for (std::size_t cell_index : face.neighbors())
     if (cell_index != icell)
-      return cell_iterator(cell_index, mesh_vertices, cells,
+      return const_cell_iterator(cell_index, mesh_vertices, cells,
                            map_faces, shape_ids, cell_markers);
 
   throw std::invalid_argument("cannot be here");

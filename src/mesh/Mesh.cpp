@@ -1,11 +1,13 @@
 #include <Mesh.hpp>
 #include <SurfaceMesh.hpp>
 
-#include <angem/PolyhedronFactory.hpp>
+#include "angem/PolyhedronFactory.hpp"
 
 namespace mesh
 {
 
+using std::unordered_map;
+using std::vector;
 
 Mesh::Mesh()
 {}
@@ -285,32 +287,48 @@ SurfaceMesh<double> Mesh::split_faces()
     map_2d_3d.insert({ielement, hash});
   }
 
-  const std::size_t n_faces_old = this->n_faces();
-  std::unordered_map<std::size_t, std::size_t> map_old_new_cells;
-  std::vector<std::vector<std::size_t>> new_cells;
-  std::unordered_map<hash_type, Face> map_new_faces;
+  // const std::size_t n_faces_old = this->n_faces();
+  unordered_map<size_t, vector<face_iterator>> vertices_to_split;
   for (auto edge = mesh_faces.begin_edges(); edge !=mesh_faces.end_edges(); ++edge)
   {
-    const std::vector<std::size_t> & edge_neighbors = edge.neighbors();
+    const vector<size_t> & edge_neighbors = edge.neighbors();
     if (edge_neighbors.size() > 1)  // internal edge vertex
     {
-      // find face elements of 3d mesh corresponding to 2d mesh elements
-      std::vector<face_iterator> vertex_faces;
-      for (const auto & neighbor : edge_neighbors)
-      {
-        auto it = create_face_iterator
-            (map_faces.find(map_2d_3d.find(neighbor)->second));
-        vertex_faces.push_back(std::move(it));
-      }
+       const auto edge_vertices = edge.vertex_indices();
 
-      const auto edge_vertices = edge.vertices();
-      std::cout << "splitting vertex = " << edge_vertices.first << std::endl;
-      split_vertex(vertices.find(edge_vertices.first), vertex_faces,
-                   map_old_new_cells, new_cells);
-      std::cout << "splitting vertex = " << edge_vertices.second << std::endl;
-      split_vertex(vertices.find(edge_vertices.second), vertex_faces,
-                   map_old_new_cells, new_cells);
+       {  // add data for the first vertex
+         auto & faces = find_split_data(edge_vertices.first, vertices_to_split);
+         // find face elements of 3d mesh corresponding to 2d mesh elements
+         for (const auto & neighbor : edge_neighbors)
+         {
+           auto it = create_face_iterator
+                     (map_faces.find(map_2d_3d.find(neighbor)->second));
+           if (find(faces.begin(), faces.end(), it) != faces.end())
+             faces.push_back(std::move(it));
+         }
+       }
+
+       {// same for the second vertex
+         auto & faces = find_split_data(edge_vertices.second, vertices_to_split);
+         // find face elements of 3d mesh corresponding to 2d mesh elements
+         for (const auto & neighbor : edge_neighbors)
+         {
+           auto it = create_face_iterator
+                     (map_faces.find(map_2d_3d.find(neighbor)->second));
+           if (find(faces.begin(), faces.end(), it) != faces.end())
+             faces.push_back(std::move(it));
+           }
+       }
     }
+  }
+
+  std::unordered_map<std::size_t, std::size_t> map_old_new_cells;
+  std::vector<std::vector<std::size_t>> new_cells;
+  // std::unordered_map<hash_type, Face> map_new_faces;
+  for (auto & it : vertices_to_split)
+  {
+    // std::cout << "splitting vertex = " << it.first << std::endl;
+    split_vertex(it.first, it.second, map_old_new_cells, new_cells);
   }
 
   std::cout << "modifying face map" << std::endl;
@@ -487,5 +505,34 @@ std::vector<face_iterator> Mesh::get_ordered_faces()
     ordered_faces[face.index()] = face;
   return ordered_faces;
 }
+
+
+ const angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i) const
+{
+  assert(i < n_vertices());
+  return vertices.points[i];
+}
+
+
+angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i)
+{
+  assert(i < n_vertices());
+  return vertices.points[i];
+}
+
+std::vector<face_iterator> &
+Mesh:: find_split_data(const std::size_t vertex,
+        unordered_map<size_t, vector<face_iterator>> &vertices_to_split)
+{
+  auto it = vertices_to_split.find(vertex);
+  if (it == vertices_to_split.end())
+  {
+    vector<face_iterator> vertex_faces;
+    auto result = vertices_to_split.insert({vertex, std::move(vertex_faces)});
+    return result.first->second;
+  }
+  else return it->second;
+}
+
 
 }

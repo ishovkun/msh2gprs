@@ -1,7 +1,7 @@
 #pragma once
 
 #include <GElement.hpp>
-#include <Point.hpp>
+#include "angem/Point.hpp"
 using Point = angem::Point<3,double>;
 
 namespace IO
