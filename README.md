@@ -29,3 +29,4 @@ for 256-bit integers (used for hashing).
 
 ## Examples
 The example models are located in examples directory.
+Check out the Wiki of the project to get a handle on the usage.
