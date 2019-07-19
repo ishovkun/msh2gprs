@@ -52,8 +52,8 @@ struct LayerDataMSRSB
   // indices of centroid vertices
   // std::vector<std::size_t> block_centroid_vertex_indices;
   // support region
-  // std::vector<std::unordered_set<std::size_t>> support_boundary_cells;
-  // std::vector<std::unordered_set<std::size_t>> support_internal_cells;
+  std::vector<std::unordered_set<std::size_t>> support_boundary_cells;
+  std::vector<std::unordered_set<std::size_t>> support_internal_cells;
 
   // i impose dirichet here
   // std::vector<std::vector<std::size_t>> support_boundary_nodes;
@@ -61,6 +61,9 @@ struct LayerDataMSRSB
   // std::vector<std::vector<std::size_t>>   support_internal_nodes;
   // std::vector<std::vector<double>> shape_function_values;
   // std::vector<std::unordered_map<std::size_t, double> > shape_function_values;
+
+  // for vtk output
+  mesh::SurfaceMesh<double> support_bounding_surface;
 };
 
 }  // end namespace

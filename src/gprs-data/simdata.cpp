@@ -275,23 +275,23 @@ void SimData::mergeSmallFracCells()
     auto & msh = vEfrac[ifrac].mesh;
 
     double max_area = 0;
-    for (const auto & element : msh.polygons)
+    for (const auto & element : msh.get_polygons())
     {
-      angem::Polygon<double> poly(msh.vertices.points, element);
+      angem::Polygon<double> poly(msh.get_vertices(), element);
       const double area = poly.area();
       max_area = std::max(area, max_area);
     }
 
     // merge tiny cells
     std::size_t ielement = 0;
-    std::size_t n_frac_elements = msh.polygons.size();
+    std::size_t n_frac_elements = msh.n_polygons();
 
     // loop is with variable upper limit since elements can be
     // merged and deleted
     while (ielement < n_frac_elements)
     {
-      angem::Polygon<double> poly(msh.vertices.points,
-                                  msh.polygons[ielement]);
+      angem::Polygon<double> poly(msh.get_vertices(),
+                                  msh.get_polygons()[ielement]);
       const double area_factor = poly.area() / max_area;
 
       if (area_factor < config.frac_cell_elinination_factor)
@@ -302,7 +302,7 @@ void SimData::mergeSmallFracCells()
         flow_data.merge_elements(efrac_flow_index(ifrac, new_element),
                                  global_ielement);
 
-        n_frac_elements = msh.polygons.size();
+        n_frac_elements = msh.n_polygons();
         if (ielement >= n_frac_elements)
           break;
         continue;
@@ -495,7 +495,7 @@ std::size_t SimData::efrac_flow_index(const std::size_t ifrac,
 {
   std::size_t result = n_flow_dfm_faces + grid.n_cells();
   for (std::size_t i=0; i<ifrac; ++i)
-    result += vEfrac[i].mesh.polygons.size();
+    result += vEfrac[i].mesh.n_polygons();
 
   result += ielement;
   return result;
@@ -510,27 +510,29 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
 {
   flow::CalcTranses calc;
 
-  calc.NbNodes     = mesh.vertices.size();
+  calc.NbNodes     = mesh.n_vertices();
   calc.NbPolyhedra = 0;
-  calc.NbPolygons  = mesh.polygons.size();
+  calc.NbPolygons  = mesh.n_polygons();
   calc.NbZones     = calc.NbPolygons;  // 2 block + 1 frac
   calc.NbOptions   = 1;  // when 2 runs volume correction procedure
   calc.fracporo    = 1.0;
   calc.init();
   // -------------------- geometry -----------------------
-  for (std::size_t i=0; i<mesh.vertices.size(); ++i)
+  const auto & vertices = mesh.get_vertices();
+  for (std::size_t i=0; i<mesh.n_vertices(); ++i)
   {
-    calc.X[i] = mesh.vertices[i][0];
-    calc.Y[i] = mesh.vertices[i][1];
-    calc.Z[i] = mesh.vertices[i][2];
+    calc.X[i] = vertices[i][0];
+    calc.Y[i] = vertices[i][1];
+    calc.Z[i] = vertices[i][2];
   }
 
   // polygons (2d elements)
-  const std::size_t n_poly = mesh.polygons.size();
+  const auto polygons = mesh.get_polygons();
+  const std::size_t n_poly = mesh.n_polygons();
   int code_polygon = 0;
   for(std::size_t ipoly = 0; ipoly < n_poly; ++ipoly)
   {
-    calc.vvFNodes[ipoly] = mesh.polygons[ipoly];
+    calc.vvFNodes[ipoly] = polygons[ipoly];
     calc.vCodePolygon[ipoly] = code_polygon;
     code_polygon++;
   }
@@ -734,7 +736,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
   computeFracFracTran(frac_ind, efrac, efrac.mesh, frac_flow_data);
 
   // fill global data
-  for (std::size_t i=0; i<efrac.mesh.polygons.size(); ++i)
+  for (std::size_t i=0; i<efrac.mesh.n_polygons(); ++i)
   {
     auto & cell = flow_data.cells.emplace_back();
     cell.volume = frac_flow_data.cells[i].volume;
@@ -1468,13 +1470,18 @@ void SimData::computeTransEfracIntersection()
       // fast check
       if (collision.check(*iShape, *jShape))
       {
-        for (std::size_t ielement=0; ielement<ifrac.mesh.polygons.size(); ++ielement)
-          for (std::size_t jelement=0; jelement<jfrac.mesh.polygons.size(); ++jelement)
+        const auto ifrac_vertices = ifrac.mesh.get_vertices();
+        const auto jfrac_vertices = jfrac.mesh.get_vertices();
+        const auto ifrac_polygons = ifrac.mesh.get_polygons();
+        const auto jfrac_polygons = jfrac.mesh.get_polygons();
+
+        for (std::size_t ielement=0; ielement<ifrac.mesh.n_polygons(); ++ielement)
+          for (std::size_t jelement=0; jelement<jfrac.mesh.n_polygons(); ++jelement)
           {
-            const angem::Polygon<double> poly_i(ifrac.mesh.vertices,
-                                                ifrac.mesh.polygons[ielement]);
-            const angem::Polygon<double> poly_j(jfrac.mesh.vertices,
-                                                jfrac.mesh.polygons[jelement]);
+            const angem::Polygon<double> poly_i(ifrac_vertices,
+                                                ifrac_polygons[ielement]);
+            const angem::Polygon<double> poly_j(jfrac_vertices,
+                                                jfrac_polygons[jelement]);
             std::vector<Point> section;
             if (angem::collision(poly_i, poly_j, section, tol))
             {
@@ -1554,13 +1561,13 @@ void SimData::meshFractures()
       const double tol = std::min(new_frac_mesh.minimum_edge_size() / 3,
                                   efrac.mesh.minimum_edge_size() / 3);
 
-      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
-        for (std::size_t j=0; j<efrac.mesh.polygons.size(); ++j)
+      for (std::size_t i=0; i<new_frac_mesh.n_polygons(); ++i)
+        for (std::size_t j=0; j<efrac.mesh.n_polygons(); ++j)
         {
-          const angem::Polygon<double> poly_i(new_frac_mesh.vertices,
-                                              new_frac_mesh.polygons[i]);
-          const angem::Polygon<double> poly_j(efrac.mesh.vertices,
-                                              efrac.mesh.polygons[j]);
+          const angem::Polygon<double> poly_i(new_frac_mesh.get_vertices(),
+                                              new_frac_mesh.get_polygons()[i]);
+          const angem::Polygon<double> poly_j(efrac.mesh.get_vertices(),
+                                              efrac.mesh.get_polygons()[j]);
           std::vector<Point> section;
           if (angem::collision(poly_i, poly_j, section, tol))
           {
@@ -1608,7 +1615,7 @@ void SimData::meshFractures()
       flow::FlowData frac_flow_data;
       computeFracFracTran(f, efrac, new_frac_mesh, frac_flow_data);
 
-      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+      for (std::size_t i=0; i<new_frac_mesh.n_polygons(); ++i)
       {
         // new_flow_data.volumes.push_back(frac_flow_data.volumes[i]);
         // new_flow_data.poro.push_back(frac_flow_data.poro[i]);
@@ -1638,7 +1645,7 @@ void SimData::meshFractures()
         if (config.expression_type[j] == 0)
           n_flow_vars++;
 
-      for (std::size_t i=0; i<new_frac_mesh.polygons.size(); ++i)
+      for (std::size_t i=0; i<new_frac_mesh.n_polygons(); ++i)
       {
         std::vector<double> new_custom_data(n_flow_vars);
         const std::size_t ielement = new_shift + i;
@@ -1671,7 +1678,7 @@ void SimData::meshFractures()
     else  // copy old efrac data
     {
       std::pair<std::size_t,std::size_t> range =
-          {old_shift, old_shift + vEfrac[f].mesh.polygons.size()};
+          {old_shift, old_shift + vEfrac[f].mesh.n_polygons()};
 
       for (const auto & conn : flow_data.map_connection)
       {
@@ -1692,7 +1699,7 @@ void SimData::meshFractures()
         }
       }
 
-      for (std::size_t i=0; i<efrac.mesh.polygons.size(); ++i)
+      for (std::size_t i=0; i<efrac.mesh.n_polygons(); ++i)
       {
         auto & new_cell = new_flow_data.cells.emplace_back();
         new_cell.volume = flow_data.cells[old_shift + i].volume;
@@ -1706,11 +1713,11 @@ void SimData::meshFractures()
       }
     }
 
-    old_shift += vEfrac[f].mesh.polygons.size();
+    old_shift += vEfrac[f].mesh.n_polygons();
     if (new_frac_meshes[f].empty())
       new_shift = old_shift;
     else
-      new_shift += new_frac_meshes[f].polygons.size();
+      new_shift += new_frac_meshes[f].n_polygons();
   }  // end efrac loop
 
 //   // const std::string vtk_file2 = "./ababa.vtk";

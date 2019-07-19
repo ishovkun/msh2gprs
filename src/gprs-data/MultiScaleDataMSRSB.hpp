@@ -74,8 +74,24 @@ class MultiScaleDataMSRSB
       std::unordered_map<std::tuple<std::size_t,std::size_t,std::size_t>, std::vector<std::size_t>>
       &map_block_vertices);
 
+  // build support region for a block
+  void build_support_region(const std::size_t block);
 
+  // mark cells that lay on the boundary of the support region
+  // (intersect with the bounding shape)
+  // Input:
+  // block: coarse element for which we are building the support region
+  // neighbor: coarse block in which the support boundary is located
+  // bounding_shape: a triangle that cuts through the cells in the neighbor block
+  // those find cells are marked as boundary cells
+  void build_support_region_boundary(const std::size_t block,
+                                     const std::size_t neighbor,
+                                     const angem::Shape<double> & bounding_shape);
+  // find a cell that's definitely outside the support region for the current block
+  angem::Point<3,double> find_point_outside_support_region(const std::size_t block);
 
+  // build the internal points of the block support region
+  void build_support_internal_cells(const std::size_t block);
   // members
   const mesh::Mesh & grid;
   vector<LayerDataMSRSB> layers;
