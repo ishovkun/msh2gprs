@@ -19,12 +19,12 @@
 
 namespace mesh
 {
+static const int default_face_marker = -1;
 
 using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 using FaceiVertices = std::vector<std::size_t>;
-
 
 /* This class implements a structure for unstructure grid storage
  * It features constant lookup and insertion times
@@ -45,7 +45,7 @@ class Mesh
   // insert a cell element assigned as vertex global indices
   void insert_cell(const std::vector<std::size_t> & ivertices,
                    const int                        vtk_id,
-                   const int                        marker = -1);
+                   const int                        marker = default_face_marker);
   // insert marker into map_physical_faces
   void insert(const Polygon & poly,
               const int       marker);
@@ -163,6 +163,10 @@ class Mesh
   // get global indices of polygon face vertices
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
 
+  // everything we need to know to perform a vertex split
+  std::vector<face_iterator> &
+  find_split_data(const std::size_t vertex,
+  std::unordered_map<std::size_t, std::vector<face_iterator>> &vertices_to_split);
   // vector of faces that are markerd for split by the user via mark_for_split
   // Note: the vector is cleared after split_faces is performed
   std::vector<hash_type> marked_for_split;

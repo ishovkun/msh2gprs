@@ -263,8 +263,9 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
                                     std::istream_iterator<std::string>{}};
     const int entity = std::atoi(tokens[0].c_str());
     const int n_physical_tags = std::atoi(tokens[7].c_str());
-    const int tag = std::atoi(tokens[8].c_str());
-    if (n_physical_tags != 1)
+    const int tag = (n_physical_tags == 1) ?
+        std::atoi(tokens[8].c_str()) : mesh::default_face_marker;
+    if (n_physical_tags > 1)
     {
       std::cout << "error in line: " << line << std::endl;
       std::cout << "n_physical_tags = " << n_physical_tags << std::endl;
@@ -294,35 +295,58 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
   while(entry != "$Nodes")
     mesh_file >> entry;
 
-  // n_entities whatever that is
-  mesh_file >> entry;
+  /* Vertex data as follows:
+   * numEntityBlocks(size_t) numNodes(size_t)
+   * minNodeTag(size_t) maxNodeTag(size_t)
+   * entityDim(int) entityTag(int) parametric(int; 0 or 1) numNodesInBlock(size_t)
+   * nodeTag(size_t)
+   * ...
+   * x(double) y(double) z(double) */
 
-  // read number of vertices
-  std::size_t n_vertices;
-  mesh_file >> n_vertices;
+  mesh_file >> entry;  // numEntityBlocks
+  std::size_t n_vertices; mesh_file >> n_vertices;  // numNodes
+  mesh_file >> entry;  // minNodeTag
+  mesh_file >> entry;  // maxNodeTag
 
   std::cout << "\tn_vertices = " << n_vertices << std::endl;
   mesh.vertices.points.reserve(n_vertices);
 
-  const int dim = 3;
-  for (std::size_t ivertex=0; ivertex<n_vertices; ++ivertex)
+  size_t vertex = 0;
+  while (vertex < n_vertices)
   {
-    double value;
-    mesh_file >> value;  // skip vertex index
-    angem::Point<3,double> vertex;
-    for (int d=0; d<dim; ++d)
-      mesh_file >> vertex[d];
+    mesh_file >> entry;  // entityDim (0 for vertices)
+    mesh_file >> entry;  // entityTag
+    mesh_file >> entry;  // parametric
+    std::size_t n_nodes_in_block;
+    mesh_file >> n_nodes_in_block;  // numNodesInBlock(size_t)
 
-    // std::cout << "adding vertex " << vertex << std::endl;
-    //  warning if duplicates
-    const std::size_t new_ind = mesh.vertices.insert(vertex);
-    if (new_ind != mesh.vertices.points.size() - 1)
-      std::cout << "WARNING: duplicate entry in gmsh file "
-                << value << "\t"
-                << vertex
-                << std::endl;
-    // mesh.vertices.points.push_back(vertex);
-  } // endonodes
+    // skip node tags
+    for (std::size_t j=0; j<n_nodes_in_block; ++j)
+    {
+      size_t node_tag;
+      mesh_file >> node_tag;  // nodeTag
+    }
+
+    // read vertices
+    for (std::size_t j=0; j<n_nodes_in_block; ++j)
+    {
+      static const int dim = 3;
+      angem::Point<dim,double> coords;
+      for (int d=0; d<dim; ++d) mesh_file >> coords[d];
+
+      // warning if duplicates
+      const std::size_t new_ind = mesh.vertices.insert(coords);
+      // mesh.vertices.points.push_back(vertex);
+      if (new_ind != mesh.vertices.points.size() - 1)
+      {
+        std::cout << "WARNING: duplicate entry in gmsh file "
+                  <<  coords << std::endl;
+        abort();
+      }
+      vertex++;
+    } // endonodes
+  }
+
 
   //  read until elements
   while(entry != "$Elements")
