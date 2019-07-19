@@ -1066,7 +1066,6 @@ void SimData::defineRockProperties()
                     << "'" << std::endl;
           exit(-1);
         }
-
       }
       try {
         parsers[i].SetExpr(conf.expressions[i]);

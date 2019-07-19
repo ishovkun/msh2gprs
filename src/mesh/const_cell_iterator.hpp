@@ -18,7 +18,7 @@ class const_cell_iterator
 {
  public:
   // constructor
-  const_cell_iterator(const std::size_t                       icell,
+  const_cell_iterator(const std::size_t                             icell,
                       const angem::PointSet<3,double>             & vertices,
                       const std::vector<std::vector<std::size_t>> & cells,
                       const std::unordered_map<hash_type, Face>   & map_faces,
