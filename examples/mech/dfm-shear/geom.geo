@@ -190,7 +190,8 @@ Mesh.Algorithm = 8;
 
 Geometry.Tolerance = size_x / nx / 1e3;
 Geometry.AutoCoherence = 2;
-Mesh.MshFileVersion = 2.2;
+// Mesh.MshFileVersion = 2.2;
+Mesh.MshFileVersion = 4.1;
 
 Mesh 3;  // Generalte 3D mesh
 Coherence Mesh;  // Remove duplicate entities

@@ -19,12 +19,12 @@
 
 namespace mesh
 {
+static const int default_face_marker = -1;
 
 using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 using FaceiVertices = std::vector<std::size_t>;
-
 
 /* This class implements a structure for unstructure grid storage
  * It features constant lookup and insertion times
@@ -45,7 +45,7 @@ class Mesh
   // insert a cell element assigned as vertex global indices
   void insert_cell(const std::vector<std::size_t> & ivertices,
                    const int                        vtk_id,
-                   const int                        marker = -1);
+                   const int                        marker = default_face_marker);
   // insert marker into map_physical_faces
   void insert(const Polygon & poly,
               const int       marker);

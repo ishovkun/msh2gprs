@@ -327,7 +327,7 @@ SurfaceMesh<double> Mesh::split_faces()
   // std::unordered_map<hash_type, Face> map_new_faces;
   for (auto & it : vertices_to_split)
   {
-    std::cout << "splitting vertex = " << it.first << std::endl;
+    // std::cout << "splitting vertex = " << it.first << std::endl;
     split_vertex(it.first, it.second, map_old_new_cells, new_cells);
   }
 

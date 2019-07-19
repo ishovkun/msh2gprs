@@ -66,16 +66,12 @@ public:
   int NbZones;
   int NbFracs;
   int NbOptions;
-  //coordinates
+  // coordinates
   std::vector<double>	X,Y,Z;
-  // std::vector<double> vCoordinatesX;
-  // std::vector<double> vCoordinatesY;
-  // std::vector<double> vCoordinatesZ;
-  //faces
+  // faces
   std::vector<std::vector<std::size_t> > vvVFaces;
   std::vector<int> vCodePolygon;
-  //elements
-  // std::vector<int> vNbFNodes;
+  // elements
   std::vector<std::vector<std::size_t> > vvFNodes;
   std::vector<int> vCodePolyhedron;
   //properties
@@ -88,8 +84,6 @@ public:
   std::vector<double> vZConduction;
 
 protected:
-  double ABS(double v);
-  void CheckIt(int TEST);
   void ProjectionA(double mx,double my,double mz,
                    double px,double py,double pz,
                    double ix,double iy,double iz,
@@ -99,6 +93,7 @@ protected:
                    double ix,double iy,double iz,
                    double ux,double uy,double uz,
                    double *hx,double *hy,double *hz);
+
   void ComputeBasicGeometry();
   void ComputeControlVolumeList();
   void PrepareConnectionList();
