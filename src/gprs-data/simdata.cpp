@@ -1024,7 +1024,7 @@ void SimData::defineRockProperties()
   for (std::size_t i=0; i<config.all_vars.size(); ++i)
   {
     std::cout << config.all_vars[i] << "\t";
-    if ((i+1)%10 == 0)
+    if ((i + 1)%3 == 0)
       std::cout << std::endl;
   }
   std::cout << std::endl;
@@ -1095,7 +1095,7 @@ void SimData::defineRockProperties()
         for (std::size_t i=0; i<n_expressions; ++i)
         {
           try {
-          vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
+            vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
           }
           catch(mu::Parser::exception_type & e)
           {
@@ -1945,8 +1945,8 @@ void SimData::prepare_multiscale_data()
     else if (config.multiscale_flow == method_msrsb or
             config.multiscale_mechanics == method_msrsb)  // poor option
     {
-      multiscale::MultiScaleDataMSRSB ms_data(grid, config.n_multiscale_blocks);
-      throw std::invalid_argument("Igor's code aint merged yet");
+      multiscale::MultiScaleDataMSRSB ms_handler(grid, config.n_multiscale_blocks);
+      ms_handler.fill_output_model(ms_data);
     }
     else if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
     {

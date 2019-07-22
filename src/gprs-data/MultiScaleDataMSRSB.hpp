@@ -2,6 +2,7 @@
 
 #include "mesh/Mesh.hpp"
 #include "LayerDataMSRSB.hpp"
+#include "MultiScaleOutputData.hpp"
 #include "UnionFindWrapper.hpp"
 #include "tuple_hash.hpp"
 #include <algorithm>  // std::max_element
@@ -20,14 +21,14 @@ class MultiScaleDataMSRSB
    * takes n_blocks for only a single layer,
    * since multi-level multiscale is a long way
    * down the road. */
-  MultiScaleDataMSRSB(mesh::Mesh  & grid,
-                      const size_t  n_blocks);
+  MultiScaleDataMSRSB(mesh::Mesh  & grid, const size_t  n_blocks);
+  void fill_output_model(MultiScaleOutputData & model, const int layer_index = 0) const;
+
+ protected:
   // get reference to the active layer
   inline
   LayerDataMSRSB & active_layer(){return layers[active_layer_index];}
   const LayerDataMSRSB & active_layer() const {return layers[active_layer_index];}
-
- protected:
 
  private:
   // call to metis to obtain partitioning

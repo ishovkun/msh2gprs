@@ -569,4 +569,37 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block)
     }
 }
 
+
+void MultiScaleDataMSRSB::fill_output_model(MultiScaleOutputData & model,
+                                            const int layer_index) const
+{
+  const auto & layer = layers[layer_index];
+
+  //  partitioning
+  model.partitioning.resize(layer.partitioning.size());
+  std::copy(layer.partitioning.begin(), layer.partitioning.end(), model.partitioning.begin());
+
+  // support boundary
+  model.support_boundary_cells.resize(layer.n_blocks);
+  for (std::size_t block = 0; block < layer.n_blocks; ++block)
+  {
+    auto & from = layer.support_boundary_cells[block];
+    auto & to = model.support_boundary_cells[block];
+    to.resize(from.size());
+    std::copy(from.begin(), from.end(), to.begin());
+  }
+
+  //  support internal
+  model.support_internal_cells.resize(layer.n_blocks);
+  for (std::size_t block = 0; block < layer.n_blocks; ++block)
+  {
+    auto & from = layer.support_internal_cells[block];
+    auto & to = model.support_internal_cells[block];
+    to.resize(from.size());
+    std::copy(from.begin(), from.end(), to.begin());
+  }
+
+}
+
+
 }  // end namespace

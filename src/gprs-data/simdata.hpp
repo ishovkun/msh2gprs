@@ -21,6 +21,7 @@
 #include "SimdataConfig.hpp"
 #include <Well.hpp>
 #include "MultiScaleDataMSRSB.hpp"
+#include "MultiScaleOutputData.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -262,10 +263,12 @@ public:
   // vector<SimpleWell> vsWell;
 
   // multiscale
-  std::vector<std::size_t> partitioning;
+  multiscale::MultiScaleOutputData ms_data;
+  // std::vector<std::size_t> partitioning;
 
-  // different from partitioning cause of DFM and EDFM fracs and wells
-  std::vector<std::size_t> fluid_partitioning;
+  // different from partitioning cause of fracturess and wells
+  
+  //  std::vector<std::size_t> fluid_partitioning;
 
 protected:
   // i'm not sure if it's even used
