@@ -1,5 +1,5 @@
 #include <gprs-data/simdata.hpp>
-#include <gprs-data/femout.hpp>
+#include <gprs-data/OutputDataGPRS.hpp>
 #include "gprs-data/OutputDataVTK.hpp"
 #include <parsers/JsonParser.hpp>
 #include <parsers/YamlParser.hpp>
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
       case OutputFormat::gprs :
         {
           std::cout << "Output gprs format" << std::endl;
-          gprs_data::OutputData output_data(preprocessor, msh);
+          gprs_data::OutputDataGPRS output_data(preprocessor, msh);
           output_data.write_output(output_dir);
           break;
         }

@@ -2,7 +2,7 @@
 
 ADD_LIBRARY(gprs_data
   element.cpp
-  femout.cpp
+  OutputDataGPRS.cpp
   OutputDataVTK.cpp
   renum.cpp
   simdata.cpp

@@ -1,4 +1,4 @@
-#include "femout.hpp"
+#include "OutputDataGPRS.hpp"
 #include "VTKWriter.hpp"
 
 #include <sys/stat.h>
@@ -9,7 +9,7 @@ namespace gprs_data
 const int n_entries_per_line = 10;
 
 
-OutputData::OutputData(SimData & sim_data,
+OutputDataGPRS::OutputDataGPRS(SimData & sim_data,
                        mesh::Mesh & grid)
     :
     data(sim_data),
@@ -17,12 +17,8 @@ OutputData::OutputData(SimData & sim_data,
     ordered_faces(grid.get_ordered_faces())
 {}
 
-OutputData::~OutputData()
-{
-}
 
-
-void OutputData::write_output(const std::string & output_path)
+void OutputDataGPRS::write_output(const std::string & output_path)
 {
   std::cout << "save geometry" << std::endl;
   saveGeometry(output_path);
@@ -59,7 +55,7 @@ void OutputData::write_output(const std::string & output_path)
 }
 
 
-void OutputData::saveGeometry(const std::string & output_path)
+void OutputDataGPRS::saveGeometry(const std::string & output_path)
 {
   // vtk output
   // const std::string vtk_file = output_path + "reservoir_mesh.vtk";
@@ -67,15 +63,14 @@ void OutputData::saveGeometry(const std::string & output_path)
   // IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
   //                          grid.shape_ids, vtk_file);
 
-  if (data.dfm_faces.size() > 0)
-  { // DFM frac geometry
-    const std::string vtk_dfm_file = output_path + "dfm.vtk";
-    std::cout << "Saving DFM mesh file: " << vtk_dfm_file << std::endl;
-    IO::VTKWriter::write_geometry(data.dfm_master_grid.get_vertices(),
-                                  data.dfm_master_grid.get_polygons(),
-                                  vtk_dfm_file);
+  // if (data.dfm_faces.size() > 0)
+  // { // DFM frac geometry
+    // const std::string vtk_dfm_file = output_path + "dfm.vtk";
+    // IO::VTKWriter::write_geometry(data.dfm_master_grid.get_vertices(),
+    //                               data.dfm_master_grid.get_polygons(),
+    //                               vtk_dfm_file);
 
-  }
+  // }
 
   // gprs output
   std::string outstring;
@@ -235,57 +230,10 @@ void OutputData::saveGeometry(const std::string & output_path)
   }
   geomechfile << "/" << std::endl << std::endl;
 
-    // write vtk data
-  if (!data.vEfrac.empty())
-  {
-    std::cout  << "Writing EDFM vtk" << std::endl;
-    std::size_t n_efrac_vertices = 0;
-    // make up a vector of all sda vertices
-    for (const auto & efrac : data.vEfrac)
-      n_efrac_vertices += efrac.mesh.n_vertices();
-
-    std::vector<angem::Point<3,double>> efrac_verts(n_efrac_vertices);
-    std::size_t ivertex = 0;
-    for (const auto & efrac : data.vEfrac)
-      for (const auto & p : efrac.mesh.get_vertices())
-      {
-        efrac_verts[ivertex] = p;
-        ivertex++;
-      }
-
-    std::size_t n_efrac_elements = 0;
-    std::size_t vind_size_total = 0;
-
-    for (const auto & efrac : data.vEfrac)
-    {
-      n_efrac_elements += efrac.mesh.n_polygons();
-      for (const auto & poly : efrac.mesh.get_polygons())
-        vind_size_total += poly.size();
-    }
-
-    std::vector<std::vector<std::size_t>> efrac_cells(n_efrac_elements);
-    std::size_t ielement = 0;
-    std::size_t shift = 0;
-    for (const auto & efrac : data.vEfrac)
-    {
-      for (const auto & cell : efrac.mesh.get_polygons())
-      {
-        efrac_cells[ielement].resize(cell.size());
-        for (short v=0; v<cell.size(); ++v)
-          efrac_cells[ielement][v] = shift + cell[v];
-
-        ielement++;
-      }
-      shift += efrac.mesh.n_vertices();
-    }
-
-    const std::string vtk_file = output_path + "efrac.vtk";
-    IO::VTKWriter::write_geometry(efrac_verts, efrac_cells, vtk_file);
-  }
 }
 
 
-void OutputData::saveGeomechDataNewKeywords(const std::string file_name)
+void OutputDataGPRS::saveGeomechDataNewKeywords(const std::string file_name)
 {
   std::cout << "Writing all domain from user input properties" << std::endl;
   {  // write domain properties
@@ -323,7 +271,7 @@ void OutputData::saveGeomechDataNewKeywords(const std::string file_name)
 }
 
 
-void OutputData::saveEmbeddedFractureProperties(const std::string file_name)
+void OutputDataGPRS::saveEmbeddedFractureProperties(const std::string file_name)
 {
   std::cout  << "Writing SDA props" << std::endl;
   std::ofstream geomechfile;
@@ -388,7 +336,7 @@ void OutputData::saveEmbeddedFractureProperties(const std::string file_name)
 }
 
 
-void OutputData::saveBoundaryConditions(const std::string file_name)
+void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
 {
   std::ofstream geomechfile;
   std::cout << "Computing Dirichlet nodes" << std::endl;
@@ -507,7 +455,7 @@ void OutputData::saveBoundaryConditions(const std::string file_name)
 }
 
 
-void OutputData::saveDiscreteFractureProperties(const std::string file_name)
+void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
 {
   std::cout << "write discrete fracs" << std::endl;
 
@@ -576,7 +524,7 @@ void OutputData::saveDiscreteFractureProperties(const std::string file_name)
 }
 
 
-void OutputData::saveWells(const std::string file_name,
+void OutputDataGPRS::saveWells(const std::string file_name,
                            const std::string vtk_file_name)
 {
   std::ofstream file;

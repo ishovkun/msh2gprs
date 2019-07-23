@@ -10,9 +10,14 @@ namespace IO
 class VTKWriter
 {
  public:
-  static void write_geometry(const std::vector<Point>                    & vertices,
-                             const std::vector<std::vector<std::size_t>> & cells,
-                             const std::string                           & fname);
+  // for fractures
+  static void write_surface_geometry(const std::vector<Point>                    & vertices,
+                                     const std::vector<std::vector<std::size_t>> & cells,
+                                     const std::string                           & fname);
+  // for fractures
+  static void write_surface_geometry(const std::vector<Point>                    & vertices,
+                                     const std::vector<std::vector<std::size_t>> & cells,
+                                     std::ofstream                               & out);
 
   static void write_geometry(const std::vector<Point>                    & vertices,
                         const std::vector<std::vector<std::size_t>> & cells,

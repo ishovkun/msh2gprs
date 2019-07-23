@@ -7,13 +7,10 @@ namespace IO
 {
 
 // edfm
-void VTKWriter::write_geometry(const std::vector<Point>                    & vertices,
-                          const std::vector<std::vector<std::size_t>> & cells,
-                          const std::string                           & fname)
+void VTKWriter::write_surface_geometry(const std::vector<Point>    & vertices,
+                                       const std::vector<std::vector<std::size_t>> & cells,
+                                       std::ofstream               & out)
 {
-  std::ofstream out;
-  out.open(fname.c_str());
-
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
   out << "ASCII \n \n";
@@ -66,12 +63,23 @@ void VTKWriter::write_geometry(const std::vector<Point>                    & ver
     // }
   }
 
+}
+
+
+void VTKWriter::
+write_surface_geometry(const std::vector<Point>                    & vertices,
+                       const std::vector<std::vector<std::size_t>> & cells,
+                       const std::string                           & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+  write_surface_geometry(vertices, cells, out);
   out.close();
 }
 
 void VTKWriter::write_geometry(const std::vector<Point>    & vertices,
-                          const std::vector<Gelement> & elements,
-                          std::ofstream               & out)
+                               const std::vector<Gelement> & elements,
+                               std::ofstream               & out)
 {
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
@@ -154,7 +162,7 @@ void VTKWriter::write_geometry(const std::vector<Point>    & vertices,
   out << "CELL_TYPES" << "\t" << n_cells << std::endl;
   for (const auto & cell : elements)
     out <<  cell.vtkIndex << std::endl;
-  out << std::endl;
+
 }
 
 
@@ -170,9 +178,9 @@ void VTKWriter::write_geometry(const std::vector<Point>    & vertices,
 
 
 void VTKWriter::write_geometry(const std::vector<Point>                    & vertices,
-                          const std::vector<std::vector<std::size_t>> & cells,
-                          const std::vector<int>                      & vtk_indices,
-                          std::ofstream                               & out)
+                               const std::vector<std::vector<std::size_t>> & cells,
+                               const std::vector<int>                      & vtk_indices,
+                               std::ofstream                               & out)
 {
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
@@ -218,9 +226,9 @@ void VTKWriter::write_geometry(const std::vector<Point>                    & ver
 
 
 void VTKWriter::write_geometry(const std::vector<Point>                    & vertices,
-                          const std::vector<std::vector<std::size_t>> & cells,
-                          const std::vector<int>                      & vtk_indices,
-                          const std::string                           & fname)
+                               const std::vector<std::vector<std::size_t>> & cells,
+                               const std::vector<int>                      & vtk_indices,
+                               const std::string                           & fname)
 {
   std::ofstream out;
   out.open(fname.c_str());

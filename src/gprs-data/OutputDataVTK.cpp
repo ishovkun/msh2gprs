@@ -13,6 +13,10 @@ OutputDataVTK::OutputDataVTK(const SimData & sim_data, const mesh::Mesh & grid)
 void OutputDataVTK::write_output(const std::string & output_path)
 {
   save_reservoir_data(output_path + data.config.reservoir_grid_vtk_file);
+  if (data.dfm_faces.size() > 0)
+    save_dfm_data(output_path + data.config.discrete_frac_file);
+  if (!data.vEfrac.empty())
+    save_edfm_data(output_path + data.config.efrac_file);
 }
 
 
@@ -38,6 +42,72 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
   }
 
   // save multiscale
+
+  out.close();
+}
+
+
+void OutputDataVTK::save_dfm_data(const std::string & fname)
+{
+  std::cout << "Saving DFM mesh file: " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+  IO::VTKWriter::write_surface_geometry(data.dfm_master_grid.get_vertices(),
+                                        data.dfm_master_grid.get_polygons(),
+                                        out);
+  out.close();
+}
+
+
+void OutputDataVTK::save_edfm_data(const std::string & fname)
+{
+  std::cout << "Saving EDFM mesh file: " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+
+  // write vtk data
+  std::size_t n_efrac_vertices = 0;
+  // make up a vector of all sda vertices
+  for (const auto & efrac : data.vEfrac)
+    n_efrac_vertices += efrac.mesh.n_vertices();
+
+  std::vector<angem::Point<3,double>> efrac_verts(n_efrac_vertices);
+  std::size_t ivertex = 0;
+  for (const auto & efrac : data.vEfrac)
+    for (const auto & p : efrac.mesh.get_vertices())
+    {
+      efrac_verts[ivertex] = p;
+      ivertex++;
+    }
+
+  std::size_t n_efrac_elements = 0;
+  std::size_t vind_size_total = 0;
+
+  for (const auto & efrac : data.vEfrac)
+  {
+    n_efrac_elements += efrac.mesh.n_polygons();
+    for (const auto & poly : efrac.mesh.get_polygons())
+      vind_size_total += poly.size();
+  }
+
+  std::vector<std::vector<std::size_t>> efrac_cells(n_efrac_elements);
+  std::size_t ielement = 0;
+  std::size_t shift = 0;
+  for (const auto & efrac : data.vEfrac)
+  {
+    for (const auto & cell : efrac.mesh.get_polygons())
+    {
+      efrac_cells[ielement].resize(cell.size());
+      for (short v=0; v<cell.size(); ++v)
+        efrac_cells[ielement][v] = shift + cell[v];
+
+      ielement++;
+    }
+    shift += efrac.mesh.n_vertices();
+  }
+
+  IO::VTKWriter::write_surface_geometry(efrac_verts, efrac_cells, out);
+
 
   out.close();
 }

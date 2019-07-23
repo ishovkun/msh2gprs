@@ -6,11 +6,10 @@
 namespace gprs_data
 {
 
-class OutputData
+class OutputDataGPRS
 {
 public:
-  OutputData(SimData & sim_data, mesh::Mesh & grid);
-  ~OutputData();
+  OutputDataGPRS(SimData & sim_data, mesh::Mesh & grid);
 
   void write_output(const std::string & output_path);
  private:

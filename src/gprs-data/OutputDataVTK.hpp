@@ -15,6 +15,8 @@ class OutputDataVTK
 
  private:
   void save_reservoir_data(const std::string & fname);
+  void save_dfm_data(const std::string & fname);
+  void save_edfm_data(const std::string & fname);
 
   const SimData & data;
   const mesh::Mesh & grid;
