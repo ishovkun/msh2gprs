@@ -75,11 +75,12 @@ void MultiScaleDataMSRSB::build_support_regions()
   active_layer().support_internal_cells.resize(active_layer().n_blocks);
   for (std::size_t block = 0; block < active_layer().n_blocks; ++block)
   {
+    std::cout << "\rbuild support regions... block "
+              << (int)(100*block/active_layer().n_blocks)  << "% " <<std::flush;
     build_support_region(block);
-    // exit(0);
   }
-  std::cout << "OK" << std::endl;
 
+  std::cout << "OK" << std::endl;
 }
 
 
@@ -98,6 +99,25 @@ void MultiScaleDataMSRSB::find_centroids()
 
   for (std::size_t block=0; block<layer.n_blocks; ++block)
     layer.block_centroids[block] /= n_cells_per_block[block];
+
+  // find closest cell
+  layer.block_centroid_cells.resize(layer.n_blocks);
+  const auto max = std::numeric_limits<double>::max();
+  for (size_t block = 0; block < layer.n_blocks; ++block )
+  {
+    double min_dist = max;
+    size_t closest = 0;
+    for (const size_t cell : layer.cells_in_block[block])
+    {
+      const double current_dist = layer.block_centroids[block].distance(grid.get_center(cell));
+      if ( current_dist <= min_dist )
+      {
+        closest = cell;
+        min_dist = current_dist;
+      }
+    }
+    layer.block_centroid_cells[block] = closest;
+  }
 }
 
 
@@ -409,7 +429,7 @@ bool have_better_fit(const std::size_t                                 block,
     if (block_connections.connection_exists(nn1, n1) &&
         block_connections.connection_exists(nn1, n2))
     {
-      std::cout << "better = " << nn1 <<" ";
+      // std::cout << "better = " << nn1 <<" ";
       return true;
     }
 
@@ -435,7 +455,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
   mesh::SurfaceMesh<double> bounding_surface;
 
   // exit(0);
-  std::cout << "\nblock = " << block << std::endl;
+  // std::cout << "\nblock = " << block << std::endl;
   // for (auto it = layer.block_faces.begin(); it != layer.block_faces.end(); ++it)
   //   std::cout << it.elements().first <<" " << it.elements().second << std::endl;
 
@@ -443,17 +463,17 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
   for (const size_t & neighbor1 : layer.block_faces.get_neighbors(block) )
     if (!is_ghost_block(neighbor1))
     {
-      std::cout << "\tneighbor1 = " << neighbor1 << std::endl;
+      // std::cout << "\tneighbor1 = " << neighbor1 << std::endl;
       // select neighbors of neighbor1 (including ghosts)
       for (const size_t & neighbor2 : layer.block_faces.get_neighbors(neighbor1))
       {
-        std::cout << "\t\tneighbor2 = " << debug_ghost_cell_names[ neighbor2 ] <<"...";
+        // std::cout << "\t\tneighbor2 = " << debug_ghost_cell_names[ neighbor2 ] <<"...";
 
         // criterion 1: should be a neighbor of the block
         if (!layer.block_faces.connection_exists(neighbor2, block))
         {
           // std::cout << "no conn with " << block << std::endl;
-          std::cout << "-" << std::endl;
+          // std::cout << "-" << std::endl;
           continue;
         }
 
@@ -463,7 +483,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
         // Note: we use std::find since the number of edging blocks is assumed <O(10)
         if (find( b_n2_edging.begin(), b_n2_edging.end(), neighbor1 ) == b_n2_edging.end())
         {
-          std::cout << neighbor1 << " not in " << block <<"-"<<neighbor2 <<" edging" << std::endl;
+          // std::cout << neighbor1 << " not in " << block <<"-"<<neighbor2 <<" edging" << std::endl;
           continue;
         }
 
@@ -477,7 +497,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
                                 layer.block_internal_connections,
                                 layer.block_faces))
             {
-              std::cout << "have better fit" << std::endl;
+              // std::cout << "have better fit" << std::endl;
               continue;
             }
 
@@ -486,24 +506,24 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
         const auto & face_n1_n2 = layer.block_faces.get_data(neighbor1, neighbor2);
         for (const size_t & neighbor3 : face_n1_n2.edging_blocks)
         {
-          std::cout << "\n\t\t\tneighbor3 = " << debug_ghost_cell_names[ neighbor3 ] <<" ";
+          // std::cout << "\n\t\t\tneighbor3 = " << debug_ghost_cell_names[ neighbor3 ] <<" ";
           // Obviously this should'n be an already selected block
           if (neighbor3 == neighbor1 or neighbor3 == neighbor2 or neighbor3 == block)
           {
-            std::cout << "repeated block" << std::endl;
+            // std::cout << "repeated block" << std::endl;
             continue;
           }
 
           // Criterion 1 (yes, again)
           if (!layer.block_faces.connection_exists(neighbor3, block))
           {
-            std::cout << "not connected to " << block << " face!"<< std::endl;
+            // std::cout << "not connected to " << block << " face!"<< std::endl;
             continue;
           }
           // and again
           if (!layer.block_faces.connection_exists(neighbor1, neighbor3))
           {
-            std::cout << "not connected to "<< neighbor1 << std::endl;
+            // std::cout << "not connected to "<< neighbor1 << std::endl;
             continue;
           }
 
@@ -511,13 +531,13 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
           const auto & b_n3_edging = layer.block_faces.get_data(neighbor3, block).edging_blocks;
           if (find( b_n3_edging.begin(), b_n3_edging.end(), neighbor2 ) == b_n3_edging.end())
           {
-            std::cout << neighbor2 <<" not edging in "<< block<<"-"<<neighbor3<< std::endl;
+            // std::cout << neighbor2 <<" not edging in "<< block<<"-"<<neighbor3<< std::endl;
             continue;
           }
           // Criterion 2 (same) for another pair of blocks
           if (find( b_n3_edging.begin(), b_n3_edging.end(), neighbor1 ) == b_n3_edging.end())
           {
-            std::cout << neighbor1 <<" not edging in "<< block<<"-"<<neighbor3<< std::endl;
+            // std::cout << neighbor1 <<" not edging in "<< block<<"-"<<neighbor3<< std::endl;
             continue;
           }
 
@@ -527,7 +547,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
               if (have_better_fit(block, neighbor1, neighbor3,
                         layer.block_internal_connections, layer.block_faces))
               {
-                std::cout << "better fit" << std::endl;
+                // std::cout << "better fit" << std::endl;
                 continue;
               }
           // and again
@@ -536,11 +556,11 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
               if (have_better_fit(block, neighbor2, neighbor3,
                         layer.block_internal_connections, layer.block_faces))
               {
-                std::cout << "better fit" << std::endl;
+                // std::cout << "better fit" << std::endl;
                 continue;
               }
 
-          std::cout << "OK" << std::endl;
+          // std::cout << "OK" << std::endl;
 
           // Now it's time to construct an element of the bounding surface
           //  construct a triangle: a part of the bounding surface
@@ -563,9 +583,9 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
     }
 
   // debug output bounding surface vtk
-   const std::string fname = "debug_output/support_surface-" + std::to_string(block) + ".vtk";
-   IO::VTKWriter::write_surface_geometry(bounding_surface.get_vertices(),
-                                         bounding_surface.get_polygons(), fname);
+  // const std::string fname = "debug_output/support_surface-" + std::to_string(block) + ".vtk";
+  // IO::VTKWriter::write_surface_geometry(bounding_surface.get_vertices(),
+  //                                       bounding_surface.get_polygons(), fname);
 
   // Next we find the internal points of the support region
   build_support_internal_cells(block, bounding_surface);
@@ -623,23 +643,23 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block,
   // of times, then the cell center is inside the support region
   const Point outer_point = find_point_outside_support_region(block);
   const auto & block_neighbors = layer.block_internal_connections.get_neighbors(block);
-  std::cout << "outer_point = " << outer_point << std::endl;
+  // std::cout << "outer_point = " << outer_point << std::endl;
 
   for (const std::size_t neighbor : block_neighbors)
     for (const std::size_t cell : layer.cells_in_block[neighbor])
     {
-      if (block == 1) std::cout << cell << ": " << grid.get_center(cell) << " ";
+      // if (block == 1) std::cout << cell << ": " << grid.get_center(cell) << " ";
       // ray casting
       if ( angem::point_inside_surface(grid.get_center(cell), outer_point,
                                        bounding_surface.get_vertices(),
                                        bounding_surface.get_polygons()) )
       {
-        if (block == 1) std::cout << "OK" << std::endl;
+        // if (block == 1) std::cout << "OK" << std::endl;
         // if not among the boundary cells
         if (layer.support_boundary_cells[block].find(cell) == layer.support_boundary_cells[block].end())
           layer.support_internal_cells[block].insert(cell);
       }
-      else if (block == 1) std::cout << "NO" << std::endl;
+      // else if (block == 1) std::cout << "NO" << std::endl;
     }
 }
 
@@ -650,9 +670,13 @@ void MultiScaleDataMSRSB::fill_output_model(MultiScaleOutputData & model,
   const auto & layer = layers[layer_index];
 
   model.n_blocks = layer.n_blocks;
-  //    partitioning
+
+  // partitioning
   model.partitioning.resize(layer.partitioning.size());
   std::copy(layer.partitioning.begin(), layer.partitioning.end(), model.partitioning.begin());
+
+  //  centroids
+  model.centroids = layer.block_centroid_cells;
 
   // support boundary
   model.support_boundary_cells = layer.support_boundary_cells;
@@ -673,7 +697,7 @@ void MultiScaleDataMSRSB::build_cells_in_block()
 std::string debug_direction_to_string(angem::Point<3,double> p)
 {
   angem::Point<3,double> pn = p; pn.normalize();
-  std::cout << "pn = " << pn << std::endl;
+  // std::cout << "pn = " << pn << std::endl;
   double tol = 1e-4;
   repeat:{
     if ((pn - angem::Point<3,double>(-1, 0, 0)).norm() < tol)
@@ -706,14 +730,14 @@ debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_di
 
   // Point global_center;
   // size_t n_items;
-  std::cout << "starting loop" << std::endl;
+  // std::cout << "starting loop" << std::endl;
 
   for (auto & group : map_block_group)
   {
     const auto ghost = group.second;
-    std::cout << "ghost = " << ghost << std::endl;
+    // std::cout << "ghost = " << ghost << std::endl;
     const auto block = layer.block_faces.get_neighbors(ghost)[0];
-    std::cout << "block = " << block << std::endl;
+    // std::cout << "block = " << block << std::endl;
     if (block < layer.n_blocks)
     {
       Point face_direction;
@@ -731,7 +755,7 @@ debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_di
       face_direction /= n_faces;
       const std::string block_name = debug_direction_to_string(face_direction -
                                                                layer.block_centroids[block]);
-      std::cout << "adding ghost cell  " << block_name  << std::endl;
+      // std::cout << "adding ghost cell  " << block_name  << std::endl;
       debug_ghost_cell_names[ghost] = block_name;
 
     }
@@ -740,17 +764,17 @@ debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_di
   for (size_t i = 0; i < layer.n_blocks; i++)
     debug_ghost_cell_names[i] = std::to_string(i);
 
-  // print which blocks connected to which ghosts
-  for (size_t i = 0; i < layer.n_blocks; i++)
-  {
-    std::cout << "block " << i <<": ";
-    for (const auto neighbor : layer.block_faces.get_neighbors(i))
-      if (neighbor >= layer.n_blocks)
-      {
-        std::cout << debug_ghost_cell_names[neighbor] << "\t";
-      }
-    std::cout << std::endl;
-  }
+  // // print which blocks connected to which ghosts
+  // for (size_t i = 0; i < layer.n_blocks; i++)
+  // {
+  //   std::cout << "block " << i <<": ";
+  //   for (const auto neighbor : layer.block_faces.get_neighbors(i))
+  //     if (neighbor >= layer.n_blocks)
+  //     {
+  //       std::cout << debug_ghost_cell_names[neighbor] << "\t";
+  //     }
+  //   std::cout << std::endl;
+  // }
 }
 
 }  // end namespace

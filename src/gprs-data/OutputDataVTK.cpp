@@ -53,7 +53,9 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
     {
       for (size_t cell = 0; cell < grid.n_cells(); ++cell)
       {
-        if (ms.support_boundary_cells[block].find(cell) != ms.support_boundary_cells[block].end())
+        if (cell == ms.centroids[block])
+          support_value[cell] = 3;
+        else if (ms.support_boundary_cells[block].find(cell) != ms.support_boundary_cells[block].end())
           support_value[cell] = 2;
         else if (ms.support_internal_cells[block].find(cell) != ms.support_internal_cells[block].end())
           support_value[cell] = 1;

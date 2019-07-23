@@ -29,8 +29,9 @@ struct LayerDataMSRSB
   // inverse of the partitioning
   //  block (coarse cell) -> list of fine cells in it
   std::vector<std::vector<std::size_t>> cells_in_block;
-  // coarse block centers
+  // coarse block geometric centers
   std::vector<angem::Point<3,double>>  block_centroids;
+  std::vector<std::size_t> block_centroid_cells;
   // face connections between coarse elements
   PureConnectionMap block_internal_connections;
   // Comprises:
