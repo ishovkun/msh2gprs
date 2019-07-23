@@ -1,5 +1,6 @@
 #include <gprs-data/simdata.hpp>
 #include <gprs-data/femout.hpp>
+#include "gprs-data/OutputDataVTK.hpp"
 #include <parsers/JsonParser.hpp>
 #include <parsers/YamlParser.hpp>
 #include <uint256/uint256_t.h>
@@ -132,12 +133,27 @@ int main(int argc, char *argv[])
 
   // OUPUT
   cout << "Write Output data\n";
-  gprs_data::OutputData output_data(preprocessor, msh);
-
   const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";
   std::cout << "output directory: " << output_dir << std::endl;
-
-  output_data.write_output(output_dir);
+  for (auto format : config.output_formats)
+  {
+    switch (format) {
+      case OutputFormat::gprs :
+        {
+          std::cout << "Output gprs format" << std::endl;
+          gprs_data::OutputData output_data(preprocessor, msh);
+          output_data.write_output(output_dir);
+          break;
+        }
+        case OutputFormat::vtk :
+          {
+            std::cout << "Output vtk format" << std::endl;
+            gprs_data::OutputDataVTK output_data(preprocessor, msh);
+            output_data.write_output(output_dir);
+            break;
+          }
+    }
+  }
 
   // if no frac remove vtk files
   if (preprocessor.vEfrac.empty())

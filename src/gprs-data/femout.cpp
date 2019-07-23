@@ -62,18 +62,18 @@ void OutputData::write_output(const std::string & output_path)
 void OutputData::saveGeometry(const std::string & output_path)
 {
   // vtk output
-  const std::string vtk_file = output_path + "reservoir_mesh.vtk";
-  std::cout << "Saving reservoir mesh file: " << vtk_file << std::endl;
-  IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
-                           grid.shape_ids, vtk_file);
+  // const std::string vtk_file = output_path + "reservoir_mesh.vtk";
+  // std::cout << "Saving reservoir mesh file: " << vtk_file << std::endl;
+  // IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
+  //                          grid.shape_ids, vtk_file);
 
   if (data.dfm_faces.size() > 0)
   { // DFM frac geometry
     const std::string vtk_dfm_file = output_path + "dfm.vtk";
     std::cout << "Saving DFM mesh file: " << vtk_dfm_file << std::endl;
-    IO::VTKWriter::write_vtk(data.dfm_master_grid.get_vertices(),
-                             data.dfm_master_grid.get_polygons(),
-                             vtk_dfm_file);
+    IO::VTKWriter::write_geometry(data.dfm_master_grid.get_vertices(),
+                                  data.dfm_master_grid.get_polygons(),
+                                  vtk_dfm_file);
 
   }
 
@@ -280,7 +280,7 @@ void OutputData::saveGeometry(const std::string & output_path)
     }
 
     const std::string vtk_file = output_path + "efrac.vtk";
-    IO::VTKWriter::write_vtk(efrac_verts, efrac_cells, vtk_file);
+    IO::VTKWriter::write_geometry(efrac_verts, efrac_cells, vtk_file);
   }
 }
 

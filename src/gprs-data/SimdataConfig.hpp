@@ -15,6 +15,12 @@ enum MSPartitioning : int
 };
 
 
+enum OutputFormat
+{
+  gprs, vtk
+};
+
+
 struct DomainConfig
 {
   int label;
@@ -108,6 +114,9 @@ struct SimdataConfig
   size_t n_multiscale_blocks;
   int multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do shit
   int multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do shit
+
+  // output format
+  std::vector<OutputFormat> output_formats = {OutputFormat::gprs, OutputFormat::vtk};
 
   // output file names
   // GPRS format

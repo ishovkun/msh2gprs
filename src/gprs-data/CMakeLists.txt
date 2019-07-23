@@ -3,6 +3,7 @@
 ADD_LIBRARY(gprs_data
   element.cpp
   femout.cpp
+  OutputDataVTK.cpp
   renum.cpp
   simdata.cpp
   FlowData.cpp
