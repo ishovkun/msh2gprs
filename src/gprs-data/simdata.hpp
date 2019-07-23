@@ -258,9 +258,6 @@ public:
   // set of markers for boundary faces (used in is_boundary)
   std::unordered_set<int> boundary_face_markers;
 
-  // old timur wells: rewrute
-  // vector<SimpleWell> vsWell;
-
   // multiscale
   std::vector<std::size_t> partitioning;
 
