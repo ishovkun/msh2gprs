@@ -12,6 +12,8 @@
 #include "mesh/Mesh.hpp" // 3D mesh format
 // parser for user-defined expressions for reservoir data
 #include "muparser/muParser.h"
+#include "MultiScaleDataMSRSB.hpp"
+#include "MultiScaleDataMech.hpp"
 
 #include <algorithm>
 #include <exception>
@@ -1933,7 +1935,7 @@ void SimData::computeWellIndex(Well & well)
 }
 
 
-void SimData::prepare_multiscale_data()
+void SimData::build_multiscale_data()
 {
   if (config.multiscale_flow != MSPartitioning::no_partitioning or
       config.multiscale_mechanics != MSPartitioning::no_partitioning)
@@ -1946,15 +1948,18 @@ void SimData::prepare_multiscale_data()
             config.multiscale_mechanics == method_msrsb)  // poor option
     {
       multiscale::MultiScaleDataMSRSB ms_handler(grid, config.n_multiscale_blocks);
+      ms_handler.build_data();
       ms_handler.fill_output_model(ms_data);
     }
     else if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
     {
-      throw std::invalid_argument("Will write this code this week");
+      multiscale::MultiScaleDataMech ms_handler(grid, config.n_multiscale_blocks);
+      ms_handler.build_data();
+      throw std::invalid_argument("Will try to write this code this week");
     }
   }
   else return;
-  exit(0);
+  // exit(0);
 }
 
 }  // end namespace

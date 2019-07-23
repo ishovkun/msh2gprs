@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
   // multiscale
   std::cout << "build multiscale data" << std::endl;
-  preprocessor.prepare_multiscale_data();
+  preprocessor.build_multiscale_data();
 
   // OUPUT
   cout << "Write Output data\n";

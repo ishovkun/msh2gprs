@@ -20,7 +20,6 @@
 #include "mesh/Mesh.hpp"
 #include "SimdataConfig.hpp"
 #include <Well.hpp>
-#include "MultiScaleDataMSRSB.hpp"
 #include "MultiScaleOutputData.hpp"
 
 #include <algorithm>
@@ -161,7 +160,7 @@ public:
   }
 
   // Multiscale
-  void prepare_multiscale_data();
+  void build_multiscale_data();
 
 protected:
   // number of default variables (such as cell x,y,z) for rock properties
