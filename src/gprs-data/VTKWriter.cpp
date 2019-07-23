@@ -269,21 +269,6 @@ void VTKWriter::write_well_trajectory(const std::vector<Point>                  
   out.close();
 }
 
-// add cell data to vtk file
-void VTKWriter::add_cell_data(const std::vector<double> & property,
-                              const std::string          keyword,
-                              std::ofstream            & out)
-{
-  out << "SCALARS\t" << keyword << "\t";
-  out << "float" << std::endl;
-  out << "LOOKUP_TABLE HSV" << std::endl;
-  for (const double item : property)
-  {
-    out << item << std::endl;
-  }
-  out << std::endl;
-}
-
 
 void VTKWriter::enter_section_cell_data(const std::size_t n_cells,
                                         std::ofstream & out)

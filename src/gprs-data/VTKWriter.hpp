@@ -2,6 +2,8 @@
 
 #include <GElement.hpp>
 #include "angem/Point.hpp"
+#include <fstream>
+
 using Point = angem::Point<3,double>;
 
 namespace IO
@@ -42,7 +44,8 @@ class VTKWriter
                                     const std::vector<std::pair<std::size_t,std::size_t>> & indices,
                                     const std::string                                     & fname);
   // add cell data to vtk file
-  static void add_cell_data(const std::vector<double> & property,
+  template <typename T>
+  static void add_cell_data(const std::vector<T> & property,
                             const std::string           keyword,
                             std::ofstream             & out);
 
@@ -52,5 +55,19 @@ class VTKWriter
  private:
   VTKWriter();
 };
+
+// add cell data to vtk file
+template <typename T>
+void VTKWriter::add_cell_data(const std::vector<T> &     property,
+                              const std::string          keyword,
+                              std::ofstream            & out)
+{
+  out << "SCALARS\t" << keyword << "\t";
+  out << "float" << std::endl;
+  out << "LOOKUP_TABLE HSV" << std::endl;
+  for (const double item : property)
+    out << static_cast<double>(item)<< std::endl;
+  out << std::endl;
+}
 
 }  // end namespace

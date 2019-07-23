@@ -17,6 +17,7 @@ class UnionFindWrapper
   void merge(const T & item1, const T & item2);
   const std::unordered_map<T, size_t> & items() const {return storage;}
   size_t group(const T & item) const;
+  size_t n_groups() const {return p_uf->n_groups();}
 
  private:
   std::unordered_map<T, size_t> storage;

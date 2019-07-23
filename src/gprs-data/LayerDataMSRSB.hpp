@@ -66,7 +66,7 @@ struct LayerDataMSRSB
   // std::vector<std::unordered_map<std::size_t, double> > shape_function_values;
 
   // for vtk output
-  mesh::SurfaceMesh<double> support_bounding_surface;
+  // mesh::SurfaceMesh<double> support_bounding_surface;
 };
 
 }  // end namespace

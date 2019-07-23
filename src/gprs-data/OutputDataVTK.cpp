@@ -42,6 +42,28 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
   }
 
   // save multiscale
+  const auto & ms = data.ms_data;
+  if (!ms.partitioning.empty())
+  {
+    IO::VTKWriter::add_cell_data(ms.partitioning, "partitioning", out);
+
+    // support regions
+    std::vector<int> support_value(grid.n_cells());
+    for (std::size_t block = 0; block < ms.n_blocks; block++)
+    {
+      for (size_t cell = 0; cell < grid.n_cells(); ++cell)
+      {
+        if (ms.support_boundary_cells[block].find(cell) != ms.support_boundary_cells[block].end())
+          support_value[cell] = 2;
+        else if (ms.support_internal_cells[block].find(cell) != ms.support_internal_cells[block].end())
+          support_value[cell] = 1;
+        else
+          support_value[cell] = 0;
+      }
+
+      IO::VTKWriter::add_cell_data(support_value, "support-" + std::to_string(block), out);
+    }
+  }
 
   out.close();
 }
@@ -100,7 +122,6 @@ void OutputDataVTK::save_edfm_data(const std::string & fname)
       efrac_cells[ielement].resize(cell.size());
       for (short v=0; v<cell.size(); ++v)
         efrac_cells[ielement][v] = shift + cell[v];
-
       ielement++;
     }
     shift += efrac.mesh.n_vertices();

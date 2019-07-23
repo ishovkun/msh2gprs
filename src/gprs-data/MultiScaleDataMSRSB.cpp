@@ -3,6 +3,7 @@
 #include "angem/CollisionGJK.hpp"  // collision_gjk algorithm
 #include "angem/Collisions.hpp"  // point_inside_surface
 #include "mesh/SurfaceMesh.hpp"  // to store support bounding surface
+#include "VTKWriter.hpp" // debug bounding region
 
 #include <unordered_set>
 
@@ -130,13 +131,11 @@ void MultiScaleDataMSRSB::build_block_face_data()
     if (map_block_group.find(face_disjoint.group( it_face.second )) == map_block_group.end())
       map_block_group.insert({ face_disjoint.group( it_face.second ), ghost_block++});
 
-  // for (auto & it :map_block_group)
-  //   std::cout << "g: "<<it.first << " block " << it.second<< std::endl;
-
   find_block_face_centroids(face_disjoint, map_block_group);
   const auto map_vertex_blocks = build_map_vertex_blocks(face_disjoint, map_block_group);
   const auto map_block_edge_vertices = build_block_edges(map_vertex_blocks);
   find_block_edge_centroids(map_block_edge_vertices);
+  debug_make_ghost_cell_names(face_disjoint, map_block_group);
 }
 
 
@@ -433,7 +432,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
    * the support region.
    */
   auto & layer = active_layer();
-  mesh::SurfaceMesh<double> & bounding_surface = layer.support_bounding_surface;
+  mesh::SurfaceMesh<double> bounding_surface;
 
   // exit(0);
   std::cout << "\nblock = " << block << std::endl;
@@ -448,7 +447,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
       // select neighbors of neighbor1 (including ghosts)
       for (const size_t & neighbor2 : layer.block_faces.get_neighbors(neighbor1))
       {
-        std::cout << "\t\tneighbor2 = " << neighbor2 <<"...";
+        std::cout << "\t\tneighbor2 = " << debug_ghost_cell_names[ neighbor2 ] <<"...";
 
         // criterion 1: should be a neighbor of the block
         if (!layer.block_faces.connection_exists(neighbor2, block))
@@ -472,7 +471,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
         // in this case we select the neighbors that actually have a common face
         // this is done recursively with have_better_fit
         // NOTE: of course those are not ghost blocks
-        if (layer.block_internal_connections.connection_exists(neighbor1, neighbor2)) // no conn by face
+        if (!layer.block_internal_connections.connection_exists(neighbor1, neighbor2)) // no conn by face
           if (!is_ghost_block(neighbor1) and !is_ghost_block(neighbor2))
             if (have_better_fit(block, neighbor1, neighbor2,
                                 layer.block_internal_connections,
@@ -487,7 +486,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
         const auto & face_n1_n2 = layer.block_faces.get_data(neighbor1, neighbor2);
         for (const size_t & neighbor3 : face_n1_n2.edging_blocks)
         {
-          std::cout << "\n\t\t\tneighbor3 = " << neighbor3 <<" ";
+          std::cout << "\n\t\t\tneighbor3 = " << debug_ghost_cell_names[ neighbor3 ] <<" ";
           // Obviously this should'n be an already selected block
           if (neighbor3 == neighbor1 or neighbor3 == neighbor2 or neighbor3 == block)
           {
@@ -496,13 +495,13 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
           }
 
           // Criterion 1 (yes, again)
-          if (layer.block_faces.connection_exists(neighbor3, block))
+          if (!layer.block_faces.connection_exists(neighbor3, block))
           {
-            std::cout << "not connected to " << block << std::endl;
+            std::cout << "not connected to " << block << " face!"<< std::endl;
             continue;
           }
           // and again
-          if (layer.block_faces.connection_exists(neighbor1, neighbor3))
+          if (!layer.block_faces.connection_exists(neighbor1, neighbor3))
           {
             std::cout << "not connected to "<< neighbor1 << std::endl;
             continue;
@@ -523,7 +522,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
           }
 
           // Criterion 3 (same)
-          if (layer.block_internal_connections.connection_exists(neighbor1, neighbor3)) // no conn by face
+          if (!layer.block_internal_connections.connection_exists(neighbor1, neighbor3)) // no conn by face
             if (!is_ghost_block(neighbor1) and !is_ghost_block(neighbor3))
               if (have_better_fit(block, neighbor1, neighbor3,
                         layer.block_internal_connections, layer.block_faces))
@@ -532,7 +531,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
                 continue;
               }
           // and again
-          if (layer.block_internal_connections.connection_exists(neighbor2, neighbor3)) // no conn by face
+          if (!layer.block_internal_connections.connection_exists(neighbor2, neighbor3)) // no conn by face
             if (!is_ghost_block(neighbor2) and !is_ghost_block(neighbor3))
               if (have_better_fit(block, neighbor2, neighbor3,
                         layer.block_internal_connections, layer.block_faces))
@@ -562,14 +561,14 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
         }
       }
     }
-  // std::cout << "done with boundary region" << std::endl;
 
   // debug output bounding surface vtk
-  //  const std::string fname = "debug_output/surface_mesh-" + std::to_string(block) + ".vtk";
-  // IO::VTKWriter::write_vtk(support_verts.points, support_boundary_triangles, fname);
+   const std::string fname = "debug_output/support_surface-" + std::to_string(block) + ".vtk";
+   IO::VTKWriter::write_surface_geometry(bounding_surface.get_vertices(),
+                                         bounding_surface.get_polygons(), fname);
 
   // Next we find the internal points of the support region
-  build_support_internal_cells(block);
+  build_support_internal_cells(block, bounding_surface);
 }
 
 
@@ -578,16 +577,16 @@ void MultiScaleDataMSRSB::build_support_region_boundary(const std::size_t block,
                                                         const angem::Shape<double> & bounding_shape)
 {
   auto & layer = active_layer();
+  if (layer.support_boundary_cells.empty())
+    layer.support_boundary_cells.resize(layer.n_blocks);
+
   // fast collision checking algorithm
   angem::CollisionGJK<double> collision;
   for (const std::size_t cell : layer.cells_in_block[neighbor])
   {
     const auto p_cell_polyhedra = grid.get_polyhedron(cell);
     if (collision.check(*p_cell_polyhedra, bounding_shape))
-    {
-      std::cout << "boundary cell = " << cell << std::endl;
       layer.support_boundary_cells[block].insert(cell);
-    }
   }
 }
 
@@ -608,7 +607,8 @@ Point MultiScaleDataMSRSB::find_point_outside_support_region(const std::size_t b
 }
 
 
-void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block)
+void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block,
+                                                       const mesh::SurfaceMesh<double>& bounding_surface)
 {
   auto & layer = active_layer();
 
@@ -623,18 +623,23 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block)
   // of times, then the cell center is inside the support region
   const Point outer_point = find_point_outside_support_region(block);
   const auto & block_neighbors = layer.block_internal_connections.get_neighbors(block);
+  std::cout << "outer_point = " << outer_point << std::endl;
 
   for (const std::size_t neighbor : block_neighbors)
     for (const std::size_t cell : layer.cells_in_block[neighbor])
     {
-      const auto & cell_center = grid.get_center(cell);
+      if (block == 1) std::cout << cell << ": " << grid.get_center(cell) << " ";
       // ray casting
-      if ( angem::point_inside_surface(cell_center, outer_point,
-                                       layer.support_bounding_surface.get_vertices(),
-                                       layer.support_bounding_surface.get_polygons()) )
+      if ( angem::point_inside_surface(grid.get_center(cell), outer_point,
+                                       bounding_surface.get_vertices(),
+                                       bounding_surface.get_polygons()) )
+      {
+        if (block == 1) std::cout << "OK" << std::endl;
         // if not among the boundary cells
         if (layer.support_boundary_cells[block].find(cell) == layer.support_boundary_cells[block].end())
           layer.support_internal_cells[block].insert(cell);
+      }
+      else if (block == 1) std::cout << "NO" << std::endl;
     }
 }
 
@@ -644,33 +649,16 @@ void MultiScaleDataMSRSB::fill_output_model(MultiScaleOutputData & model,
 {
   const auto & layer = layers[layer_index];
 
-  std::cout << "copy partitioing" << std::endl;
+  model.n_blocks = layer.n_blocks;
   //    partitioning
   model.partitioning.resize(layer.partitioning.size());
   std::copy(layer.partitioning.begin(), layer.partitioning.end(), model.partitioning.begin());
 
-  // // support boundary
-  // std::cout << "support bound" << std::endl;
-  // model.support_boundary_cells.resize(layer.n_blocks);
-  // for (std::size_t block = 0; block < layer.n_blocks; ++block)
-  // {
-  //   auto & from = layer.support_boundary_cells[block];
-  //   auto & to = model.support_boundary_cells[block];
-  //   to.resize(from.size());
-  //   std::copy(from.begin(), from.end(), to.begin());
-  // }
+  // support boundary
+  model.support_boundary_cells = layer.support_boundary_cells;
 
-  // std::cout << "internals" << std::endl;
-  // //  support internal
-  // model.support_internal_cells.resize(layer.n_blocks);
-  // for (std::size_t block = 0; block < layer.n_blocks; ++block)
-  // {
-  //   auto & from = layer.support_internal_cells[block];
-  //   auto & to = model.support_internal_cells[block];
-  //   to.resize(from.size());
-  //   std::copy(from.begin(), from.end(), to.begin());
-  // }
-
+  //  support internal
+  model.support_internal_cells = layer.support_internal_cells;
 }
 
 
@@ -682,5 +670,87 @@ void MultiScaleDataMSRSB::build_cells_in_block()
     layer.cells_in_block[layer.partitioning[cell]].push_back(cell);
 }
 
+std::string debug_direction_to_string(angem::Point<3,double> p)
+{
+  angem::Point<3,double> pn = p; pn.normalize();
+  std::cout << "pn = " << pn << std::endl;
+  double tol = 1e-4;
+  repeat:{
+    if ((pn - angem::Point<3,double>(-1, 0, 0)).norm() < tol)
+      return "left";
+    if ((pn - angem::Point<3,double>(1, 0, 0)).norm() < tol)
+      return "right";
+    if ((pn - angem::Point<3,double>(0, -1, 0)).norm() < tol)
+      return "front";
+    if ((pn - angem::Point<3,double>(0, 1, 0)).norm() < tol)
+      return "back";
+
+    if ((pn - angem::Point<3,double>(0, 0, 1)).norm() < tol)
+      return "top";
+    if ((pn - angem::Point<3,double>(0, 0, -1)).norm() < tol)
+      return "bottom";
+    tol *= 2;
+    goto repeat;
+  }
+
+  return "unknown";
+}
+
+void MultiScaleDataMSRSB::
+debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
+                            std::unordered_map<size_t, size_t>   & map_block_group)
+{
+  const auto & layer = active_layer();
+  // std::vector<Point> avg_face_group_direction(face_disjoint.n_groups());
+  // std::vector<size_t> n_group_items(face_disjoint.n_groups());
+
+  // Point global_center;
+  // size_t n_items;
+  std::cout << "starting loop" << std::endl;
+
+  for (auto & group : map_block_group)
+  {
+    const auto ghost = group.second;
+    std::cout << "ghost = " << ghost << std::endl;
+    const auto block = layer.block_faces.get_neighbors(ghost)[0];
+    std::cout << "block = " << block << std::endl;
+    if (block < layer.n_blocks)
+    {
+      Point face_direction;
+      size_t n_faces = 0;
+      // find ghost face center
+      for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+        if (face.neighbors().size() == 1)
+          if (layer.partitioning[face.neighbors()[0]] == block)
+            if ( face_disjoint.group(face.index()) == group.first)
+          {
+            face_direction += face.center();
+            n_faces++;
+          }
+
+      face_direction /= n_faces;
+      const std::string block_name = debug_direction_to_string(face_direction -
+                                                               layer.block_centroids[block]);
+      std::cout << "adding ghost cell  " << block_name  << std::endl;
+      debug_ghost_cell_names[ghost] = block_name;
+
+    }
+  }
+
+  for (size_t i = 0; i < layer.n_blocks; i++)
+    debug_ghost_cell_names[i] = std::to_string(i);
+
+  // print which blocks connected to which ghosts
+  for (size_t i = 0; i < layer.n_blocks; i++)
+  {
+    std::cout << "block " << i <<": ";
+    for (const auto neighbor : layer.block_faces.get_neighbors(i))
+      if (neighbor >= layer.n_blocks)
+      {
+        std::cout << debug_ghost_cell_names[neighbor] << "\t";
+      }
+    std::cout << std::endl;
+  }
+}
 
 }  // end namespace

@@ -49,8 +49,7 @@ class const_face_iterator
   // get vtk id of the face
   int vtk_id() const {return face_it->second.vtk_id;}
   // get vector of neighbor cell indices
-  inline
-  const std::vector<std::size_t> & neighbors() const {return face_it->second.neighbors;}
+  inline const std::vector<std::size_t> & neighbors() const {return face_it->second.neighbors;}
   // get vector of face vertex coordinates
   std::vector<Point> vertices() const;
   // get vector of face vertex indices

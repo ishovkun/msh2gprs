@@ -95,12 +95,19 @@ class MultiScaleDataMSRSB
   angem::Point<3,double> find_point_outside_support_region(const std::size_t block);
 
   // build the internal points of the block support region
-  void build_support_internal_cells(const std::size_t block);
+  void build_support_internal_cells(const std::size_t block,
+                                    const mesh::SurfaceMesh<double>& bounding_surface);
 
   //  attributes
   const mesh::Mesh & grid;
   vector<LayerDataMSRSB> layers;
   size_t active_layer_index;
+
+  // debugging shit
+ private:
+  std::unordered_map<size_t, std::string> debug_ghost_cell_names;
+  void debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
+                                   std::unordered_map<size_t, size_t>   & map_block_group);
 };
 
 
