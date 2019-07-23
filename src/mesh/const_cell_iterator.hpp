@@ -18,7 +18,7 @@ class const_cell_iterator
 {
  public:
   // constructor
-  const_cell_iterator(const std::size_t                       icell,
+  const_cell_iterator(const std::size_t                             icell,
                       const angem::PointSet<3,double>             & vertices,
                       const std::vector<std::vector<std::size_t>> & cells,
                       const std::unordered_map<hash_type, Face>   & map_faces,
@@ -31,6 +31,7 @@ class const_cell_iterator
   bool operator!=(const const_cell_iterator & other) const;
   // GETTERS
   inline const std::vector<std::size_t> & vertices() {return cells[icell];}
+  inline size_t n_vertices() const {return cells[icell].size();}
   const_cell_iterator neighbor_by_face(const const_face_iterator & face) const;
   inline std::size_t index() const {return icell;}
   inline int shape_id() const {return shape_ids[icell];}

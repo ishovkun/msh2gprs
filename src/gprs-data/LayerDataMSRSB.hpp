@@ -1,7 +1,10 @@
 #pragma once
 
 #include "ConnectionMap.hpp"
+#include "mesh/SurfaceMesh.hpp"
 #include "angem/Point.hpp"
+
+#include <unordered_set>
 
 namespace multiscale
 {
@@ -43,14 +46,14 @@ struct LayerDataMSRSB
   // std::vector<std::vector<std::size_t>> adjacent_ghost_cells;
   // std::vector<angem::Point<3,double>> ghost_cell_directions;
   // std::vector<std::string> ghost_cell_names;
-  // ---------------- Flowe     ( fvm ) stuff ----------------------------- //
+  // ---------------- Flow      ( fvm ) stuff ----------------------------- //
   // std::shared_ptr< std::vector<angem::Point<3,double>> > p_cell_centroids_flow;
   // std::shared_ptr< std::vector<angem::Point<3,double>> > p_block_centroids_flow;
   // indices of centroid cells
   // std::vector<std::size_t> block_centroid_cell_indices;
-  // ---------------- mechanics ( fem ) stuff ----------------------------- //
+  // ---------------- Mechanics ( fem ) stuff ----------------------------- //
   // indices of centroid vertices
-  // std::vector<std::size_t> block_centroid_vertex_indices;
+  std::vector<std::size_t> coarse_node_vertices;
   // support region
   std::vector<std::unordered_set<std::size_t>> support_boundary_cells;
   std::vector<std::unordered_set<std::size_t>> support_internal_cells;

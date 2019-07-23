@@ -6,6 +6,7 @@
 namespace IO
 {
 
+// edfm
 void VTKWriter::write_vtk(const std::vector<Point>                    & vertices,
                           const std::vector<std::vector<std::size_t>> & cells,
                           const std::string                           & fname)
@@ -68,14 +69,10 @@ void VTKWriter::write_vtk(const std::vector<Point>                    & vertices
   out.close();
 }
 
-
 void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
                           const std::vector<Gelement> & elements,
-                          const std::string           & fname)
+                          std::ofstream               & out)
 {
-  std::ofstream out;
-  out.open(fname.c_str());
-
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
   out << "ASCII \n \n";
@@ -158,7 +155,15 @@ void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
   for (const auto & cell : elements)
     out <<  cell.vtkIndex << std::endl;
   out << std::endl;
+}
 
+void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
+                          const std::vector<Gelement> & elements,
+                          const std::string           & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+  write_vtk(vertices, elements, out);
   out.close();
 }
 
@@ -166,11 +171,8 @@ void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
 void VTKWriter::write_vtk(const std::vector<Point>                    & vertices,
                           const std::vector<std::vector<std::size_t>> & cells,
                           const std::vector<int>                      & vtk_indices,
-                          const std::string                           & fname)
+                          std::ofstream                               & out)
 {
-  std::ofstream out;
-  out.open(fname.c_str());
-
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
   out << "ASCII \n \n";
@@ -210,7 +212,18 @@ void VTKWriter::write_vtk(const std::vector<Point>                    & vertices
   {
     out << id << std::endl;
   }
+}
 
+
+
+void VTKWriter::write_vtk(const std::vector<Point>                    & vertices,
+                          const std::vector<std::vector<std::size_t>> & cells,
+                          const std::vector<int>                      & vtk_indices,
+                          const std::string                           & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+  write_vtk(vertices, cells, vtk_indices, out);
   out.close();
 }
 

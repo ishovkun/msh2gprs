@@ -10,6 +10,7 @@ ADD_LIBRARY(gprs_data
   VTKWriter.cpp
   Well.cpp
   MultiScaleDataMSRSB.cpp
+  MultiScaleDataMech.cpp
   UnionFind.cpp
 )
 

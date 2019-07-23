@@ -15,17 +15,18 @@ UnionFind::UnionFind(const size_t set_size)
 }
 
 
-size_t UnionFind::root(size_t entry) //const
+size_t UnionFind::root(const size_t entry) const
 {
   // without path compression
   //  while (entry != id[entry]) entry = id[entry];
   //  with path compression
-  while (entry != id[entry])
+  size_t rt = entry;
+  while (rt != id[rt])
   {
-    id[entry] = id[id[entry]];
-    entry = id[entry];
+    id[rt] = id[id[rt]];
+    rt = id[rt];
   }
-  return entry;
+  return rt;
 }
 
 

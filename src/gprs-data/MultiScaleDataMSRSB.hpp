@@ -2,6 +2,7 @@
 
 #include "mesh/Mesh.hpp"
 #include "LayerDataMSRSB.hpp"
+#include "MultiScaleOutputData.hpp"
 #include "UnionFindWrapper.hpp"
 #include "tuple_hash.hpp"
 #include <algorithm>  // std::max_element
@@ -20,18 +21,21 @@ class MultiScaleDataMSRSB
    * takes n_blocks for only a single layer,
    * since multi-level multiscale is a long way
    * down the road. */
-  MultiScaleDataMSRSB(mesh::Mesh  & grid,
-                      const size_t  n_blocks);
+  MultiScaleDataMSRSB(mesh::Mesh  & grid, const size_t  n_blocks);
+  // main method. that's when the fun happens
+  virtual void build_data();
+  virtual void fill_output_model(MultiScaleOutputData & model, const int layer_index = 0) const;
+
+ protected:
   // get reference to the active layer
   inline
   LayerDataMSRSB & active_layer(){return layers[active_layer_index];}
   const LayerDataMSRSB & active_layer() const {return layers[active_layer_index];}
 
- protected:
-
- private:
   // call to metis to obtain partitioning
   void build_partitioning();
+  // build inverted partitioning block -> cells
+  void build_cells_in_block();
   // main method that identifies regions where shape functions exist
   void build_support_regions();
   // find geometric centers of coarse blocks
@@ -92,7 +96,8 @@ class MultiScaleDataMSRSB
 
   // build the internal points of the block support region
   void build_support_internal_cells(const std::size_t block);
-  // members
+
+  //  attributes
   const mesh::Mesh & grid;
   vector<LayerDataMSRSB> layers;
   size_t active_layer_index;

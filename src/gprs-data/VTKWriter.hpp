@@ -19,6 +19,16 @@ class VTKWriter
                         const std::vector<int>                      & vtk_indices,
                         const std::string                           & fname);
 
+  static void write_vtk(const std::vector<Point>                    & vertices,
+                        const std::vector<std::vector<std::size_t>> & cells,
+                        const std::vector<int>                      & vtk_indices,
+                        std::ofstream                               & out);
+
+  // wicked old timur's Gelement format for reservoir
+  static void write_vtk(const std::vector<Point>    & vertices,
+                        const std::vector<Gelement> & elements,
+                        std::ofstream               & out);
+
   static void write_vtk(const std::vector<Point>    & vertices,
                         const std::vector<Gelement> & elements,
                         const std::string           & fname);
@@ -27,6 +37,8 @@ class VTKWriter
                                     const std::vector<std::pair<std::size_t,std::size_t>> & indices,
                                     const std::string                                     & fname);
 
+ private:
+  VTKWriter();
 };
 
 }  // end namespace

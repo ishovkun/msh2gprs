@@ -16,7 +16,7 @@ class UnionFindWrapper
   void finalize();
   void merge(const T & item1, const T & item2);
   const std::unordered_map<T, size_t> & items() const {return storage;}
-  size_t group(const T & item);
+  size_t group(const T & item) const;
 
  private:
   std::unordered_map<T, size_t> storage;
@@ -63,11 +63,13 @@ void UnionFindWrapper<T>::merge(const T & item1,
 
 
 template <typename T>
-size_t UnionFindWrapper<T>::group(const T & item)
+size_t UnionFindWrapper<T>::group(const T & item) const
 {
   if (!is_finalized)
     throw std::runtime_error("union_find not finalized");
-  return p_uf->group(storage[item]);
+  const auto it = storage.find(item);
+  if (it == storage.end()) throw std::invalid_argument("item does not exist");
+  return p_uf->group(it->second);
 }
 
 
