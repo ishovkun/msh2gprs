@@ -1945,7 +1945,7 @@ void SimData::build_multiscale_data()
       throw std::invalid_argument("Jaques' code aint merged yet");
     }
     else if (config.multiscale_flow == method_msrsb or
-            config.multiscale_mechanics == method_msrsb)  // poor option
+             config.multiscale_mechanics == method_msrsb)  // poor option
     {
       multiscale::MultiScaleDataMSRSB ms_handler(grid, config.n_multiscale_blocks);
       ms_handler.build_data();
@@ -1955,7 +1955,7 @@ void SimData::build_multiscale_data()
     {
       multiscale::MultiScaleDataMech ms_handler(grid, config.n_multiscale_blocks);
       ms_handler.build_data();
-      throw std::invalid_argument("Will try to write this code this week");
+      ms_handler.fill_output_model(ms_data);
     }
   }
   else return;

@@ -276,4 +276,11 @@ void VTKWriter::enter_section_cell_data(const std::size_t n_cells,
   out << "CELL_DATA" << "\t" << n_cells << std::endl;
 }
 
+
+void VTKWriter::enter_section_point_data(const std::size_t n_vertices,
+                                         std::ofstream & out)
+{
+  out << "POINT_DATA" << "\t" << n_vertices << std::endl;
+}
+
 }  // end namespace

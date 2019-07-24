@@ -45,12 +45,14 @@ class VTKWriter
                                     const std::string                                     & fname);
   // add cell data to vtk file
   template <typename T>
-  static void add_cell_data(const std::vector<T> & property,
-                            const std::string           keyword,
-                            std::ofstream             & out);
+  static void add_data(const std::vector<T> & property,
+                       const std::string           keyword,
+                       std::ofstream             & out);
 
   static void enter_section_cell_data(const std::size_t n_cells,
                                       std::ofstream & out);
+  static void enter_section_point_data(const std::size_t n_vertices,
+                                       std::ofstream & out);
 
  private:
   VTKWriter();
@@ -58,9 +60,9 @@ class VTKWriter
 
 // add cell data to vtk file
 template <typename T>
-void VTKWriter::add_cell_data(const std::vector<T> &     property,
-                              const std::string          keyword,
-                              std::ofstream            & out)
+void VTKWriter::add_data(const std::vector<T> &     property,
+                         const std::string          keyword,
+                         std::ofstream            & out)
 {
   out << "SCALARS\t" << keyword << "\t";
   out << "float" << std::endl;

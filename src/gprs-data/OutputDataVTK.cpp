@@ -38,32 +38,56 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
       property[cell.index()] = data.vsCellRockProps[cell.index()].v_props[ivar];
 
-    IO::VTKWriter::add_cell_data(property, keyword, out);
+    IO::VTKWriter::add_data(property, keyword, out);
   }
 
   // save multiscale
   const auto & ms = data.ms_data;
   if (!ms.partitioning.empty())
   {
-    IO::VTKWriter::add_cell_data(ms.partitioning, "partitioning", out);
+    IO::VTKWriter::add_data(ms.partitioning, "partitioning", out);
 
-    // support regions
-    std::vector<int> support_value(grid.n_cells());
-    for (std::size_t block = 0; block < ms.n_blocks; block++)
+    if (ms.cell_data)
     {
-      for (size_t cell = 0; cell < grid.n_cells(); ++cell)
+      // support regions
+      std::vector<int> support_value(grid.n_cells());
+      for (std::size_t block = 0; block < ms.n_coarse; block++)
       {
-        if (cell == ms.centroids[block])
-          support_value[cell] = 3;
-        else if (ms.support_boundary_cells[block].find(cell) != ms.support_boundary_cells[block].end())
-          support_value[cell] = 2;
-        else if (ms.support_internal_cells[block].find(cell) != ms.support_internal_cells[block].end())
-          support_value[cell] = 1;
-        else
-          support_value[cell] = 0;
-      }
+        for (size_t cell = 0; cell < grid.n_cells(); ++cell)
+        {
+          if (cell == ms.centroids[block])
+            support_value[cell] = 3;
+          else if (ms.support_boundary[block].find(cell) != ms.support_boundary[block].end())
+            support_value[cell] = 2;
+          else if (ms.support_internal[block].find(cell) != ms.support_internal[block].end())
+            support_value[cell] = 1;
+          else
+            support_value[cell] = 0;
+        }
 
-      IO::VTKWriter::add_cell_data(support_value, "support-" + std::to_string(block), out);
+        IO::VTKWriter::add_data(support_value, "support-" + std::to_string(block), out);
+      }
+    }
+    else // point data
+    {
+      IO::VTKWriter::enter_section_point_data(grid.n_vertices(), out);
+
+      // coarse nodes
+      std::vector<int> support_value(grid.n_vertices());
+      for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
+      {
+        for (std::size_t i=0; i<grid.n_vertices(); ++i)
+        {
+          if (i == ms.centroids[coarse])
+            support_value[i] = 3;
+          else if (ms.support_boundary[coarse].find(i) != ms.support_boundary[coarse].end())
+            support_value[i] = 2;
+          else
+            support_value[i] = 0;
+        }
+
+        IO::VTKWriter::add_data(support_value, "support-" + std::to_string(coarse), out);
+      }
     }
   }
 

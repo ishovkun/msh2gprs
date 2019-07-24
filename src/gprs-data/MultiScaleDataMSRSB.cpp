@@ -72,7 +72,7 @@ void MultiScaleDataMSRSB::build_support_regions()
   std::cout << "OK" << std::endl;
 
   std::cout << "build support regions..." << std::flush;
-  active_layer().support_internal_cells.resize(active_layer().n_blocks);
+  active_layer().support_internal.resize(active_layer().n_blocks);
   for (std::size_t block = 0; block < active_layer().n_blocks; ++block)
   {
     std::cout << "\rbuild support regions... block "
@@ -101,7 +101,7 @@ void MultiScaleDataMSRSB::find_centroids()
     layer.block_centroids[block] /= n_cells_per_block[block];
 
   // find closest cell
-  layer.block_centroid_cells.resize(layer.n_blocks);
+  layer.coarse_to_fine.resize(layer.n_blocks);
   const auto max = std::numeric_limits<double>::max();
   for (size_t block = 0; block < layer.n_blocks; ++block )
   {
@@ -116,7 +116,7 @@ void MultiScaleDataMSRSB::find_centroids()
         min_dist = current_dist;
       }
     }
-    layer.block_centroid_cells[block] = closest;
+    layer.coarse_to_fine[block] = closest;
   }
 }
 
@@ -303,11 +303,11 @@ build_map_vertex_blocks(algorithms::UnionFindWrapper<size_t> & face_disjoint,
         if (std::find(blocks.begin(), blocks.end(), block2) == blocks.end())
           blocks.push_back(block2);
       }
-
     }
   }
   return vertex_blocks;
 }
+
 
 bool MultiScaleDataMSRSB::is_ghost_block(const size_t block) const
 {
@@ -597,8 +597,8 @@ void MultiScaleDataMSRSB::build_support_region_boundary(const std::size_t block,
                                                         const angem::Shape<double> & bounding_shape)
 {
   auto & layer = active_layer();
-  if (layer.support_boundary_cells.empty())
-    layer.support_boundary_cells.resize(layer.n_blocks);
+  if (layer.support_boundary.empty())
+    layer.support_boundary.resize(layer.n_blocks);
 
   // fast collision checking algorithm
   angem::CollisionGJK<double> collision;
@@ -606,7 +606,7 @@ void MultiScaleDataMSRSB::build_support_region_boundary(const std::size_t block,
   {
     const auto p_cell_polyhedra = grid.get_polyhedron(cell);
     if (collision.check(*p_cell_polyhedra, bounding_shape))
-      layer.support_boundary_cells[block].insert(cell);
+      layer.support_boundary[block].insert(cell);
   }
 }
 
@@ -633,7 +633,7 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block,
   auto & layer = active_layer();
 
   for (const std::size_t cell: layer.cells_in_block[block])
-    layer.support_internal_cells[block].insert(cell);
+    layer.support_internal[block].insert(cell);
 
   // loop through block neighbours and determine which cells
   // belong to the support region
@@ -656,8 +656,8 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block,
       {
         // if (block == 1) std::cout << "OK" << std::endl;
         // if not among the boundary cells
-        if (layer.support_boundary_cells[block].find(cell) == layer.support_boundary_cells[block].end())
-          layer.support_internal_cells[block].insert(cell);
+        if (layer.support_boundary[block].find(cell) == layer.support_boundary[block].end())
+          layer.support_internal[block].insert(cell);
       }
       // else if (block == 1) std::cout << "NO" << std::endl;
     }
@@ -669,20 +669,21 @@ void MultiScaleDataMSRSB::fill_output_model(MultiScaleOutputData & model,
 {
   const auto & layer = layers[layer_index];
 
-  model.n_blocks = layer.n_blocks;
+  model.cell_data = true;
+  model.n_coarse = layer.n_blocks;
 
   // partitioning
   model.partitioning.resize(layer.partitioning.size());
   std::copy(layer.partitioning.begin(), layer.partitioning.end(), model.partitioning.begin());
 
   //  centroids
-  model.centroids = layer.block_centroid_cells;
+  model.centroids = layer.coarse_to_fine;
 
   // support boundary
-  model.support_boundary_cells = layer.support_boundary_cells;
+  model.support_boundary = layer.support_boundary;
 
   //  support internal
-  model.support_internal_cells = layer.support_internal_cells;
+  model.support_internal = layer.support_internal;
 }
 
 
