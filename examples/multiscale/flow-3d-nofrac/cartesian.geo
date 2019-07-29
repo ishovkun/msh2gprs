@@ -93,4 +93,5 @@ Geometry.Tolerance = size_x / nx / 1e3;
 Geometry.AutoCoherence = 2;
 Mesh 3;  // Generalte 3D mesh
 Coherence Mesh;  // Remove duplicate entities
+Mesh.MshFileVersion = 2.2;
 Save "cartesian.msh";  // Save mesh in MSH format
