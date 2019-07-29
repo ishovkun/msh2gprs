@@ -47,47 +47,26 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
   {
     IO::VTKWriter::add_data(ms.partitioning, "partitioning", out);
 
-    if (ms.cell_data)
-    {
-      // support regions
-      std::vector<int> support_value(grid.n_cells());
-      for (std::size_t block = 0; block < ms.n_coarse; block++)
-      {
-        for (size_t cell = 0; cell < grid.n_cells(); ++cell)
-        {
-          if (cell == ms.centroids[block])
-            support_value[cell] = 3;
-          else if (ms.support_boundary[block].find(cell) != ms.support_boundary[block].end())
-            support_value[cell] = 2;
-          else if (ms.support_internal[block].find(cell) != ms.support_internal[block].end())
-            support_value[cell] = 1;
-          else
-            support_value[cell] = 0;
-        }
-
-        IO::VTKWriter::add_data(support_value, "support-" + std::to_string(block), out);
-      }
-    }
-    else // point data
-    {
+    if (!ms.cell_data)  // point data
       IO::VTKWriter::enter_section_point_data(grid.n_vertices(), out);
 
-      // coarse nodes
-      std::vector<int> support_value(grid.n_vertices());
-      for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
+    // coarse nodes
+    std::vector<int> support_value(grid.n_vertices());
+    for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
+    {
+      for (std::size_t i=0; i<grid.n_vertices(); ++i)
       {
-        for (std::size_t i=0; i<grid.n_vertices(); ++i)
-        {
-          if (i == ms.centroids[coarse])
-            support_value[i] = 3;
-          else if (ms.support_boundary[coarse].find(i) != ms.support_boundary[coarse].end())
-            support_value[i] = 2;
-          else
-            support_value[i] = 0;
-        }
-
-        IO::VTKWriter::add_data(support_value, "support-" + std::to_string(coarse), out);
+        if (i == ms.centroids[coarse])
+          support_value[i] = 3;
+        else if (ms.support_boundary[coarse].find(i) != ms.support_boundary[coarse].end())
+          support_value[i] = 2;
+        else if (ms.support_internal[coarse].find(i) != ms.support_internal[coarse].end())
+          support_value[i] = 1;
+        else
+          support_value[i] = 0;
       }
+
+      IO::VTKWriter::add_data(support_value, "support-" + std::to_string(coarse), out);
     }
   }
 
@@ -101,8 +80,7 @@ void OutputDataVTK::save_dfm_data(const std::string & fname)
   std::ofstream out;
   out.open(fname.c_str());
   IO::VTKWriter::write_surface_geometry(data.dfm_master_grid.get_vertices(),
-                                        data.dfm_master_grid.get_polygons(),
-                                        out);
+                                        data.dfm_master_grid.get_polygons(), out);
   out.close();
 }
 

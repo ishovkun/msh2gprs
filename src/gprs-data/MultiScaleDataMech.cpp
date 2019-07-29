@@ -176,7 +176,6 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
   model.support_internal.resize(layer.coarse_to_fine.size());
   for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
   {
-    std::cout << "coarse_vertex = " << coarse_vertex << std::endl;
     const size_t fine_vertex = layer.coarse_to_fine[coarse_vertex];
     const auto & neighboring_blocks = map_coarse_node_blocks.find( fine_vertex )->second;
     // approximate number of nodes to allocate memory
@@ -186,7 +185,6 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
         n_approx_internal_nodes += (size_t)( grid.n_vertices() *
                                              ( double ) layer.cells_in_block[block].size()  /
                                              grid.n_cells() );
-    std::cout << "n_approx_internal_nodes = " << n_approx_internal_nodes << std::endl;
 
     // fill internal nodes
     model.support_internal[coarse_vertex].reserve(n_approx_internal_nodes);
