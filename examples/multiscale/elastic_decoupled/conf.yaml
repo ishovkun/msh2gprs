@@ -30,16 +30,8 @@ Boundary Conditions:            # geomechanical bc's
       label: 1111112            # right
       type: 2                   # neumann
       value: [100, 0, 0]
-    # face:                       # bottom
-    #   label: 3333331
-    #   type: 1                     # dirichlet
-    #   value: [nan, nan, 0]
-    # face:                       # top?
-    #   label: 3333332
-    #   type: 1                     # dirichlet
-    #   value: [nan, nan, 0]
 
 Multiscale:
   blocks : 10
   flow: no
-  mechanics: msrsb
+  mechanics: srfem

@@ -1,0 +1,14 @@
+Mesh file: cartesian.msh
+# Mesh file: geom.msh
+
+Domain Flow Properties:
+  domain:
+    label: 9999991
+    Coupled: false                  # true/false on by default
+    RTEMP: 0
+    PORO: 0.1
+    PERM: 10
+
+Multiscale:
+  blocks : 10
+  flow: msrsb
