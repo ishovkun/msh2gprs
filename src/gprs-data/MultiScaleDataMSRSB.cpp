@@ -140,7 +140,6 @@ void MultiScaleDataMSRSB::build_block_connections()
 void MultiScaleDataMSRSB::build_block_face_data()
 {
   algorithms::UnionFindWrapper<size_t> face_disjoint = build_external_face_disjoint();
-
   size_t ghost_block = active_layer().n_blocks;
   // face group -> ghost block
   std::unordered_map<size_t, size_t> map_block_group;
@@ -223,8 +222,8 @@ algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_di
       for (size_t & v : face.vertex_indices() )
       {
         auto it = map_vertex_face.find(v);
-        if (it == map_vertex_face.end()) map_vertex_face.insert({v, {std::move( face )}});
-        else it->second.push_back(std::move( face ));
+        if (it == map_vertex_face.end()) map_vertex_face.insert({v, { face }});
+        else it->second.push_back(face);
       }
     }
 
@@ -250,9 +249,19 @@ algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_di
          * (2) their normals don't have a crazy angle between 'em
          * (3) two faces share an edge (two connected vertices) */
         if (cell1 != cell2)                                      // criterion 1
+        {
+          for (auto v : face1.vertex_indices())
+            std::cout << v << " ";
+          std::cout << std::endl;
+          for (auto v : face2.vertex_indices())
+            std::cout << v << " ";
+          std::cout << std::endl;
+          //  std::cout << face1.normal() << std::endl << std::flush;
+          // std::cout << face2.normal() << std::endl << std::flush;
           if ( abs(dot(face1.normal(), face2.normal())) > 1e-4 ) // criterion 2
             if ( share_edge(face1, face2) )                      // criterion 3
-            face_disjoint.merge(face1.index(), face2.index());
+              face_disjoint.merge(face1.index(), face2.index());
+        }
       }
     }
   }
