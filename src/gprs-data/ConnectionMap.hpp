@@ -262,6 +262,7 @@ template <typename DataType>
 const std::vector<std::size_t> &
 ConnectionMap<DataType>::get_neighbors(std::size_t ielement) const
 {
+  assert(ielement < v_neighbors.size());
   return v_neighbors[ielement];
 }
 

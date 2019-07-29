@@ -15,6 +15,12 @@ enum MSPartitioning : int
 };
 
 
+enum OutputFormat
+{
+  gprs, vtk
+};
+
+
 struct DomainConfig
 {
   int label;
@@ -109,7 +115,11 @@ struct SimdataConfig
   int multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do shit
   int multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do shit
 
+  // output format
+  std::vector<OutputFormat> output_formats = {OutputFormat::gprs, OutputFormat::vtk};
+
   // output file names
+  // GPRS format
   std::string mesh_file;
   std::string domain_file           = "domain.txt";
   std::string mechanics_domain_file = "gm_geometry.txt";
@@ -117,9 +127,13 @@ struct SimdataConfig
   std::string discrete_frac_file    = "gm_DFM.txt";
   std::string bcond_file            = "bcond.txt";
   std::string wells_file            = "wells.txt";
-  std::string wells_vtk_file        = "wells.vtk";
   std::string mech_ms_file          = "ms_mech.txt";
   std::string flow_ms_file          = "ms_flow.txt";
+  // VTK format
+  std::string reservoir_grid_vtk_file = "reservoir_mesh.vtk";
+  std::string edfm_grid_vtk_file      = "efrac.vtk";
+  std::string dfm_grid_vtk_file       = "dfm.vtk";
+  std::string wells_vtk_file          = "wells.vtk";
 };
 
 

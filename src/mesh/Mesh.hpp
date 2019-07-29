@@ -100,6 +100,10 @@ class Mesh
   std::vector<angem::Point<3,double>> & get_vertices() {return vertices.points;}
   // get const vector of all the grid vertex node coordinates
   const std::vector<angem::Point<3,double>> & get_vertices() const {return vertices.points;}
+  // get vertex indices of a cell
+  std::vector<std::size_t> & get_vertices(const std::size_t cell);
+  // get vertex indices of a cell
+  const std::vector<std::size_t> & get_vertices(const std::size_t cell) const;
   // get vertex coordinates
   const angem::Point<3,double> & vertex_coordinates(const std::size_t i) const;
   // get vertex coordinates

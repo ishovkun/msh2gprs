@@ -273,7 +273,7 @@ SurfaceMesh<double> Mesh::split_faces()
   // std::cout << "n_faces = " << n_faces() << std::endl;
   /* Algorithm:
   * 1. create SurfaceMesh from marked faces
-  * 2. find internal vertices (not on boundary)
+  * 2. find internal vertices (those whose edge have >1 neighbors)
   * 3. split each internal vertex
   * 4. modify neighbors map */
   SurfaceMesh<double> mesh_faces(1e-6);
@@ -534,5 +534,15 @@ Mesh:: find_split_data(const std::size_t vertex,
   else return it->second;
 }
 
+std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell)
+{
+  return cells[cell];
+}
+
+
+const std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell) const
+{
+  return cells[cell];
+}
 
 }

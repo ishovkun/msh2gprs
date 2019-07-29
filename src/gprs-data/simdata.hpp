@@ -20,7 +20,7 @@
 #include "mesh/Mesh.hpp"
 #include "SimdataConfig.hpp"
 #include <Well.hpp>
-#include "MultiScaleDataMSRSB.hpp"
+#include "MultiScaleOutputData.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -156,7 +156,7 @@ public:
   }
 
   // Multiscale
-  void prepare_multiscale_data();
+  void build_multiscale_data();
 
 protected:
   // number of default variables (such as cell x,y,z) for rock properties
@@ -283,9 +283,18 @@ public:
   std::unordered_set<int> boundary_face_markers;
 
   // multiscale
+<<<<<<< HEAD
   std::vector<std::size_t> partitioning;
   // different from partitioning cause of DFM and EDFM fracs and wells
   std::vector<std::size_t> fluid_partitioning;
+=======
+  multiscale::MultiScaleOutputData ms_data;
+  // std::vector<std::size_t> partitioning;
+
+  // different from partitioning cause of fracturess and wells
+  
+  //  std::vector<std::size_t> fluid_partitioning;
+>>>>>>> partition
 
 protected:
   // it might be used in older timur's version for 2nd order elements but not

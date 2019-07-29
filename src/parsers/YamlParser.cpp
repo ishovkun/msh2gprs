@@ -558,10 +558,10 @@ void YamlParser::section_multiscale(const YAML::Node & node)
       const auto value = it->second.as<std::string>();
       if (value == "no")
         config.multiscale_mechanics = MSPartitioning::no_partitioning;
-      else if (value == "msrsb")
-        config.multiscale_flow = MSPartitioning::method_msrsb;
+      // else if (value == "msrsb")
+      //   config.multiscale_flow = MSPartitioning::method_msrsb;
       else if (value == "srfem")
-        config.multiscale_flow = MSPartitioning::method_mechanics;
+        config.multiscale_mechanics = MSPartitioning::method_mechanics;
       else
       {
         std::cout << "\tunknown keyword aborting" << std::endl;

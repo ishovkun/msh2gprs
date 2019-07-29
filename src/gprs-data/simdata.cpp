@@ -12,6 +12,8 @@
 #include "mesh/Mesh.hpp" // 3D mesh format
 // parser for user-defined expressions for reservoir data
 #include "muparser/muParser.h"
+#include "MultiScaleDataMSRSB.hpp"
+#include "MultiScaleDataMech.hpp"
 
 #include <algorithm>
 #include <exception>
@@ -1021,7 +1023,7 @@ void SimData::defineRockProperties()
   for (std::size_t i=0; i<config.all_vars.size(); ++i)
   {
     std::cout << config.all_vars[i] << "\t";
-    if ((i+1)%10 == 0)
+    if ((i + 1)%3 == 0)
       std::cout << std::endl;
   }
   std::cout << std::endl;
@@ -1063,7 +1065,6 @@ void SimData::defineRockProperties()
                     << "'" << std::endl;
           exit(-1);
         }
-
       }
       try {
         parsers[i].SetExpr(conf.expressions[i]);
@@ -1093,7 +1094,7 @@ void SimData::defineRockProperties()
         for (std::size_t i=0; i<n_expressions; ++i)
         {
           try {
-          vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
+            vars[conf.local_to_global_vars.at(i)] = parsers[i].Eval();
           }
           catch(mu::Parser::exception_type & e)
           {
@@ -1929,7 +1930,7 @@ void SimData::computeWellIndex(Well & well)
 }
 
 
-void SimData::prepare_multiscale_data()
+void SimData::build_multiscale_data()
 {
   if (config.multiscale_flow != MSPartitioning::no_partitioning or
       config.multiscale_mechanics != MSPartitioning::no_partitioning)
@@ -1939,18 +1940,21 @@ void SimData::prepare_multiscale_data()
       throw std::invalid_argument("Jaques' code aint merged yet");
     }
     else if (config.multiscale_flow == method_msrsb or
-            config.multiscale_mechanics == method_msrsb)  // poor option
+             config.multiscale_mechanics == method_msrsb)  // poor option
     {
-      multiscale::MultiScaleDataMSRSB ms_data(grid, config.n_multiscale_blocks);
-      throw std::invalid_argument("Igor's code aint merged yet");
+      multiscale::MultiScaleDataMSRSB ms_handler(grid, config.n_multiscale_blocks);
+      ms_handler.build_data();
+      ms_handler.fill_output_model(ms_data);
     }
     else if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
     {
-      throw std::invalid_argument("Will write this code this week");
+      multiscale::MultiScaleDataMech ms_handler(grid, config.n_multiscale_blocks);
+      ms_handler.build_data();
+      ms_handler.fill_output_model(ms_data);
     }
   }
   else return;
-  exit(0);
+  // exit(0);
 }
 
 }  // end namespace

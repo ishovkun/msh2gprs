@@ -6,13 +6,11 @@
 namespace IO
 {
 
-void VTKWriter::write_vtk(const std::vector<Point>                    & vertices,
-                          const std::vector<std::vector<std::size_t>> & cells,
-                          const std::string                           & fname)
+// edfm
+void VTKWriter::write_surface_geometry(const std::vector<Point>    & vertices,
+                                       const std::vector<std::vector<std::size_t>> & cells,
+                                       std::ofstream               & out)
 {
-  std::ofstream out;
-  out.open(fname.c_str());
-
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
   out << "ASCII \n \n";
@@ -65,17 +63,24 @@ void VTKWriter::write_vtk(const std::vector<Point>                    & vertices
     // }
   }
 
-  out.close();
 }
 
 
-void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
-                          const std::vector<Gelement> & elements,
-                          const std::string           & fname)
+void VTKWriter::
+write_surface_geometry(const std::vector<Point>                    & vertices,
+                       const std::vector<std::vector<std::size_t>> & cells,
+                       const std::string                           & fname)
 {
   std::ofstream out;
   out.open(fname.c_str());
+  write_surface_geometry(vertices, cells, out);
+  out.close();
+}
 
+void VTKWriter::write_geometry(const std::vector<Point>    & vertices,
+                               const std::vector<Gelement> & elements,
+                               std::ofstream               & out)
+{
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
   out << "ASCII \n \n";
@@ -157,20 +162,26 @@ void VTKWriter::write_vtk(const std::vector<Point>    & vertices,
   out << "CELL_TYPES" << "\t" << n_cells << std::endl;
   for (const auto & cell : elements)
     out <<  cell.vtkIndex << std::endl;
-  out << std::endl;
 
+}
+
+
+void VTKWriter::write_geometry(const std::vector<Point>    & vertices,
+                               const std::vector<Gelement> & elements,
+                               const std::string           & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+  write_geometry(vertices, elements, out);
   out.close();
 }
 
 
-void VTKWriter::write_vtk(const std::vector<Point>                    & vertices,
-                          const std::vector<std::vector<std::size_t>> & cells,
-                          const std::vector<int>                      & vtk_indices,
-                          const std::string                           & fname)
+void VTKWriter::write_geometry(const std::vector<Point>                    & vertices,
+                               const std::vector<std::vector<std::size_t>> & cells,
+                               const std::vector<int>                      & vtk_indices,
+                               std::ofstream                               & out)
 {
-  std::ofstream out;
-  out.open(fname.c_str());
-
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
   out << "ASCII \n \n";
@@ -210,7 +221,18 @@ void VTKWriter::write_vtk(const std::vector<Point>                    & vertices
   {
     out << id << std::endl;
   }
+}
 
+
+
+void VTKWriter::write_geometry(const std::vector<Point>                    & vertices,
+                               const std::vector<std::vector<std::size_t>> & cells,
+                               const std::vector<int>                      & vtk_indices,
+                               const std::string                           & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+  write_geometry(vertices, cells, vtk_indices, out);
   out.close();
 }
 
@@ -245,6 +267,20 @@ void VTKWriter::write_well_trajectory(const std::vector<Point>                  
     out << 3 << std::endl;
 
   out.close();
+}
+
+
+void VTKWriter::enter_section_cell_data(const std::size_t n_cells,
+                                        std::ofstream & out)
+{
+  out << "CELL_DATA" << "\t" << n_cells << std::endl;
+}
+
+
+void VTKWriter::enter_section_point_data(const std::size_t n_vertices,
+                                         std::ofstream & out)
+{
+  out << "POINT_DATA" << "\t" << n_vertices << std::endl;
 }
 
 }  // end namespace
