@@ -534,5 +534,15 @@ Mesh:: find_split_data(const std::size_t vertex,
   else return it->second;
 }
 
+std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell)
+{
+  return cells[cell];
+}
+
+
+const std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell) const
+{
+  return cells[cell];
+}
 
 }

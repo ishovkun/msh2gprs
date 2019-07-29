@@ -31,9 +31,7 @@ void MultiScaleDataMSRSB::build_data()
   build_partitioning();
   std::cout << "OK" << std::endl;
 
-  std::cout << "building cells in block...";
   build_cells_in_block();
-  std::cout << "OK" << std::endl;
 
   build_support_regions();
 }
@@ -756,7 +754,7 @@ debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_di
       face_direction /= n_faces;
       const std::string block_name = debug_direction_to_string(face_direction -
                                                                layer.block_centroids[block]);
-      // std::cout << "adding ghost cell  " << block_name  << std::endl;
+      std::cout << "adding ghost cell  " << block_name  << std::endl;
       debug_ghost_cell_names[ghost] = block_name;
 
     }
