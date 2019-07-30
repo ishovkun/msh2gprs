@@ -283,8 +283,8 @@ public:
   std::unordered_set<int> boundary_face_markers;
 
   // multiscale
-  multiscale::MultiScaleOutputData ms_data;
-  // std::vector<std::size_t> partitioning;
+  multiscale::MultiScaleOutputData ms_flow_data;
+  multiscale::MultiScaleOutputData ms_mech_data;
 
   // different from partitioning cause of fracturess and wells
   //  std::vector<std::size_t> fluid_partitioning;

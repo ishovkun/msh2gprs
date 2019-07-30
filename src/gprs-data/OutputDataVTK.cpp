@@ -30,9 +30,6 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
   // save keywords
   for (std::size_t ivar=0; ivar<data.rockPropNames.size(); ++ivar)
   {
-    // if ( data.config.expression_type[ivar] != 1 )  // only mechanics kwds
-    //   continue;
-
     vector<double> property(grid.n_cells());
     const string keyword = data.rockPropNames[ivar];
     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
@@ -41,35 +38,20 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
     IO::VTKWriter::add_data(property, keyword, out);
   }
 
-  // save multiscale
-  const auto & ms = data.ms_data;
-  if (!ms.partitioning.empty())
+  // save multiscale flow data
+  const auto & msf = data.ms_flow_data;
+  if (!msf.partitioning.empty())
   {
-    IO::VTKWriter::add_data(ms.partitioning, "partitioning", out);
-
-    if (!ms.cell_data)  // point data
-      IO::VTKWriter::enter_section_point_data(grid.n_vertices(), out);
-
-    // coarse nodes
-    std::vector<int> support_value(grid.n_vertices());
-    for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
-    {
-      for (std::size_t i=0; i<grid.n_vertices(); ++i)
-      {
-        if (i == ms.centroids[coarse])
-          support_value[i] = 3;
-        else if (ms.support_boundary[coarse].find(i) != ms.support_boundary[coarse].end())
-          support_value[i] = 2;
-        else if (ms.support_internal[coarse].find(i) != ms.support_internal[coarse].end())
-          support_value[i] = 1;
-        else
-          support_value[i] = 0;
-      }
-
-      IO::VTKWriter::add_data(support_value, "support-" + std::to_string(coarse), out);
-    }
+    IO::VTKWriter::add_data(msf.partitioning, "partitioning-flow", out);
+    saveMultiScaleSupport(msf, grid.n_cells(), "support-flow-", out);
   }
-
+  const auto & msm = data.ms_mech_data;
+  if (!msm.partitioning.empty())
+  {
+    IO::VTKWriter::add_data(msm.partitioning, "partitioning-mech", out);
+    IO::VTKWriter::enter_section_point_data(grid.n_vertices(), out);
+    saveMultiScaleSupport(msf, grid.n_vertices(), "support-mech-", out);
+  }
   out.close();
 }
 
@@ -133,8 +115,55 @@ void OutputDataVTK::save_edfm_data(const std::string & fname)
 
   IO::VTKWriter::write_surface_geometry(efrac_verts, efrac_cells, out);
 
-
   out.close();
+}
+
+
+void OutputDataVTK::saveMultiScaleSupport(const multiscale::MultiScaleOutputData & ms,
+                                          const std::size_t                        size,
+                                          const std::string                      & prefix,
+                                          std::ofstream                          & out)
+{
+  // coarse nodes
+  std::vector<int> support_value(size);
+  for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
+  {
+    // std::cout << "output " << coarse << std::endl;
+    // std::cout << "out.boundary.size() = " << ms.support_boundary[coarse].size() << std::endl;
+    // int count = 0;
+    // for (size_t cell : ms.support_boundary[coarse])
+    // {
+    //   std::cout << cell << " ";
+    //   if (count++ % 20 == 0)
+    //     if (count != 1)
+    //       std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
+
+    size_t ni = 0, nb = 0;
+    for (std::size_t i=0; i<size; ++i)
+    {
+      if (i == ms.centroids[coarse])
+        support_value[i] = 3;
+      else if (ms.support_boundary[coarse].find(i) != ms.support_boundary[coarse].end())
+      {
+        nb++;
+        support_value[i] = 2;
+      }
+      else if (ms.support_internal[coarse].find(i) != ms.support_internal[coarse].end())
+      {
+        support_value[i] = 1;
+        ni++;
+      }
+      else
+        support_value[i] = 0;
+    }
+    // std::cout << "ni = " << ni << std::endl;
+    // std::cout << "nb = " << nb << std::endl;
+    // exit(0);
+
+    IO::VTKWriter::add_data(support_value, prefix + std::to_string(coarse), out);
+  }  // end coarse loop
 }
 
 

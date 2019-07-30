@@ -1939,18 +1939,18 @@ void SimData::build_multiscale_data()
     {
       throw std::invalid_argument("Jaques' code aint merged yet");
     }
-    else if (config.multiscale_flow == method_msrsb or
-             config.multiscale_mechanics == method_msrsb)  // poor option
+    else if (config.multiscale_flow == method_msrsb)  // poor option
     {
       multiscale::MultiScaleDataMSRSB ms_handler(grid, config.n_multiscale_blocks);
       ms_handler.build_data();
-      ms_handler.fill_output_model(ms_data);
+      ms_handler.fill_output_model(ms_flow_data);
     }
-    else if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
+
+    if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
     {
       multiscale::MultiScaleDataMech ms_handler(grid, config.n_multiscale_blocks);
       ms_handler.build_data();
-      ms_handler.fill_output_model(ms_data);
+      ms_handler.fill_output_model(ms_mech_data);
     }
   }
   else return;

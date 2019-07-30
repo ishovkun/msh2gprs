@@ -6,6 +6,7 @@
 #include "VTKWriter.hpp" // debug bounding region
 
 #include <unordered_set>
+#include <chrono>  // for high_resolution_clock debug timing
 
 namespace multiscale {
 
@@ -249,19 +250,9 @@ algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_di
          * (2) their normals don't have a crazy angle between 'em
          * (3) two faces share an edge (two connected vertices) */
         if (cell1 != cell2)                                      // criterion 1
-        {
-          for (auto v : face1.vertex_indices())
-            std::cout << v << " ";
-          std::cout << std::endl;
-          for (auto v : face2.vertex_indices())
-            std::cout << v << " ";
-          std::cout << std::endl;
-          //  std::cout << face1.normal() << std::endl << std::flush;
-          // std::cout << face2.normal() << std::endl << std::flush;
           if ( abs(dot(face1.normal(), face2.normal())) > 1e-4 ) // criterion 2
             if ( share_edge(face1, face2) )                      // criterion 3
               face_disjoint.merge(face1.index(), face2.index());
-        }
       }
     }
   }
@@ -461,10 +452,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
   auto & layer = active_layer();
   mesh::SurfaceMesh<double> bounding_surface;
 
-  // exit(0);
-  // std::cout << "\nblock = " << block << std::endl;
-  // for (auto it = layer.block_faces.begin(); it != layer.block_faces.end(); ++it)
-  //   std::cout << it.elements().first <<" " << it.elements().second << std::endl;
+  // auto start = std::chrono::high_resolution_clock::now();
 
   //  select non-ghost neighobors of the current block
   for (const size_t & neighbor1 : layer.block_faces.get_neighbors(block) )
@@ -589,13 +577,17 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
       }
     }
 
+  // auto SS = std::chrono::high_resolution_clock::now();
   // debug output bounding surface vtk
-  // const std::string fname = "debug_output/support_surface-" + std::to_string(block) + ".vtk";
-  // IO::VTKWriter::write_surface_geometry(bounding_surface.get_vertices(),
-  //                                       bounding_surface.get_polygons(), fname);
+  const std::string fname = "support_surface-" + std::to_string(block) + ".vtk";
+  IO::VTKWriter::write_surface_geometry(bounding_surface.get_vertices(),
+                                        bounding_surface.get_polygons(), fname);
 
   // Next we find the internal points of the support region
   build_support_internal_cells(block, bounding_surface);
+  // auto E = std::chrono::high_resolution_clock::now();
+  // std::cout << "finding = " << ( SS - start ).count() / 1e4 << std::endl;
+  // std::cout << "internal = " << (E - SS).count() / 1e4<< std::endl;
 }
 
 
@@ -613,7 +605,10 @@ void MultiScaleDataMSRSB::build_support_region_boundary(const std::size_t block,
   {
     const auto p_cell_polyhedra = grid.get_polyhedron(cell);
     if (collision.check(*p_cell_polyhedra, bounding_shape))
+    {
+      // std::cout << "boundary " << block << " " << neighbor << " "  << cell << std::endl;
       layer.support_boundary[block].insert(cell);
+    }
   }
 }
 
@@ -639,9 +634,6 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block,
 {
   auto & layer = active_layer();
 
-  for (const std::size_t cell: layer.cells_in_block[block])
-    layer.support_internal[block].insert(cell);
-
   // loop through block neighbours and determine which cells
   // belong to the support region
   // ray casting algorithm:
@@ -650,24 +642,31 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block,
   // of times, then the cell center is inside the support region
   const Point outer_point = find_point_outside_support_region(block);
   const auto & block_neighbors = layer.block_internal_connections.get_neighbors(block);
-  // std::cout << "outer_point = " << outer_point << std::endl;
+
+  //  approximately count number of internal cells and reserve space
+  size_t n_internal_cells = layer.cells_in_block[block].size();
+  for (const std::size_t neighbor : block_neighbors)
+    n_internal_cells += layer.cells_in_block[neighbor].size();
+  layer.support_internal[block].reserve(n_internal_cells);
+  // of course insert points that are already in block
+  for (const std::size_t cell: layer.cells_in_block[block])
+    layer.support_internal[block].insert(cell);
 
   for (const std::size_t neighbor : block_neighbors)
     for (const std::size_t cell : layer.cells_in_block[neighbor])
     {
-      // if (block == 1) std::cout << cell << ": " << grid.get_center(cell) << " ";
       // ray casting
       if ( angem::point_inside_surface(grid.get_center(cell), outer_point,
                                        bounding_surface.get_vertices(),
                                        bounding_surface.get_polygons()) )
-      {
-        // if (block == 1) std::cout << "OK" << std::endl;
         // if not among the boundary cells
         if (layer.support_boundary[block].find(cell) == layer.support_boundary[block].end())
+        {
+          // std::cout << "internal " << block << " " << neighbor << " " << cell << std::endl;
           layer.support_internal[block].insert(cell);
-      }
-      // else if (block == 1) std::cout << "NO" << std::endl;
+        }
     }
+  // exit(0);
 }
 
 
@@ -691,6 +690,22 @@ void MultiScaleDataMSRSB::fill_output_model(MultiScaleOutputData & model,
 
   //  support internal
   model.support_internal = layer.support_internal;
+  // std::cout << "model.support_internal.size() = " << model.support_internal.size() << std::endl;
+  // std::cout << "layer.support_internal.size() = " << layer.support_internal.size() << std::endl;
+  // for (size_t block = 0; block < layer.n_blocks; block++)
+  // {
+  //   std::cout << "model.support_boundary[block].size() = " << model.support_boundary[block].size() << std::endl;
+  //   std::cout << "model.support_internal[block].size() = " << model.support_internal[block].size() << std::endl;
+  //   // int count = 0;
+  //   // for (size_t cell : model.support_internal[block])
+  //   // {
+  //   //   std::cout << cell << " ";
+  //   //   if (count++ % 20 == 0)
+  //   //     if (count != 1)
+  //   //       std::cout << std::endl;
+  //   // }
+  //   // std::cout << std::endl;
+  // }
 }
 
 
@@ -701,6 +716,7 @@ void MultiScaleDataMSRSB::build_cells_in_block()
   for (std::size_t cell=0; cell<layer.n_cells; ++cell)
     layer.cells_in_block[layer.partitioning[cell]].push_back(cell);
 }
+
 
 std::string debug_direction_to_string(angem::Point<3,double> p)
 {
