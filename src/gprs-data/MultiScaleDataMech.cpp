@@ -196,6 +196,7 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
                 layer.support_boundary[coarse_vertex].end())
               model.support_internal[coarse_vertex].insert(vertex);
   }
+
 }
 
 

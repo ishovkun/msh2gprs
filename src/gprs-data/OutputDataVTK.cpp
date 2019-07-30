@@ -50,7 +50,7 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
   {
     IO::VTKWriter::add_data(msm.partitioning, "partitioning-mech", out);
     IO::VTKWriter::enter_section_point_data(grid.n_vertices(), out);
-    saveMultiScaleSupport(msf, grid.n_vertices(), "support-mech-", out);
+    saveMultiScaleSupport(msm, grid.n_vertices(), "support-mech-", out);
   }
   out.close();
 }
@@ -128,17 +128,6 @@ void OutputDataVTK::saveMultiScaleSupport(const multiscale::MultiScaleOutputData
   std::vector<int> support_value(size);
   for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
   {
-    // std::cout << "output " << coarse << std::endl;
-    // std::cout << "out.boundary.size() = " << ms.support_boundary[coarse].size() << std::endl;
-    // int count = 0;
-    // for (size_t cell : ms.support_boundary[coarse])
-    // {
-    //   std::cout << cell << " ";
-    //   if (count++ % 20 == 0)
-    //     if (count != 1)
-    //       std::cout << std::endl;
-    // }
-    // std::cout << std::endl;
 
     size_t ni = 0, nb = 0;
     for (std::size_t i=0; i<size; ++i)
