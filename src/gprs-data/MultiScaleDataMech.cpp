@@ -178,6 +178,7 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
   {
     const size_t fine_vertex = layer.coarse_to_fine[coarse_vertex];
     const auto & neighboring_blocks = map_coarse_node_blocks.find( fine_vertex )->second;
+
     // approximate number of nodes to allocate memory
     size_t n_approx_internal_nodes = 0;
     for (const size_t block : neighboring_blocks)

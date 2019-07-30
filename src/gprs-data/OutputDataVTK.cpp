@@ -129,27 +129,17 @@ void OutputDataVTK::saveMultiScaleSupport(const multiscale::MultiScaleOutputData
   for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
   {
 
-    size_t ni = 0, nb = 0;
     for (std::size_t i=0; i<size; ++i)
     {
       if (i == ms.centroids[coarse])
         support_value[i] = 3;
       else if (ms.support_boundary[coarse].find(i) != ms.support_boundary[coarse].end())
-      {
-        nb++;
         support_value[i] = 2;
-      }
       else if (ms.support_internal[coarse].find(i) != ms.support_internal[coarse].end())
-      {
         support_value[i] = 1;
-        ni++;
-      }
       else
         support_value[i] = 0;
     }
-    // std::cout << "ni = " << ni << std::endl;
-    // std::cout << "nb = " << nb << std::endl;
-    // exit(0);
 
     IO::VTKWriter::add_data(support_value, prefix + std::to_string(coarse), out);
   }  // end coarse loop

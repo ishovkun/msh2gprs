@@ -50,8 +50,13 @@ void OutputDataGPRS::write_output(const std::string & output_path)
               output_path + data.config.wells_vtk_file);
   }
 
-  std::cout << "save flow data" << std::endl;
+  // flow discretization
+  std::cout << "save flow discretization" << std::endl;
   flow::CalcTranses::save_output(data.flow_data, output_path);
+
+  // multiscale
+  saveFlowMultiScaleData(output_path + data.config.flow_ms_file);
+  saveMechMultiScaleData(output_path + data.config.mech_ms_file);
 }
 
 
@@ -258,16 +263,6 @@ void OutputDataGPRS::saveGeomechDataNewKeywords(const std::string file_name)
 
     geomechfile.close();
   }
-
-  // //   geomechfile <<  "COMPDAT\n";
-  // //   for ( int iw = 0; iw < pSim->nWells; iw++ )
-  // //   {
-  // //     for ( int i = 0; i < pSim->vsWell[iw].vID.size(); ++i )
-  // //       geomechfile <<  "W" << iw << "\t" << pSim->vsWell[iw].vID[i]+1 <<" 1 1 1 OPEN 1* " << pSim->vsWell[iw].vWi[i] << " 4* Z/" << endl;
-  // //   }
-  // //   geomechfile << "/\n\n";
-  // //   geomechfile.close();
-  // // }
 }
 
 
@@ -564,6 +559,63 @@ void OutputDataGPRS::saveWells(const std::string file_name,
   IO::VTKWriter::write_well_trajectory(data.well_vertices.points,
                                        data.well_vertex_indices,
                                        vtk_file_name);
+}
+
+
+void OutputDataGPRS::saveFlowMultiScaleData(const std::string file_name)
+{
+
+}
+
+
+void OutputDataGPRS::saveMechMultiScaleData(const std::string file_name)
+{
+  std::ofstream out;
+  out.open(file_name.c_str());
+  const auto & ms = data.ms_mech_data;
+
+  // save partitioing
+  out << "GMMSPARTITIONING";
+  for (std::size_t i=0; i < ms.partitioning.size(); ++i)
+  {
+    if (i % n_entries_per_line == 0) out << endl;
+    out << ms.partitioning[i] << " ";
+  }
+  out << "/" << endl << endl;
+
+  // save support
+  out << "GMMSSUPPORT ";
+  for (std::size_t i=0; i < ms.n_coarse; ++i)
+  {
+    out << endl;
+    out << ms.support_internal[i].size() << " "
+        << ms.support_boundary[i].size() << " ";
+
+    // first write the centroids
+    out << ms.centroids[i] << " ";
+
+    // internal nodes
+    size_t counter = 3;
+    for (const size_t vertex : ms.support_internal[i])
+    {
+      if (vertex != ms.centroids[i])
+      {
+        if (counter++ % n_entries_per_line == 0) out << endl;
+        out << vertex << " ";
+      }
+    }
+
+    // boundary nodes
+    for (const size_t vertex : ms.support_boundary[i])
+    {
+      if (counter++ % n_entries_per_line == 0) out << endl;
+      out << vertex << " ";
+    }
+  }
+
+  out << "/" << endl << endl;
+
+  out.close();
 }
 
 }
