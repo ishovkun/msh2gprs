@@ -138,27 +138,52 @@ void MultiScaleDataMSRSB::build_block_connections()
   }
 }
 
-void MultiScaleDataMSRSB::build_block_face_data()
+
+std::unordered_map<size_t,size_t>
+MultiScaleDataMSRSB::build_map_face_to_ghost_cell() const
 {
   algorithms::UnionFindWrapper<size_t> face_disjoint = build_external_face_disjoint();
-  size_t ghost_block = active_layer().n_blocks;
-  // face group -> ghost block
+
   std::unordered_map<size_t, size_t> map_block_group;
-
+  // numbering starts with n_blocks
+  std::size_t ghost_block = active_layer().n_blocks;
   for ( const auto &it_face: face_disjoint.items() )
-    if (map_block_group.find(face_disjoint.group( it_face.second )) == map_block_group.end())
-      map_block_group.insert({ face_disjoint.group( it_face.second ), ghost_block++});
+  {
+    const size_t group = face_disjoint.group( it_face.first );
+    // std::cout << "group = " << group << std::endl;
+    if (map_block_group.find(group) == map_block_group.end())
+    {
+      std::cout << "inserting group " << group << std::endl;
+      map_block_group.insert({ group, ghost_block++});
+    }
+  }
 
-  find_block_face_centroids(face_disjoint, map_block_group);
-  const auto map_vertex_blocks = build_map_vertex_blocks(face_disjoint, map_block_group);
-  const auto map_block_edge_vertices = build_block_edges(map_vertex_blocks);
-  find_block_edge_centroids(map_block_edge_vertices);
-  debug_make_ghost_cell_names(face_disjoint, map_block_group);
+  std::unordered_map<size_t,size_t> map_boundary_face_ghost_block;
+  map_boundary_face_ghost_block.reserve(face_disjoint.items().size());
+  for (const auto & item : face_disjoint.items())
+    map_boundary_face_ghost_block.insert({ item.first, map_block_group[face_disjoint.group(item.first)]});
+
+  std::cout << "number of ghost cells = " << map_block_group.size() << std::endl;
+
+  // debug_make_ghost_cell_names(face_disjoint, map_block_group);
+
+  return map_boundary_face_ghost_block;
 }
 
 
-void MultiScaleDataMSRSB::find_block_face_centroids(algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                                                    std::unordered_map<size_t, size_t>   & map_block_group)
+void MultiScaleDataMSRSB::build_block_face_data()
+{
+  size_t ghost_block = active_layer().n_blocks;
+  const auto map_boundary_face_ghost_block = build_map_face_to_ghost_cell();
+  find_block_face_centroids(map_boundary_face_ghost_block);
+  const auto map_vertex_blocks = build_map_vertex_blocks(map_boundary_face_ghost_block);
+  const auto map_block_edge_vertices = build_block_edges(map_vertex_blocks);
+  find_block_edge_centroids(map_block_edge_vertices);
+}
+
+
+void MultiScaleDataMSRSB::
+find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary_face_ghost_block)
 {
   auto & layer = active_layer();
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
@@ -168,10 +193,7 @@ void MultiScaleDataMSRSB::find_block_face_centroids(algorithms::UnionFindWrapper
     block1 = layer.partitioning[neighbors[0]];
 
     if (neighbors.size() == 1)  // block + ghost block
-    {
-      const size_t face_group = face_disjoint.group(face.index());
-      block2 = map_block_group[face_group];
-    }
+      block2 = map_boundary_face_ghost_block.find(face.index())->second;
     else // if (neighbors.size() == 2)
     {
       block2 = layer.partitioning[neighbors[1]];
@@ -195,7 +217,7 @@ void MultiScaleDataMSRSB::find_block_face_centroids(algorithms::UnionFindWrapper
 
 
 bool MultiScaleDataMSRSB::share_edge(const mesh::const_face_iterator &face1,
-                                     const mesh::const_face_iterator &face2)
+                                     const mesh::const_face_iterator &face2) const
 {
   unordered_set<size_t> shared_verts;
   for (const auto &v1 : face1.vertex_indices())
@@ -207,10 +229,8 @@ bool MultiScaleDataMSRSB::share_edge(const mesh::const_face_iterator &face1,
 }
 
 
-algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_disjoint()
+algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_disjoint() const
 {
-  auto & layer = active_layer();
-
   // build map vertex - external face and fill disjoints
   std::unordered_map<size_t, vector<mesh::const_face_iterator>> map_vertex_face;
   algorithms::UnionFindWrapper<size_t> face_disjoint;
@@ -262,8 +282,7 @@ algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_di
 
 std::unordered_map<std::size_t, std::vector<std::size_t>>
 MultiScaleDataMSRSB::
-build_map_vertex_blocks(algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                        std::unordered_map<size_t, size_t>   & map_block_group)
+build_map_vertex_blocks(const std::unordered_map<size_t,size_t> & map_boundary_face_ghost_block)
 {
   /* collect vertices from faces that are on block-block interfaces */
   auto & layer = active_layer();
@@ -280,10 +299,7 @@ build_map_vertex_blocks(algorithms::UnionFindWrapper<size_t> & face_disjoint,
       if (block1 == block2) continue;
     }
     else if (neighbors.size() == 1)
-    {
-      const size_t face_group = face_disjoint.group(face.index());
-      block2 = map_block_group[face_group];
-    }
+      block2 = map_boundary_face_ghost_block.find(face.index())->second;
 
     for (const auto & vertex : face.vertex_indices())
     {
@@ -746,7 +762,7 @@ std::string debug_direction_to_string(angem::Point<3,double> p)
 
 void MultiScaleDataMSRSB::
 debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                            std::unordered_map<size_t, size_t>   & map_block_group)
+                            std::unordered_map<size_t, size_t>   & map_block_group) const
 {
   const auto & layer = active_layer();
   // std::vector<Point> avg_face_group_direction(face_disjoint.n_groups());

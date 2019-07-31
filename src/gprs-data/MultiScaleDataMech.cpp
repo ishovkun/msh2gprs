@@ -23,25 +23,32 @@ void MultiScaleDataMech::build_data()
   std::cout << "OK" << std::endl;
   build_cells_in_block();
 
-  algorithms::UnionFindWrapper<size_t> face_disjoint = build_external_face_disjoint();
-  size_t ghost_block = active_layer().n_blocks;
-  std::unordered_map<size_t, size_t> map_block_group;
-  for ( const auto &it_face: face_disjoint.items() )
-    if (map_block_group.find(face_disjoint.group( it_face.second )) == map_block_group.end())
-      map_block_group.insert({ face_disjoint.group( it_face.second ), ghost_block++});
+  const auto map_boundary_face_ghost_block = build_map_face_to_ghost_cell();
 
-  const auto cell_block_neighbors = build_cell_block_neighbors(face_disjoint, map_block_group);
+  // get rid of discjoint and just build a regular map
+  // map_boundary_face_ghost_block.reserve(face_disjoint.items().size());
+  // for (const auto & item : face_disjoint.items())
+  //   map_boundary_face_ghost_block.insert({ item.first, map_block_group[item.second]});
+
+
+  // const auto cell_block_neighbors = build_cell_block_neighbors(face_disjoint, map_block_group);
   // const auto map_vertex_blocks = build_map_vertex_blocks(face_disjoint, map_block_group);
   // const auto map_block_edge_vertices = build_block_edges(map_vertex_blocks);
+  //
+  const auto cell_block_neighbors = build_cell_block_neighbors(map_boundary_face_ghost_block);
 
-  find_block_corners(face_disjoint, map_block_group, cell_block_neighbors);
+  // find_block_corners(face_disjoint, map_block_group, cell_block_neighbors);
+  // find_block_corners(map_boundary_face_ghost_block, cell_block_neighbors);
+  find_block_corners2(map_boundary_face_ghost_block, cell_block_neighbors);
   build_boundary_nodes();
 }
 
 
 std::vector<std::unordered_set<std::size_t>>
-MultiScaleDataMech::build_cell_block_neighbors(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                                               const std::unordered_map<size_t, size_t>   & map_block_group) const
+// MultiScaleDataMech::build_cell_block_neighbors(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
+//                                                const std::unordered_map<size_t, size_t>   & map_block_group) const
+MultiScaleDataMech::
+build_cell_block_neighbors(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block) const
 {
   const auto & layer = active_layer();
   vector<unordered_set<size_t>> cell_block_neighbors(grid.n_cells());
@@ -65,8 +72,7 @@ MultiScaleDataMech::build_cell_block_neighbors(const algorithms::UnionFindWrappe
     }
     else // if (neighbors.size() == 1)
     {
-      const size_t face_group = face_disjoint.group(face.index());
-      const size_t block2 = map_block_group.find( face_group )->second;
+      const size_t block2 = map_boundary_face_ghost_block.find(face.index())->second;
       cell_block_neighbors[cell1].insert(block1);
       cell_block_neighbors[cell1].insert(block2);
     }
@@ -76,11 +82,89 @@ MultiScaleDataMech::build_cell_block_neighbors(const algorithms::UnionFindWrappe
 
 
 void MultiScaleDataMech::
-find_block_corners(const algorithms::UnionFindWrapper<size_t>         & face_disjoint,
-                   const std::unordered_map<size_t, size_t>           & map_block_group,
+find_block_corners2(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block,
+                    const std::vector<std::unordered_set<std::size_t>> & cell_block_neighbors)
+{
+  auto & layer = active_layer();
+
+  std::unordered_map<size_t, std::unordered_set<size_t>> map_coarse_node_blocks;
+  for (std::size_t block=0; block<layer.n_blocks; ++block)
+  {
+    unordered_map<size_t, unordered_set<size_t>> vertex_blocks;
+    // unordered_map<size_t, unordered_set<size_t>> vertex_faces;
+
+    for (const size_t i : layer.cells_in_block[block])
+     if (cell_block_neighbors[i].size() > 1)  // might contain block corner
+     {
+       const auto cell = grid.create_const_cell_iterator(i);
+       // const size_t block1 = layer.partitioning[i];
+       // assert(block1 == block);
+       // a corner is a node all of whose adjacent faces touch different blocks
+       for (const auto & face : cell.faces())
+       {
+         size_t block2;
+         const auto & neighbors = face.neighbors();
+         if (neighbors.size() == 2)
+         {
+           if (neighbors[0] == i)
+           {
+
+             block2 = layer.partitioning[neighbors[1]];
+           }
+           else if (neighbors[1] == i)
+           {
+             block2 = layer.partitioning[neighbors[0]];
+           }
+           else
+             assert(false);
+         }
+         else  // if (neighbors.size() == 1)  -- ghost case
+           block2 = map_boundary_face_ghost_block.find(face.index())->second;
+
+         if (block != block2)
+           for (const size_t vertex : face.vertex_indices())
+             vertex_blocks[vertex].insert(block2);
+
+       }  // end cell face loop
+     }  // end cell loop within block
+
+    // if more than two vertex blocks
+    for (auto & it : vertex_blocks)
+      if (it.second.size() > 2)
+      { // it's a corner!
+        auto glob_it = map_coarse_node_blocks.find(it.first);
+        if (glob_it == map_coarse_node_blocks.end())
+          map_coarse_node_blocks.insert({ it.first, it.second});
+        else
+        {
+          auto & blocks = glob_it->second;
+          for (const size_t b : it.second) blocks.insert(b);
+        }
+      }
+  }
+
+   //  save coarse node vertices
+   layer.coarse_to_fine.resize(map_coarse_node_blocks.size());
+   coarse_node_blocks.resize(map_coarse_node_blocks.size());
+   size_t index = 0;
+   for (const auto & it : map_coarse_node_blocks)
+   {
+     layer.coarse_to_fine[index] = it.first;
+     for (const size_t block : it.second)
+       if (!is_ghost_block(block))
+         coarse_node_blocks[index].push_back(block);
+
+     index++;
+   }
+}
+
+
+void MultiScaleDataMech::
+find_block_corners(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block,
                    const std::vector<std::unordered_set<std::size_t>> & cell_block_neighbors)
 {
   auto & layer = active_layer();
+  std::unordered_map<size_t, std::unordered_set<size_t>> map_coarse_node_blocks;
   // given a list of cells that have more than two neighboring blocks
   // find corners of the blocks.
   // To do this we loop over the faces of the cell, figure out which faces touch
@@ -99,28 +183,18 @@ find_block_corners(const algorithms::UnionFindWrapper<size_t>         & face_dis
          const auto & neighbors = face.neighbors();
          const size_t cell1 = neighbors[0];
          const size_t block1 = layer.partitioning[cell1];
+         size_t block2;
          if (neighbors.size() == 2)
-         {
-           const size_t block2 = layer.partitioning[neighbors[1]];
-           if (block1 != block2)
-             for (const auto & vertex : face.vertex_indices())
-             {
-               vertex_blocks[vertex].insert(block1);
-               vertex_blocks[vertex].insert(block2);
-               vertex_faces[vertex].insert(face.index());
-             }
-         }
+           block2 = layer.partitioning[neighbors[1]];
          else // if (neighbors.size() == 1)
-         {
-           const size_t face_group = face_disjoint.group(face.index());
-           const size_t block2 = map_block_group.find( face_group )->second;
+           block2 = map_boundary_face_ghost_block.find(face.index())->second;
+
+         if (block1 != block2)
            for (const auto & vertex : face.vertex_indices())
            {
-             vertex_blocks[vertex].insert(block1);
              vertex_blocks[vertex].insert(block2);
              vertex_faces[vertex].insert(face.index());
            }
-         }
        }
 
        for (auto & it : vertex_blocks)
@@ -150,10 +224,12 @@ find_block_corners(const algorithms::UnionFindWrapper<size_t>         & face_dis
    size_t index = 0;
    for (const auto & it : map_coarse_node_blocks)
    {
+     std::cout << "index = " << index << std::endl;
      layer.coarse_to_fine[index] = it.first;
      index++;
    }
 }
+
 
 void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const int layer_index) const
 {
@@ -177,7 +253,7 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
   for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
   {
     const size_t fine_vertex = layer.coarse_to_fine[coarse_vertex];
-    const auto & neighboring_blocks = map_coarse_node_blocks.find( fine_vertex )->second;
+    const auto & neighboring_blocks = coarse_node_blocks[coarse_vertex];
 
     // approximate number of nodes to allocate memory
     size_t n_approx_internal_nodes = 0;
@@ -197,6 +273,11 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
                 layer.support_boundary[coarse_vertex].end())
               model.support_internal[coarse_vertex].insert(vertex);
   }
+
+  std::cout << "Exported multiscale model" << std::endl;
+  std::cout << "Partitioning size: " << layer.n_blocks << std::endl;
+  std::cout << "Number of coarse nodes: " << model.n_coarse << std::endl;
+  std::cout << std::endl;
 
 }
 
@@ -234,19 +315,25 @@ void MultiScaleDataMech::build_boundary_nodes()
   // take coarse faces between a block that contains the coarse
   // vertex and its neighbors that do not
   layer.support_boundary.resize(layer.coarse_to_fine.size());
+
   for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
   {
     const size_t fine_vertex = layer.coarse_to_fine[coarse_vertex];
+    std::cout << "coarse_vertex = " << coarse_vertex << std::endl;
 
-    assert (map_coarse_node_blocks.find(fine_vertex) != map_coarse_node_blocks.end() );
-    const auto & neighboring_blocks = map_coarse_node_blocks[fine_vertex];
+    // assert (map_coarse_node_blocks.find(fine_vertex) != map_coarse_node_blocks.end() );
+    // const auto & neighboring_blocks = map_coarse_node_blocks[fine_vertex];
+    const auto & neighboring_blocks = coarse_node_blocks[coarse_vertex];
     for (const size_t block1 : neighboring_blocks)
     {
+      std::cout << "block1 = " << block1 << std::endl;
       const auto blocks2 = block_face_vertices.get_neighbors(block1);
       for (const size_t block2 : blocks2)
       {
-        if (neighboring_blocks.find(block2) == neighboring_blocks.end())
+        if (std::find(neighboring_blocks.begin(), neighboring_blocks.end(), block2) ==
+            neighboring_blocks.end())
         {
+          std::cout << "\tblock2 = " << block2 << std::endl;
           for (const size_t node : block_face_vertices.get_data(block1, block2))
             layer.support_boundary[coarse_vertex].insert(node);
         }

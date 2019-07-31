@@ -21,20 +21,27 @@ class MultiScaleDataMech : public MultiScaleDataMSRSB
 
  protected:
   // find coarse block corners
-  void find_block_corners(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                          const std::unordered_map<size_t, size_t>   & map_block_group,
+  // void find_block_corners(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
+  //                         const std::unordered_map<size_t, size_t>   & map_block_group,
+  //                         const std::vector<std::unordered_set<std::size_t>> & cell_block_neighbors);
+  void find_block_corners(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block,
                           const std::vector<std::unordered_set<std::size_t>> & cell_block_neighbors);
-  void find_block_corners();
+  void find_block_corners2(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block,
+                          const std::vector<std::unordered_set<std::size_t>> & cell_block_neighbors);
 
   // build vector cell -> list of blocks it is a neighbors of
   std::vector<std::unordered_set<std::size_t>>
-  build_cell_block_neighbors(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                             const std::unordered_map<size_t, size_t>   & map_block_group) const;
+  // build_cell_block_neighbors(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
+  //                            const std::unordered_map<size_t, size_t>   & map_block_group) const;
+  build_cell_block_neighbors(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block) const;
   // build a container for boundary vertices
   void build_boundary_nodes();
 
   // const mesh::Mesh & grid;
-  std::unordered_map<size_t, std::unordered_set<size_t>> map_coarse_node_blocks;
+  // std::unordered_map<size_t, std::unordered_set<size_t>> map_coarse_node_blocks;
+  std::vector<std::vector<size_t>> coarse_node_blocks;
+  // std::vector<std::unordered_set<size_t>> coarse_node_blocks;
+  // std::unordered_map<size_t,size_t> map_boundary_face_ghost_block;
 
 };
 

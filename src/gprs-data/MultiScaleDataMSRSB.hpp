@@ -51,20 +51,21 @@ class MultiScaleDataMSRSB
   void build_ghost_block_faces();
   // check whether two faces share an edge
   bool share_edge(const mesh::const_face_iterator &face1,
-                  const mesh::const_face_iterator &face2);
+                  const mesh::const_face_iterator &face2) const;
   // build a structure that diistinguishes between boundary face groups
   // this is done to find ghost blocks
-  algorithms::UnionFindWrapper<size_t> build_external_face_disjoint();
+  algorithms::UnionFindWrapper<size_t> build_external_face_disjoint() const;
+  // wrapper around a previous function
+  std::unordered_map<size_t,size_t> build_map_face_to_ghost_cell() const;
+
 
   bool is_ghost_block(const size_t block) const;
 
-  void find_block_face_centroids(algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                                 std::unordered_map<size_t, size_t>   & map_block_group);
+  void find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary_face_ghost_block);
 
   /* collect vertices from faces that are on block-block interfaces */
   std::unordered_map<std::size_t, std::vector<std::size_t>>
-  build_map_vertex_blocks(algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                          std::unordered_map<size_t, size_t>   & map_block_group);
+  build_map_vertex_blocks(const std::unordered_map<size_t,size_t> & map_boundary_face_ghost_block);
 
   //this method inverts a map obtained in the previous method
   // build a map (triplet of block in ascending order) -> (vertex)
@@ -103,11 +104,10 @@ class MultiScaleDataMSRSB
   vector<LayerDataMSRSB> layers;
   size_t active_layer_index;
 
-  // debugging shit
  private:
-  std::unordered_map<size_t, std::string> debug_ghost_cell_names;
+  mutable std::unordered_map<size_t, std::string> debug_ghost_cell_names;
   void debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_disjoint,
-                                   std::unordered_map<size_t, size_t>   & map_block_group);
+                                   std::unordered_map<size_t, size_t>   & map_block_group) const;
 };
 
 
