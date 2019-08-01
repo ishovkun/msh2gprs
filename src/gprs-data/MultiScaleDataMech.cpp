@@ -123,14 +123,17 @@ find_block_corners2(const std::unordered_map<size_t, size_t> & map_boundary_face
 
          if (block != block2)
            for (const size_t vertex : face.vertex_indices())
+           {
+             vertex_blocks[vertex].insert(block);
              vertex_blocks[vertex].insert(block2);
+           }
 
        }  // end cell face loop
      }  // end cell loop within block
 
     // if more than two vertex blocks
     for (auto & it : vertex_blocks)
-      if (it.second.size() > 2)
+      if (it.second.size() > 3)
       { // it's a corner!
         auto glob_it = map_coarse_node_blocks.find(it.first);
         if (glob_it == map_coarse_node_blocks.end())
@@ -265,6 +268,7 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
 
     // fill internal nodes
     model.support_internal[coarse_vertex].reserve(n_approx_internal_nodes);
+
     for (const size_t block : neighboring_blocks)
       if (!is_ghost_block(block))
         for(const size_t cell: layer.cells_in_block[block])
@@ -274,9 +278,18 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
               model.support_internal[coarse_vertex].insert(vertex);
   }
 
+  std::cout << std::endl;
+  std::cout << "#########################" << std::endl;
   std::cout << "Exported multiscale model" << std::endl;
   std::cout << "Partitioning size: " << layer.n_blocks << std::endl;
   std::cout << "Number of coarse nodes: " << model.n_coarse << std::endl;
+  for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
+    std::cout << coarse_vertex << " "
+              << model.centroids[coarse_vertex] << " "
+              << model.support_internal[coarse_vertex].size() << " "
+              << model.support_boundary[coarse_vertex].size() << " "
+              << std::endl;
+  std::cout << "#########################" << std::endl;
   std::cout << std::endl;
 
 }
@@ -319,21 +332,18 @@ void MultiScaleDataMech::build_boundary_nodes()
   for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
   {
     const size_t fine_vertex = layer.coarse_to_fine[coarse_vertex];
-    std::cout << "coarse_vertex = " << coarse_vertex << std::endl;
 
     // assert (map_coarse_node_blocks.find(fine_vertex) != map_coarse_node_blocks.end() );
     // const auto & neighboring_blocks = map_coarse_node_blocks[fine_vertex];
     const auto & neighboring_blocks = coarse_node_blocks[coarse_vertex];
     for (const size_t block1 : neighboring_blocks)
     {
-      std::cout << "block1 = " << block1 << std::endl;
       const auto blocks2 = block_face_vertices.get_neighbors(block1);
       for (const size_t block2 : blocks2)
       {
         if (std::find(neighboring_blocks.begin(), neighboring_blocks.end(), block2) ==
             neighboring_blocks.end())
         {
-          std::cout << "\tblock2 = " << block2 << std::endl;
           for (const size_t node : block_face_vertices.get_data(block1, block2))
             layer.support_boundary[coarse_vertex].insert(node);
         }

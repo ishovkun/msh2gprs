@@ -150,12 +150,8 @@ MultiScaleDataMSRSB::build_map_face_to_ghost_cell() const
   for ( const auto &it_face: face_disjoint.items() )
   {
     const size_t group = face_disjoint.group( it_face.first );
-    // std::cout << "group = " << group << std::endl;
     if (map_block_group.find(group) == map_block_group.end())
-    {
-      std::cout << "inserting group " << group << std::endl;
       map_block_group.insert({ group, ghost_block++});
-    }
   }
 
   std::unordered_map<size_t,size_t> map_boundary_face_ghost_block;
