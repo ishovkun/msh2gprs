@@ -259,23 +259,18 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
     const auto & neighboring_blocks = coarse_node_blocks[coarse_vertex];
 
     // approximate number of nodes to allocate memory
-    size_t n_approx_internal_nodes = 0;
+    // size_t n_approx_internal_cells = 0;
+    size_t n_approx_internal_cells = 0;
     for (const size_t block : neighboring_blocks)
       if (!is_ghost_block(block))
-        n_approx_internal_nodes += (size_t)( grid.n_vertices() *
-                                             ( double ) layer.cells_in_block[block].size()  /
-                                             grid.n_cells() );
+        n_approx_internal_cells += layer.cells_in_block[block].size();
 
-    // fill internal nodes
-    model.support_internal[coarse_vertex].reserve(n_approx_internal_nodes);
-
+    // fill internal cells
+    model.support_internal[coarse_vertex].reserve(n_approx_internal_cells);
     for (const size_t block : neighboring_blocks)
       if (!is_ghost_block(block))
         for(const size_t cell: layer.cells_in_block[block])
-          for (const size_t vertex : grid.get_vertices(cell))
-            if (layer.support_boundary[coarse_vertex].find(vertex) ==
-                layer.support_boundary[coarse_vertex].end())
-              model.support_internal[coarse_vertex].insert(vertex);
+          model.support_internal[coarse_vertex].insert(cell);
   }
 
   std::cout << std::endl;
@@ -283,12 +278,12 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
   std::cout << "Exported multiscale model" << std::endl;
   std::cout << "Partitioning size: " << layer.n_blocks << std::endl;
   std::cout << "Number of coarse nodes: " << model.n_coarse << std::endl;
-  for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
-    std::cout << coarse_vertex << " "
-              << model.centroids[coarse_vertex] << " "
-              << model.support_internal[coarse_vertex].size() << " "
-              << model.support_boundary[coarse_vertex].size() << " "
-              << std::endl;
+  // for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
+    // std::cout << coarse_vertex << " "
+    //           << model.centroids[coarse_vertex] << " "
+    //           << model.support_internal[coarse_vertex].size() << " "
+    //           << model.support_boundary[coarse_vertex].size() << " "
+    //           << std::endl;
   std::cout << "#########################" << std::endl;
   std::cout << std::endl;
 

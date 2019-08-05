@@ -39,18 +39,28 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
   }
 
   // save multiscale flow data
-  const auto & msf = data.ms_flow_data;
-  if (!msf.partitioning.empty())
+  if (!data.ms_flow_data.partitioning.empty())
   {
-    IO::VTKWriter::add_data(msf.partitioning, "partitioning-flow", out);
-    saveMultiScaleSupport(msf, grid.n_cells(), "support-flow-", out);
+    IO::VTKWriter::add_data(data.ms_flow_data.partitioning, "partitioning-flow", out);
+    saveMultiScaleSupport(data.ms_mech_data, grid.n_cells(), "support-flow-", out);
   }
-  const auto & msm = data.ms_mech_data;
-  if (!msm.partitioning.empty())
+  if (!data.ms_mech_data.partitioning.empty())
   {
-    IO::VTKWriter::add_data(msm.partitioning, "partitioning-mech", out);
+    const auto & ms = data.ms_mech_data;
+    IO::VTKWriter::add_data(ms.partitioning, "partitioning-mech", out);
     IO::VTKWriter::enter_section_point_data(grid.n_vertices(), out);
-    saveMultiScaleSupport(msm, grid.n_vertices(), "support-mech-", out);
+    // saveMultiScaleSupport(msm, grid.n_vertices(), "support-mech-", out);
+
+    // I'm just gonna save vertices and boundaries
+    std::vector<int> output(grid.n_vertices(), 0);
+    for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
+    {
+      for (const size_t i : ms.support_boundary[coarse])
+        output[i] = 1;
+    }
+    for (const size_t i : ms.centroids)
+      output[i] = 2;
+    IO::VTKWriter::add_data(output, "support-mech", out);
   }
   out.close();
 }
@@ -128,7 +138,6 @@ void OutputDataVTK::saveMultiScaleSupport(const multiscale::MultiScaleOutputData
   std::vector<int> support_value(size);
   for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
   {
-
     for (std::size_t i=0; i<size; ++i)
     {
       if (i == ms.centroids[coarse])
@@ -144,6 +153,5 @@ void OutputDataVTK::saveMultiScaleSupport(const multiscale::MultiScaleOutputData
     IO::VTKWriter::add_data(support_value, prefix + std::to_string(coarse), out);
   }  // end coarse loop
 }
-
 
 }
