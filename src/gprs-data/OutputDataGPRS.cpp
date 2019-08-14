@@ -588,21 +588,18 @@ void OutputDataGPRS::saveMechMultiScaleData(const std::string file_name)
   for (std::size_t i=0; i < ms.n_coarse; ++i)
   {
     out << endl;
-    out << ms.support_internal[i].size() << " "
-        << ms.support_boundary[i].size() << " ";
+    out << ms.support_internal[i].size() << " "  // number of cells (centroid)
+        << ms.support_boundary[i].size() << " "; // number of boundary nodes
 
-    // first write the centroids
+    // first write the centroid (vertex)
     out << ms.centroids[i] << " ";
 
-    // internal nodes
+    // internal cells
     size_t counter = 3;
-    for (const size_t vertex : ms.support_internal[i])
+    for (const size_t cell : ms.support_internal[i])
     {
-      if (vertex != ms.centroids[i])
-      {
-        if (counter++ % n_entries_per_line == 0) out << endl;
-        out << vertex << " ";
-      }
+      if (counter++ % n_entries_per_line == 0) out << endl;
+      out << cell << " ";
     }
 
     // boundary nodes

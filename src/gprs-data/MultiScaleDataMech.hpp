@@ -35,7 +35,7 @@ class MultiScaleDataMech : public MultiScaleDataMSRSB
   //                            const std::unordered_map<size_t, size_t>   & map_block_group) const;
   build_cell_block_neighbors(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block) const;
   // build a container for boundary vertices
-  void build_boundary_nodes();
+  void build_boundary_nodes(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block);
 
   // const mesh::Mesh & grid;
   // std::unordered_map<size_t, std::unordered_set<size_t>> map_coarse_node_blocks;

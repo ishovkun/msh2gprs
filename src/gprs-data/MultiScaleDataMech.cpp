@@ -24,23 +24,9 @@ void MultiScaleDataMech::build_data()
   build_cells_in_block();
 
   const auto map_boundary_face_ghost_block = build_map_face_to_ghost_cell();
-
-  // get rid of discjoint and just build a regular map
-  // map_boundary_face_ghost_block.reserve(face_disjoint.items().size());
-  // for (const auto & item : face_disjoint.items())
-  //   map_boundary_face_ghost_block.insert({ item.first, map_block_group[item.second]});
-
-
-  // const auto cell_block_neighbors = build_cell_block_neighbors(face_disjoint, map_block_group);
-  // const auto map_vertex_blocks = build_map_vertex_blocks(face_disjoint, map_block_group);
-  // const auto map_block_edge_vertices = build_block_edges(map_vertex_blocks);
-  //
   const auto cell_block_neighbors = build_cell_block_neighbors(map_boundary_face_ghost_block);
-
-  // find_block_corners(face_disjoint, map_block_group, cell_block_neighbors);
-  // find_block_corners(map_boundary_face_ghost_block, cell_block_neighbors);
   find_block_corners2(map_boundary_face_ghost_block, cell_block_neighbors);
-  build_boundary_nodes();
+  build_boundary_nodes(map_boundary_face_ghost_block);
 }
 
 
@@ -154,7 +140,7 @@ find_block_corners2(const std::unordered_map<size_t, size_t> & map_boundary_face
    {
      layer.coarse_to_fine[index] = it.first;
      for (const size_t block : it.second)
-       if (!is_ghost_block(block))
+       // if (!is_ghost_block(block))
          coarse_node_blocks[index].push_back(block);
 
      index++;
@@ -290,7 +276,7 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
 }
 
 
-void MultiScaleDataMech::build_boundary_nodes()
+void MultiScaleDataMech::build_boundary_nodes(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block)
 {
   auto & layer = active_layer();
 
@@ -301,9 +287,14 @@ void MultiScaleDataMech::build_boundary_nodes()
     const auto & neighbors = face.neighbors();
     const size_t cell1 = neighbors[0];
     const size_t block1 = layer.partitioning[cell1];
-    if (neighbors.size() == 1) continue;
-    const size_t cell2 = neighbors[1];
-    const size_t block2 = layer.partitioning[cell2];;
+    size_t block2;
+    if (neighbors.size() == 1)
+      block2 = map_boundary_face_ghost_block.find(face.index())->second;
+    else // if (neighbors.size() == 2)
+    {
+      const size_t cell2 = neighbors[1];
+      block2 = layer.partitioning[cell2];;
+    }
 
     if (block1 != block2)
     {
@@ -328,10 +319,9 @@ void MultiScaleDataMech::build_boundary_nodes()
   {
     const size_t fine_vertex = layer.coarse_to_fine[coarse_vertex];
 
-    // assert (map_coarse_node_blocks.find(fine_vertex) != map_coarse_node_blocks.end() );
-    // const auto & neighboring_blocks = map_coarse_node_blocks[fine_vertex];
     const auto & neighboring_blocks = coarse_node_blocks[coarse_vertex];
     for (const size_t block1 : neighboring_blocks)
+      if (!is_ghost_block(block1))
     {
       const auto blocks2 = block_face_vertices.get_neighbors(block1);
       for (const size_t block2 : blocks2)
