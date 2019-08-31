@@ -90,7 +90,8 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
   mesh_file >> n_vertices;
 
   std::cout << "\tn_vertices = " << n_vertices << std::endl;
-  mesh.vertices.points.reserve(n_vertices);
+  auto & vertices= mesh.get_vertices();
+  mesh.get_vertices().reserve(n_vertices);
 
   const int dim = 3;
   for (std::size_t ivertex=0; ivertex<n_vertices; ++ivertex)
@@ -101,14 +102,7 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     for (int d=0; d<dim; ++d)
       mesh_file >> vertex[d];
 
-    // warning if duplicates
-    const std::size_t new_ind = mesh.vertices.insert(vertex);
-    if (new_ind != mesh.vertices.points.size() - 1)
-      std::cout << "WARNING: duplicate entry in gmsh file "
-                << value << "\t"
-                << vertex
-                << std::endl;
-    // mesh.vertices.points.push_back(vertex);
+    vertices.push_back(vertex);
   }
   // endonodes
 
@@ -120,7 +114,7 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
   mesh_file >> n_elements;
 
   std::cout << "\tn_elements = " << n_elements << std::endl;
-  mesh.cells.reserve(n_elements);
+  mesh.get_cells().reserve(n_elements);
 
   // std::size_t n_cells, n_faces;
   std::string line;
@@ -264,7 +258,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
     const int entity = std::atoi(tokens[0].c_str());
     const int n_physical_tags = std::atoi(tokens[7].c_str());
     const int tag = (n_physical_tags == 1) ?
-        std::atoi(tokens[8].c_str()) : mesh::default_face_marker;
+        std::atoi(tokens[8].c_str()) : mesh::DEFAULT_FACE_MARKER;
     if (n_physical_tags > 1)
     {
       std::cout << "error in line: " << line << std::endl;
@@ -309,7 +303,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
   mesh_file >> entry;  // maxNodeTag
 
   std::cout << "\tn_vertices = " << n_vertices << std::endl;
-  mesh.vertices.points.reserve(n_vertices);
+  mesh.get_vertices().reserve(n_vertices);
 
   size_t vertex = 0;
   while (vertex < n_vertices)
@@ -334,15 +328,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
       angem::Point<dim,double> coords;
       for (int d=0; d<dim; ++d) mesh_file >> coords[d];
 
-      // warning if duplicates
-      const std::size_t new_ind = mesh.vertices.insert(coords);
-      // mesh.vertices.points.push_back(vertex);
-      if (new_ind != mesh.vertices.points.size() - 1)
-      {
-        std::cout << "WARNING: duplicate entry in gmsh file "
-                  <<  coords << std::endl;
-        abort();
-      }
+      mesh.get_vertices().push_back(coords);
       vertex++;
     } // endonodes
   }
@@ -400,7 +386,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
     std::vector<std::size_t> vertices(n_element_vertices);
 
     if (entity_dim == 3)
-      mesh.cells.reserve(mesh.cells.capacity() + n_elements);
+      mesh.get_cells().reserve(mesh.get_cells().capacity() + n_elements);
 
     for (size_t i = 0; i < n_elements_in_block; i++)
     {

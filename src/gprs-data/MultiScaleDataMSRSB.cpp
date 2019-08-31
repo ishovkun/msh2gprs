@@ -212,8 +212,8 @@ find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary
 }
 
 
-bool MultiScaleDataMSRSB::share_edge(const mesh::const_face_iterator &face1,
-                                     const mesh::const_face_iterator &face2) const
+bool MultiScaleDataMSRSB::share_edge(const mesh::face_const_iterator &face1,
+                                     const mesh::face_const_iterator &face2) const
 {
   unordered_set<size_t> shared_verts;
   for (const auto &v1 : face1.vertex_indices())
@@ -228,7 +228,7 @@ bool MultiScaleDataMSRSB::share_edge(const mesh::const_face_iterator &face1,
 algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_disjoint() const
 {
   // build map vertex - external face and fill disjoints
-  std::unordered_map<size_t, vector<mesh::const_face_iterator>> map_vertex_face;
+  std::unordered_map<size_t, vector<mesh::face_const_iterator>> map_vertex_face;
   algorithms::UnionFindWrapper<size_t> face_disjoint;
 
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
@@ -370,12 +370,12 @@ void MultiScaleDataMSRSB::find_block_edge_centroids(
     // find block edge center
     angem::Point<3,double> block_edge_center = {0, 0, 0};
     for (const auto & vertex : block_edge.second)
-      block_edge_center += grid.vertex_coordinates(vertex);
+      block_edge_center += grid.vertex(vertex);
     block_edge_center /= block_edge.second.size();
 
     // move this point to lie on the edge
     // make this point lie on edge
-    block_edge_center = grid.vertex_coordinates(
+    block_edge_center = grid.vertex(
         angem::find_closest_vertex(block_edge_center,
               /* all_vertices = */ grid.get_vertices(),
                     /* subset = */ block_edge.second));
@@ -617,10 +617,7 @@ void MultiScaleDataMSRSB::build_support_region_boundary(const std::size_t block,
   {
     const auto p_cell_polyhedra = grid.get_polyhedron(cell);
     if (collision.check(*p_cell_polyhedra, bounding_shape))
-    {
-      // std::cout << "boundary " << block << " " << neighbor << " "  << cell << std::endl;
       layer.support_boundary[block].insert(cell);
-    }
   }
 }
 

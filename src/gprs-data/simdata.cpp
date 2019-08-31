@@ -180,7 +180,7 @@ void SimData::computeCellClipping()
       if (v_neighbors.size() > 0)
       {
         // construct polygon and determine intersection points
-        angem::Polygon<double> poly_face(face.vertices());
+        angem::Polygon<double> poly_face = face.polygon();
         std::vector<Point> section;
         angem::collision(poly_face, frac_plane, section);
 
@@ -332,7 +332,7 @@ void SimData::computeReservoirTransmissibilities()
   // nodes
   for ( std::size_t i = 0; i < grid.n_vertices(); i++ )
   {
-    Point vertex = grid.vertices[i];
+    Point vertex = grid.vertex(i);
     calc.X[i] = vertex.x();
     calc.Y[i] = vertex.y();
     calc.Z[i] = vertex.z();
@@ -361,11 +361,8 @@ void SimData::computeReservoirTransmissibilities()
     const std::size_t icell = cell.index();
     calc.vvVFaces[icell].reserve(faces.size());
 
-    for (const mesh::face_iterator & face : faces)
-    {
-      const std::size_t ipolygon = face.index();
-      calc.vvVFaces[icell].push_back(ipolygon);
-    }
+    for (const mesh::Face * face : faces)
+      calc.vvVFaces[icell].push_back(face->index);
     calc.vCodePolyhedron[icell] = n_flow_dfm_faces + icell;
   }
 
@@ -785,167 +782,167 @@ std::size_t SimData::n_default_vars() const
 }
 
 
-void SimData::
-apply_projection_edfm(const std::size_t                ifrac,     // embedded frac index ndex of embedded fracture
-                      const std::size_t                ielement,  // frac element index  / fracture element index
-                      const std::size_t                icell,     // reservoir cell index
-                      const angem::PolyGroup<double> & split)     // result of cell dissection by frac
-{
-  const mesh::cell_iterator cell = grid.create_cell_iterator(icell);
-  const std::vector<Point> frac_element_vertices =
-      vEfrac[ifrac].mesh.create_poly_iterator(ielement).vertices();
-  const auto frac_poly = angem::Polygon(frac_element_vertices);
-  const Point frac_normal = frac_poly.plane.normal();
+// void SimData::
+// apply_projection_edfm(const std::size_t                ifrac,     // embedded frac index ndex of embedded fracture
+//                       const std::size_t                ielement,  // frac element index  / fracture element index
+//                       const std::size_t                icell,     // reservoir cell index
+//                       const angem::PolyGroup<double> & split)     // result of cell dissection by frac
+// {
+//   const mesh::cell_iterator cell = grid.create_cell_iterator(icell);
+//   const std::vector<Point> frac_element_vertices =
+//       vEfrac[ifrac].mesh.create_poly_iterator(ielement).vertices();
+//   const auto frac_poly = angem::Polygon(frac_element_vertices);
+//   const Point frac_normal = frac_poly.plane.normal();
 
-  for (const auto & face : pedfm_select_faces(cell, split))
-  {
-    // don't connect to cells that are perpendicular to the fracture
-    if (fabs(frac_normal.dot(face.normal())) < 1e-10)
-      continue;
-    if (face.neighbors().size() < 2)  // is boundary
-        continue;
+//   for (const auto & face : pedfm_select_faces(cell, split))
+//   {
+//     // don't connect to cells that are perpendicular to the fracture
+//     if (fabs(frac_normal.dot(face.normal())) < 1e-10)
+//       continue;
+//     if (face.neighbors().size() < 2)  // is boundary
+//         continue;
 
-    // compute projection
-    const auto face_poly = face.polygon();
-    const std::vector<Point> projected_frac_vertices =
-        face_poly.plane.project_points(frac_element_vertices);
-    const double projection_area = angem::Polygon(projected_frac_vertices).area();
+//     // compute projection
+//     const auto face_poly = face.polygon();
+//     const std::vector<Point> projected_frac_vertices =
+//         face_poly.plane.project_points(frac_element_vertices);
+//     const double projection_area = angem::Polygon(projected_frac_vertices).area();
 
-    // modify neighbor map
-    const auto neighbor = cell.neighbor_by_face(face);
+//     // modify neighbor map
+//     const auto neighbor = cell.neighbor_by_face(face);
 
-    const double k_cell_n = fabs(get_permeability(cell.index()) * face.normal());
-    const double k_neighbor_n = fabs(get_permeability(neighbor.index()) * face.normal());
-    const double volume_cell = cell.volume();
-    const double volume_neighbor = neighbor.volume();
-    // const double k_face = (volume_cell + volume_neighbor) /
-    //                       (volume_cell/k_cell_n + volume_neighbor/k_neighbor_n);
-    const double k_face = k_cell_n * k_neighbor_n * (volume_cell + volume_neighbor) /
-                          (k_cell_n*volume_neighbor + k_neighbor_n*volume_cell);
-    // new face trans
-    const double T_face_mm_full = (face_poly.area()) /
-                                  (neighbor.center() - cell.center()).norm() *
-                                  k_face;
-    const double delta_T_face_mm = k_face * projection_area /
-                                   neighbor.center().distance(cell.center());
+//     const double k_cell_n = fabs(get_permeability(cell.index()) * face.normal());
+//     const double k_neighbor_n = fabs(get_permeability(neighbor.index()) * face.normal());
+//     const double volume_cell = cell.volume();
+//     const double volume_neighbor = neighbor.volume();
+//     // const double k_face = (volume_cell + volume_neighbor) /
+//     //                       (volume_cell/k_cell_n + volume_neighbor/k_neighbor_n);
+//     const double k_face = k_cell_n * k_neighbor_n * (volume_cell + volume_neighbor) /
+//                           (k_cell_n*volume_neighbor + k_neighbor_n*volume_cell);
+//     // new face trans
+//     const double T_face_mm_full = (face_poly.area()) /
+//                                   (neighbor.center() - cell.center()).norm() *
+//                                   k_face;
+//     const double delta_T_face_mm = k_face * projection_area /
+//                                    neighbor.center().distance(cell.center());
 
-    // old matrix-matrix transmissibility
-    auto & con = flow_data.get_connection(res_cell_flow_index(icell),
-                                          res_cell_flow_index(neighbor.index()));
-    const double T_face_mm_old = con.transmissibility;
-    const double T_face_mm_new = T_face_mm_old - delta_T_face_mm;
+//     // old matrix-matrix transmissibility
+//     auto & con = flow_data.get_connection(res_cell_flow_index(icell),
+//                                           res_cell_flow_index(neighbor.index()));
+//     const double T_face_mm_old = con.transmissibility;
+//     const double T_face_mm_new = T_face_mm_old - delta_T_face_mm;
 
-    // figure out way to avoid double connections
-    if (T_face_mm_new / T_face_mm_old < 1e-4)
-    {
-      std::cout << "killing connection "
-                << res_cell_flow_index(icell)
-                << "-"
-                << res_cell_flow_index(neighbor.index())
-                << "\t percentage = " << T_face_mm_new / T_face_mm_old * 100
-                << std::endl;
-      flow_data.clear_connection(res_cell_flow_index(icell),
-                                 res_cell_flow_index(neighbor.index()));
-    }
-    else
-    {
-      // std::cout << "replacing connection "
-      //           << res_cell_flow_index(icell)
-      //           << "-"
-      //           << res_cell_flow_index(neighbor.index())
-      //           << "\t portion = " << T_face_mm_new / T_face_mm_old * 100
-      //           << " %"
-      //           << std::endl;
-      con.transmissibility = T_face_mm_new;
+//     // figure out way to avoid double connections
+//     if (T_face_mm_new / T_face_mm_old < 1e-4)
+//     {
+//       std::cout << "killing connection "
+//                 << res_cell_flow_index(icell)
+//                 << "-"
+//                 << res_cell_flow_index(neighbor.index())
+//                 << "\t percentage = " << T_face_mm_new / T_face_mm_old * 100
+//                 << std::endl;
+//       flow_data.clear_connection(res_cell_flow_index(icell),
+//                                  res_cell_flow_index(neighbor.index()));
+//     }
+//     else
+//     {
+//       // std::cout << "replacing connection "
+//       //           << res_cell_flow_index(icell)
+//       //           << "-"
+//       //           << res_cell_flow_index(neighbor.index())
+//       //           << "\t portion = " << T_face_mm_new / T_face_mm_old * 100
+//       //           << " %"
+//       //           << std::endl;
+//       con.transmissibility = T_face_mm_new;
 
-      if (T_face_mm_new / T_face_mm_old > 1.0)
-      {
-        std::cout << "Should not be here i think" << std::endl;
-        abort();
-      }
-    }
+//       if (T_face_mm_new / T_face_mm_old > 1.0)
+//       {
+//         std::cout << "Should not be here i think" << std::endl;
+//         abort();
+//       }
+//     }
 
-    // compute projection connection
-    const double k_f = vEfrac[ifrac].conductivity / vEfrac[ifrac].aperture;
-    const double volume_frac = frac_poly.area() * vEfrac[ifrac].aperture;
-    const double k_mf = (volume_frac + volume_neighbor) /
-                        (volume_frac/k_mf + volume_neighbor/k_neighbor_n);
-    const double T_fm_projection = k_mf * frac_poly.area() /
-                                   frac_poly.center().distance(neighbor.center());
+//     // compute projection connection
+//     const double k_f = vEfrac[ifrac].conductivity / vEfrac[ifrac].aperture;
+//     const double volume_frac = frac_poly.area() * vEfrac[ifrac].aperture;
+//     const double k_mf = (volume_frac + volume_neighbor) /
+//                         (volume_frac/k_mf + volume_neighbor/k_neighbor_n);
+//     const double T_fm_projection = k_mf * frac_poly.area() /
+//                                    frac_poly.center().distance(neighbor.center());
 
-    auto & new_connection =
-        flow_data.insert_connection(res_cell_flow_index(neighbor.index()),
-                                    efrac_flow_index(ifrac, ielement));
-    new_connection.transmissibility = T_fm_projection;
-    // flow_data.trans_ij[new_con] = T_fm_projection;
-    // std::cout << "adding connection "
-    //           << res_cell_flow_index(neighbor.index())
-    //           << "-"
-    //           << efrac_flow_index(ifrac, ielement)
-    //           << std::endl;
-  }
-}
+//     auto & new_connection =
+//         flow_data.insert_connection(res_cell_flow_index(neighbor.index()),
+//                                     efrac_flow_index(ifrac, ielement));
+//     new_connection.transmissibility = T_fm_projection;
+//     // flow_data.trans_ij[new_con] = T_fm_projection;
+//     // std::cout << "adding connection "
+//     //           << res_cell_flow_index(neighbor.index())
+//     //           << "-"
+//     //           << efrac_flow_index(ifrac, ielement)
+//     //           << std::endl;
+//   }
+// }
 
 
-std::vector<mesh::face_iterator>
-SimData::pedfm_select_faces(const mesh::cell_iterator      & cell,
-                            const angem::PolyGroup<double> & split) const
-{
-  // 1. select smaller half
-  // 2. determine face iterators belonging to that half
-  // 3. put them in a vector and return
+// std::vector<mesh::face_iterator>
+// SimData::pedfm_select_faces(const mesh::cell_const_iterator      & cell,
+//                             const angem::PolyGroup<double> & split) const
+// {
+//   // 1. select smaller half
+//   // 2. determine face iterators belonging to that half
+//   // 3. put them in a vector and return
 
-  // 1.
-  std::vector<std::vector<std::size_t>> faces_below;
-  std::vector<std::vector<std::size_t>> faces_above;
-  for (std::size_t iface=0; iface<split.markers.size(); ++iface)
-  {
-    const int marker = split.markers[iface];
-    switch (marker)
-    {
-      case MARKER_BELOW_FRAC:
-        faces_below.push_back(split.polygons[iface]);
-        break;
-      case MARKER_ABOVE_FRAC:
-        faces_above.push_back(split.polygons[iface]);
-        break;
-      case MARKER_FRAC:
-        faces_above.push_back(split.polygons[iface]);
-        faces_below.push_back(split.polygons[iface]);
-        break;
-      default:
-        throw std::invalid_argument("fracture marker " + std::to_string(marker) + " does not exist");
-    }
-  }
+//   // 1.
+//   std::vector<std::vector<std::size_t>> faces_below;
+//   std::vector<std::vector<std::size_t>> faces_above;
+//   for (std::size_t iface=0; iface<split.markers.size(); ++iface)
+//   {
+//     const int marker = split.markers[iface];
+//     switch (marker)
+//     {
+//       case MARKER_BELOW_FRAC:
+//         faces_below.push_back(split.polygons[iface]);
+//         break;
+//       case MARKER_ABOVE_FRAC:
+//         faces_above.push_back(split.polygons[iface]);
+//         break;
+//       case MARKER_FRAC:
+//         faces_above.push_back(split.polygons[iface]);
+//         faces_below.push_back(split.polygons[iface]);
+//         break;
+//       default:
+//         throw std::invalid_argument("fracture marker " + std::to_string(marker) + " does not exist");
+//     }
+//   }
 
-  const angem::Polyhedron<double> * p_poly;
-  const auto polyhedron_above = angem::Polyhedron<double>(split.vertices.points, faces_above);
-  const auto polyhedron_below = angem::Polyhedron<double>(split.vertices.points, faces_below);
-  if (polyhedron_above.volume() < polyhedron_below.volume())
-    p_poly = & polyhedron_above;
-  else
-    p_poly = & polyhedron_below;
+//   const angem::Polyhedron<double> * p_poly;
+//   const auto polyhedron_above = angem::Polyhedron<double>(split.vertices.points, faces_above);
+//   const auto polyhedron_below = angem::Polyhedron<double>(split.vertices.points, faces_below);
+//   if (polyhedron_above.volume() < polyhedron_below.volume())
+//     p_poly = & polyhedron_above;
+//   else
+//     p_poly = & polyhedron_below;
 
-  // 2. & 3.
-  // cell face and split_polyhedron faces are kinda the same if they have
-  // any vertices in common
-  angem::PointSet<3,double> point_set;
-  for (const auto & p : p_poly->get_points())
-    point_set.insert(p);
+//   // 2. & 3.
+//   // cell face and split_polyhedron faces are kinda the same if they have
+//   // any vertices in common
+//   angem::PointSet<3,double> point_set;
+//   for (const auto & p : p_poly->get_points())
+//     point_set.insert(p);
 
-  std::vector<mesh::face_iterator> connected_faces;
-  for (const auto & face : cell.faces())
-  {
-    bool any_points_coniside = false;
-    for (const auto & vertex : face.vertices())
-      if (point_set.find(vertex) != point_set.size())
-        any_points_coniside = true;
-    if (any_points_coniside)
-      connected_faces.push_back(face);
-  }
-  assert(!connected_faces.empty());
-  return connected_faces;
-}
+//   std::vector<mesh::face_iterator> connected_faces;
+//   for (const auto & face : cell.faces())
+//   {
+//     bool any_points_coniside = false;
+//     for (const auto & vertex : face.vertices())
+//       if (point_set.find(vertex) != point_set.size())
+//         any_points_coniside = true;
+//     if (any_points_coniside)
+//       connected_faces.push_back(face);
+//   }
+//   assert(!connected_faces.empty());
+//   return connected_faces;
+// }
 
 
 void SimData::
@@ -1174,8 +1171,9 @@ void SimData::handleConnections()
     for (std::size_t i=0; i<efrac.cells.size(); ++i)
     {
       const std::size_t icell = efrac.cells[i];
+      const auto cell = grid.create_cell_iterator(efrac.cells[i]);
       for (const auto & conf: config.domains)
-        if (grid.cell_markers[icell] == conf.label and conf.coupled)
+        if (cell.marker() == conf.label and conf.coupled)
           gm_cell_to_flow_cell[icell].push_back(efrac_flow_index(ifrac, i));
     }
   }
@@ -1242,8 +1240,11 @@ void SimData::definePhysicalFacets()
       const auto neighbors = face.neighbors();
       for (const auto & neighbor : neighbors)
         for (const auto & conf: config.domains)
-          if (grid.cell_markers[neighbor] == conf.label and conf.coupled)
+        {
+          auto cell = grid.create_cell_iterator(neighbor);
+          if (cell.marker() == conf.label and conf.coupled)
             coupled = true;
+        }
 
       if (coupled)
       {

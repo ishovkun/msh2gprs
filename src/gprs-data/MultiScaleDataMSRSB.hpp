@@ -50,8 +50,8 @@ class MultiScaleDataMSRSB
   // their indices start from layer.n_blocks and go up
   void build_ghost_block_faces();
   // check whether two faces share an edge
-  bool share_edge(const mesh::const_face_iterator &face1,
-                  const mesh::const_face_iterator &face2) const;
+  bool share_edge(const mesh::face_const_iterator &face1,
+                  const mesh::face_const_iterator &face2) const;
   // build a structure that diistinguishes between boundary face groups
   // this is done to find ghost blocks
   algorithms::UnionFindWrapper<size_t> build_external_face_disjoint() const;

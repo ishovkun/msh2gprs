@@ -89,12 +89,11 @@ find_block_corners2(const std::unordered_map<size_t, size_t> & map_boundary_face
        for (const auto & face : cell.faces())
        {
          size_t block2;
-         const auto & neighbors = face.neighbors();
+         const auto & neighbors = face->neighbor_cells;
          if (neighbors.size() == 2)
          {
            if (neighbors[0] == i)
            {
-
              block2 = layer.partitioning[neighbors[1]];
            }
            else if (neighbors[1] == i)
@@ -105,10 +104,10 @@ find_block_corners2(const std::unordered_map<size_t, size_t> & map_boundary_face
              assert(false);
          }
          else  // if (neighbors.size() == 1)  -- ghost case
-           block2 = map_boundary_face_ghost_block.find(face.index())->second;
+           block2 = map_boundary_face_ghost_block.find(face->index)->second;
 
          if (block != block2)
-           for (const size_t vertex : face.vertex_indices())
+           for (const size_t vertex : face->vertices)
            {
              vertex_blocks[vertex].insert(block);
              vertex_blocks[vertex].insert(block2);
@@ -169,20 +168,20 @@ find_block_corners(const std::unordered_map<size_t, size_t> & map_boundary_face_
        // a corner is a node all of whose adjacent faces touch different blocks
        for (const auto & face : cell.faces())
        {
-         const auto & neighbors = face.neighbors();
+         const auto & neighbors = face->neighbor_cells;
          const size_t cell1 = neighbors[0];
          const size_t block1 = layer.partitioning[cell1];
          size_t block2;
          if (neighbors.size() == 2)
            block2 = layer.partitioning[neighbors[1]];
          else // if (neighbors.size() == 1)
-           block2 = map_boundary_face_ghost_block.find(face.index())->second;
+           block2 = map_boundary_face_ghost_block.find(face->index)->second;
 
          if (block1 != block2)
-           for (const auto & vertex : face.vertex_indices())
+           for (const auto & vertex : face->vertices)
            {
              vertex_blocks[vertex].insert(block2);
-             vertex_faces[vertex].insert(face.index());
+             vertex_faces[vertex].insert(face->index);
            }
        }
 

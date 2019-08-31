@@ -1,7 +1,7 @@
 #pragma once
 
-#include <angem/Point.hpp>
-#include <angem/PointSet.hpp>
+#include "angem/Point.hpp"
+#include "angem/PointSet.hpp"
 
 #include <unordered_map>
 #include <vector>
@@ -9,7 +9,7 @@
 
 namespace mesh
 {
-// using Edge = std::pair<std::size_t, std::size_t>;
+
 using EdgeMap = std::unordered_map<std::size_t, std::vector<std::size_t>>;
 
 template <typename Scalar>

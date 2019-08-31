@@ -24,7 +24,7 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
 {
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_geometry(grid.get_vertices(), grid.cells, grid.shape_ids, out);
+  IO::VTKWriter::write_geometry(grid, out);
   IO::VTKWriter::enter_section_cell_data(grid.n_cells(), out);
 
   // save keywords

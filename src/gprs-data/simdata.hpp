@@ -230,7 +230,7 @@ protected:
   // Params [in]
   // cell: iterator pointing to the intersecting cell
   // split: result of dissecting a cell with a fracture polygon
-  std::vector<mesh::face_iterator>
+  std::vector<mesh::face_const_iterator>
   pedfm_select_faces(const mesh::cell_iterator      & cell,
                      const angem::PolyGroup<double> & split) const;
 

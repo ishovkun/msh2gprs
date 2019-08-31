@@ -26,7 +26,6 @@ public:
 protected:
   SimData & data;
   mesh::Mesh & grid;
-  std::vector<mesh::face_iterator> ordered_faces;
 };
 
 }

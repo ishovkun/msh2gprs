@@ -36,8 +36,8 @@ std::size_t estimate_max_vertices(const int n_polygon_vertices);
 Point get_element_center(const angem::PointSet<3,double> & vertices,
                          const std::vector<std::size_t>  & ivertices);
 
-std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> & vertices,
-                                          const std::vector<std::size_t>  & ivertices);
+std::vector<Point> get_vertex_coordinates(const std::vector<angem::Point<3,double>> & vertices,
+                                          const std::vector<std::size_t>            & ivertices);
 
 std::vector<Point> get_vertex_coordinates(const angem::PointSet<3,double> * p_vertices,
                                           const std::vector<std::size_t>  & ivertices);

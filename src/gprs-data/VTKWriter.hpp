@@ -2,12 +2,14 @@
 
 #include <GElement.hpp>
 #include "angem/Point.hpp"
+#include "Mesh.hpp"
 #include <fstream>
-
-using Point = angem::Point<3,double>;
 
 namespace IO
 {
+
+using Point = angem::Point<3,double>;
+using Mesh = mesh::Mesh;
 
 class VTKWriter
 {
@@ -21,20 +23,16 @@ class VTKWriter
                                      const std::vector<std::vector<std::size_t>> & cells,
                                      std::ofstream                               & out);
 
-  static void write_geometry(const std::vector<Point>                    & vertices,
-                        const std::vector<std::vector<std::size_t>> & cells,
-                        const std::vector<int>                      & vtk_indices,
-                        const std::string                           & fname);
+  static void write_geometry(const Mesh               & grid,
+                             const std::string        & fname);
 
-  static void write_geometry(const std::vector<Point>                    & vertices,
-                        const std::vector<std::vector<std::size_t>> & cells,
-                        const std::vector<int>                      & vtk_indices,
-                        std::ofstream                               & out);
+  static void write_geometry(const Mesh               & grid,
+                             std::ofstream            & out);
 
   // wicked old timur's Gelement format for reservoir
   static void write_geometry(const std::vector<Point>    & vertices,
-                        const std::vector<Gelement> & elements,
-                        std::ofstream               & out);
+                             const std::vector<Gelement> & elements,
+                             std::ofstream               & out);
 
   static void write_geometry(const std::vector<Point>    & vertices,
                              const std::vector<Gelement> & elements,

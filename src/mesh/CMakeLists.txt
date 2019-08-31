@@ -4,9 +4,9 @@ ADD_LIBRARY(mesh
   ShapeID.cpp
   Mesh.cpp
   cell_iterator.cpp
-  const_cell_iterator.cpp
+  cell_const_iterator.cpp
   face_iterator.cpp
-  const_face_iterator.cpp
+  face_const_iterator.cpp
   mesh_methods.cpp
   surface_mesh_methods.cpp
 )

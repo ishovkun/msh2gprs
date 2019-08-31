@@ -13,8 +13,7 @@ OutputDataGPRS::OutputDataGPRS(SimData & sim_data,
                        mesh::Mesh & grid)
     :
     data(sim_data),
-    grid(grid),
-    ordered_faces(grid.get_ordered_faces())
+    grid(grid)
 {}
 
 
@@ -98,7 +97,7 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
   geomechfile.precision(6);
   cout << "write all coordinates\n";
   geomechfile << "GMNODE_COORDS" << endl;
-  for (const auto & vertex : grid.vertices)
+  for (const auto & vertex : grid.get_vertices())
       geomechfile << vertex[0] << "\t"
                   << vertex[1] << "\t"
                   << vertex[2] << "\n";
@@ -108,10 +107,10 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
   geomechfile << "GMCELL_NODES" << endl;
   for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
   {
-    const auto & vertices = cell.vertices();
+    const auto & vertices = cell.vertex_indices();
     geomechfile << vertices.size() << "\t";
 
-    switch (cell.shape_id())
+    switch (cell.vtk_id())
     {
       case 25: // super wierd element 25
         {
@@ -166,7 +165,7 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
 
   geomechfile << "GMCELL_TYPE" << endl;
   for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
-    geomechfile <<  cell.shape_id() << std::endl;
+    geomechfile <<  cell.vtk_id() << std::endl;
   geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMCELL_TO_FLOWCELLS" << endl;
@@ -187,8 +186,7 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
 
   std::cout << "write all faces\n";
   geomechfile << "GMFACE_NODES\n";
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  for (const auto & face : ordered_faces)
+  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
   {
     const std::vector<std::size_t> ivertices = face.vertex_indices();
     geomechfile << ivertices.size() << "\t";
@@ -200,13 +198,13 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
   geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMFACE_TYPE" << std::endl;
-  for (const auto & face : ordered_faces)
+  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
     geomechfile << face.vtk_id() << std::endl;
   geomechfile << "/" << std::endl << std::endl;
 
   std::cout << "writing face-cell connection" << std::endl;
   geomechfile << "GMFACE_GMCELLS" << std::endl;
-  for (const auto & face : ordered_faces)
+  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
   {
     if (data.is_fracture(face.marker()))  // timur want to retain neighbors of master frac face
     {
@@ -354,9 +352,9 @@ void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
   // search tolerance
   const double tol = data.config.node_search_tolerance;
 
-  for (std::size_t ivert=0; ivert<grid.vertices.size(); ++ivert)
+  for (std::size_t ivert=0; ivert<grid.n_vertices(); ++ivert)
   {
-    const auto & vertex = grid.vertices[ivert];
+    const auto & vertex = grid.vertex(ivert);
 
     for (const auto & bc_node : data.config.bc_nodes)
     {
@@ -374,7 +372,7 @@ void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
   }
 
   if ( data.n_dirichlet_faces > 0 )
-    for (const auto & face : ordered_faces)
+  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
       if (data.is_boundary(face.marker()))
       {
         const auto facet_it = data.boundary_faces.find(face.master_index());
