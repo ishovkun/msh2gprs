@@ -55,8 +55,10 @@ void OutputDataGPRS::write_output(const std::string & output_path)
   flow::CalcTranses::save_output(data.flow_data, output_path);
 
   // multiscale
-  saveFlowMultiScaleData(output_path + data.config.flow_ms_file);
-  saveMechMultiScaleData(output_path + data.config.mech_ms_file);
+  if (data.ms_flow_data.partitioning.size() > 0)
+    saveFlowMultiScaleData(output_path + data.config.flow_ms_file);
+  if (data.ms_mech_data.partitioning.size() > 0)
+    saveMechMultiScaleData(output_path + data.config.mech_ms_file);
 }
 
 

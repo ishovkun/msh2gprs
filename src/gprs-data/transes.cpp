@@ -1485,18 +1485,6 @@ void CalcTranses::save_output(const FlowData    & data,
           << std::scientific
           << face.transmissibility * transmissibility_conversion_factor
           << std::defaultfloat << std::endl;
-
-      // if (element_pair.first == 110)
-      // {
-      //   std::cout << "outtran("
-      //             << element_pair.first
-      //             <<", "
-      //             << element_pair.second
-      //             <<") = "
-      //             << face.transmissibility
-      //             << std::endl;
-      //   // abort();
-      // }
     }
     out << "/" << std::endl;
 

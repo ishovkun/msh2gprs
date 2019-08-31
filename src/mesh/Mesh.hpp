@@ -168,9 +168,10 @@ class Mesh
   std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
 
   // everything we need to know to perform a vertex split
-  std::vector<face_iterator> &
-  find_split_data(const std::size_t vertex,
-  std::unordered_map<std::size_t, std::vector<face_iterator>> &vertices_to_split);
+  void add_vertex_to_split(const std::size_t vertex,
+                      const std::vector<std::size_t> & edge_neighbors,
+                      const std::unordered_map<std::size_t, hash_type> & map_2d_3d,
+                      std::unordered_map<size_t, std::vector<face_iterator>> &vertices_to_split);
   // vector of faces that are markerd for split by the user via mark_for_split
   // Note: the vector is cleared after split_faces is performed
   std::vector<hash_type> marked_for_split;

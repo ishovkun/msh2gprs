@@ -215,8 +215,8 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
       }
     }
 
-  std::vector<std::vector<std::size_t>> groups =
-      group_cells_based_on_split_faces(affected_cells, vertex_faces);
+  std::vector<std::vector<std::size_t>> groups = group_cells_based_on_split_faces(affected_cells, vertex_faces);
+
   const int n_groups = groups.size();
 
   // create new vertices
@@ -269,8 +269,8 @@ void Mesh::mark_for_split(const face_iterator & face)
 
 SurfaceMesh<double> Mesh::split_faces()
 {
-  // std::cout << "n_nodes() = " << n_vertices() << std::endl;
-  // std::cout << "n_faces = " << n_faces() << std::endl;
+  std::cout << "n_nodes() = " << n_vertices() << std::endl;
+  std::cout << "n_faces = " << n_faces() << std::endl;
   /* Algorithm:
   * 1. create SurfaceMesh from marked faces
   * 2. find internal vertices (those whose edge have >1 neighbors)
@@ -287,38 +287,17 @@ SurfaceMesh<double> Mesh::split_faces()
     map_2d_3d.insert({ielement, hash});
   }
 
-  // const std::size_t n_faces_old = this->n_faces();
   unordered_map<size_t, vector<face_iterator>> vertices_to_split;
   for (auto edge = mesh_faces.begin_edges(); edge !=mesh_faces.end_edges(); ++edge)
   {
     const vector<size_t> & edge_neighbors = edge.neighbors();
     if (edge_neighbors.size() > 1)  // internal edge vertex
     {
-       const auto edge_vertices = edge.vertex_indices();
-
-       {  // add data for the first vertex
-         auto & faces = find_split_data(edge_vertices.first, vertices_to_split);
-         // find face elements of 3d mesh corresponding to 2d mesh elements
-         for (const auto & neighbor : edge_neighbors)
-         {
-           auto it = create_face_iterator
-                     (map_faces.find(map_2d_3d.find(neighbor)->second));
-           if (find(faces.begin(), faces.end(), it) != faces.end())
-             faces.push_back(std::move(it));
-         }
-       }
-
-       {// same for the second vertex
-         auto & faces = find_split_data(edge_vertices.second, vertices_to_split);
-         // find face elements of 3d mesh corresponding to 2d mesh elements
-         for (const auto & neighbor : edge_neighbors)
-         {
-           auto it = create_face_iterator
-                     (map_faces.find(map_2d_3d.find(neighbor)->second));
-           if (find(faces.begin(), faces.end(), it) != faces.end())
-             faces.push_back(std::move(it));
-           }
-       }
+      const auto edge_vertices = edge.vertex_indices();
+      const size_t v1 = vertices.find(mesh_faces.get_vertices()[edge_vertices.first]);
+      const size_t v2 = vertices.find(mesh_faces.get_vertices()[edge_vertices.second]);
+      add_vertex_to_split(v1, edge_neighbors, map_2d_3d, vertices_to_split);
+      add_vertex_to_split(v2, edge_neighbors, map_2d_3d, vertices_to_split);
     }
   }
 
@@ -327,13 +306,12 @@ SurfaceMesh<double> Mesh::split_faces()
   // std::unordered_map<hash_type, Face> map_new_faces;
   for (auto & it : vertices_to_split)
   {
-    // std::cout << "splitting vertex = " << it.first << std::endl;
+    std::cout << "splitting vertex = " << it.first << std::endl;
+    // std::cout << "it.second.size() = " << it.second.size() << std::endl;
     split_vertex(it.first, it.second, map_old_new_cells, new_cells);
   }
 
-  std::cout << "modifying face map" << std::endl;
-
-  // modify face map
+  // MODIFY FACE MAP
   std::unordered_set<std::size_t> old_ind_touched;
   std::unordered_set<hash_type> faces_to_delete;
   // store it since new faces are added first and then old faces are deleted
@@ -343,13 +321,12 @@ SurfaceMesh<double> Mesh::split_faces()
   {
     const std::size_t icell = it_cell.first;
     const std::size_t new_icell = it_cell.second;  // index in new array
+    std::cout << "icell = " << icell << std::endl;
 
     const std::vector<std::vector<std::size_t>> old_poly_faces =
-        angem::PolyhedronFactory::get_global_faces<double>(cells[icell],
-                                                           shape_ids[icell]);
+        angem::PolyhedronFactory::get_global_faces<double>(cells[icell], shape_ids[icell]);
     const std::vector<std::vector<std::size_t>> new_poly_faces =
-        angem::PolyhedronFactory::get_global_faces<double>(new_cells[new_icell],
-                                                           shape_ids[icell]);
+        angem::PolyhedronFactory::get_global_faces<double>(new_cells[new_icell], shape_ids[icell]);
 
     assert(old_poly_faces.size() == new_poly_faces.size());
 
@@ -362,6 +339,8 @@ SurfaceMesh<double> Mesh::split_faces()
       {
         auto it_face = map_faces.find(new_hash);
         auto it_face_old = map_faces.find(old_hash);
+        std::cout << "hash changed " << it_face_old->second.index << std::endl;
+
         if (it_face == map_faces.end())
         {
           Face new_face;
@@ -370,11 +349,14 @@ SurfaceMesh<double> Mesh::split_faces()
           new_face.ordered_indices = new_poly_faces[i];
 
           if (old_ind_touched.insert(it_face_old->second.index).second) // if not touched
+          {
+            std::cout << "not touched " << it_face_old->second.index << std::endl;
             new_face.index = it_face_old->second.index;
+          }
           else
           {
-            new_face.index = num_faces;
-            num_faces++;
+            std::cout << "touched " << num_faces << std::endl;
+            new_face.index = ++num_faces;
           }
 
           new_face.old_index = it_face_old->second.old_index;
@@ -387,6 +369,7 @@ SurfaceMesh<double> Mesh::split_faces()
         // mark old faces for delete
         faces_to_delete.insert(old_hash);
       }  // end if face changed
+      else std::cout << "not changed " << std::endl;
     }    // end face loop
 
     // replace old cell with new cell
@@ -398,8 +381,14 @@ SurfaceMesh<double> Mesh::split_faces()
   {
     auto face_it = map_faces.find(hash);
     if (face_it != map_faces.end())
+    {
       map_faces.erase(face_it);
+      std::cout << "deleting face" << std::endl;
+    }
   }
+
+  std::cout << "n_nodes() = " << n_vertices() << std::endl;
+  std::cout << "n_faces = " << n_faces() << std::endl;
 
   // clear marked elements vector
   marked_for_split.clear();
@@ -422,8 +411,6 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
   std::unordered_set<std::size_t> processed_cells;
   for (const std::size_t icell : affected_cells)
   {
-    // std::cout << "icell = " << icell << std::endl;
-
     auto group_it = map_cell_group.find(icell);
     if (group_it != map_cell_group.end())
     {
@@ -432,7 +419,6 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
     else
     {
       igroup = new_group;
-      // groups[igroup].push_back(icell);
       map_cell_group.insert({icell, igroup});
       new_group++;
     }
@@ -440,8 +426,6 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
     processed_cells.insert(icell);
 
     for (const std::size_t jcell : get_neighbors(icell))
-      // if (processed_cells.find(jcell) == processed_cells.end() and
-      //     affected_cells.find(jcell) != affected_cells.end())
       if (affected_cells.find(jcell) != affected_cells.end())
       {
         auto pair_cells = std::minmax(icell, jcell);
@@ -463,7 +447,6 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
 
         if (!neighbor_by_marked_face)
         {
-          // std::cout << " same" << std::endl;
           auto group_it = map_cell_group.find(jcell);
           if (group_it == map_cell_group.end())
             map_cell_group.insert({jcell, igroup});
@@ -520,19 +503,22 @@ angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i)
   return vertices.points[i];
 }
 
-std::vector<face_iterator> &
-Mesh:: find_split_data(const std::size_t vertex,
-        unordered_map<size_t, vector<face_iterator>> &vertices_to_split)
+
+void Mesh::add_vertex_to_split(const std::size_t                                        vertex,
+                               const std::vector<std::size_t>                         & edge_neighbors,
+                               const std::unordered_map<std::size_t, hash_type>       & map_2d_3d,
+                               std::unordered_map<size_t, std::vector<face_iterator>> & vertices_to_split)
 {
-  auto it = vertices_to_split.find(vertex);
-  if (it == vertices_to_split.end())
+  auto & faces = vertices_to_split[vertex];
+  for (const auto & neighbor : edge_neighbors)
   {
-    vector<face_iterator> vertex_faces;
-    auto result = vertices_to_split.insert({vertex, std::move(vertex_faces)});
-    return result.first->second;
+    auto it = create_face_iterator(map_faces.find(map_2d_3d.find(neighbor)->second));
+    if (find(faces.begin(), faces.end(), it) == faces.end())
+      faces.push_back(std::move(it));
   }
-  else return it->second;
+
 }
+
 
 std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell)
 {
@@ -544,5 +530,6 @@ const std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell) cons
 {
   return cells[cell];
 }
+
 
 }

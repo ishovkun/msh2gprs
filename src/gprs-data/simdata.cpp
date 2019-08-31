@@ -1135,7 +1135,17 @@ void SimData::splitInternalFaces()
       grid.mark_for_split(face);
   }
 
+  const size_t n_faces_old = grid.n_faces();
   dfm_master_grid = grid.split_faces();
+
+  if (grid.n_faces() != n_faces_old)
+  {
+    std::cout << "Split " << grid.n_faces() - n_faces_old
+              << " for DFM fractures." << std::endl;
+    std::cout << "There was " << n_faces_old << " faces before and "
+              << "now there is " << grid.n_faces() << " faces."
+              << std::endl;
+  }
 }
 
 

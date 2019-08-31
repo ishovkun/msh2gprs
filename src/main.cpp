@@ -131,30 +131,8 @@ int main(int argc, char *argv[])
   std::cout << "build multiscale data" << std::endl;
   preprocessor.build_multiscale_data();
 
-  // OUPUT
-  cout << "Write Output data\n";
   const std::string output_dir = std::string(filesystem::absolute(config_dir_path)) + "/";
   std::cout << "output directory: " << output_dir << std::endl;
-  for (auto format : config.output_formats)
-  {
-    switch (format) {
-      case OutputFormat::gprs :
-        {
-          std::cout << "Output gprs format" << std::endl;
-          gprs_data::OutputDataGPRS output_data(preprocessor, msh);
-          output_data.write_output(output_dir);
-          break;
-        }
-        case OutputFormat::vtk :
-          {
-            std::cout << "Output vtk format" << std::endl;
-            gprs_data::OutputDataVTK output_data(preprocessor, msh);
-            output_data.write_output(output_dir);
-            break;
-          }
-    }
-  }
-
   // if no frac remove vtk files
   if (preprocessor.vEfrac.empty())
   {
@@ -172,6 +150,28 @@ int main(int argc, char *argv[])
     {
       std::cout << "cleanup old dfm.vtk file" << std::endl;
       filesystem::remove(dfm_vtk_file);
+    }
+  }
+
+  // OUPUT
+  cout << "Write Output data\n";
+  for (auto format : config.output_formats)
+  {
+    switch (format) {
+      case OutputFormat::gprs :
+        {
+          std::cout << "Output gprs format" << std::endl;
+          gprs_data::OutputDataGPRS output_data(preprocessor, msh);
+          output_data.write_output(output_dir);
+          break;
+        }
+        case OutputFormat::vtk :
+          {
+            std::cout << "Output vtk format" << std::endl;
+            gprs_data::OutputDataVTK output_data(preprocessor, msh);
+            output_data.write_output(output_dir);
+            break;
+          }
     }
   }
 
