@@ -90,8 +90,8 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
   mesh_file >> n_vertices;
 
   std::cout << "\tn_vertices = " << n_vertices << std::endl;
-  auto & vertices= mesh.get_vertices();
-  mesh.get_vertices().reserve(n_vertices);
+  auto & vertices= mesh.vertices();
+  mesh.vertices().reserve(n_vertices);
 
   const int dim = 3;
   for (std::size_t ivertex=0; ivertex<n_vertices; ++ivertex)
@@ -114,7 +114,7 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
   mesh_file >> n_elements;
 
   std::cout << "\tn_elements = " << n_elements << std::endl;
-  mesh.get_cells().reserve(n_elements);
+  mesh.cells().reserve(n_elements);
 
   // std::size_t n_cells, n_faces;
   std::string line;
@@ -152,17 +152,12 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     // 3D element
     if (std::find(begin(polyhedras), end(polyhedras), element_type) != polyhedras.end())
     {
-      // const auto polyhedron = angem::PolyhedronFactory::create
-      //     (mesh.vertices.points, ivertices, vtk_id);
-      // mesh.insert(polyhedron, marker);
       mesh.insert_cell(ivertices, vtk_id, marker);
     }
     // 2D element
     else if (std::find(begin(polygons), end(polygons), element_type) !=
              polygons.end())
     {
-      // const angem::Polygon<double> poly(mesh.vertices.points, ivertices);
-      // mesh.insert(poly, marker);
       mesh.insert_face(ivertices, vtk_id, marker);
     }
     else
@@ -303,7 +298,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
   mesh_file >> entry;  // maxNodeTag
 
   std::cout << "\tn_vertices = " << n_vertices << std::endl;
-  mesh.get_vertices().reserve(n_vertices);
+  mesh.vertices().reserve(n_vertices);
 
   size_t vertex = 0;
   while (vertex < n_vertices)
@@ -328,7 +323,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
       angem::Point<dim,double> coords;
       for (int d=0; d<dim; ++d) mesh_file >> coords[d];
 
-      mesh.get_vertices().push_back(coords);
+      mesh.vertices().push_back(coords);
       vertex++;
     } // endonodes
   }
@@ -386,11 +381,10 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
     std::vector<std::size_t> vertices(n_element_vertices);
 
     if (entity_dim == 3)
-      mesh.get_cells().reserve(mesh.get_cells().capacity() + n_elements);
+      mesh.cells().reserve(mesh.cells().capacity() + n_elements);
 
     for (size_t i = 0; i < n_elements_in_block; i++)
     {
-      // std::cout << "element = " << element << " " << n_elements << std::endl;
       // line 3: element tag, element nodes
       getline(mesh_file, line);
       std::istringstream iss(line);

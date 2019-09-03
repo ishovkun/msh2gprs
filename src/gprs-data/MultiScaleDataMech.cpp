@@ -41,12 +41,12 @@ build_cell_block_neighbors(const std::unordered_map<size_t, size_t> & map_bounda
 
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
   {
-    const auto & neighbors = face.neighbors();
-    const size_t cell1 = neighbors[0];
+    const auto & neighbors = face->neighbors();
+    const size_t cell1 = neighbors[0]->index();
     const size_t block1 = layer.partitioning[cell1];
     if (neighbors.size() == 2)
     {
-      const size_t cell2 = neighbors[1];
+      const size_t cell2 = neighbors[1]->index();
       const size_t block2 = layer.partitioning[cell2];
       if (block1 != block2)
       {
@@ -58,7 +58,7 @@ build_cell_block_neighbors(const std::unordered_map<size_t, size_t> & map_bounda
     }
     else // if (neighbors.size() == 1)
     {
-      const size_t block2 = map_boundary_face_ghost_block.find(face.index())->second;
+      const size_t block2 = map_boundary_face_ghost_block.find(face->index())->second;
       cell_block_neighbors[cell1].insert(block1);
       cell_block_neighbors[cell1].insert(block2);
     }
@@ -82,32 +82,28 @@ find_block_corners2(const std::unordered_map<size_t, size_t> & map_boundary_face
     for (const size_t i : layer.cells_in_block[block])
      if (cell_block_neighbors[i].size() > 1)  // might contain block corner
      {
-       const auto cell = grid.create_const_cell_iterator(i);
+       const auto & cell = grid.cell(i);
        // const size_t block1 = layer.partitioning[i];
        // assert(block1 == block);
        // a corner is a node all of whose adjacent faces touch different blocks
        for (const auto & face : cell.faces())
        {
          size_t block2;
-         const auto & neighbors = face->neighbor_cells;
+         const auto & neighbors = face->neighbors();
          if (neighbors.size() == 2)
          {
-           if (neighbors[0] == i)
-           {
-             block2 = layer.partitioning[neighbors[1]];
-           }
-           else if (neighbors[1] == i)
-           {
-             block2 = layer.partitioning[neighbors[0]];
-           }
+           if (neighbors[0]->index() == i)
+             block2 = layer.partitioning[neighbors[1]->index()];
+           else if (neighbors[1]->index() == i)
+             block2 = layer.partitioning[neighbors[0]->index()];
            else
              assert(false);
          }
          else  // if (neighbors.size() == 1)  -- ghost case
-           block2 = map_boundary_face_ghost_block.find(face->index)->second;
+           block2 = map_boundary_face_ghost_block.find(face->index())->second;
 
          if (block != block2)
-           for (const size_t vertex : face->vertices)
+           for (const size_t vertex : face->vertices())
            {
              vertex_blocks[vertex].insert(block);
              vertex_blocks[vertex].insert(block2);
@@ -159,29 +155,29 @@ find_block_corners(const std::unordered_map<size_t, size_t> & map_boundary_face_
   // other blocks, and then find a common vertex among those vertices
   // unordered_set<size_t> global_corners;
    for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
-     if (cell_block_neighbors[cell.index()].size() > 2)  // might contain block corner
+     if (cell_block_neighbors[cell->index()].size() > 2)  // might contain block corner
      {
        // don't want a hash_map here
        map<size_t, unordered_set<size_t>> vertex_blocks;
        map<size_t, unordered_set<size_t>> vertex_faces;
 
        // a corner is a node all of whose adjacent faces touch different blocks
-       for (const auto & face : cell.faces())
+       for (const auto & face : cell->faces())
        {
-         const auto & neighbors = face->neighbor_cells;
-         const size_t cell1 = neighbors[0];
+         const auto & neighbors = face->neighbors();
+         const size_t cell1 = neighbors[0]->index();
          const size_t block1 = layer.partitioning[cell1];
          size_t block2;
          if (neighbors.size() == 2)
-           block2 = layer.partitioning[neighbors[1]];
+           block2 = layer.partitioning[neighbors[1]->index()];
          else // if (neighbors.size() == 1)
-           block2 = map_boundary_face_ghost_block.find(face->index)->second;
+           block2 = map_boundary_face_ghost_block.find(face->index())->second;
 
          if (block1 != block2)
-           for (const auto & vertex : face->vertices)
+           for (const auto & vertex : face->vertices())
            {
              vertex_blocks[vertex].insert(block2);
-             vertex_faces[vertex].insert(face->index);
+             vertex_faces[vertex].insert(face->index());
            }
        }
 
@@ -283,15 +279,15 @@ void MultiScaleDataMech::build_boundary_nodes(const std::unordered_map<size_t, s
   hash_algorithms::ConnectionMap<unordered_set<size_t>> block_face_vertices;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
   {
-    const auto & neighbors = face.neighbors();
-    const size_t cell1 = neighbors[0];
+    const auto & neighbors = face->neighbors();
+    const size_t cell1 = neighbors[0]->index();
     const size_t block1 = layer.partitioning[cell1];
     size_t block2;
     if (neighbors.size() == 1)
-      block2 = map_boundary_face_ghost_block.find(face.index())->second;
+      block2 = map_boundary_face_ghost_block.find(face->index())->second;
     else // if (neighbors.size() == 2)
     {
-      const size_t cell2 = neighbors[1];
+      const size_t cell2 = neighbors[1]->index();
       block2 = layer.partitioning[cell2];;
     }
 
@@ -304,7 +300,7 @@ void MultiScaleDataMech::build_boundary_nodes(const std::unordered_map<size_t, s
         conn_index = block_face_vertices.insert_connection(block1, block2);
 
       auto & vertices = block_face_vertices.get_data(conn_index);
-      for (const size_t vertex : face.vertex_indices())
+      for (const size_t vertex : face->vertices())
         vertices.insert(vertex);
     }
   }

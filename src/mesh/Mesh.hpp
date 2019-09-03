@@ -1,17 +1,18 @@
 #pragma once
 
 // internal
-#include <mesh_methods.hpp>
-#include <ShapeID.hpp>
-#include <Face.hpp>
-#include <cell_iterator.hpp>
-#include <cell_const_iterator.hpp>
-#include <face_iterator.hpp>
-#include <face_const_iterator.hpp>
-// external
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
 #include <angem/Polygon.hpp>
+// #include <mesh_methods.hpp>
+// #include "ShapeID.hpp"
+#include "Face.hpp"
+#include "Cell.hpp"
+#include "SurfaceMesh.hpp"
+// #include <cell_const_iterator.hpp>
+// #include <face_iterator.hpp>
+// #include <face_const_iterator.hpp>
+// external
 // standard
 #include <algorithm> // std::sort
 #include <unordered_set>
@@ -20,6 +21,7 @@
 namespace mesh
 {
 
+static const int DEFAULT_FACE_MARKER = -1;
 using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
@@ -42,12 +44,12 @@ class Mesh
  //  void insert(const Polyhedron & poly,
  //              const int          marker = -1);
  //  // insert a cell element assigned as vertex global indices
-  void insert_cell(const std::vector<std::size_t> & ivertices,
-                   const int                        vtk_id,
-                   const int                        marker = DEFAULT_CELL_MARKER);
-  void insert_face(const std::vector<std::size_t> & ivertices,
-                   const int                        vtk_id,
-                   const int                        marker = DEFAULT_CELL_MARKER);
+  std::size_t insert_cell(const std::vector<std::size_t> & ivertices,
+                          const int                        vtk_id,
+                          const int                        marker = DEFAULT_CELL_MARKER);
+  std::size_t insert_face(const std::vector<std::size_t> & ivertices,
+                          const int                        vtk_id,
+                          const int                        marker = DEFAULT_CELL_MARKER);
  //  // insert marker into map_physical_faces
  //  void insert(const Polygon & poly,
  //              const int       marker);
@@ -58,111 +60,84 @@ class Mesh
 
   // ITERATORS
 
-  // Helper function to create cell iterators.
-  // Still thinking whether it should be a public method
-  cell_iterator create_cell_iterator(const std::size_t icell)
-  {return cell_iterator(icell, cells, faces, vertices);}
   // create cell iterator for the first cell
-  cell_iterator begin_cells(){return create_cell_iterator(0);}
+  inline std::vector<Cell>::iterator begin_cells() {return m_cells.begin();}
+  // create cell const_iterator for the first cell
+  inline std::vector<Cell>::const_iterator begin_cells() const {return m_cells.begin();}
   // Returns an iterator referring to the past-the-end element in the cell container
-  cell_iterator end_cells()  {return create_cell_iterator(cells.size());}
-
-  // CONST_ITERATORS
-  // Helper function to create cell const_iterators.
-  cell_const_iterator create_const_cell_iterator(const std::size_t icell) const
-  {return cell_const_iterator(icell, cells, faces, vertices);}
-  // create cell iterator for the first cell
-  cell_const_iterator begin_cells() const {return create_const_cell_iterator(0);}
+  inline std::vector<Cell>::iterator end_cells()   {return m_cells.end();}
   // end iterator for cells. Must only be used as the range indicator
-  cell_const_iterator end_cells() const {return create_const_cell_iterator(cells.size());}
-
-  // face iterators
-  // A helper funciton to create face iterators
-  face_iterator create_face_iterator(const size_t face_index)
-  {return face_iterator(face_index, faces, vertices);}
+  inline std::vector<Cell>::const_iterator end_cells() const {return m_cells.end();}
   // create a face iterator
-  face_iterator begin_faces(){return create_face_iterator(0);}
-  // create a end iterator for faces
-  face_iterator end_faces()  {return create_face_iterator(faces.size());}
-  face_const_iterator create_face_const_iterator(const size_t face_index) const
-  {return face_const_iterator(face_index, faces, vertices);}
+  inline std::vector<Face>::iterator begin_faces(){return m_faces.begin();}
   // create a face const_iterator
-  face_const_iterator begin_faces() const {return create_face_const_iterator(0);}
-  // create a end const_iterator for faces
-  face_const_iterator end_faces()  const {return create_face_const_iterator(faces.size());}
+  inline std::vector<Face>::const_iterator begin_faces() const {return m_faces.begin();}
+  // create an end iterator for faces
+  inline std::vector<Face>::iterator end_faces(){return m_faces.end();}
+  // create an end const_iterator for faces
+  inline std::vector<Face>::const_iterator end_faces() const {return m_faces.end();}
+  // create a vertex iterator pointing to the first vertex
+  inline std::vector<Point>::iterator begin_vertices() { return m_vertices.begin(); }
+  // create a vertex const_iterator pointing to the first vertex
+  inline std::vector<Point>::const_iterator begin_vertices() const { return m_vertices.begin(); }
+  // create a vertex iterator pointing to the past last vertex
+  inline std::vector<Point>::iterator end_vertices() { return m_vertices.end(); }
+  // create a vertex const_iterator pointing to the past last vertex
+  inline std::vector<Point>::const_iterator end_vertices() const { return m_vertices.end(); }
 
   // ACCESS OPERATORS
-  inline const Point& vertex(const size_t vertex_index) const {return vertices[vertex_index];}
+
+  // get reference to a cell object by index
+  inline Cell & cell(const size_t cell_index) { return m_cells[cell_index]; }
+  // get const reference to a cell object by index
+  inline const Cell & cell(const size_t cell_index) const { return m_cells[cell_index]; }
+  // get reference to a face object by index
+  inline Face & face(const size_t face_index) { return m_faces[face_index]; }
+  // get const reference to a face object by index
+  inline const Face & face(const size_t face_index) const { return m_faces[face_index]; }
+  // get reference to a vertex object by index
+  inline Point& vertex(const size_t vertex_index) {return m_vertices[vertex_index];}
+  // get const reference to a vertex object by index
+  inline const Point& vertex(const size_t vertex_index) const {return m_vertices[vertex_index];}
   // GETTERS
   // get vector of all the grid vertex node coordinates
-  std::vector<angem::Point<3,double>> & get_vertices() {return vertices;}
-  // get vector of cells
-  std::vector<Cell> & get_cells() {return cells;}
+  inline std::vector<angem::Point<3,double>> & vertices() {return m_vertices;}
   // get const vector of all the grid vertex node coordinates
-  const std::vector<angem::Point<3,double>> & get_vertices() const {return vertices;}
+  inline const std::vector<angem::Point<3,double>> & vertices() const {return m_vertices;}
   // get vector of cells
-  // std::vector<Cell> & get_cells() { return cells; }
-  // get constant vector of cells
-  // const std::vector<Cell> & get_cells() const { return cells; }
-  // get vector of faces
-  // std::vector<Face> & get_faces() { return faces; }
-  // get constant vector of faces
-  // const std::vector<Face> & get_faces() const { return faces; }
- //  // get vertex indices of a cell
- //  std::vector<std::size_t> & get_vertices(const std::size_t cell);
- //  // get vertex indices of a cell
- //  const std::vector<std::size_t> & get_vertices(const std::size_t cell) const;
- //  // get vertex coordinates
- //  const angem::Point<3,double> & vertex_coordinates(const std::size_t i) const;
- //  // get vertex coordinates
- //  angem::Point<3,double> & vertex_coordinates(const std::size_t i);
- //  // get vector of neighbor cell indices
- //  std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
- //  // vector of indices of cells neighboring a face
- //  const std::vector<std::size_t> & get_neighbors( const FaceiVertices & face ) const;
- //  // get vector of vectors of indices representing faces of a cell
- //  std::vector<std::vector<std::size_t>> get_faces( const std::size_t ielement ) const;
- //  // true if vector of cells is empty
-  bool empty() const {return cells.empty();}
+  inline std::vector<Cell> & cells() {return m_cells;}
+  // get vector of cells
+  inline const std::vector<Cell> & cells() const {return m_cells;}
+  // true if vector of cells is empty
+  bool empty() const {return m_cells.empty();}
   // get number of cells
-  inline std::size_t n_cells() const {return cells.size();}
+  inline std::size_t n_cells() const {return m_cells.size();}
   // get number of vertices
-  inline std::size_t n_vertices() const {return vertices.size();}
+  inline std::size_t n_vertices() const {return m_vertices.size();}
   // get number of faces
-  inline std::size_t n_faces() const {return faces.size();}
-  // get cell center coordinates
-  Point get_center(const std::size_t icell) const;
-  // get cell polyhedron
-  std::unique_ptr<Polyhedron> get_polyhedron(const std::size_t icell) const;
- //  // get vector of faces ordered by index (super expernsive -- linear O(n_faces))
- //  std::vector<face_iterator> get_ordered_faces();
+  inline std::size_t n_faces() const {return m_faces.size();}
 
- //  // MANIPULATION
- //  // delete an element from the mesh
- //  void delete_element(const std::size_t ielement);
- //  // merges jcell into icell if they have a common face
- //  std::size_t merge_cells(const std::size_t icell,
- //                          const std::size_t jcell);
+  // MANIPULATION
+  // delete an element from the mesh
+  //  void delete_element(const std::size_t ielement);
+  //  // merges jcell into icell if they have a common face
+  std::size_t merge_cells(const std::size_t icell, const std::size_t jcell);
   // tell grid which faces to split before calling split_faces method
-  void mark_for_split(const face_iterator & face);
+  void mark_for_split(const std::size_t face_index);
   // split faces marked for splitting with mark_for_split
   // returns SurfaceMesh of master DFM faces
   // cleans marked_for_split array upon completion
   SurfaceMesh<double> split_faces();
+  /* split a vertex
+   * retults in adding new vertices (pushed to the back of vertices set) */
+  void split_vertex(const std::size_t vertex_index,
+                    const std::size_t master_face_index);
+
 
  private:
   void insert_vertex(const std::size_t vertex,
                      const std::size_t face,
                      const std::size_t cell);
-
- //  /* split a vertex
- //   * retults in adding new vertices (pushed to the back of vertices set)
- //   * modifies elements of cells array
- //   */
- //  void split_vertex(const std::size_t                              ivertex,
- //                    const std::vector<face_iterator>             & vertex_faces,
- //                    std::unordered_map<std::size_t, std::size_t> & map_old_new_cells,
- //                    std::vector<std::vector<std::size_t>>        & new_cells);
 
  //  // two elements are in the same group if they are neighbors and
  //  // the neighboring face is not in vertex_faces array
@@ -173,23 +148,19 @@ class Mesh
  //  // get global indices of polygon face vertices
  //  std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
 
- //  // everything we need to know to perform a vertex split
- //  void add_vertex_to_split(const std::size_t vertex,
- //                      const std::vector<std::size_t> & edge_neighbors,
- //                      const std::unordered_map<std::size_t, hash_type> & map_2d_3d,
- //                      std::unordered_map<size_t, std::vector<face_iterator>> &vertices_to_split);
  //  // vector of faces that are markerd for split by the user via mark_for_split
  //  // Note: the vector is cleared after split_faces is performed
  //  std::vector<hash_type> marked_for_split;
  private:
   // ATTRIBUTES
-  // angem::PointSet<3,double>             vertices;      // vector of vertex coordinates
-  std::vector<angem::Point<3,double>>   vertices;      // vector of vertex coordinates
-  // std::vector<std::vector<std::size_t>> cells;         // vertex indices
-  std::vector<Cell>                     cells;
-  std::vector<Face>                     faces;
-  std::vector<std::vector<std::size_t>> vertex_faces;  // vertex neighboring faces
-  std::vector<std::vector<std::size_t>> vertex_cells;  // vertex neighboring cells
+  std::vector<angem::Point<3,double>>   m_vertices;      // vector of vertex coordinates
+  std::vector<Cell>                     m_cells;
+  std::vector<Face>                     m_faces;
+  std::vector<std::vector<std::size_t>> m_vertex_cells;  // vertex neighboring cells
+  std::vector<std::vector<std::size_t>> m_vertex_faces;  // vertex neighboring faces
+
+  //
+  std::vector<std::size_t> m_faces_marked_for_split;
 };
 
 

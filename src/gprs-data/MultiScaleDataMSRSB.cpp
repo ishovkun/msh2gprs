@@ -44,11 +44,12 @@ void MultiScaleDataMSRSB::build_partitioning()
     auto & layer = active_layer();
     PureConnectionMap cell_connections;
 
-    for (auto it = grid.begin_faces(); it != grid.end_faces(); ++it)
+    for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
     {
-      const auto & neighbors = it.neighbors();
+      const auto neighbors = face->neighbors();
       if (neighbors.size() == 2)  // not a boundary face
-        cell_connections.insert_connection( neighbors[0], neighbors[1] );
+        cell_connections.insert_connection( neighbors[0]->index(),
+                                            neighbors[1]->index() );
     }
 
     layer.partitioning = multiscale::MetisInterface<hash_algorithms::empty>
@@ -91,8 +92,8 @@ void MultiScaleDataMSRSB::find_centroids()
 
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
-    const size_t block = layer.partitioning[cell.index()];
-    layer.block_centroids[block] += cell.center();
+    const size_t block = layer.partitioning[cell->index()];
+    layer.block_centroids[block] += cell->center();
     n_cells_per_block[block]++;
   }
 
@@ -108,7 +109,8 @@ void MultiScaleDataMSRSB::find_centroids()
     size_t closest = 0;
     for (const size_t cell : layer.cells_in_block[block])
     {
-      const double current_dist = layer.block_centroids[block].distance(grid.get_center(cell));
+      const Point cell_center = grid.cell(cell).center();
+      const double current_dist = layer.block_centroids[block].distance(cell_center);
       if ( current_dist <= min_dist )
       {
         closest = cell;
@@ -126,11 +128,11 @@ void MultiScaleDataMSRSB::build_block_connections()
 
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
   {
-    const auto & neighbors = face.neighbors();
+    const auto neighbors = face->neighbors();
     if (neighbors.size() == 2)  // not a boundary face
     {
-      const std::size_t i1 = layer.partitioning[neighbors[0]];
-      const std::size_t i2 = layer.partitioning[neighbors[1]];;
+      const std::size_t i1 = layer.partitioning[neighbors[0]->index()];
+      const std::size_t i2 = layer.partitioning[neighbors[1]->index()];;
       if (i1 != i2)
         if (!layer.block_internal_connections.connection_exists(i1, i2))
           layer.block_internal_connections.insert_connection(i1, i2);
@@ -184,15 +186,15 @@ find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary
   auto & layer = active_layer();
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
   {
-    const auto & neighbors = face.neighbors();
+    const auto neighbors = face->neighbors();
     size_t block1, block2;
-    block1 = layer.partitioning[neighbors[0]];
+    block1 = layer.partitioning[neighbors[0]->index()];
 
     if (neighbors.size() == 1)  // block + ghost block
-      block2 = map_boundary_face_ghost_block.find(face.index())->second;
+      block2 = map_boundary_face_ghost_block.find(face->index())->second;
     else // if (neighbors.size() == 2)
     {
-      block2 = layer.partitioning[neighbors[1]];
+      block2 = layer.partitioning[neighbors[1]->index()];
       if (block1 == block2) continue;
     }
 
@@ -203,7 +205,7 @@ find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary
       conn_ind = layer.block_faces.insert_connection(block1, block2);
 
     auto & data = layer.block_faces.get_data(conn_ind);
-    data.center += face.center();
+    data.center += face->center();
     data.n_cell_faces++;
   }
 
@@ -212,12 +214,12 @@ find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary
 }
 
 
-bool MultiScaleDataMSRSB::share_edge(const mesh::face_const_iterator &face1,
-                                     const mesh::face_const_iterator &face2) const
+bool MultiScaleDataMSRSB::share_edge(const mesh::Face &face1,
+                                     const mesh::Face &face2) const
 {
   unordered_set<size_t> shared_verts;
-  for (const auto &v1 : face1.vertex_indices())
-    for (const auto &v2 : face2.vertex_indices())
+  for (const auto &v1 : face1.vertices())
+    for (const auto &v2 : face2.vertices())
       if (v1 == v2)
         shared_verts.insert(v1);
 
@@ -228,19 +230,19 @@ bool MultiScaleDataMSRSB::share_edge(const mesh::face_const_iterator &face1,
 algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_disjoint() const
 {
   // build map vertex - external face and fill disjoints
-  std::unordered_map<size_t, vector<mesh::face_const_iterator>> map_vertex_face;
+  std::unordered_map<size_t, vector<std::size_t>> map_vertex_face;
   algorithms::UnionFindWrapper<size_t> face_disjoint;
 
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
-    if (face.neighbors().size() == 1)
+    if (face->neighbors().size() == 1)
     {
-      face_disjoint.insert(face.index());
+      face_disjoint.insert(face->index());
 
-      for (size_t & v : face.vertex_indices() )
+      for (const size_t v : face->vertices() )
       {
         auto it = map_vertex_face.find(v);
-        if (it == map_vertex_face.end()) map_vertex_face.insert({v, { face }});
-        else it->second.push_back(face);
+        if (it == map_vertex_face.end()) map_vertex_face.insert({v, { face->index() }});
+        else it->second.push_back(face->index());
       }
     }
 
@@ -252,12 +254,12 @@ algorithms::UnionFindWrapper<size_t> MultiScaleDataMSRSB::build_external_face_di
     const auto & faces = it.second;
     for (std::size_t i=0; i<faces.size(); ++i)
     {
-      const auto & face1 = faces[i];
-      const size_t cell1 = face1.neighbors()[0];
+      const auto & face1 = grid.face(faces[i]);
+      const size_t cell1 = face1.neighbors()[0]->index();
       for (std::size_t j=i+1; j<faces.size(); ++j)
       {
-        const auto & face2 = faces[j];
-        const size_t cell2 = face2.neighbors()[0];
+        const auto & face2 = grid.face(faces[j]);
+        const size_t cell2 = face2.neighbors()[0]->index();
         // if (face1 != face2) // they are created different
 
         /* criteria for uniting faces into groups to identify
@@ -285,19 +287,19 @@ build_map_vertex_blocks(const std::unordered_map<size_t,size_t> & map_boundary_f
   std::unordered_map<std::size_t, std::vector<std::size_t>> vertex_blocks;
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
   {
-    const auto & neighbors = face.neighbors();
+    const auto neighbors = face->neighbors();
     size_t block1, block2;
-    block1 = layer.partitioning[neighbors[0]];
+    block1 = layer.partitioning[neighbors[0]->index()];
 
     if (neighbors.size() == 2)
     {
-      block2 = layer.partitioning[neighbors[1]];
+      block2 = layer.partitioning[neighbors[1]->index()];
       if (block1 == block2) continue;
     }
     else if (neighbors.size() == 1)
-      block2 = map_boundary_face_ghost_block.find(face.index())->second;
+      block2 = map_boundary_face_ghost_block.find(face->index())->second;
 
-    for (const auto & vertex : face.vertex_indices())
+    for (const auto & vertex : face->vertices())
     {
       auto it_vert = vertex_blocks.find(vertex);
 
@@ -377,7 +379,7 @@ void MultiScaleDataMSRSB::find_block_edge_centroids(
     // make this point lie on edge
     block_edge_center = grid.vertex(
         angem::find_closest_vertex(block_edge_center,
-              /* all_vertices = */ grid.get_vertices(),
+              /* all_vertices = */ grid.vertices(),
                     /* subset = */ block_edge.second));
 
     std::pair<std::size_t, std::size_t> face_blocks;
@@ -615,7 +617,7 @@ void MultiScaleDataMSRSB::build_support_region_boundary(const std::size_t block,
   angem::CollisionGJK<double> collision;
   for (const std::size_t cell : layer.cells_in_block[neighbor])
   {
-    const auto p_cell_polyhedra = grid.get_polyhedron(cell);
+    const auto p_cell_polyhedra = grid.cell(cell).polyhedron();
     if (collision.check(*p_cell_polyhedra, bounding_shape))
       layer.support_boundary[block].insert(cell);
   }
@@ -665,7 +667,7 @@ void MultiScaleDataMSRSB::build_support_internal_cells(const std::size_t block,
     for (const std::size_t cell : layer.cells_in_block[neighbor])
     {
       // ray casting
-      if ( angem::point_inside_surface(grid.get_center(cell), outer_point,
+      if ( angem::point_inside_surface(grid.cell(cell).center(), outer_point,
                                        bounding_surface.get_vertices(),
                                        bounding_surface.get_polygons()) )
         // if not among the boundary cells
@@ -777,11 +779,11 @@ debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_di
       size_t n_faces = 0;
       // find ghost face center
       for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
-        if (face.neighbors().size() == 1)
-          if (layer.partitioning[face.neighbors()[0]] == block)
-            if ( face_disjoint.group(face.index()) == group.first)
+        if (face->neighbors().size() == 1)
+          if (layer.partitioning[face->neighbors()[0]->index()] == block)
+            if ( face_disjoint.group(face->index()) == group.first)
           {
-            face_direction += face.center();
+            face_direction += face->center();
             n_faces++;
           }
 

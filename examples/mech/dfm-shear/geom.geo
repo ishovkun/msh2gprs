@@ -172,12 +172,12 @@ Top = 3333332;
 
 Frac1 = 1;
 
-Physical Surface(Bottom) = {1, 2, 3, 4, 5, 6, 7};
-Physical Surface(Top) = {163, 251, 185, 207, 229, 295, 273, 251};
-Physical Surface(Left) = {54};
-Physical Surface(Right) = {62};
-Physical Surface(Front) = {58};
-Physical Surface(Back) = {66};
+// Physical Surface(Bottom) = {1, 2, 3, 4, 5, 6, 7};
+// Physical Surface(Top) = {163, 251, 185, 207, 229, 295, 273, 251};
+// Physical Surface(Left) = {54};
+// Physical Surface(Right) = {62};
+// Physical Surface(Front) = {58};
+// Physical Surface(Back) = {66};
 
 Physical Surface(Frac1) = {94};
 
@@ -194,5 +194,7 @@ Geometry.AutoCoherence = 2;
 Mesh.MshFileVersion = 4.1;
 
 Mesh 3;  // Generalte 3D mesh
+// Mesh.MshFileVersion = 4.1;
+Mesh.MshFileVersion = 2.2;
 Coherence Mesh;  // Remove duplicate entities
 Save "geom.msh";  // Save mesh in MSH format

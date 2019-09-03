@@ -190,14 +190,14 @@ void VTKWriter::write_geometry(const Mesh               & grid,
       << n_points << " float"
       << std::endl;
 
-  for (const auto & p : grid.get_vertices())
+  for (const auto & p : grid.vertices())
     out << p << std::endl;
 
   // cells
   const std::size_t n_cells = grid.n_cells();
   std::size_t vind_size_total = 0;
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
-    vind_size_total += cell.n_vertices();
+    vind_size_total += cell->n_vertices();
 
   out << "CELLS" << "\t"
       << n_cells << "\t"
@@ -206,8 +206,8 @@ void VTKWriter::write_geometry(const Mesh               & grid,
 
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   {
-    out << cell.n_vertices() << "\t";
-    for (std::size_t i : cell.vertex_indices())
+    out << cell->n_vertices() << "\t";
+    for (std::size_t i : cell->vertices())
       out << i << "\t";
     out << std::endl;
   }
@@ -215,7 +215,7 @@ void VTKWriter::write_geometry(const Mesh               & grid,
   out << std::endl;
   out << "CELL_TYPES" << "\t" << n_cells << std::endl;
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
-    out << cell.vtk_id() << std::endl;
+    out << cell->vtk_id() << std::endl;
 }
 
 

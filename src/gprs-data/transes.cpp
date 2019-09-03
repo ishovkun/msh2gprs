@@ -1388,9 +1388,6 @@ void CalcTranses::extractData(FlowData & data) const
   // std::cout << "extracting volume data" << std::endl;
   // Extract Volumes, porosity, depth
   data.cells.resize(NbCVs);
-  // data.volumes.resize(NbCVs);
-  // data.poro.resize(NbCVs);
-  // data.depth.resize(NbCVs);
   for (std::size_t i=0; i<NbCVs; i++ )
   {
     data.cells[i].volume   = CVVolume[i];
@@ -1401,6 +1398,10 @@ void CalcTranses::extractData(FlowData & data) const
   // Transmissibility
   for (std::size_t i=0;i<NbTransmissibility; i++)
   {
+    if (data.connection_exists(iTr[i], jTr[i]))
+      throw std::runtime_error("connection exists " +
+                               std::to_string(iTr[i]) + " " +
+                               std::to_string(jTr[i]));
     auto & face = data.insert_connection(iTr[i], jTr[i]);
     face.transmissibility = Tij[i];
     face.thermal_conductivity = TConductionIJ[i];

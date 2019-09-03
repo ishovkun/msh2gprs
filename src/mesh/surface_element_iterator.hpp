@@ -28,7 +28,9 @@ class surface_element_iterator
   inline std::size_t index() const {return ielement;}
   std::vector<surface_element_iterator<Scalar>> neighbors() const;
   std::vector<edge_iterator<Scalar>> edges() const;
-  std::vector<angem::Point<3,Scalar>> vertices() const;
+  const std::vector<std::size_t> & vertices() const { return polygons[ielement]; }
+  std::vector<std::size_t> & vertices() { return polygons[ielement]; };
+  std::vector<angem::Point<3,Scalar>> vertex_coordinates() const;
 
  private:
   std::size_t                             ielement;
@@ -116,7 +118,7 @@ surface_element_iterator<Scalar>::edges() const
 
 
 template <typename Scalar>
-std::vector<angem::Point<3,Scalar>> surface_element_iterator<Scalar>::vertices() const
+std::vector<angem::Point<3,Scalar>> surface_element_iterator<Scalar>::vertex_coordinates() const
 {
   std::vector<angem::Point<3,Scalar>> result;
   result.reserve(polygons[ielement].size());

@@ -1,8 +1,8 @@
 #include <Mesh.hpp>
 #include <SurfaceMesh.hpp>
 #include "Cell.hpp"
-
 #include "angem/PolyhedronFactory.hpp"
+#include <unordered_set>
 
 namespace mesh
 {
@@ -14,60 +14,18 @@ Mesh::Mesh()
 {}
 
 
-// void Mesh::insert(const Polyhedron & poly,
-//                   const int          marker)
-// {
-//   std::vector<std::size_t> indices;
-//   const std::vector<Point> & points = poly.get_points();
-//   for (const auto & p : points)
-//   {
-//     const std::size_t ind = vertices.insert(p);
-//     indices.push_back(ind);
-//   }
-
-//   const std::size_t new_element_index = cells.size();
-//   cells.push_back(indices);
-//   shape_ids.push_back(poly.id());
-//   cell_markers.push_back(marker);
-
-//   for (const auto & face : poly.get_faces())
-//   {
-//     // get global indices of face vertices
-//     std::vector<std::size_t> face_glob;
-//     for (const auto & ivert : face)
-//       face_glob.push_back(indices[ivert]);
-
-//     const auto hash = hash_value(face_glob);
-
-//     auto iter = map_faces.find(hash);
-//     if (iter != map_faces.end())
-//     {
-//       (iter->second).neighbors.push_back(new_element_index);
-//     }
-//     else
-//     {
-//       Face face_data;
-//       face_data.neighbors.push_back(new_element_index);
-//       face_data.index = map_faces.size();
-//       face_data.old_index = face_data.index;
-//       map_faces.insert({ {hash, face_data} });
-//     }
-//   }
-// }
-
-
-void Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
-                       const int                        vtk_id,
-                       const int                        marker)
+std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
+                              const int                        vtk_id,
+                              const int                        marker)
 {
   // get faces: vectors of vertexindices based on vtk numbering
   const std::vector<std::vector<std::size_t>> poly_faces =
       angem::PolyhedronFactory::get_global_faces<double>(ivertices, vtk_id);
 
-  const std::size_t new_cell_index = cells.size();
+  const std::size_t new_cell_index = n_cells();
 
-  for (const size_t vertex: ivertices)
-    vertex_cells[vertex].push_back(new_cell_index);
+  std::vector<std::size_t> face_indices;
+  face_indices.reserve(poly_faces.size());
 
   for (const vector<size_t> & face : poly_faces)
   {
@@ -85,346 +43,212 @@ void Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
         break;
     }
 
-    insert_face(face, face_vtk_id, DEFAULT_FACE_MARKER);
+    const std::size_t face_index = insert_face(face, face_vtk_id, DEFAULT_FACE_MARKER);
+    face_indices.push_back(face_index);
   }
 
-  Cell new_cell;
-  new_cell.index = new_cell_index;
-  new_cell.vertices = ivertices;
-  new_cell.vtk_id = vtk_id;
-  new_cell.marker = marker;
-  cells.push_back(new_cell);
+  m_cells.emplace_back(new_cell_index, ivertices, std::move(face_indices),
+                       m_vertices, m_cells, m_faces, vtk_id, marker);
+
+  for (const size_t vertex: ivertices)
+    m_vertex_cells[vertex].push_back(new_cell_index);
+
+  return new_cell_index;
 }
 
 
-void Mesh::insert_face(const std::vector<std::size_t> & ivertices,
-                       const int                        vtk_id,
-                       const int                        marker)
+size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
+                         const int                        vtk_id,
+                         const int                        marker)
 {
-  const size_t new_face_index = faces.size();
+  if (m_vertex_cells.size() < n_vertices())
+    m_vertex_cells.resize(n_vertices());
+  if (m_vertex_faces.size() < n_vertices())
+    m_vertex_faces.resize(n_vertices());
 
-  Face new_face;
+  size_t face_index = m_faces.size();
+  std::vector<size_t> sorted_vertices(ivertices);
+  std::sort(sorted_vertices.begin(), sorted_vertices.end());
+
+  bool face_exists = false;
   for (const size_t vertex: ivertices)
   {
-    vertex_faces[vertex].push_back(new_face_index);
-    for (const size_t cell_index: vertex_cells[vertex])
+    for (const size_t iface: m_vertex_faces[vertex])
     {
-      if (std::find(new_face.neighbor_cells.begin(), new_face.neighbor_cells.end(), cell_index) ==
-          new_face.neighbor_cells.end())
-        new_face.neighbor_cells.push_back(cell_index);
-
-      Cell cell = cells[cell_index];
-      if (std::find(cell.faces.begin(), cell.faces.end(), new_face_index) ==
-          cell.faces.end())
-        cell.faces.push_back(new_face_index);
+      assert( n_faces() > iface );
+      Face & f = m_faces[iface];
+      std::vector<size_t> face_vertices(f.vertices());
+      std::sort(face_vertices.begin(), face_vertices.end());
+      if ( std::equal( face_vertices.begin(), face_vertices.end(),
+                       sorted_vertices.begin(), sorted_vertices.end()) )
+      {
+        face_exists = true;
+        face_index = iface;
+        break;
+      }
     }
   }
 
-  new_face.index = new_face_index;
-  new_face.master_face_index = new_face_index;
-  new_face.marker = marker;
-  new_face.vtk_id = vtk_id;
-  new_face.vertices = ivertices;
-  faces.push_back(std::move(new_face));
+  if (!face_exists)
+  {
+    m_faces.emplace_back(face_index, face_index,
+                         ivertices, vtk_id, marker,
+                         m_cells, m_vertices, m_vertex_cells);
+  }
+  else
+  {
+    if (marker != DEFAULT_FACE_MARKER)
+      m_faces[face_index].m_marker = marker;
+    assert( m_faces[face_index].m_vtk_id == vtk_id );
+  }
+
+  if (face_index == 0 ||
+      (  sorted_vertices[0] == 10 and
+         sorted_vertices[1] == 22 and
+         sorted_vertices[2] == 270))
+  {
+    std::cout << "\n "<< "##########" << std::endl;
+    std::cout << "face_index = " << face_index << std::endl;
+      std::cout << "vertices:" << std::endl;
+      for (auto v: ivertices)
+        std::cout << v << " ";
+      std::cout << std::endl;
+  }
+
+  for (const size_t vertex : ivertices)
+    if (std::find( m_vertex_faces[vertex].begin(), m_vertex_faces[vertex].end(),
+                   face_index) == m_vertex_faces[vertex].end())
+      m_vertex_faces[vertex].push_back(face_index);
+
+  return face_index;
 }
 
 
-
-// const std::vector<std::size_t> & Mesh::get_neighbors( const FaceiVertices & face ) const
-// {
-//   const auto hash = hash_value(face);
-//   const auto iter = map_faces.find(hash);
-
-//   if (iter == map_faces.end())
-//   {
-//     for (auto & v : face)
-//       std::cout << v << " ";
-//     std::cout << std::endl;
-//     throw std::out_of_range("face does not exist");
-//   }
-
-//   return iter->second.neighbors;
-// }
-
-
-// std::vector<std::size_t>
-// Mesh::get_neighbors( const std::size_t icell ) const
-// {
-//   if (icell >= cells.size())
-//     throw std::out_of_range("wrong cell index: " + std::to_string(icell));
-
-//   std::vector<std::size_t> neighbors;
-//   const std::vector<std::vector<std::size_t>> cell_faces =
-//       angem::PolyhedronFactory::get_global_faces<double>(cells[icell],
-//                                                          shape_ids[icell]);
-//   for (const auto & face : cell_faces)
-//   {
-//     const std::vector<std::size_t> & face_neighbors = get_neighbors(face);
-//     for (const std::size_t jcell : face_neighbors)
-//       if (jcell != icell)
-//         neighbors.push_back(jcell);
-//   }
-//   return neighbors;
-// }
+void Mesh::split_vertex(const std::size_t vertex_index,
+                        const std::size_t master_face_index)
+{
+  std::vector<std::size_t> affected_face_indices;
+  for (const size_t iface : m_vertex_faces[vertex_index])
+  {
+    const Face & f = m_faces[iface];
+    if (f.master_index() == master_face_index)
+      if (f.has_vertex(vertex_index))
+        affected_face_indices.push_back(f.index());
+  }
+  
+  // for (auto id : affected_face_indices)
+  //   std::cout << id << std::endl;
+  // exit(0);
+  std::vector<std::size_t> affected_cell_indices;
+  affected_cell_indices.reserve(2);
+  for (const size_t iface : affected_face_indices)
+  {
+    const Face & f = m_faces[iface];
+    for (const Cell * cell : f.neighbors())
+      if (std::find( affected_cell_indices.begin(), affected_cell_indices.end(),
+                     cell->index() == affected_cell_indices.end()) )
+        affected_cell_indices.push_back(cell->index());
+      }
+}
 
 
-// std::vector<std::vector<std::size_t>> Mesh::get_faces(const Polyhedron & poly) const
-// {
-//   return get_face_indices(poly, vertices);
-// }
+void Mesh::mark_for_split(const std::size_t face_index)
+{
+  assert( face_index < n_faces() );
+  m_faces_marked_for_split.push_back(face_index);
+}
 
 
-// void Mesh::insert(const Polygon & poly,
-//                   const int       marker)
-// {
-//   const auto & points = poly.get_points();
-//   std::vector<std::size_t> face(points.size());
-//   for (int i=0; i<points.size(); ++i)
-//     face[i] = vertices.find(points[i]);
+SurfaceMesh<double> Mesh::split_faces()
+{
+  std::cout << "n_nodes() = " << n_vertices() << std::endl;
+  std::cout << "n_faces = " << n_faces() << std::endl;
 
-//   // const vtk_id = poly.vtk_id();
-//   const int vtk_id = -1;
-//   insert_face(face, vtk_id, marker);
-// }
+  /* Algorithm:
+  * create SurfaceMesh from marked faces in order to identify
+  * vertices to split those whose edge have >1 neighbors)
+  * cross-match vertices in 3d Mesh and Surface mesh. */
 
+  // create surfacemesh and map vertices
+  SurfaceMesh<double> mesh_faces(1e-6);
+  // map 2d-element -> 3d face hash
+  std::unordered_map<std::size_t, std::size_t> map_face_surface_element;
+  // map surfacemesh vertex -> 3d mesh vertex
+  std::unordered_map<std::size_t, std::size_t> map_frac_vertex_vertex;
+  for (const std::size_t face_index: m_faces_marked_for_split)
+  {
+    const Face & f = face(face_index);
+    const std::size_t ielement = mesh_faces.insert(f.polygon());
+    map_face_surface_element.insert({ielement, face_index});
+    const auto frac_poly = mesh_faces.create_poly_iterator(ielement);
+    size_t iv = 0;
+    for (const Point & v : f.vertex_coordinates())
+    {
+      size_t ifv = 0;
+      for (const Point & frac_vertex : frac_poly.vertex_coordinates())
+      {
+        if (v == frac_vertex)
+        {
+          const size_t iv_global = f.vertices()[iv];
+          const size_t ifv_global = frac_poly.vertices()[ifv];
+          if (map_frac_vertex_vertex.find(ifv_global) == map_frac_vertex_vertex.end() )
+            map_frac_vertex_vertex.insert({ ifv_global, iv_global });
+          else
+            assert( map_frac_vertex_vertex.find(ifv_global)->second == iv_global );
+        }
+        ifv++;
+      }
+      iv++;
+    }
+  }
 
-// void Mesh::insert_face(const std::vector<std::size_t> & ivertices,
-//                        const int                        vtk_id,
-//                        const int                        marker)
-// {
-//   const auto hash = hash_value(ivertices);
-//   auto it = map_faces.find(hash);
-//   if (it == map_faces.end())
-//   {
-//     Face face_data;
-//     face_data.marker = marker;
-//     face_data.vtk_id = vtk_id;
-//     face_data.index = map_faces.size();
-//     face_data.old_index = face_data.index;
-//     face_data.ordered_indices = ivertices;
-//     map_faces.insert({hash, face_data});
-//   }
-//   else
-//   {
-//     it->second.marker = marker;
-//     it->second.vtk_id = vtk_id;
-//   }
-// }
+  // find vertices to split as those those edges have more than one neighbor
+  std::unordered_map<size_t, std::vector<size_t>> vertices_to_split;
+  for (auto edge = mesh_faces.begin_edges(); edge !=mesh_faces.end_edges(); ++edge)
+  {
+    const vector<size_t> & edge_neighbors = edge.neighbors();
+    std::vector<size_t> grid_face_indices;
+    grid_face_indices.reserve(edge_neighbors.size());
+    for (size_t ielement: edge_neighbors)
+      grid_face_indices.push_back(map_face_surface_element[ielement]);
 
+    if (edge_neighbors.size() > 1)  // internal edge vertex
+    {
+      const auto edge_vertices = edge.vertex_indices();
+      const size_t v1 = map_frac_vertex_vertex[edge_vertices.first];
+      const size_t v2 = map_frac_vertex_vertex[edge_vertices.second];
+      auto it1 = vertices_to_split.find(v1);
+      if (it1 == vertices_to_split.end())
+        vertices_to_split.insert({v1, edge_neighbors});
+      else
+        for (const size_t face : grid_face_indices)
+          if ( std::find(it1->second.begin(), it1->second.end(), face) ==
+               it1->second.end())
+            it1->second.push_back(face);
 
-// Point Mesh::get_center(const std::size_t icell) const
-// {
-//   return get_element_center(vertices, cells[icell]);
-// }
+      auto it2 = vertices_to_split.find(v2);
+      if (it2 == vertices_to_split.end())
+        vertices_to_split.insert({v2, edge_neighbors});
+      else
+        for (const size_t face : grid_face_indices)
+          if ( std::find(it2->second.begin(), it2->second.end(), face) ==
+               it2->second.end())
+            it2->second.push_back(face);
+    }
+  }
 
-
-// std::unique_ptr<Polyhedron> Mesh::get_polyhedron(const std::size_t icell) const
-// {
-//   return angem::PolyhedronFactory::create<double>(vertices.points,
-//                                                   cells[icell],
-//                                                   shape_ids[icell]);
-// }
-
-
-// void Mesh::split_vertex(const std::size_t                              ivertex,
-//                         const std::vector<face_iterator>             & vertex_faces,
-//                         std::unordered_map<std::size_t, std::size_t> & map_old_new_cells,
-//                         std::vector<std::vector<std::size_t>>        & new_cells)
-// {
-//   // find affected elements
-//   std::unordered_set<std::size_t> affected_cells;
-//   for (auto & face : vertex_faces)
-//     for (const std::size_t icell : face.neighbors())
-//     {
-//       affected_cells.insert(icell);
-//       // include elements that don't neighbor split faces (only by vertex)
-//       for (const std::size_t jcell : get_neighbors(icell))
-//       {
-//         auto cell_j = create_cell_iterator(jcell);
-//         if (cell_j.has_vertex(ivertex))
-//           affected_cells.insert(cell_j.index());
-//       }
-//     }
-
-//   std::vector<std::vector<std::size_t>> groups = group_cells_based_on_split_faces(affected_cells, vertex_faces);
-
-//   const int n_groups = groups.size();
-
-//   // create new vertices
-//   std::vector<std::size_t> new_ivertices(n_groups);
-//   const angem::Point<3,double> vertex = vertices[ivertex];
-//   for (int i=0; i < n_groups; ++i)
-//   {
-//     if (i == 0)  // group 0 retains old vertex
-//       new_ivertices[i] = ivertex;
-//     else
-//     {
-//       const std::size_t new_ivertex = vertices.size();
-//       new_ivertices[i] = new_ivertex;
-//       vertices.points.push_back(vertex);
-//     }
-//   }
-
-//   // modify new cell vertices
-//   for (int igroup = 0; igroup < groups.size(); ++igroup)
-//   {
-//     const auto & group = groups[igroup];
-//     for (const std::size_t icell : group)
-//     {
-//       // modify cell vertices
-//       std::vector<std::size_t> * p_new_cell;
-//       auto it = map_old_new_cells.find(icell);
-//       if (it != map_old_new_cells.end())  // cell modified before
-//         p_new_cell = &(new_cells[it->second]);
-//       else
-//       {
-//         map_old_new_cells.insert({icell, new_cells.size()});
-//         new_cells.push_back(cells[icell]);
-//         p_new_cell = &(new_cells.back());
-//       }
-
-//       auto & new_cell = *p_new_cell;
-//       for (std::size_t & jvertex : new_cell)
-//         if (jvertex == ivertex)
-//           jvertex = new_ivertices[igroup];
-//     }
-//   }
-// }
-
-
-// void Mesh::mark_for_split(const face_iterator & face)
-// {
-//   marked_for_split.push_back(face.hash());
-// }
-
-
-// SurfaceMesh<double> Mesh::split_faces()
-// {
-//   std::cout << "n_nodes() = " << n_vertices() << std::endl;
-//   std::cout << "n_faces = " << n_faces() << std::endl;
-//   /* Algorithm:
-//   * 1. create SurfaceMesh from marked faces
-//   * 2. find internal vertices (those whose edge have >1 neighbors)
-//   * 3. split each internal vertex
-//   * 4. modify neighbors map */
-//   SurfaceMesh<double> mesh_faces(1e-6);
-//   // map 2d-element : 3d face hash
-//   std::unordered_map<std::size_t, hash_type> map_2d_3d;
-//   for (const auto & hash : marked_for_split)
-//   {
-//     face_iterator face = create_face_iterator(map_faces.find(hash));
-//     Polygon poly(face.vertices());
-//     const std::size_t ielement = mesh_faces.insert(poly);
-//     map_2d_3d.insert({ielement, hash});
-//   }
-
-//   unordered_map<size_t, vector<face_iterator>> vertices_to_split;
-//   for (auto edge = mesh_faces.begin_edges(); edge !=mesh_faces.end_edges(); ++edge)
-//   {
-//     const vector<size_t> & edge_neighbors = edge.neighbors();
-//     if (edge_neighbors.size() > 1)  // internal edge vertex
-//     {
-//       const auto edge_vertices = edge.vertex_indices();
-//       const size_t v1 = vertices.find(mesh_faces.get_vertices()[edge_vertices.first]);
-//       const size_t v2 = vertices.find(mesh_faces.get_vertices()[edge_vertices.second]);
-//       add_vertex_to_split(v1, edge_neighbors, map_2d_3d, vertices_to_split);
-//       add_vertex_to_split(v2, edge_neighbors, map_2d_3d, vertices_to_split);
-//     }
-//   }
-
-//   std::unordered_map<std::size_t, std::size_t> map_old_new_cells;
-//   std::vector<std::vector<std::size_t>> new_cells;
-//   // std::unordered_map<hash_type, Face> map_new_faces;
-//   for (auto & it : vertices_to_split)
-//   {
-//     std::cout << "splitting vertex = " << it.first << std::endl;
-//     // std::cout << "it.second.size() = " << it.second.size() << std::endl;
-//     split_vertex(it.first, it.second, map_old_new_cells, new_cells);
-//   }
-
-//   // MODIFY FACE MAP
-//   std::unordered_set<std::size_t> old_ind_touched;
-//   std::unordered_set<hash_type> faces_to_delete;
-//   // store it since new faces are added first and then old faces are deleted
-//   // which may cause wrong indexing
-//   std::size_t num_faces = map_faces.size();
-//   for (const auto it_cell : map_old_new_cells)
-//   {
-//     const std::size_t icell = it_cell.first;
-//     const std::size_t new_icell = it_cell.second;  // index in new array
-//     std::cout << "icell = " << icell << std::endl;
-
-//     const std::vector<std::vector<std::size_t>> old_poly_faces =
-//         angem::PolyhedronFactory::get_global_faces<double>(cells[icell], shape_ids[icell]);
-//     const std::vector<std::vector<std::size_t>> new_poly_faces =
-//         angem::PolyhedronFactory::get_global_faces<double>(new_cells[new_icell], shape_ids[icell]);
-
-//     assert(old_poly_faces.size() == new_poly_faces.size());
-
-//     for (std::size_t i=0; i<old_poly_faces.size(); ++i)
-//     {
-//       const hash_type old_hash = hash_value(old_poly_faces[i]);
-//       const hash_type new_hash = hash_value(new_poly_faces[i]);
-
-//       if (new_hash != old_hash) // face changed
-//       {
-//         auto it_face = map_faces.find(new_hash);
-//         auto it_face_old = map_faces.find(old_hash);
-//         std::cout << "hash changed " << it_face_old->second.index << std::endl;
-
-//         if (it_face == map_faces.end())
-//         {
-//           Face new_face;
-//           new_face.neighbors.push_back(icell);
-//           new_face.marker = it_face_old->second.marker;
-//           new_face.ordered_indices = new_poly_faces[i];
-
-//           if (old_ind_touched.insert(it_face_old->second.index).second) // if not touched
-//           {
-//             std::cout << "not touched " << it_face_old->second.index << std::endl;
-//             new_face.index = it_face_old->second.index;
-//           }
-//           else
-//           {
-//             std::cout << "touched " << num_faces << std::endl;
-//             new_face.index = ++num_faces;
-//           }
-
-//           new_face.old_index = it_face_old->second.old_index;
-//           new_face.vtk_id = it_face_old->second.vtk_id;
-//           map_faces.insert({new_hash, new_face});
-//         }
-//         else
-//           it_face->second.neighbors.push_back(icell);
-
-//         // mark old faces for delete
-//         faces_to_delete.insert(old_hash);
-//       }  // end if face changed
-//       else std::cout << "not changed " << std::endl;
-//     }    // end face loop
-
-//     // replace old cell with new cell
-//     cells[icell] = new_cells[new_icell];
-//   }
-
-//   // remove marked old faces from map
-//   for (auto & hash : faces_to_delete)
-//   {
-//     auto face_it = map_faces.find(hash);
-//     if (face_it != map_faces.end())
-//     {
-//       map_faces.erase(face_it);
-//       std::cout << "deleting face" << std::endl;
-//     }
-//   }
-
-//   std::cout << "n_nodes() = " << n_vertices() << std::endl;
-//   std::cout << "n_faces = " << n_faces() << std::endl;
-
-//   // clear marked elements vector
-//   marked_for_split.clear();
-//   return mesh_faces;
-// }
+  // split 'em
+  for (const auto & it : vertices_to_split)
+  {
+    const size_t vertex = it.first;
+    const auto & faces = it.second;
+    std::cout << "splitting vertex = " << vertex << std::endl;
+    for (const size_t face : faces)
+      split_vertex(vertex, face);
+  }
+  exit(0);
+  return mesh_faces;
+}
 
 
 // std::vector<std::vector<std::size_t>>
@@ -537,8 +361,8 @@ void Mesh::insert_face(const std::vector<std::size_t> & ivertices,
 
 // void Mesh::add_vertex_to_split(const std::size_t                                        vertex,
 //                                const std::vector<std::size_t>                         & edge_neighbors,
-//                                const std::unordered_map<std::size_t, hash_type>       & map_2d_3d,
-//                                std::unordered_map<size_t, std::vector<face_iterator>> & vertices_to_split)
+//                                const std::unordered_map<std::size_t, size_t>       & map_2d_3d,
+//                                std::unordered_set<size_t> & vertices_to_split)
 // {
 //   auto & faces = vertices_to_split[vertex];
 //   for (const auto & neighbor : edge_neighbors)

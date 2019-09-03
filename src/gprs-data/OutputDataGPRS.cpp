@@ -63,177 +63,177 @@ void OutputDataGPRS::write_output(const std::string & output_path)
 
 void OutputDataGPRS::saveGeometry(const std::string & output_path)
 {
-  // vtk output
-  // const std::string vtk_file = output_path + "reservoir_mesh.vtk";
-  // std::cout << "Saving reservoir mesh file: " << vtk_file << std::endl;
-  // IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
-  //                          grid.shape_ids, vtk_file);
+  // // vtk output
+  // // const std::string vtk_file = output_path + "reservoir_mesh.vtk";
+  // // std::cout << "Saving reservoir mesh file: " << vtk_file << std::endl;
+  // // IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
+  // //                          grid.shape_ids, vtk_file);
 
-  // if (data.dfm_faces.size() > 0)
-  // { // DFM frac geometry
-    // const std::string vtk_dfm_file = output_path + "dfm.vtk";
-    // IO::VTKWriter::write_geometry(data.dfm_master_grid.get_vertices(),
-    //                               data.dfm_master_grid.get_polygons(),
-    //                               vtk_dfm_file);
+  // // if (data.dfm_faces.size() > 0)
+  // // { // DFM frac geometry
+  //   // const std::string vtk_dfm_file = output_path + "dfm.vtk";
+  //   // IO::VTKWriter::write_geometry(data.dfm_master_grid.get_vertices(),
+  //   //                               data.dfm_master_grid.get_polygons(),
+  //   //                               vtk_dfm_file);
 
+  // // }
+
+  // // gprs output
+  // std::string outstring;
+  // std::ofstream geomechfile;
+
+  // // GEOMETRY
+  // outstring = output_path + data.config.mechanics_domain_file;
+  // std::cout << "writing file " << outstring << std::endl;
+
+  // geomechfile.open(outstring.c_str());
+  // geomechfile << "GMDIMS" << endl;
+
+  // geomechfile << grid.n_vertices() << "\t"
+  //             << grid.n_cells() << "\t"
+  //             << grid.n_faces();
+  // geomechfile << "/" << endl << endl;
+
+  // geomechfile.precision(6);
+  // cout << "write all coordinates\n";
+  // geomechfile << "GMNODE_COORDS" << endl;
+  // for (const auto & vertex : grid.get_vertices())
+  //     geomechfile << vertex[0] << "\t"
+  //                 << vertex[1] << "\t"
+  //                 << vertex[2] << "\n";
+  // geomechfile << "/" << std::endl << std::endl;
+
+  // cout << "write all elements\n";
+  // geomechfile << "GMCELL_NODES" << endl;
+  // for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
+  // {
+  //   const auto & vertices = cell.vertex_indices();
+  //   geomechfile << vertices.size() << "\t";
+
+  //   switch (cell.vtk_id())
+  //   {
+  //     case 25: // super wierd element 25
+  //       {
+  //         for (int j = 0; j < 8; j++)
+  //           geomechfile << vertices[j] + 1 << "\t";
+  //         geomechfile << vertices[8] + 1 << "\t";
+  //         geomechfile << vertices[11] + 1 << "\t";
+  //         geomechfile << vertices[13] + 1 << "\t";
+  //         geomechfile << vertices[9] + 1 << "\t";
+
+  //         geomechfile << vertices[16] + 1 << "\t";
+  //         geomechfile << vertices[18] + 1 << "\t";
+  //         geomechfile << vertices[19] + 1 << "\t";
+  //         geomechfile << vertices[17] + 1 << "\t";
+
+  //         geomechfile << vertices[10] + 1 << "\t";
+  //         geomechfile << vertices[12] + 1 << "\t";
+  //         geomechfile << vertices[14] + 1 << "\t";
+  //         geomechfile << vertices[15] + 1 << "\t";
+  //         break;
+  //       }
+  //     case 26:
+  //       {
+  //         for (int j = 0; j < 6; j++)
+  //           geomechfile << vertices[j] + 1 << "\t";
+
+  //         geomechfile << vertices[6] + 1 << "\t";
+  //         geomechfile << vertices[9] + 1 << "\t";
+  //         geomechfile << vertices[7] + 1 << "\t";
+
+  //         geomechfile << vertices[12] + 1 << "\t";
+  //         geomechfile << vertices[14] + 1 << "\t";
+  //         geomechfile << vertices[13] + 1 << "\t";
+
+  //         geomechfile << vertices[8] + 1 << "\t";
+  //         geomechfile << vertices[10] + 1 << "\t";
+  //         geomechfile << vertices[11] + 1 << "\t";
+  //         break;
+  //       }
+  //     default:
+  //       {
+  //         for (const auto vertex : vertices)
+  //           geomechfile << vertex + 1 << "\t";
+  //         break;
+  //       }
+  //   }
+
+  //   geomechfile << std::endl;
   // }
 
-  // gprs output
-  std::string outstring;
-  std::ofstream geomechfile;
+  // geomechfile << "/" << endl << endl;
 
-  // GEOMETRY
-  outstring = output_path + data.config.mechanics_domain_file;
-  std::cout << "writing file " << outstring << std::endl;
+  // geomechfile << "GMCELL_TYPE" << endl;
+  // for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
+  //   geomechfile <<  cell.vtk_id() << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile.open(outstring.c_str());
-  geomechfile << "GMDIMS" << endl;
+  // geomechfile << "GMCELL_TO_FLOWCELLS" << endl;
+  // for (const auto & flow_cells : data.gm_cell_to_flow_cell)
+  // {
+  //   const std::size_t n_connected_elements = flow_cells.size();
+  //   if (n_connected_elements == 0)
+  //     geomechfile << 1 << "\t" << -1 << std::endl;
+  //   else
+  //   {
+  //     geomechfile << n_connected_elements << "\t";
+  //     for (const std::size_t ielement : flow_cells)
+  //       geomechfile << ielement + 1 << "\t";
+  //     geomechfile << std::endl;
+  //   }
+  // }
+  // geomechfile << "/\n\n";
 
-  geomechfile << grid.n_vertices() << "\t"
-              << grid.n_cells() << "\t"
-              << grid.n_faces();
-  geomechfile << "/" << endl << endl;
+  // std::cout << "write all faces\n";
+  // geomechfile << "GMFACE_NODES\n";
+  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  // {
+  //   const std::vector<std::size_t> ivertices = face.vertex_indices();
+  //   geomechfile << ivertices.size() << "\t";
+  //   for (const std::size_t ivertex : ivertices)
+  //     geomechfile << ivertex + 1 << "\t";
+  //   geomechfile << std::endl;
+  // }
 
-  geomechfile.precision(6);
-  cout << "write all coordinates\n";
-  geomechfile << "GMNODE_COORDS" << endl;
-  for (const auto & vertex : grid.get_vertices())
-      geomechfile << vertex[0] << "\t"
-                  << vertex[1] << "\t"
-                  << vertex[2] << "\n";
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  cout << "write all elements\n";
-  geomechfile << "GMCELL_NODES" << endl;
-  for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
-  {
-    const auto & vertices = cell.vertex_indices();
-    geomechfile << vertices.size() << "\t";
+  // geomechfile << "GMFACE_TYPE" << std::endl;
+  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  //   geomechfile << face.vtk_id() << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-    switch (cell.vtk_id())
-    {
-      case 25: // super wierd element 25
-        {
-          for (int j = 0; j < 8; j++)
-            geomechfile << vertices[j] + 1 << "\t";
-          geomechfile << vertices[8] + 1 << "\t";
-          geomechfile << vertices[11] + 1 << "\t";
-          geomechfile << vertices[13] + 1 << "\t";
-          geomechfile << vertices[9] + 1 << "\t";
+  // std::cout << "writing face-cell connection" << std::endl;
+  // geomechfile << "GMFACE_GMCELLS" << std::endl;
+  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  // {
+  //   if (data.is_fracture(face.marker()))  // timur want to retain neighbors of master frac face
+  //   {
+  //     if (face.index() == face.master_index())
+  //     {
+  //       const auto it_frac_face = data.dfm_faces.find(face.master_index());
+  //       if (it_frac_face == data.dfm_faces.end())
+  //       {
+  //         std::cout << "bug in dfm connections" << std::endl;
+  //         exit(0);
+  //       }
+  //       const auto & neighbors = it_frac_face->second.neighbor_cells;
 
-          geomechfile << vertices[16] + 1 << "\t";
-          geomechfile << vertices[18] + 1 << "\t";
-          geomechfile << vertices[19] + 1 << "\t";
-          geomechfile << vertices[17] + 1 << "\t";
-
-          geomechfile << vertices[10] + 1 << "\t";
-          geomechfile << vertices[12] + 1 << "\t";
-          geomechfile << vertices[14] + 1 << "\t";
-          geomechfile << vertices[15] + 1 << "\t";
-          break;
-        }
-      case 26:
-        {
-          for (int j = 0; j < 6; j++)
-            geomechfile << vertices[j] + 1 << "\t";
-
-          geomechfile << vertices[6] + 1 << "\t";
-          geomechfile << vertices[9] + 1 << "\t";
-          geomechfile << vertices[7] + 1 << "\t";
-
-          geomechfile << vertices[12] + 1 << "\t";
-          geomechfile << vertices[14] + 1 << "\t";
-          geomechfile << vertices[13] + 1 << "\t";
-
-          geomechfile << vertices[8] + 1 << "\t";
-          geomechfile << vertices[10] + 1 << "\t";
-          geomechfile << vertices[11] + 1 << "\t";
-          break;
-        }
-      default:
-        {
-          for (const auto vertex : vertices)
-            geomechfile << vertex + 1 << "\t";
-          break;
-        }
-    }
-
-    geomechfile << std::endl;
-  }
-
-  geomechfile << "/" << endl << endl;
-
-  geomechfile << "GMCELL_TYPE" << endl;
-  for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
-    geomechfile <<  cell.vtk_id() << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
-
-  geomechfile << "GMCELL_TO_FLOWCELLS" << endl;
-  for (const auto & flow_cells : data.gm_cell_to_flow_cell)
-  {
-    const std::size_t n_connected_elements = flow_cells.size();
-    if (n_connected_elements == 0)
-      geomechfile << 1 << "\t" << -1 << std::endl;
-    else
-    {
-      geomechfile << n_connected_elements << "\t";
-      for (const std::size_t ielement : flow_cells)
-        geomechfile << ielement + 1 << "\t";
-      geomechfile << std::endl;
-    }
-  }
-  geomechfile << "/\n\n";
-
-  std::cout << "write all faces\n";
-  geomechfile << "GMFACE_NODES\n";
-  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  {
-    const std::vector<std::size_t> ivertices = face.vertex_indices();
-    geomechfile << ivertices.size() << "\t";
-    for (const std::size_t ivertex : ivertices)
-      geomechfile << ivertex + 1 << "\t";
-    geomechfile << std::endl;
-  }
-
-  geomechfile << "/" << std::endl << std::endl;
-
-  geomechfile << "GMFACE_TYPE" << std::endl;
-  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-    geomechfile << face.vtk_id() << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
-
-  std::cout << "writing face-cell connection" << std::endl;
-  geomechfile << "GMFACE_GMCELLS" << std::endl;
-  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  {
-    if (data.is_fracture(face.marker()))  // timur want to retain neighbors of master frac face
-    {
-      if (face.index() == face.master_index())
-      {
-        const auto it_frac_face = data.dfm_faces.find(face.master_index());
-        if (it_frac_face == data.dfm_faces.end())
-        {
-          std::cout << "bug in dfm connections" << std::endl;
-          exit(0);
-        }
-        const auto & neighbors = it_frac_face->second.neighbor_cells;
-
-        geomechfile << neighbors.size() << "\t";
-        for (const auto & neighbor : neighbors)
-          geomechfile << neighbor + 1 << "\t";
-        geomechfile << std::endl;
-      }
-    }
-    else
-    {
-      const auto & neighbors = face.neighbors();
-      geomechfile << neighbors.size() << "\t";
-      for (const auto & neighbor : neighbors)
-        geomechfile << neighbor + 1 << "\t";
-      geomechfile << std::endl;
-    }
-  }
-  geomechfile << "/" << std::endl << std::endl;
+  //       geomechfile << neighbors.size() << "\t";
+  //       for (const auto & neighbor : neighbors)
+  //         geomechfile << neighbor + 1 << "\t";
+  //       geomechfile << std::endl;
+  //     }
+  //   }
+  //   else
+  //   {
+  //     const auto & neighbors = face.neighbors();
+  //     geomechfile << neighbors.size() << "\t";
+  //     for (const auto & neighbor : neighbors)
+  //       geomechfile << neighbor + 1 << "\t";
+  //     geomechfile << std::endl;
+  //   }
+  // }
+  // geomechfile << "/" << std::endl << std::endl;
 
 }
 
@@ -253,7 +253,7 @@ void OutputDataGPRS::saveGeomechDataNewKeywords(const std::string file_name)
       geomechfile << data.rockPropNames[ivar] << std::endl;
       for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
       {
-        const std::size_t icell = cell.index();
+        const std::size_t icell = cell->index();
         geomechfile << data.vsCellRockProps[icell].v_props[ivar] << "\t";
         if ((icell + 1) % n_entries_per_line == 0)
           geomechfile << std::endl;
@@ -373,15 +373,15 @@ void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
 
   if ( data.n_dirichlet_faces > 0 )
   for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-      if (data.is_boundary(face.marker()))
+      if (data.is_boundary(face->marker()))
       {
-        const auto facet_it = data.boundary_faces.find(face.master_index());
+        const auto facet_it = data.boundary_faces.find(face->master_index());
         if (facet_it != data.boundary_faces.end())
         {
           if (facet_it->second.ntype == 1) // dirichlet
             for (std::size_t d=0; d<dim; ++d)
               if (facet_it->second.condition[d] != data.config.nan)
-                for (const auto ivertex : face.vertex_indices())
+                for (const auto ivertex : face->vertices())
                 {
                   const auto ret = setDisp[d].insert(ivertex);
                   // check if already in set
@@ -394,7 +394,7 @@ void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
         }
         else  // should not happen
         {
-          std::cout << "face " << face.index()
+          std::cout << "face " << face->index()
                     << " is not a boundary face!! Aborting!!!"
                     << std::endl;
           abort();

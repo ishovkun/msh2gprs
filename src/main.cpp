@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
   std::cout << "Setup wells" << std::endl;
   preprocessor.setupWells();
 
-  if (preprocessor.dfm_faces.size() > 0)
+  if (!preprocessor.dfm_faces.empty())
   {
     cout << "Split FEM mesh on internal surfaces" << endl;
     preprocessor.splitInternalFaces();
