@@ -1181,20 +1181,20 @@ void SimData::handleConnections()
   }
 
   // update dfm face indices in map
-  std::unordered_set<std::size_t> face_touched;
-  std::size_t counter = 0;
-  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++ face)
-    if (is_fracture(face.marker()))
-    {
-      counter++;
-      auto flow_face_it = dfm_faces.find(face.master_index());
-      auto & facet = flow_face_it->second;
-      if (face_touched.insert(face.master_index()).second)
-      {
-        facet.ifracture = find(face.marker(), fracture_face_markers);
-        facet.nface = face.index();
-      }
-    }
+  // std::unordered_set<std::size_t> face_touched;
+  // std::size_t counter = 0;
+  // for (auto face = grid.begin_faces(); face != grid.end_faces(); ++ face)
+  //   if (is_fracture(face.marker()))
+  //   {
+  //     counter++;
+  //     auto flow_face_it = dfm_faces.find(face.master_index());
+  //     auto & facet = flow_face_it->second;
+  //     if (face_touched.insert(face.master_index()).second)
+  //     {
+  //       facet.ifracture = find(face.marker(), fracture_face_markers);
+  //       facet.nface = face.index();
+  //     }
+  //   }
 
   // std::cout << "n new dfm face = " << counter << std::endl;
 }
@@ -1211,7 +1211,7 @@ void SimData::definePhysicalFacets()
   {
     const bool is_boundary = (face.neighbors().size() < 2);
     const int marker = face.marker();
-    for (const auto & conf : config.bc_faces)
+    for (const auto & conf : config.bc_faces)  // external domain boundaries
       if (marker == conf.label)
       {
         PhysicalFace facet;
@@ -1230,11 +1230,13 @@ void SimData::definePhysicalFacets()
         break;
       }
 
-    if (!is_boundary and marker != 0)
+    if (!is_boundary)
+      for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
+        if( marker == config.discrete_fractures[ifrac].label)  // dirscrete fractures
     {
       PhysicalFace facet;
       facet.nface = face.index();
-      facet.ntype = 0;
+      facet.ntype = 0;  // doesn't really matter
       facet.nmark = marker;
       facet.neighbor_cells = face.neighbors();
       fracture_face_markers.insert(marker);
@@ -1256,23 +1258,25 @@ void SimData::definePhysicalFacets()
         facet.coupled = false;
       }
 
-      bool found_label = false;
-      for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
-        if( marker == config.discrete_fractures[ifrac].label)
-        {
-          facet.aperture = config.discrete_fractures[ifrac].aperture; //m
-          facet.conductivity = config.discrete_fractures[ifrac].conductivity; //mD.m
-          found_label = true;
-        }
-      if (!found_label)
-      {
-        std::cout << "No properties for DFM label "
-                  << marker
-                  << " found! Setting sealed fault."
-                  << std::endl;
-        facet.aperture = 1; //m
-        facet.conductivity = 0; //mD.m
-      }
+      facet.aperture = config.discrete_fractures[ifrac].aperture; //m
+      facet.conductivity = config.discrete_fractures[ifrac].conductivity; //mD.m
+      // bool found_label = false;
+      // for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
+      //   if( marker == config.discrete_fractures[ifrac].label)
+      //   {
+          // facet.aperture = config.discrete_fractures[ifrac].aperture; //m
+          // facet.conductivity = config.discrete_fractures[ifrac].conductivity; //mD.m
+          // found_label = true;
+        // }
+      // if (!found_label)
+      // {
+      //   std::cout << "No properties for DFM label "
+      //             << marker
+      //             << " found! Setting sealed fault."
+      //             << std::endl;
+      //   facet.aperture = 1; //m
+      //   facet.conductivity = 0; //mD.m
+      // }
 
       dfm_faces.insert({face.index(), facet});
 

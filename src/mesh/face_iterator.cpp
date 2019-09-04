@@ -21,13 +21,13 @@ face_iterator(const face_iterator & other)
 {}
 
 
-face_iterator &
-face_iterator::operator=(const face_iterator & other)
-{
-  face_it = other.face_it;
-  p_mesh_vertices = other.p_mesh_vertices;
-  return (*this);
-}
+// face_iterator &
+// face_iterator::operator=(const face_iterator & other)
+// {
+//   face_it = other.face_it;
+//   p_mesh_vertices = other.p_mesh_vertices;
+//   return (*this);
+// }
 
 
 bool face_iterator::operator==(const face_iterator & other) const

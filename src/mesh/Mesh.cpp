@@ -236,11 +236,9 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
   // modify new cell vertices
   for (int igroup = 0; igroup < groups.size(); ++igroup)
   {
-    std::cout << "\tigroup = " << igroup << std::endl;
     const auto & group = groups[igroup];
     for (const std::size_t icell : group)
     {
-      std::cout << "\t\ticell = " << icell << std::endl;
       // modify cell vertices
       std::vector<std::size_t> * p_new_cell;
       auto it = map_old_new_cells.find(icell);
@@ -255,15 +253,10 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
 
       auto & new_cell = *p_new_cell;
       for (std::size_t & jvertex : new_cell)
-        std::cout << jvertex << " ";
-      std::cout << std::endl;
-      for (std::size_t & jvertex : new_cell)
       {
         if (jvertex == ivertex)
           jvertex = new_ivertices[igroup];
-        std::cout << jvertex << " ";
       }
-      std::cout << std::endl;
     }
   }
 }
@@ -341,12 +334,31 @@ SurfaceMesh<double> Mesh::split_faces()
     {
       const hash_type old_hash = hash_value(old_poly_faces[i]);
       const hash_type new_hash = hash_value(new_poly_faces[i]);
+      if (new_hash == old_hash) // face not changed
+        faces_to_not_delete.insert(old_hash);
+    }
+  }
+  for (const auto it_cell : map_old_new_cells)
+  {
+    const std::size_t icell = it_cell.first;
+    const std::size_t new_icell = it_cell.second;  // index in new array
+
+    const std::vector<std::vector<std::size_t>> old_poly_faces =
+        angem::PolyhedronFactory::get_global_faces<double>(cells[icell], shape_ids[icell]);
+    const std::vector<std::vector<std::size_t>> new_poly_faces =
+        angem::PolyhedronFactory::get_global_faces<double>(new_cells[new_icell], shape_ids[icell]);
+
+    assert(old_poly_faces.size() == new_poly_faces.size());
+
+    for (std::size_t i=0; i<old_poly_faces.size(); ++i)
+    {
+      const hash_type old_hash = hash_value(old_poly_faces[i]);
+      const hash_type new_hash = hash_value(new_poly_faces[i]);
 
       if (new_hash != old_hash) // face changed
       {
         auto it_face = map_faces.find(new_hash);
         auto it_face_old = map_faces.find(old_hash);
-        // std::cout << "hash changed " << it_face_old->second.index << std::endl;
 
         if (it_face == map_faces.end())
         {
@@ -355,16 +367,23 @@ SurfaceMesh<double> Mesh::split_faces()
           new_face.marker = it_face_old->second.marker;
           new_face.ordered_indices = new_poly_faces[i];
 
-          if (old_ind_touched.insert(it_face_old->second.index).second) // if not touched
+          new_face.index = it_face_old->second.index;
+          if (old_ind_touched.insert(it_face_old->second.index).second) // if not inserted yet
           {
-            // std::cout << "not touched " << it_face_old->second.index << std::endl;
             new_face.index = it_face_old->second.index;
+            if (faces_to_not_delete.find( old_hash ) != faces_to_not_delete.end())
+              new_face.index = num_faces++;
+              // std::cout << "ALERT motherfucker"  << std::endl;
+            // new_face.index = std::numeric_limits<size_t>::max();
           }
-          else
+          else // face already inserted
           {
-            // std::cout << "touched " << num_faces << std::endl;
-            new_face.index = ++num_faces;
+            new_face.index = num_faces++;
+            // new_face.index = std::numeric_limits<size_t>::max();
           }
+          std::cout << "new_face " << it_face_old->second.index << " "
+                    << new_face.index << " "
+                    << new_face.marker << std::endl;
 
           new_face.old_index = it_face_old->second.old_index;
           new_face.vtk_id = it_face_old->second.vtk_id;
@@ -376,10 +395,10 @@ SurfaceMesh<double> Mesh::split_faces()
         // mark old faces for delete
         faces_to_delete.insert(old_hash);
       }  // end if face changed
-      else
-      {
-        faces_to_not_delete.insert(old_hash);
-      }
+      // else
+      // {
+      //   faces_to_not_delete.insert(old_hash);
+      // }
       // else std::cout << "not changed " << std::endl;
     }    // end face loop
 
@@ -395,12 +414,26 @@ SurfaceMesh<double> Mesh::split_faces()
       if (face_it != map_faces.end())
       {
         map_faces.erase(face_it);
-        std::cout << "deleting face " << face_it->second.index << std::endl;
+        std::cout << "deleting face " << face_it->second.index  << " "<<face_it->second.marker<< std::endl;
       }
     }
+    else {
+      std::cout << "NOT deleting face "
+                << map_faces.find(hash)->second.index  << " "
+                << map_faces.find(hash)->second.marker << std::endl;
+    }
+  // for (auto & f : map_faces)
+  // {
+  //   if (f.second.marker == 1)
+  //     std::cout << f.second.index << " " << f.second.old_index << std::endl;
+  //   if (f.second.index >= 320)
+  //     std::cout << "weird " << f.second.index << " " << f.second.old_index
+  //         << std::endl;
+  // }
 
+  // exit(0);
   // clear marked elements vector
-  marked_for_split.clear();
+  marked_for_split.clear();      
   return mesh_faces;
 }
 

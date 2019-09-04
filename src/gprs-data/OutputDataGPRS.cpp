@@ -80,19 +80,18 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
   // }
 
   // gprs output
-  std::string outstring;
-  std::ofstream geomechfile;
 
   // GEOMETRY
-  outstring = output_path + data.config.mechanics_domain_file;
+  const std::string outstring = output_path + data.config.mechanics_domain_file;
   std::cout << "writing file " << outstring << std::endl;
 
+  std::ofstream geomechfile;
   geomechfile.open(outstring.c_str());
   geomechfile << "GMDIMS" << endl;
 
   geomechfile << grid.n_vertices() << "\t"
               << grid.n_cells() << "\t"
-              << grid.n_faces();
+              << grid.n_faces() - data.dfm_faces.size();  // not counting the split faces
   geomechfile << "/" << endl << endl;
 
   geomechfile.precision(6);
@@ -187,9 +186,12 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
 
   std::cout << "write all faces\n";
   geomechfile << "GMFACE_NODES\n";
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
   for (const auto & face : ordered_faces)
   {
+    if (data.is_fracture(face.marker()))  // skip non-master faces
+      if (face.index() != face.master_index())
+        continue;
+
     const std::vector<std::size_t> ivertices = face.vertex_indices();
     geomechfile << ivertices.size() << "\t";
     for (const std::size_t ivertex : ivertices)
@@ -201,7 +203,12 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
 
   geomechfile << "GMFACE_TYPE" << std::endl;
   for (const auto & face : ordered_faces)
+  {
+    if (data.is_fracture(face.marker()))  // skip non-master faces
+      if (face.index() != face.master_index())
+        continue;
     geomechfile << face.vtk_id() << std::endl;
+  }
   geomechfile << "/" << std::endl << std::endl;
 
   std::cout << "writing face-cell connection" << std::endl;
@@ -228,15 +235,16 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
     }
     else
     {
+      assert( face.index() == face.master_index() );
       const auto & neighbors = face.neighbors();
       geomechfile << neighbors.size() << "\t";
-      for (const auto & neighbor : neighbors)
+      for (const std::size_t neighbor : neighbors)
         geomechfile << neighbor + 1 << "\t";
       geomechfile << std::endl;
     }
   }
   geomechfile << "/" << std::endl << std::endl;
-
+  geomechfile.close();
 }
 
 
@@ -464,7 +472,6 @@ void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
   geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
   for (const auto & face_it : data.dfm_faces)
   {
-    // geomechfile << face_it.second.ifracture + 1 << "\t";
     geomechfile << face_it.second.nface + 1 << "\t";
     if (face_it.second.coupled)
       geomechfile << face_it.second.nfluid + 1 << std::endl;

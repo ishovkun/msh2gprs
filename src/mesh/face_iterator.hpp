@@ -30,7 +30,7 @@ class face_iterator
 
   // SETTERS
   // assignment operator
-  face_iterator & operator=(const face_iterator & other);
+  // face_iterator & operator=(const face_iterator & other);
 
   // GETTERS
   // get center of mass of a face
