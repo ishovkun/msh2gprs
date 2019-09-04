@@ -3,6 +3,7 @@
 #include "Cell.hpp"
 #include "angem/PolyhedronFactory.hpp"
 #include <unordered_set>
+#include <algorithm>  // std::max
 
 namespace mesh
 {
@@ -124,31 +125,44 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
 }
 
 
-void Mesh::split_vertex(const std::size_t vertex_index,
-                        const std::size_t master_face_index)
+void Mesh::split_vertex(const std::size_t               vertex_index,
+                        const std::vector<std::size_t> &splitted_face_indices)
 {
-  std::vector<std::size_t> affected_face_indices;
-  for (const size_t iface : m_vertex_faces[vertex_index])
+  // this code is for when splitted face indices contains all different faces
+  // I'm not really doing anything with the vertices,
+  // cause adgprs doesn't need that
+  std::vector<std::vector<std::size_t>> groups =
+      group_cells_based_on_split_faces(m_vertex_cells[vertex_index],
+                                       splitted_face_indices);
+  // create new vertices
+  std::vector<std::size_t> new_vertex_indices(groups.size());
+  const angem::Point<3,double> vertex_coord = m_vertices[vertex_index];
+  for (std::size_t group = 0; group < groups.size(); group++)
   {
-    const Face & f = m_faces[iface];
-    if (f.master_index() == master_face_index)
-      if (f.has_vertex(vertex_index))
-        affected_face_indices.push_back(f.index());
+    if (group == 0)  // group 0 retains old vertex
+      new_vertex_indices[group] = vertex_index;
+    else  // add new vertices
+    {
+      const std::size_t new_vertex_index = m_vertices.size();
+      new_vertex_indices[group] = new_vertex_index;
+      m_vertices.push_back(vertex_coord);
+    }
   }
-  
-  // for (auto id : affected_face_indices)
-  //   std::cout << id << std::endl;
-  // exit(0);
-  std::vector<std::size_t> affected_cell_indices;
-  affected_cell_indices.reserve(2);
-  for (const size_t iface : affected_face_indices)
+
+  // modify cell vertices: replace vertex indices with the new vertices
+  for (std::size_t group = 0; group < groups.size(); group++)
   {
-    const Face & f = m_faces[iface];
-    for (const Cell * cell : f.neighbors())
-      if (std::find( affected_cell_indices.begin(), affected_cell_indices.end(),
-                     cell->index() == affected_cell_indices.end()) )
-        affected_cell_indices.push_back(cell->index());
-      }
+    const std::vector<size_t> & cell_group = groups[group];
+    for (const std::size_t cell_index : cell_group)
+    {
+      std::vector<size_t> & cell_vertices = m_cells[cell_index].vertices();
+      for (size_t & cell_vertex_index : cell_vertices)
+        if (cell_vertex_index == vertex_index)
+          cell_vertex_index = new_vertex_indices[group];
+    }
+  }
+
+
 }
 
 
@@ -243,97 +257,92 @@ SurfaceMesh<double> Mesh::split_faces()
     const size_t vertex = it.first;
     const auto & faces = it.second;
     std::cout << "splitting vertex = " << vertex << std::endl;
-    for (const size_t face : faces)
-      split_vertex(vertex, face);
+    split_vertex(vertex, faces);
   }
-  exit(0);
+
   return mesh_faces;
 }
 
 
-// std::vector<std::vector<std::size_t>>
-// Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & affected_cells,
-//                                        const std::vector<face_iterator>      & vertex_faces) const
-// {
-//   // group affected elements
-//   // two elements are in the same group if they are neighbors and
-//   // the neighboring face is not in vertex_faces array
-//   const int n_groups = vertex_faces.size();
-//   std::unordered_map<std::size_t, int> map_cell_group;
-//   int igroup = 0;
-//   int new_group = 0;
-//   // just is purely for faster checking: cells that are already processed
-//   std::unordered_set<std::size_t> processed_cells;
-//   for (const std::size_t icell : affected_cells)
-//   {
-//     auto group_it = map_cell_group.find(icell);
-//     if (group_it != map_cell_group.end())
-//     {
-//       igroup = group_it->second;
-//     }
-//     else
-//     {
-//       igroup = new_group;
-//       map_cell_group.insert({icell, igroup});
-//       new_group++;
-//     }
+std::vector<std::vector<std::size_t>>
+Mesh::
+group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
+                                 const std::vector<size_t> & split_faces) const
+{
+  // group affected elements
+  // two elements are in the same group if they are neighbors and
+  // the neighboring face is not in vertex_faces array
+  const size_t n_groups = std::max(split_faces.size(), size_t(2));
+  std::unordered_map<std::size_t, size_t> map_cell_group;
+  int igroup = 0;
+  int new_group = 0;
+  std::unordered_set<std::size_t> processed_cells;
+  for (const std::size_t icell : affected_cells)
+  {
+    auto group_it = map_cell_group.find(icell);
+    if (group_it != map_cell_group.end())
+      igroup = group_it->second;
+    else
+    {
+      igroup = new_group;
+      map_cell_group.insert({icell, igroup});
+      new_group++;
+    }
 
-//     processed_cells.insert(icell);
+    processed_cells.insert(icell);
 
-//     for (const std::size_t jcell : get_neighbors(icell))
-//       if (affected_cells.find(jcell) != affected_cells.end())
-//       {
-//         auto pair_cells = std::minmax(icell, jcell);
-//         std::vector<std::size_t> ordered_neighbors =
-//             {pair_cells.first, pair_cells.second};
+    // find neighboring cell from affected cells group
+    for (const Cell* jcell : m_cells[icell].neighbors())
+      if (std::find(affected_cells.begin(), affected_cells.end(),
+                    jcell->index()) != affected_cells.end())
+      {
+        // what face neighbors should be
+        auto pair_cells = std::minmax(icell, jcell->index());
 
-//         // find out if i and j neighbor by a marked face
-//         bool neighbor_by_marked_face = false;
-//         for (const auto & face : vertex_faces)
-//         {
-//           const auto it = map_faces.find(face.hash());
+        // find out if i and j neighbor by a marked face
+        bool neighbor_by_marked_face = false;
+        for (const size_t iface : split_faces)
+        {
+          // const auto it = map_faces.find(face.hash());
+          const Face f = face(iface);
+          const auto f_neighbors = f.neighbors();
+          assert( f_neighbors.size() == 2 );
+          auto pair_cells2 = std::minmax(f_neighbors[0]->index(),
+                                         f_neighbors[1]->index());
 
-//           if (it->second.neighbors == ordered_neighbors)
-//           {
-//             neighbor_by_marked_face = true;
-//             break;
-//           }
-//         }
+          if (pair_cells == pair_cells2)
+          {
+            neighbor_by_marked_face = true;
+            break;
+          }
+        }
 
-//         if (!neighbor_by_marked_face)
-//         {
-//           auto group_it = map_cell_group.find(jcell);
-//           if (group_it == map_cell_group.end())
-//             map_cell_group.insert({jcell, igroup});
-//           else
-//           {
-//             if (group_it->second < igroup)
-//             {
-//               map_cell_group[icell] = group_it->second;
-//               igroup = group_it->second;
-//               new_group--;
-//             }
-//             else
-//               map_cell_group[jcell] = igroup;
-//           }
-//         }
-//         // else
-//         //   std::cout << " other" << std::endl;
-//       }
-//     // std::cout << "igroup = " << igroup << std::endl << std::endl;
-//   }
-//   // std::cout << "groups" << std::endl;
-//   // for (auto & it : map_cell_group)
-//   //   std::cout << it.first << "\t" << it.second << std::endl;
+        if (!neighbor_by_marked_face)
+        {
+          auto group_it = map_cell_group.find(jcell->index());
+          if (group_it == map_cell_group.end())
+            map_cell_group.insert({jcell->index(), igroup});
+          else
+          {
+            if (group_it->second < igroup)
+            {
+              map_cell_group[icell] = group_it->second;
+              igroup = group_it->second;
+              new_group--;
+            }
+            else
+              map_cell_group[jcell->index()] = igroup;
+          }
+        }
+      }
+  }
 
-//   // abort();
+  std::vector<std::vector<std::size_t>> groups(n_groups);
+  for (auto it : map_cell_group)
+    groups[it.second].push_back(it.first);
 
-//   std::vector<std::vector<std::size_t>> groups(n_groups);
-//   for (auto it : map_cell_group)
-//     groups[it.second].push_back(it.first);
-
-//   return groups;
-// }
+  return groups;
+}
 
 
 // std::vector<face_iterator> Mesh::get_ordered_faces()

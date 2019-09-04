@@ -60,4 +60,41 @@ Point Cell::center() const
 }
 
 
+std::vector<Cell*> Cell::neighbors()
+{
+  std::vector<size_t> neighbors_indices;
+  neighbors_indices.reserve(m_faces.size());
+  for (const size_t iface : m_faces)
+    for ( Cell * neighbor : m_grid_faces[iface].neighbors() )
+      if (neighbor->index() != index())
+        if (std::find(neighbors_indices.begin(), neighbors_indices.end(),
+                      neighbor->index()) != neighbors_indices.end())
+          neighbors_indices.push_back(neighbor->index());
+  std::vector<Cell*> neighbor_cells;
+  neighbor_cells.reserve(neighbors_indices.size());
+  for (const size_t icell : neighbors_indices)
+    neighbor_cells.push_back( &(m_grid_cells[icell]) );
+  return neighbor_cells;
+}
+
+
+std::vector<const Cell*> Cell::neighbors() const
+{
+  std::vector<size_t> neighbors_indices;
+  neighbors_indices.reserve(m_faces.size());
+  for (const size_t iface : m_faces)
+    for ( Cell * neighbor : m_grid_faces[iface].neighbors() )
+      if (neighbor->index() != index())
+        if (std::find(neighbors_indices.begin(), neighbors_indices.end(),
+                      neighbor->index()) != neighbors_indices.end())
+          neighbors_indices.push_back(neighbor->index());
+  std::vector<const Cell*> neighbor_cells;
+  neighbor_cells.reserve(neighbors_indices.size());
+  for (const size_t icell : neighbors_indices)
+    neighbor_cells.push_back( &(m_grid_cells[icell]) );
+  return neighbor_cells;
+}
+
+
+
 }  // end namespace

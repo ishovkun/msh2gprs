@@ -130,8 +130,8 @@ class Mesh
   SurfaceMesh<double> split_faces();
   /* split a vertex
    * retults in adding new vertices (pushed to the back of vertices set) */
-  void split_vertex(const std::size_t vertex_index,
-                    const std::size_t master_face_index);
+  void split_vertex(const std::size_t               vertex_index,
+                    const std::vector<std::size_t> &splitted_face_indices);
 
 
  private:
@@ -139,11 +139,11 @@ class Mesh
                      const std::size_t face,
                      const std::size_t cell);
 
- //  // two elements are in the same group if they are neighbors and
- //  // the neighboring face is not in vertex_faces array
- //  std::vector<std::vector<std::size_t>>
- //  group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & affected_cells,
- //                                   const std::vector<face_iterator>      & vertex_faces) const;
+  // two elements are in the same group if they are neighbors and
+  // the neighboring face is not in vertex_faces array
+  std::vector<std::vector<std::size_t>>
+  group_cells_based_on_split_faces(const std::vector<std::size_t> & affected_cells,
+                                   const std::vector<std::size_t> & splitted_face_indices) const;
 
  //  // get global indices of polygon face vertices
  //  std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
