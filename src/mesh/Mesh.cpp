@@ -270,8 +270,6 @@ void Mesh::mark_for_split(const face_iterator & face)
 
 SurfaceMesh<double> Mesh::split_faces()
 {
-  std::cout << "n_nodes() = " << n_vertices() << std::endl;
-  std::cout << "n_faces = " << n_faces() << std::endl;
   /* Algorithm:
   * 1. create SurfaceMesh from marked faces
   * 2. find internal vertices (those whose edge have >1 neighbors)
@@ -373,17 +371,11 @@ SurfaceMesh<double> Mesh::split_faces()
             new_face.index = it_face_old->second.index;
             if (faces_to_not_delete.find( old_hash ) != faces_to_not_delete.end())
               new_face.index = num_faces++;
-              // std::cout << "ALERT motherfucker"  << std::endl;
-            // new_face.index = std::numeric_limits<size_t>::max();
           }
           else // face already inserted
           {
             new_face.index = num_faces++;
-            // new_face.index = std::numeric_limits<size_t>::max();
           }
-          std::cout << "new_face " << it_face_old->second.index << " "
-                    << new_face.index << " "
-                    << new_face.marker << std::endl;
 
           new_face.old_index = it_face_old->second.old_index;
           new_face.vtk_id = it_face_old->second.vtk_id;
@@ -395,11 +387,6 @@ SurfaceMesh<double> Mesh::split_faces()
         // mark old faces for delete
         faces_to_delete.insert(old_hash);
       }  // end if face changed
-      // else
-      // {
-      //   faces_to_not_delete.insert(old_hash);
-      // }
-      // else std::cout << "not changed " << std::endl;
     }    // end face loop
 
     // replace old cell with new cell
@@ -414,25 +401,16 @@ SurfaceMesh<double> Mesh::split_faces()
       if (face_it != map_faces.end())
       {
         map_faces.erase(face_it);
-        std::cout << "deleting face " << face_it->second.index  << " "<<face_it->second.marker<< std::endl;
+        // std::cout << "deleting face " << face_it->second.index  << " "<<face_it->second.marker<< std::endl;
       }
     }
-    else {
-      std::cout << "NOT deleting face "
-                << map_faces.find(hash)->second.index  << " "
-                << map_faces.find(hash)->second.marker << std::endl;
-    }
-  // for (auto & f : map_faces)
-  // {
-  //   if (f.second.marker == 1)
-  //     std::cout << f.second.index << " " << f.second.old_index << std::endl;
-  //   if (f.second.index >= 320)
-  //     std::cout << "weird " << f.second.index << " " << f.second.old_index
-  //         << std::endl;
-  // }
+    // else {
+    //   std::cout << "NOT deleting face "
+    //             << map_faces.find(hash)->second.index  << " "
+    //             << map_faces.find(hash)->second.marker << std::endl;
+    // }
 
-  // exit(0);
-  // clear marked elements vector
+  //  clear marked elements vector
   marked_for_split.clear();      
   return mesh_faces;
 }
