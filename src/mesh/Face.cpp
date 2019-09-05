@@ -25,50 +25,58 @@ Face::Face(const std::size_t                       face_index,
 
 std::vector<Cell*> Face::neighbors()
 {
-  std::vector<size_t> face_neighbor_indices;
-  face_neighbor_indices.reserve(2);
-  for (const std::size_t vertex : vertices())
-    for (const std::size_t cell_index : m_grid_vertex_cells[vertex])
+  // find how many times each vertex neighboring cell is encountered
+  std::unordered_map<size_t, size_t> cell_time;
+  for (const size_t vertex : m_vertices)
+  {
+    for (const size_t cell_index: m_grid_vertex_cells[vertex])
     {
-      auto & cell = m_grid_cells[cell_index];
-      for (const Face * f : cell.faces())
-        if (f->index() == index())
-          if (std::find( face_neighbor_indices.begin(),
-                         face_neighbor_indices.end(),
-                         cell.index()) == face_neighbor_indices.end())
-        {
-          face_neighbor_indices.push_back(cell.index());
-        }
+      auto it = cell_time.find(cell_index);
+      if (it == cell_time.end())
+        cell_time.insert({cell_index, 1});
+      else
+        it->second++;
     }
+  }
+
+  // cells with the count == n_vertices are the face neighbors
   std::vector<Cell*> face_neighbors;
-  face_neighbors.reserve(face_neighbor_indices.size());
-  for (const size_t icell : face_neighbor_indices)
-    face_neighbors.push_back( &(m_grid_cells[icell]) );
+  face_neighbors.reserve(2);
+  for (const auto it : cell_time)
+  {
+    if (it.second == m_vertices.size())
+    {
+      face_neighbors.push_back( &(m_grid_cells[it.first]) );
+    }
+  }
   return face_neighbors;
 }
 
 
 std::vector<const Cell*> Face::neighbors() const
 {
-  std::vector<size_t> face_neighbor_indices;
-  face_neighbor_indices.reserve(2);
-  for (const std::size_t vertex_index : vertices())
-    for (const std::size_t cell_index : m_grid_vertex_cells[vertex_index])
+  // find how many times each vertex neighboring cell is encountered
+  std::unordered_map<size_t, size_t> cell_time;
+  for (const size_t vertex : m_vertices)
+  {
+    for (const size_t cell_index: m_grid_vertex_cells[vertex])
     {
-      auto & cell = m_grid_cells[cell_index];
-      for (const Face * f : cell.faces())
-        if (f->index() == index())
-          if (std::find( face_neighbor_indices.begin(),
-                         face_neighbor_indices.end(),
-                         cell.index()) == face_neighbor_indices.end())
-        {
-          face_neighbor_indices.push_back(cell.index());
-        }
+      auto it = cell_time.find(cell_index);
+      if (it == cell_time.end())
+        cell_time.insert({cell_index, 1});
+      else
+        it->second++;
     }
+  }
+
+  // cells with the count == n_vertices are the face neighbors
   std::vector<const Cell*> face_neighbors;
-  face_neighbors.reserve(face_neighbor_indices.size());
-  for (const size_t icell : face_neighbor_indices)
-    face_neighbors.push_back( &(m_grid_cells[icell]) );
+  face_neighbors.reserve(2);
+  for (const auto it : cell_time)
+  {
+    if (it.second == m_vertices.size())
+      face_neighbors.push_back( &(m_grid_cells[it.first]) );
+  }
   return face_neighbors;
 }
 

@@ -293,6 +293,7 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
 
     // find neighboring cell from affected cells group
     for (const Cell* jcell : m_cells[icell].neighbors())
+    {
       if (std::find(affected_cells.begin(), affected_cells.end(),
                     jcell->index()) != affected_cells.end())
       {
@@ -335,6 +336,7 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
           }
         }
       }
+    }
   }
 
   std::vector<std::vector<std::size_t>> groups(n_groups);
