@@ -75,20 +75,29 @@ class MetisInterface
 
     // partition the entire domain: see the user manual of METIS for details
     idx_t ncon = 1, objval = 0;
-    idx_t options[METIS_NOPTIONS];
-    METIS_SetDefaultOptions(options);
-    options[METIS_OPTION_NCUTS] = 8;
     std::vector<idx_t> vwgt(n_cells, 1);
     std::vector<idx_t> size(n_cells, 1);
     idx_t icount = static_cast<idx_t>(n_cells);
     idx_t n_domains = static_cast<idx_t>(n_blocks);
+    std::vector<real_t> ubvec(ncon, 1.5);
 
     // output: the corresponding thread of each grid block (default: 0th thread)
     vector<idx_t> coarse_cell_id(n_cells, 0);
+
     // call METIS graph partitioner
-    METIS_PartGraphKway(&icount, &ncon, &xadj[0], &adj[0], &vwgt[0], &size[0],
-                        NULL/*&adjwgt[0]*/, &n_domains,
-                        NULL, NULL, options, &objval,
+    idx_t options[METIS_NOPTIONS];
+    METIS_SetDefaultOptions(options);
+    options[METIS_OPTION_NCUTS] = 100;
+    METIS_PartGraphKway(&icount, // number of vertices in the graph
+                        &ncon,   // n balalncing constraints (>= 1)
+                        &xadj[0], &adj[0], // adjacency structure
+                        &vwgt[0], &size[0],
+                        NULL/*&adjwgt[0]*/,
+                        &n_domains,
+                        /* tpwgts = */NULL,  // weight for each partition and constraint
+                        /* ubvec = */ &ubvec[0],
+                        // /* ubvec = */NULL, // load imbalance tolerance
+                        options, &objval,
                         &coarse_cell_id[0]);
 
     vector<size_t> partitioning(n_cells);
