@@ -79,7 +79,7 @@ class MetisInterface
     std::vector<idx_t> size(n_cells, 1);
     idx_t icount = static_cast<idx_t>(n_cells);
     idx_t n_domains = static_cast<idx_t>(n_blocks);
-    std::vector<real_t> ubvec(ncon, 1.5);
+    std::vector<real_t> ubvec(ncon, 1.1);
 
     // output: the corresponding thread of each grid block (default: 0th thread)
     vector<idx_t> coarse_cell_id(n_cells, 0);

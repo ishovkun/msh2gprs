@@ -264,12 +264,6 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
   std::cout << "Exported multiscale model" << std::endl;
   std::cout << "Partitioning size: " << layer.n_blocks << std::endl;
   std::cout << "Number of coarse nodes: " << model.n_coarse << std::endl;
-  // for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
-    // std::cout << coarse_vertex << " "
-    //           << model.centroids[coarse_vertex] << " "
-    //           << model.support_internal[coarse_vertex].size() << " "
-    //           << model.support_boundary[coarse_vertex].size() << " "
-    //           << std::endl;
   std::cout << "#########################" << std::endl;
   std::cout << std::endl;
 
