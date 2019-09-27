@@ -536,8 +536,20 @@ void YamlParser::section_multiscale(const YAML::Node & node)
       config.flow_ms_file = it->second.as<std::string>();
     if (key == "Mech file")
       config.mech_ms_file = it->second.as<std::string>();
-    else if (key == "blocks")
-      config.n_multiscale_blocks = it->second.as<std::size_t>();
+    else if (key == "metis")
+    {
+      config.n_multiscale_blocks[0] = it->second.as<std::size_t>();
+      config.partitioning_method = PartitioningMethod::metis;
+    }
+    else if (key == "geometric")
+    {
+      config.n_multiscale_blocks = it->second.as<std::array<size_t,3>>();
+      config.partitioning_method = PartitioningMethod::geometric;
+    }
+    else if (key == "elimination level")
+    {
+      config.elimination_level = it->second.as<std::size_t>();
+    }
     else if (key == "flow")
     {
       const auto value = it->second.as<std::string>();

@@ -30,7 +30,7 @@ class const_cell_iterator
   bool operator==(const const_cell_iterator & other) const;
   bool operator!=(const const_cell_iterator & other) const;
   // GETTERS
-  inline const std::vector<std::size_t> & vertices() {return cells[icell];}
+  inline const std::vector<std::size_t> & vertices() const {return cells[icell];}
   inline size_t n_vertices() const {return cells[icell].size();}
   const_cell_iterator neighbor_by_face(const const_face_iterator & face) const;
   inline std::size_t index() const {return icell;}

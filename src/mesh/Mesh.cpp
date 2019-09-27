@@ -510,18 +510,18 @@ std::vector<face_iterator> Mesh::get_ordered_faces()
 }
 
 
- const angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i) const
-{
-  assert(i < n_vertices());
-  return vertices.points[i];
-}
+//  const angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i) const
+// {
+//   assert(i < n_vertices());
+//   return vertices.points[i];
+// }
 
 
-angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i)
-{
-  assert(i < n_vertices());
-  return vertices.points[i];
-}
+// angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i)
+// {
+//   assert(i < n_vertices());
+//   return vertices.points[i];
+// }
 
 
 void Mesh::add_vertex_to_split(const std::size_t                                        vertex,

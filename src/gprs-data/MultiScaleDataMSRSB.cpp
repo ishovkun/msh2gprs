@@ -14,22 +14,34 @@ using Point = angem::Point<3,double>;
 using std::unordered_set;
 
 MultiScaleDataMSRSB::MultiScaleDataMSRSB(mesh::Mesh  & grid,
-                                         const size_t  n_blocks)
+                                         const std::array<size_t,3> &  n_blocks,
+                                         const PartitioningMethod method)
     :
     grid(grid),
-    active_layer_index(0)
+    active_layer_index(0),
+    n_multiscale_blocks(n_blocks),
+    partitioning_method(method)
 {
   auto & layer = layers.emplace_back();
   layer.index = 0;
-  layer.n_blocks = n_blocks;
+  if (method == PartitioningMethod::metis)
+    layer.n_blocks = n_blocks[0];
+  else if (method == geometric)
+    layer.n_blocks = n_blocks[0] * n_blocks[1] * n_blocks[2];
+  else throw std::invalid_argument("error");
+
+  assert( layer.n_blocks != 0 );
   layer.n_cells = grid.n_cells();
 }
 
 
 void MultiScaleDataMSRSB::build_data()
 {
-  std::cout << "building METIS partitioning...";
-  build_partitioning();
+  std::cout << "building partitioning...";
+  if (partitioning_method == PartitioningMethod::metis)
+    build_metis_partitioning();
+  else if (partitioning_method == geometric)
+    build_geometric_partitioning();
   std::cout << "OK" << std::endl;
 
   build_cells_in_block();
@@ -39,20 +51,20 @@ void MultiScaleDataMSRSB::build_data()
 
 
 
-void MultiScaleDataMSRSB::build_partitioning()
+void MultiScaleDataMSRSB::build_metis_partitioning()
 {
-    auto & layer = active_layer();
-    PureConnectionMap cell_connections;
+  auto & layer = active_layer();
+  PureConnectionMap cell_connections;
 
-    for (auto it = grid.begin_faces(); it != grid.end_faces(); ++it)
-    {
-      const auto & neighbors = it.neighbors();
-      if (neighbors.size() == 2)  // not a boundary face
-        cell_connections.insert_connection( neighbors[0], neighbors[1] );
-    }
+  for (auto it = grid.begin_faces(); it != grid.end_faces(); ++it)
+  {
+    const auto & neighbors = it.neighbors();
+    if (neighbors.size() == 2)  // not a boundary face
+      cell_connections.insert_connection( neighbors[0], neighbors[1] );
+  }
 
-    layer.partitioning = multiscale::MetisInterface<hash_algorithms::empty>
-        ::build_partitioning(cell_connections, layer.n_blocks, layer.n_cells);
+  layer.partitioning = multiscale::MetisInterface<hash_algorithms::empty>
+      ::build_partitioning(cell_connections, layer.n_blocks, layer.n_cells);
 }
 
 
@@ -160,6 +172,7 @@ MultiScaleDataMSRSB::build_map_face_to_ghost_cell() const
     map_boundary_face_ghost_block.insert({ item.first, map_block_group[face_disjoint.group(item.first)]});
 
   std::cout << "number of ghost cells = " << map_block_group.size() << std::endl;
+  n_ghost = map_block_group.size();
 
   // debug_make_ghost_cell_names(face_disjoint, map_block_group);
 
@@ -370,12 +383,12 @@ void MultiScaleDataMSRSB::find_block_edge_centroids(
     // find block edge center
     angem::Point<3,double> block_edge_center = {0, 0, 0};
     for (const auto & vertex : block_edge.second)
-      block_edge_center += grid.vertex_coordinates(vertex);
+      block_edge_center += grid.vertex(vertex);
     block_edge_center /= block_edge.second.size();
 
     // move this point to lie on the edge
     // make this point lie on edge
-    block_edge_center = grid.vertex_coordinates(
+    block_edge_center = grid.vertex(
         angem::find_closest_vertex(block_edge_center,
               /* all_vertices = */ grid.get_vertices(),
                     /* subset = */ block_edge.second));
@@ -725,6 +738,7 @@ void MultiScaleDataMSRSB::build_cells_in_block()
 {
   auto & layer = active_layer();
   layer.cells_in_block.resize(layer.n_blocks);
+  std::cout << "layer.partitioning.size() = " << layer.partitioning.size() << std::endl;
   for (std::size_t cell=0; cell<layer.n_cells; ++cell)
     layer.cells_in_block[layer.partitioning[cell]].push_back(cell);
 }
@@ -811,6 +825,62 @@ debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_di
   //     }
   //   std::cout << std::endl;
   // }
+}
+
+
+void MultiScaleDataMSRSB::build_geometric_partitioning()
+{
+  auto & layer = active_layer();
+
+  struct dimensions
+  {
+    double x_min = +std::numeric_limits<double>::max(),
+           x_max = -std::numeric_limits<double>::max();
+    double y_min = +std::numeric_limits<double>::max(),
+           y_max = -std::numeric_limits<double>::max();
+    double z_min = +std::numeric_limits<double>::max(),
+           z_max = -std::numeric_limits<double>::max();
+    size_t nx, ny, nz;
+    double hx, hy, hz;
+  }; dimensions d;
+
+  for (const angem::Point<3,double> & v : grid.get_vertices())
+  {
+    if (v.x() < d.x_min) d.x_min = v.x();
+    if (v.x() > d.x_max) d.x_max = v.x();
+    if (v.y() < d.y_min) d.y_min = v.y();
+    if (v.y() > d.y_max) d.y_max = v.y();
+    if (v.z() < d.z_min) d.z_min = v.z();
+    if (v.z() > d.z_max) d.z_max = v.z();
+  }
+
+  const size_t ndir = 4;
+  d.nx = n_multiscale_blocks[0];
+  d.ny = n_multiscale_blocks[1];
+  d.nz = n_multiscale_blocks[2];
+
+  d.hx = 1.0 / d.nx;
+  d.hy = 1.0 / d.ny;
+  d.hz = 1.0 / d.nz;
+
+  layer.partitioning.resize(grid.n_cells());
+  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  {
+    const auto c = cell.center();
+
+    // normalized x and y
+    const double xn = (c.x() - d.x_min) / (d.x_max - d.x_min);
+    const double yn = (c.y() - d.y_min) / (d.y_max - d.y_min);
+    const double zn = (c.z() - d.z_min) / (d.z_max - d.z_min);
+
+    // pixel numbers
+    const int ix = std::min(std::max((int) (xn / d.hx), 0), (int)d.nx - 1);
+    const int iy = std::min(std::max((int) (yn / d.hy), 0), (int)d.ny - 1);
+    const int iz = std::min(std::max((int) (zn / d.hz), 0), (int)d.nz - 1);
+
+    layer.partitioning[cell.index()] = d.nx*d.ny*iz + d.nx * iy + ix;
+  }
+  // exit(0);
 }
 
 }  // end namespace

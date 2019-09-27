@@ -1955,14 +1955,17 @@ void SimData::build_multiscale_data()
     }
     else if (config.multiscale_flow == method_msrsb)  // poor option
     {
-      multiscale::MultiScaleDataMSRSB ms_handler(grid, config.n_multiscale_blocks);
+      multiscale::MultiScaleDataMSRSB ms_handler(grid, config.n_multiscale_blocks,
+                                                 config.partitioning_method);
       ms_handler.build_data();
       ms_handler.fill_output_model(ms_flow_data);
     }
 
     if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
     {
-      multiscale::MultiScaleDataMech ms_handler(grid, config.n_multiscale_blocks);
+      multiscale::MultiScaleDataMech ms_handler(grid, config.n_multiscale_blocks,
+                                                config.partitioning_method,
+                                                config.elimination_level);
       ms_handler.build_data();
       ms_handler.fill_output_model(ms_mech_data);
     }

@@ -7,6 +7,7 @@
 #include "tuple_hash.hpp"
 #include <algorithm>  // std::max_element
 #include <vector>
+#include "SimdataConfig.hpp"
 
 namespace multiscale
 {
@@ -21,7 +22,9 @@ class MultiScaleDataMSRSB
    * takes n_blocks for only a single layer,
    * since multi-level multiscale is a long way
    * down the road. */
-  MultiScaleDataMSRSB(mesh::Mesh  & grid, const size_t  n_blocks);
+  MultiScaleDataMSRSB(mesh::Mesh  & grid,
+                      const std::array<size_t,3> &  n_blocks,
+                      const PartitioningMethod method = PartitioningMethod::metis);
   // main method. that's when the fun happens
   virtual void build_data();
   virtual void fill_output_model(MultiScaleOutputData & model, const int layer_index = 0) const;
@@ -33,7 +36,9 @@ class MultiScaleDataMSRSB
   const LayerDataMSRSB & active_layer() const {return layers[active_layer_index];}
 
   // call to metis to obtain partitioning
-  void build_partitioning();
+  void build_metis_partitioning();
+  // build cubic cartesian-like partitioning
+  void build_geometric_partitioning();
   // build inverted partitioning block -> cells
   void build_cells_in_block();
   // main method that identifies regions where shape functions exist
@@ -103,6 +108,9 @@ class MultiScaleDataMSRSB
   const mesh::Mesh & grid;
   vector<LayerDataMSRSB> layers;
   size_t active_layer_index;
+  mutable size_t n_ghost;
+  std::array<size_t, 3> n_multiscale_blocks;
+  PartitioningMethod partitioning_method;
 
  private:
   mutable std::unordered_map<size_t, std::string> debug_ghost_cell_names;

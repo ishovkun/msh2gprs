@@ -14,6 +14,11 @@ enum MSPartitioning : int
   method_mechanics = 3  // igor's mechanics method
 };
 
+enum PartitioningMethod
+{
+  metis = 0,
+  geometric = 1
+};
 
 enum OutputFormat
 {
@@ -111,9 +116,13 @@ struct SimdataConfig
   double frac_cell_elinination_factor = 0.2;
 
   // multiscale
-  size_t n_multiscale_blocks;
+  // size_t n_multiscale_blocks;
+  std::array<size_t,3> n_multiscale_blocks;
   int multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do shit
   int multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do shit
+  PartitioningMethod partitioning_method = PartitioningMethod::metis;
+  // minimum number of cells between coarse nodes (0 means 1 cell)
+  size_t elimination_level = 0;
 
   // output format
   std::vector<OutputFormat> output_formats = {OutputFormat::gprs, OutputFormat::vtk};

@@ -105,9 +105,16 @@ class Mesh
   // get vertex indices of a cell
   const std::vector<std::size_t> & get_vertices(const std::size_t cell) const;
   // get vertex coordinates
-  const angem::Point<3,double> & vertex_coordinates(const std::size_t i) const;
+  inline const angem::Point<3,double> & vertex(const std::size_t i) const
+  {
+    assert( i < n_vertices() );
+    return vertices.points[i];
+  }
   // get vertex coordinates
-  angem::Point<3,double> & vertex_coordinates(const std::size_t i);
+  inline angem::Point<3,double> & vertex(const std::size_t i) {
+    assert( i < n_vertices() );
+    return vertices.points[i];
+  }
   // get vector of neighbor cell indices
   std::vector<std::size_t> get_neighbors( const std::size_t icell ) const;
   // vector of indices of cells neighboring a face
