@@ -300,10 +300,10 @@ void MultiScaleDataMech::build_boundary_nodes(const std::unordered_map<size_t, s
     if (block1 != block2)
     {
       size_t conn_index;
-      if ( block_face_vertices.connection_exists(block1, block2) )
-        conn_index = block_face_vertices.connection_index(block1, block2);
+      if ( block_face_vertices.find(block1, block2) != block_face_vertices.end() )
+        conn_index = block_face_vertices.index(block1, block2);
       else
-        conn_index = block_face_vertices.insert_connection(block1, block2);
+        conn_index = block_face_vertices.insert(block1, block2);
 
       auto & vertices = block_face_vertices.get_data(conn_index);
       for (const size_t vertex : face.vertex_indices())

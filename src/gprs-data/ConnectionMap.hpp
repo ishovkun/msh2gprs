@@ -43,16 +43,29 @@ class ConnectionMap
   const DataType & get_data(const std::size_t ielement, const std::size_t jelement) const;
 
   // creates a new connection and returns the connection index
-  std::size_t insert_connection(const std::size_t ielement,
-                                const std::size_t jelement);
+  std::size_t insert(const std::size_t ielement, const std::size_t jelement);
   // remove all the data about the element in internal storage
   void delete_element(const std::size_t ielement);
   // throws std::out_of_range if connection does not exist
-  std::size_t connection_index(const std::size_t ielement,
-                               const std::size_t jelement) const;
+  std::size_t index(const std::size_t ielement, const std::size_t jelement) const;
   // returns true if the connection between elements exists
-  bool connection_exists(const std::size_t ielement,
-                         const std::size_t jelement) const;
+  // bool exists(const std::size_t ielement, const std::size_t jelement) const;
+  connection_map_iterator<DataType> find(const std::size_t ielement, const std::size_t jelement)
+  {
+    const std::size_t hash = hash_value(ielement, jelement);
+    auto it = connections.find(hash);
+    return connection_map_iterator<DataType>(it, data, max_elements);
+  }
+  connection_map_const_iterator<DataType> find(const std::size_t ielement, const std::size_t jelement) const
+  {
+    const std::size_t hash = hash_value(ielement, jelement);
+    auto it = connections.find(hash);
+    return connection_map_const_iterator<DataType>(it, data, max_elements);
+  }
+
+  // true if connection exists
+  bool contains(const std::size_t ielement, const std::size_t jelement) const
+  {return (find(ielement,jelement) != end());}
   // get neighbors of the connection map element
   const std::vector<std::size_t> & get_neighbors(std::size_t ielement) const;
 
@@ -208,8 +221,8 @@ void ConnectionMap<DataType>::delete_element(const std::size_t element)
 
 
 template <typename DataType>
-std::size_t ConnectionMap<DataType>::connection_index(const std::size_t ielement,
-                                                      const std::size_t jelement) const
+std::size_t ConnectionMap<DataType>::index(const std::size_t ielement,
+                                           const std::size_t jelement) const
 {
   const std::size_t hash = hash_value(ielement, jelement);
   auto it = connections.find(hash);
@@ -219,22 +232,10 @@ std::size_t ConnectionMap<DataType>::connection_index(const std::size_t ielement
 }
 
 
-template <typename DataType>
-bool ConnectionMap<DataType>::connection_exists(const std::size_t ielement,
-                                                const std::size_t jelement) const
-{
-  const std::size_t hash = hash_value(ielement, jelement);
-  auto it = connections.find(hash);
-  if (it == connections.end())
-    return false;
-  else
-    return true;
-}
-
 
 template <typename DataType>
-std::size_t ConnectionMap<DataType>::insert_connection(const std::size_t ielement,
-                                                       const std::size_t jelement)
+std::size_t ConnectionMap<DataType>::insert(const std::size_t ielement,
+                                            const std::size_t jelement)
 {
   const std::size_t hash = hash_value(ielement, jelement);
   const std::size_t conn = connections.size();
@@ -271,7 +272,7 @@ template <typename DataType>
 DataType &
 ConnectionMap<DataType>::get_data(const std::size_t ielement, const std::size_t jelement)
 {
-  return data[connection_index(ielement, jelement)];
+  return data[index(ielement, jelement)];
 }
 
 
@@ -279,7 +280,7 @@ template <typename DataType>
 const DataType &
 ConnectionMap<DataType>::get_data(const std::size_t ielement, const std::size_t jelement) const
 {
-  return data[connection_index(ielement, jelement)];
+  return data[index(ielement, jelement)];
 }
 
 }  // end namespace
