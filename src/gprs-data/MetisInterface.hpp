@@ -87,16 +87,16 @@ class MetisInterface
     // call METIS graph partitioner
     idx_t options[METIS_NOPTIONS];
     METIS_SetDefaultOptions(options);
-    options[METIS_OPTION_NCUTS] = 100;
+    options[METIS_OPTION_NCUTS] = 8;
     METIS_PartGraphKway(&icount, // number of vertices in the graph
                         &ncon,   // n balalncing constraints (>= 1)
                         &xadj[0], &adj[0], // adjacency structure
                         &vwgt[0], &size[0],
                         NULL/*&adjwgt[0]*/,
                         &n_domains,
-                        /* tpwgts = */NULL,  // weight for each partition and constraint
-                        /* ubvec = */ &ubvec[0],
-                        // /* ubvec = */NULL, // load imbalance tolerance
+                        /* tpwgts = */ NULL,  // weight for each partition and constraint
+                        // /* ubvec = */ &ubvec[0],
+                        /* ubvec = */NULL, // load imbalance tolerance
                         options, &objval,
                         &coarse_cell_id[0]);
 

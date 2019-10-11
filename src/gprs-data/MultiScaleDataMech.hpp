@@ -50,8 +50,8 @@ class MultiScaleDataMech : public MultiScaleDataMSRSB
   // neighbors of those cells are level-2 neighbors
   std::vector<std::unordered_map<size_t,size_t>> find_node_neighboring_cells(const size_t level = 0) const;
 
-  // 0 means no elimination
-  // 1 eliminate coarse node if in the same cell as another coarse node
+  // 0 means if in the same cell as another coarse node
+  // 1 eliminate if in the neighboring cells
   const size_t elimination_level;
   // std::unordered_map<size_t, std::unordered_set<size_t>> map_coarse_node_blocks;
   std::vector<std::vector<size_t>> coarse_node_blocks;
