@@ -16,7 +16,7 @@ void OutputDataVTK::write_output(const std::string & output_path)
   if (data.dfm_faces.size() > 0)
     save_dfm_data(output_path + data.config.dfm_grid_vtk_file);
   if (!data.vEfrac.empty())
-    save_edfm_data(output_path + data.config.efrac_file);
+    save_edfm_data(output_path + data.config.edfm_grid_vtk_file);
 }
 
 
