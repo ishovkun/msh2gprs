@@ -215,7 +215,21 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
       }
     }
 
+  std::cout << "affected:" << ": ";
+  for (size_t cell : affected_cells)
+    std::cout << cell << " ";
+  std::cout << std::endl;
+
   std::vector<std::vector<std::size_t>> groups = group_cells_based_on_split_faces(affected_cells, vertex_faces);
+
+  std::cout << "groups:" << std::endl;
+  for (int group = 0; group < groups.size(); group++)
+  {
+    std::cout << "group = " << group << ": ";
+    for (size_t cell : groups[group])
+      std::cout << cell << " ";
+    std::cout << std::endl;
+  }
 
   const int n_groups = groups.size();
 
@@ -277,7 +291,8 @@ SurfaceMesh<double> Mesh::split_faces()
   * 3. split each internal vertex
   * 4. modify neighbors map */
   SurfaceMesh<double> mesh_faces(1e-6);
-  // map 2d-element : 3d face hash
+
+  // map 2d-element -> 3d face hash
   std::unordered_map<std::size_t, hash_type> map_2d_3d;
   for (const auto & hash : marked_for_split)
   {
@@ -287,10 +302,12 @@ SurfaceMesh<double> Mesh::split_faces()
     map_2d_3d.insert({ielement, hash});
   }
 
+  // find vertices to split
   unordered_map<size_t, vector<face_iterator>> vertices_to_split;
-  for (auto edge = mesh_faces.begin_edges(); edge !=mesh_faces.end_edges(); ++edge)
+  for (auto edge = mesh_faces.begin_edges(); edge != mesh_faces.end_edges(); ++edge)
   {
     const vector<size_t> & edge_neighbors = edge.neighbors();
+
     if (edge_neighbors.size() > 1)  // internal edge vertex
     {
       const auto edge_vertices = edge.vertex_indices();
@@ -301,12 +318,41 @@ SurfaceMesh<double> Mesh::split_faces()
     }
   }
 
+  // we would like to always split vertices that are the boundaries
+  // of the external domain
+  const auto bnd_edges = build_boundary_edge_hashes();
+
+  for (auto edge = mesh_faces.begin_edges(); edge != mesh_faces.end_edges(); ++edge)
+  {
+    const vector<size_t> & edge_neighbors = edge.neighbors();
+    if (edge_neighbors.size() == 1)  // boundary vertex
+    {
+      const auto edge_vertices = edge.vertex_indices();
+      const size_t v1 = vertices.find(mesh_faces.get_vertices()[edge_vertices.first]);
+      const size_t v2 = vertices.find(mesh_faces.get_vertices()[edge_vertices.second]);
+      // edge on outer boundary
+      if ( bnd_edges.find(hash_value(v1, v2)) != bnd_edges.end() )
+        // not already split
+        if ( vertices_to_split.find(v1) == vertices_to_split.end() and
+             vertices_to_split.find(v2) == vertices_to_split.end() )
+        {
+          std::cout << "boundary vertex " << v1 << std::endl;
+          add_vertex_to_split(v1, edge_neighbors, map_2d_3d, vertices_to_split);
+          std::cout << "boundary vertex " << v2 << std::endl;
+          add_vertex_to_split(v2, edge_neighbors, map_2d_3d, vertices_to_split);
+        }
+    }
+  }
+  std::cout << "finished vertex lookup" << std::endl;
+
   std::unordered_map<std::size_t, std::size_t> map_old_new_cells;
   std::vector<std::vector<std::size_t>> new_cells;
   for (auto & it : vertices_to_split)
   {
+    std::cout << "splitting " << it.first  << " outta " << vertices_to_split.size() << std::endl;
     split_vertex(it.first, it.second, map_old_new_cells, new_cells);
   }
+  std::cout << "modifying the faces" << std::endl;
 
   // MODIFY FACE MAP
   std::unordered_set<std::size_t> old_ind_touched;
@@ -314,6 +360,7 @@ SurfaceMesh<double> Mesh::split_faces()
   // exclude some faces from deleting since they are retained by cells
   // from group 0
   std::unordered_set<hash_type> faces_to_not_delete;
+
   // store it since new faces are added first and then old faces are deleted
   // which may cause wrong indexing
   std::size_t num_faces = map_faces.size();
@@ -402,14 +449,8 @@ SurfaceMesh<double> Mesh::split_faces()
       if (face_it != map_faces.end())
       {
         map_faces.erase(face_it);
-        // std::cout << "deleting face " << face_it->second.index  << " "<<face_it->second.marker<< std::endl;
       }
     }
-    // else {
-    //   std::cout << "NOT deleting face "
-    //             << map_faces.find(hash)->second.index  << " "
-    //             << map_faces.find(hash)->second.marker << std::endl;
-    // }
 
   //  clear marked elements vector
   marked_for_split.clear();      
@@ -424,7 +465,6 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
   // group affected elements
   // two elements are in the same group if they are neighbors and
   // the neighboring face is not in vertex_faces array
-  const int n_groups = vertex_faces.size();
   std::unordered_map<std::size_t, int> map_cell_group;
   int igroup = 0;
   int new_group = 0;
@@ -447,12 +487,14 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
 
     processed_cells.insert(icell);
 
+    // find neighbouring pairs within affected cells and find out
+    // whether they are divided by the marked face.
+    // if so they are in the same group
     for (const std::size_t jcell : get_neighbors(icell))
       if (affected_cells.find(jcell) != affected_cells.end())
       {
         auto pair_cells = std::minmax(icell, jcell);
-        std::vector<std::size_t> ordered_neighbors =
-            {pair_cells.first, pair_cells.second};
+        std::vector<std::size_t> ordered_neighbors = {pair_cells.first, pair_cells.second};
 
         // find out if i and j neighbor by a marked face
         bool neighbor_by_marked_face = false;
@@ -484,18 +526,10 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
               map_cell_group[jcell] = igroup;
           }
         }
-        // else
-        //   std::cout << " other" << std::endl;
       }
-    // std::cout << "igroup = " << igroup << std::endl << std::endl;
   }
-  // std::cout << "groups" << std::endl;
-  // for (auto & it : map_cell_group)
-  //   std::cout << it.first << "\t" << it.second << std::endl;
 
-  // abort();
-
-  std::vector<std::vector<std::size_t>> groups(n_groups);
+  std::vector<std::vector<std::size_t>> groups(new_group);
   for (auto it : map_cell_group)
     groups[it.second].push_back(it.first);
 
@@ -510,20 +544,6 @@ std::vector<face_iterator> Mesh::get_ordered_faces()
     ordered_faces[face.index()] = face;
   return ordered_faces;
 }
-
-
-//  const angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i) const
-// {
-//   assert(i < n_vertices());
-//   return vertices.points[i];
-// }
-
-
-// angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i)
-// {
-//   assert(i < n_vertices());
-//   return vertices.points[i];
-// }
 
 
 void Mesh::add_vertex_to_split(const std::size_t                                        vertex,
@@ -551,6 +571,22 @@ std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell)
 const std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell) const
 {
   return cells[cell];
+}
+
+
+std::unordered_set<size_t> Mesh::build_boundary_edge_hashes() const
+{
+  std::unordered_set<size_t> edge_hashes;
+  for (auto face = begin_faces(); face != end_faces(); ++face)
+    if (face.neighbors().size() == 1)  // boundary face
+    {
+      for (const auto edge : face.edges())
+      {
+        edge_hashes.insert( hash_value(edge.first, edge.second) );
+      }
+    }
+
+  return edge_hashes;
 }
 
 

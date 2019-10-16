@@ -60,7 +60,8 @@ int const_face_iterator::marker() const
 
 std::vector<Point> const_face_iterator::vertices() const
 {
-  std::vector<std::size_t> ivertices(invert_hash(face_it->first));
+  // std::vector<std::size_t> ivertices(invert_hash(face_it->first));
+  std::vector<std::size_t> ivertices(vertex_indices());
   return get_vertex_coordinates(p_mesh_vertices, ivertices);
 }
 
@@ -96,5 +97,28 @@ angem::Point<3,double> const_face_iterator::center() const
   return c;
 }
 
+
+std::vector<Edge> const_face_iterator::edges() const
+{
+  std::vector<Edge> edge_vector;
+  std::vector<std::size_t> ivertices(vertex_indices());
+  for (size_t i = 0; i < ivertices.size(); ++i)
+  {
+    std::size_t i1, i2;
+    if (i < ivertices.size() - 1)
+    {
+      i1 = ivertices[ i ];
+      i2 = ivertices[i + 1];
+    }
+    else
+    {
+      i1 = ivertices[i];
+      i2 = ivertices[ 0 ];
+    }
+    auto edge = std::minmax(i1, i2);
+    edge_vector.push_back( edge );
+  }
+  return edge_vector;
+}
 
 }

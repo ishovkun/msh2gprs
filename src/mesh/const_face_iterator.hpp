@@ -12,6 +12,7 @@ namespace mesh
 {
 using Point = angem::Point<3,double>;
 using FaceMap = std::unordered_map<hash_type, Face>;
+using Edge = std::pair<size_t, size_t>;
 
 class const_face_iterator
 {
@@ -61,6 +62,8 @@ class const_face_iterator
   const_face_iterator & operator++();
   // decrement operator
   const_face_iterator & operator--();
+  // get edges i-j with i<j ordering
+  std::vector<Edge> edges() const;
 
  private:
   FaceMap::const_iterator           face_it;        // iterator in the face container

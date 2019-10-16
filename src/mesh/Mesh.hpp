@@ -179,6 +179,12 @@ class Mesh
                       const std::vector<std::size_t> & edge_neighbors,
                       const std::unordered_map<std::size_t, hash_type> & map_2d_3d,
                       std::unordered_map<size_t, std::vector<face_iterator>> &vertices_to_split);
+
+  // build vector of unique boundary edges
+  // this method is used to select the edges on outer boundaries
+  // so that we can split the tips of faults
+  std::unordered_set<size_t> build_boundary_edge_hashes() const;
+
   // vector of faces that are markerd for split by the user via mark_for_split
   // Note: the vector is cleared after split_faces is performed
   std::vector<hash_type> marked_for_split;
