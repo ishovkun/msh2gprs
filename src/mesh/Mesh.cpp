@@ -205,6 +205,7 @@ void Mesh::split_vertex(const std::size_t                              ivertex,
     for (const std::size_t icell : face.neighbors())
     {
       affected_cells.insert(icell);
+
       // include elements that don't neighbor split faces (only by vertex)
       for (const std::size_t jcell : get_neighbors(icell))
       {
@@ -427,6 +428,7 @@ Mesh::group_cells_based_on_split_faces(const std::unordered_set<std::size_t> & a
   std::unordered_map<std::size_t, int> map_cell_group;
   int igroup = 0;
   int new_group = 0;
+
   // just is purely for faster checking: cells that are already processed
   std::unordered_set<std::size_t> processed_cells;
   for (const std::size_t icell : affected_cells)
