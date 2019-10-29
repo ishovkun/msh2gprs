@@ -46,8 +46,7 @@ void OutputDataGPRS::write_output(const std::string & output_path)
   if (!data.wells.empty())
   {
     std::cout << "save wells" << std::endl;
-    saveWells(output_path + data.config.wells_file,
-              output_path + data.config.wells_vtk_file);
+    saveWells(output_path + data.config.wells_file);
   }
 
   // flow discretization
@@ -528,8 +527,7 @@ void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
 }
 
 
-void OutputDataGPRS::saveWells(const std::string file_name,
-                           const std::string vtk_file_name)
+void OutputDataGPRS::saveWells(const std::string file_name)
 {
   std::ofstream file;
   file.open(file_name.c_str());
@@ -537,6 +535,13 @@ void OutputDataGPRS::saveWells(const std::string file_name,
   file << "WELSPECS" << std::endl;
   for (const auto & well : data.wells)
   {
+    if (well.connected_volumes.empty())
+    {
+      std::cout << "WARNING. The well " << well.name
+                << " is not connected to any CVs" << std::endl;
+      continue;
+    }
+
     file << well.name << "\tGROUP1\t";
     // connected volume + j + k empty
     file << well.connected_volumes[0] << " 1 1 ";
@@ -562,12 +567,6 @@ void OutputDataGPRS::saveWells(const std::string file_name,
   file << "/" << std::endl << std::endl;
 
   file.close();
-
-
-  // vtk well geometry
-  IO::VTKWriter::write_well_trajectory(data.well_vertices.points,
-                                       data.well_vertex_indices,
-                                       vtk_file_name);
 }
 
 

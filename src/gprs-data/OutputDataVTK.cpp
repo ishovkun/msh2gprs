@@ -17,6 +17,8 @@ void OutputDataVTK::write_output(const std::string & output_path)
     save_dfm_data(output_path + data.config.dfm_grid_vtk_file);
   if (!data.vEfrac.empty())
     save_edfm_data(output_path + data.config.edfm_grid_vtk_file);
+  if (!data.well_vertices.points.empty())
+    save_well_data(output_path + data.config.wells_vtk_file);
 }
 
 
@@ -152,6 +154,15 @@ void OutputDataVTK::saveMultiScaleSupport(const multiscale::MultiScaleOutputData
 
     IO::VTKWriter::add_data(support_value, prefix + std::to_string(coarse), out);
   }  // end coarse loop
+}
+
+
+void OutputDataVTK::save_well_data(const std::string & fname)
+{
+  // vtk well geometry
+  IO::VTKWriter::write_well_trajectory(data.well_vertices.points,
+                                       data.well_vertex_indices,
+                                       fname);
 }
 
 }

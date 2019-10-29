@@ -448,7 +448,7 @@ void YamlParser::section_wells(const YAML::Node & node)
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
-    std::cout << "\treading key " << key << std::endl;
+    std::cout << "\treading " << key << std::endl;
 
     if (key == "file")
       config.wells_file = it->second.as<std::string>();
@@ -492,9 +492,6 @@ void YamlParser::read_well(const YAML::Node & node,
       for (std::size_t i=0; i<n_coord; ++i)
         for (int d=0; d<3; ++d)
           well.coordinates[i][d] = std::atof(tokens[3*i+d].c_str());
-
-      // for (std::size_t i=0; i<n_coord; ++i)
-      //   std::cout << well.coordinates[i] << std::endl;
     }
     else if (key == "perforations")
     {
@@ -503,7 +500,7 @@ void YamlParser::read_well(const YAML::Node & node,
         well.perforated.push_back(static_cast<bool>(token));
     }
     else
-      std::cout << "\t\tunknown key; skipping" << std::endl;
+      std::cout << "\t\tunknown key: " << key << " skipping" << std::endl;
   }
 
   if (well.coordinates.empty())
