@@ -2,7 +2,7 @@ import os
 import numpy as np
 import re
 
-# case_path = "/home/ishovkun/sim/pedfm-comp/EDFM-horizontal"
+# case_path = "/home/ishovkun/sim/blackoil/1d"
 case_path = os.getcwd()
 
 if (case_path[-1] != "/"):
@@ -13,7 +13,7 @@ edfm_mesh_file = case_path + "efrac.vtk"
 dfm_mesh_file = case_path + "dfm.vtk"
 results_file = case_path + "OUTPUT.vars.txt"
 vtk_dir = case_path + "OUTPUT.vtk_output/"
-gm_sda_file = case_path + "efrac.txt"
+gm_sda_file = case_path + "gm_SDA.txt"
 output_dir = case_path + "field"
 
 # Print iterations progress
@@ -276,7 +276,7 @@ for i in range(len(times)):
         f.write("TIME 1 1 double\n%f\n"%times[i])
         f.write("CYCLE 1 1 int\n%d\n"%1)
         f.write(res_msh_txt[match.end():])
-        f.write("CELL_DATA " + str(n_cells) + "\n")
+        # f.write("CELL_DATA " + str(n_cells) + "\n")
         # f.write("Time 1 double\n%f\n"%times[i])
         for j in range(len(headers[i])):
             header = headers[i][j].replace("=", "_")
