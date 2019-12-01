@@ -103,19 +103,6 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
     assert( m_faces[face_index].m_vtk_id == vtk_id );
   }
 
-  if (face_index == 0 ||
-      (  sorted_vertices[0] == 10 and
-         sorted_vertices[1] == 22 and
-         sorted_vertices[2] == 270))
-  {
-    std::cout << "\n "<< "##########" << std::endl;
-    std::cout << "face_index = " << face_index << std::endl;
-      std::cout << "vertices:" << std::endl;
-      for (auto v: ivertices)
-        std::cout << v << " ";
-      std::cout << std::endl;
-  }
-
   for (const size_t vertex : ivertices)
     if (std::find( m_vertex_faces[vertex].begin(), m_vertex_faces[vertex].end(),
                    face_index) == m_vertex_faces[vertex].end())
@@ -150,7 +137,8 @@ void Mesh::split_vertex(const std::size_t               vertex_index,
   }
 
   // modify cell vertices: replace vertex indices with the new vertices
-  for (std::size_t group = 0; group < groups.size(); group++)
+  // start from 1 since group 0 retains the old index
+  for (std::size_t group = 1; group < groups.size(); group++)
   {
     const std::vector<size_t> & cell_group = groups[group];
     for (const std::size_t cell_index : cell_group)
@@ -158,7 +146,10 @@ void Mesh::split_vertex(const std::size_t               vertex_index,
       std::vector<size_t> & cell_vertices = m_cells[cell_index].vertices();
       for (size_t & cell_vertex_index : cell_vertices)
         if (cell_vertex_index == vertex_index)
+        {
           cell_vertex_index = new_vertex_indices[group];
+        }
+
     }
   }
 
@@ -175,9 +166,6 @@ void Mesh::mark_for_split(const std::size_t face_index)
 
 SurfaceMesh<double> Mesh::split_faces()
 {
-  std::cout << "n_nodes() = " << n_vertices() << std::endl;
-  std::cout << "n_faces = " << n_faces() << std::endl;
-
   /* Algorithm:
   * create SurfaceMesh from marked faces in order to identify
   * vertices to split those whose edge have >1 neighbors)
@@ -290,6 +278,7 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
     }
 
     processed_cells.insert(icell);
+    // std::cout << "\nicell = " << icell << std::endl;
 
     // find neighboring cell from affected cells group
     for (const Cell* jcell : m_cells[icell].neighbors())
@@ -297,14 +286,15 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
       if (std::find(affected_cells.begin(), affected_cells.end(),
                     jcell->index()) != affected_cells.end())
       {
+        // take index explicitly since minmax takes a reference
+        const size_t jind = jcell->index();
         // what face neighbors should be
-        auto pair_cells = std::minmax(icell, jcell->index());
+        const auto pair_cells = std::minmax(icell, jind);
 
         // find out if i and j neighbor by a marked face
         bool neighbor_by_marked_face = false;
         for (const size_t iface : split_faces)
         {
-          // const auto it = map_faces.find(face.hash());
           const Face f = face(iface);
           const auto f_neighbors = f.neighbors();
           assert( f_neighbors.size() == 2 );
@@ -312,6 +302,8 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
                                          f_neighbors[1]->index());
 
           if (pair_cells == pair_cells2)
+          // if (pair_cells.first == pair_cells2.first &&
+          //     pair_cells.second == pair_cells2.second)
           {
             neighbor_by_marked_face = true;
             break;

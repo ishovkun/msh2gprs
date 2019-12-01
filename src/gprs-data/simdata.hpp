@@ -184,8 +184,7 @@ protected:
   angem::Point<3,double> get_dx_dy_dz(const std::size_t icell) const;
 
   // is given flow element an embedded fracture
-  // Params [in]
-  // flow_element_index: index of the flow control volume
+  // \param [in] // flow_element_index: index of the flow control volume
   //
   // Note:
   // edfm control volumes span from 0 to n_edfm_intersections

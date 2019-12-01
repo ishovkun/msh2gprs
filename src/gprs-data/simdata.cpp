@@ -529,7 +529,7 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
   }
 
   // polygons (2d elements)
-  const auto polygons = mesh.get_polygons();
+  const auto & polygons = mesh.get_polygons();
   const std::size_t n_poly = mesh.n_polygons();
   int code_polygon = 0;
   for(std::size_t ipoly = 0; ipoly < n_poly; ++ipoly)
@@ -1143,9 +1143,13 @@ void SimData::splitInternalFaces()
 
   std::cout << "running my awesome dfm alg" << std::endl;
   const size_t n_faces_old = grid.n_faces();
+  const size_t n_vertices_old = grid.n_vertices();
   dfm_master_grid = grid.split_faces();
-  exit(0);
 
+  if (grid.n_vertices() != n_faces_old)
+    std::cout << "Split " << grid.n_vertices() - n_vertices_old
+              << " vertices for dfm fractures"
+              << std::endl;
   if (grid.n_faces() != n_faces_old)
   {
     std::cout << "Split " << grid.n_faces() - n_faces_old
@@ -1154,6 +1158,8 @@ void SimData::splitInternalFaces()
               << "now there is " << grid.n_faces() << " faces."
               << std::endl;
   }
+  else
+    std::cout << "No DFM faces have been split" << std::endl;
 }
 
 
