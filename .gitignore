@@ -1,0 +1,6 @@
+*.txt
+*.vtk
+build/
+compile_commands.json
+.cquery_cached_index/
+src/angem/.cquery_cached_index/

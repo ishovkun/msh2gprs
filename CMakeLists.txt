@@ -82,3 +82,6 @@ endif()
 # TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh uint256 -lstdc++fs -lasan)
 # last flag for std::filesystem
 TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh -lstdc++fs)
+
+enable_testing()
+add_subdirectory(tests)
