@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     // read stuff
     gprs_data::Preprocessor preprocessor(path_config);
     // let the fun begin
+    preprocessor.run();
   }
   catch (const std::exception& error)
   {

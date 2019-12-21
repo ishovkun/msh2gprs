@@ -1,8 +1,8 @@
 #include "Preprocessor.hpp"
-
-#include <string>
 #include "parsers/YamlParser.hpp"
 #include "parsers/GmshReader.hpp"
+#include "CellPropertyManager.hpp"
+#include <string>
 
 namespace gprs_data {
 
@@ -14,6 +14,11 @@ Preprocessor::Preprocessor(const Path config_file_path)
   const Path config_dir_path = config_file_path.parent_path();
   const Path grid_file_path = config_dir_path / config.mesh_file;
   read_mesh_file_(grid_file_path);
+}
+
+void Preprocessor::run()
+{
+  CellPropertyManager prop_mgr(config.cell_properties, data);
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)
@@ -63,7 +68,7 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
   if (fname.substr(str_len - 3, str_len) != "msh")
     throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
 
-  Parsers::GmshReader::read_input(filesystem::absolute(mesh_file_path), grid);
+  Parsers::GmshReader::read_input(filesystem::absolute(mesh_file_path), data.grid);
 }
 
 }  // end namespace gprs_data

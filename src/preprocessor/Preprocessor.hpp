@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PreprocessorConfig.hpp"
-#include "mesh/Mesh.hpp"
+#include "SimData.hpp"
 
 #include <experimental/filesystem>  // filesystem
 
@@ -23,7 +23,7 @@ class Preprocessor
 
   // ------------------ Variables ----------------------- //
   PreprocessorConfig config;
-  mesh::Mesh grid;
+  SimData data;
 };
 
 }  // end namespace gprs_data

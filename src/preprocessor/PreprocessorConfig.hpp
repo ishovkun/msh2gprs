@@ -86,6 +86,20 @@ struct WellConfig
 };
 
 
+struct CellPropertyConfig
+{
+  // all variables used for function parsing
+  std::vector<std::string> all_vars = {"x", "y", "z"};
+  // (0 - flow, 1 - mechanics, -1 -no output)
+  std::vector<int>         expression_type;
+  // are required for flow discretization
+  std::vector<std::string> special_keywords =
+  {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
+  static constexpr double default_permeability = 1;
+  static constexpr double default_volume_factor = 1;
+};
+
+
 struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  fractures;  //  embedded  fractures
@@ -97,13 +111,15 @@ struct PreprocessorConfig
 
   EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
 
+  CellPropertyConfig cell_properties;
   // all variables used for function parsing
-  std::vector<std::string> all_vars = {"x", "y", "z"};
-  std::vector<int>         expression_type;  // (0 - flow, 1 - mechanics, -1 -no output)
-  std::vector<std::string> special_keywords =
-  {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
-  static constexpr double default_permeability = 1;
-  static constexpr double default_volume_factor = 1;
+  // std::vector<std::string> all_vars = {"x", "y", "z"};
+  // std::vector<int>         expression_type;  // (0 - flow, 1 - mechanics, -1 -no output)
+  // std::vector<std::string> special_keywords =
+  // {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
+  // static constexpr double default_permeability = 1;
+  // static constexpr double default_volume_factor = 1;
+  // 
   // special keywords needed for computing fluid data
   // (they are not outputted)
   static constexpr double nan = -999.999;

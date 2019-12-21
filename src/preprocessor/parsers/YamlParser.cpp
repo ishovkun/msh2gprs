@@ -278,16 +278,16 @@ void YamlParser::domain(const YAML::Node & node,
       // save property name and expression
       conf.variables.push_back(key);
       conf.expressions.push_back(value);
-      const std::size_t ind = find(key, config.all_vars);
-      if (ind == config.all_vars.size())  // new variable
+      const std::size_t ind = find(key, config.cell_properties.all_vars);
+      if (ind == config.cell_properties.all_vars.size())  // new variable
       {
-        config.all_vars.push_back(key);
+        config.cell_properties.all_vars.push_back(key);
         // special case - service variable (not outputted)
-        if ( find(key, config.special_keywords) <
-             config.special_keywords.size())
-          config.expression_type.push_back(-1);
+        if ( find(key, config.cell_properties.special_keywords) <
+             config.cell_properties.special_keywords.size())
+          config.cell_properties.expression_type.push_back(-1);
         else
-          config.expression_type.push_back(var_type);
+          config.cell_properties.expression_type.push_back(var_type);
       }
 
       // save positions in the global list
