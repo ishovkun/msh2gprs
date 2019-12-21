@@ -18,7 +18,9 @@ Preprocessor::Preprocessor(const Path config_file_path)
 
 void Preprocessor::run()
 {
-  CellPropertyManager prop_mgr(config.cell_properties, data);
+  /* Distribute properties over cells */
+  CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
+  property_mgr.generate_properties();
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

@@ -97,6 +97,12 @@ struct CellPropertyConfig
   {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
   static constexpr double default_permeability = 1;
   static constexpr double default_volume_factor = 1;
+
+  static std::size_t n_default_vars()
+  {
+    CellPropertyConfig dummy;
+    return dummy.all_vars.size();
+  }
 };
 
 
@@ -104,14 +110,17 @@ struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  fractures;  //  embedded  fractures
   std::vector<DiscreteFractureConfig>  discrete_fractures;
-  std::vector<DomainConfig>            domains;
   std::vector<BCConfig>                bc_faces;
   std::vector<BCNodeConfig>            bc_nodes;
   std::vector<WellConfig>              wells;
 
   EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
 
+  // global container for all cell properties
   CellPropertyConfig cell_properties;
+  // vector of cell properties for each subdomain
+  std::vector<DomainConfig>            domains;
+
   // all variables used for function parsing
   // std::vector<std::string> all_vars = {"x", "y", "z"};
   // std::vector<int>         expression_type;  // (0 - flow, 1 - mechanics, -1 -no output)
