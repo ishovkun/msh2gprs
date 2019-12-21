@@ -15,8 +15,9 @@ Domain Flow Properties:
     SWAT: 0.0   # water saturation
     PRESSURE: 2 # in atm
 
-Domain Mechanics Properties:
+Domain Mechanical Properties:
   domain:
+    label: 2
     Coupled: false
     GMCELL_MODEL: 0               # elastic
     GMCELL_DENSITY: 1000          # kg/m3

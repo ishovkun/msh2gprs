@@ -14,6 +14,9 @@ void YamlParser::parse_file(const std::string & fname)
 {
   YAML::Node main_node = YAML::LoadFile(fname);
 
+  if (fname.substr(fname.size() - 4, fname.size()) != "yaml")
+    throw std::invalid_argument("wrong file type");
+
   for(YAML::const_iterator it=main_node.begin();it != main_node.end();++it)
   {
     const std::string key = it->first.as<std::string>();

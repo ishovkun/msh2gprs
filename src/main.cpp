@@ -39,7 +39,9 @@ int main(int argc, char *argv[])
   const std::string fname_config = argv[1];
   const Path path_config(fname_config);
   try {
+    // read stuff
     gprs_data::Preprocessor preprocessor(path_config);
+    // let the fun begin
   }
   catch (const std::exception& error)
   {
@@ -48,23 +50,6 @@ int main(int argc, char *argv[])
   }
 
   return 0;
-
-  // std::cout << "parsing " << fname_config << std::endl;
-  // const std::size_t str_len = fname_config.size();
-  // SimdataConfig config;
-  // if (fname_config.substr(str_len - 4, str_len) == "json")
-  // {
-  //   Parsers::JsonParser parser;
-  //   parser.parse_file(fname_config);
-  //   config = parser.get_config();
-  // }
-  // else if (fname_config.substr(str_len - 4, str_len) == "yaml")
-  // {
-  //   std::cout << "warning: yaml parser is still experimental" << std::endl;
-  //   Parsers::YamlParser parser;
-  //   parser.parse_file(fname_config);
-  //   config = parser.get_config();
-  // }
 
   // // MESH
   // // get path of the config file -- mesh is searched for in relative path

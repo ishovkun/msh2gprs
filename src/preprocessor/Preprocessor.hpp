@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PreprocessorConfig.hpp"
+#include "mesh/Mesh.hpp"
 
 #include <experimental/filesystem>  // filesystem
 
@@ -16,11 +17,13 @@ class Preprocessor
   void run();
 
  private:
-  void parse_config_(const Path config_file_path);
+  void read_config_file_(const Path config_file_path);
+  void read_mesh_file_(const Path mesh_file_path);
 
 
   // ------------------ Variables ----------------------- //
-  PreprocessorConfig m_config;
+  PreprocessorConfig config;
+  mesh::Mesh grid;
 };
 
 }  // end namespace gprs_data
