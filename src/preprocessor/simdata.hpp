@@ -18,7 +18,7 @@
 #include "angem/Collisions.hpp"
 #include "mesh/SurfaceMesh.hpp"
 #include "mesh/Mesh.hpp"
-#include "SimdataConfig.hpp"
+// #include "SimdataConfig.hpp"
 #include <Well.hpp>
 #include "MultiScaleOutputData.hpp"
 
@@ -97,143 +97,143 @@ struct EmbeddedFracture
 class SimData
 {
 public:
-  // SimData(const string & inputstream, const SimdataConfig & config);
-  SimData(mesh::Mesh & grid, const SimdataConfig & config);
-  // destructor
-  ~SimData();
+//   // SimData(const string & inputstream, const SimdataConfig & config);
+//   SimData(mesh::Mesh & grid, const SimdataConfig & config);
+//   // destructor
+//   ~SimData();
 
-  //  distribute user-defined properties over cells
-  void defineRockProperties();
-  // determine which cells are touched by embedded fractures
-  // and set mechanical SDA properties
-  void defineEmbeddedFractureProperties();
-  // determine geometry of intersection of embedded fractures with the mesh
-  void computeCellClipping();
-  // merge small section elemenents of edfm fractures with larger neighbors (flow only)
-  // the implementation is for the old architecture, needs a rewrite
-  void mergeSmallFracCells();
-  // create cartesian mesh within edfm fractures for flow computation
-  void meshFractures();
-  // find boundary and dfm faces in the original mesh
-  void definePhysicalFacets();
-  // define the cells occupied by well and compute well productivities
-  void setupWells();
-  // split dfm faces for geomechanics
-  void splitInternalFaces();
-  // determine which flow volumes correspond to which mechanics cells
-  void handleConnections();
-  // compute flow data without edfm fracs (reservoir and dfm only)
-  void computeReservoirTransmissibilities();
-  //  high-level method that combines everything related to embedded frac flow
-  void handleEmbeddedFractures();
-  // compute flow data withich a single edfm fracture
-  void computeFracFracTran(const std::size_t                 frac,
-                           const EmbeddedFracture          & efrac,
-                           const mesh::SurfaceMesh<double> & mesh,
-                           flow::FlowData                  & frac_flow_data);
-  // compute flow data for edfm fractures
-  void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
-                                     const int   frac_ind);
-  // compute flow data between two edfm fractures --may be old impl
-  void computeTransEfracIntersection();
+//   //  distribute user-defined properties over cells
+//   void defineRockProperties();
+//   // determine which cells are touched by embedded fractures
+//   // and set mechanical SDA properties
+//   void defineEmbeddedFractureProperties();
+//   // determine geometry of intersection of embedded fractures with the mesh
+//   void computeCellClipping();
+//   // merge small section elemenents of edfm fractures with larger neighbors (flow only)
+//   // the implementation is for the old architecture, needs a rewrite
+//   void mergeSmallFracCells();
+//   // create cartesian mesh within edfm fractures for flow computation
+//   void meshFractures();
+//   // find boundary and dfm faces in the original mesh
+//   void definePhysicalFacets();
+//   // define the cells occupied by well and compute well productivities
+//   void setupWells();
+//   // split dfm faces for geomechanics
+//   void splitInternalFaces();
+//   // determine which flow volumes correspond to which mechanics cells
+//   void handleConnections();
+//   // compute flow data without edfm fracs (reservoir and dfm only)
+//   void computeReservoirTransmissibilities();
+//   //  high-level method that combines everything related to embedded frac flow
+//   void handleEmbeddedFractures();
+//   // compute flow data withich a single edfm fracture
+//   void computeFracFracTran(const std::size_t                 frac,
+//                            const EmbeddedFracture          & efrac,
+//                            const mesh::SurfaceMesh<double> & mesh,
+//                            flow::FlowData                  & frac_flow_data);
+//   // compute flow data for edfm fractures
+//   void computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<double>> & splits,
+//                                      const int   frac_ind);
+//   // compute flow data between two edfm fractures --may be old impl
+//   void computeTransEfracIntersection();
 
-  // helper: check if face is a fracture
-  bool is_fracture (const int marker)
-  {
-    const auto it = fracture_face_markers.find(marker);
-    if (it != fracture_face_markers.end())
-      return true;
-    else return false;
-  }
+//   // helper: check if face is a fracture
+//   bool is_fracture (const int marker)
+//   {
+//     const auto it = fracture_face_markers.find(marker);
+//     if (it != fracture_face_markers.end())
+//       return true;
+//     else return false;
+//   }
 
-  // helper: check if face is a boundary face
-  bool is_boundary (const int marker)
-  {
-    const auto it = boundary_face_markers.find(marker);
-    if (it != boundary_face_markers.end())
-      return true;
-    else return false;
-  }
+//   // helper: check if face is a boundary face
+//   bool is_boundary (const int marker)
+//   {
+//     const auto it = boundary_face_markers.find(marker);
+//     if (it != boundary_face_markers.end())
+//       return true;
+//     else return false;
+//   }
 
-  // Multiscale
-  void build_multiscale_data();
+//   // Multiscale
+//   void build_multiscale_data();
 
-protected:
-  // number of default variables (such as cell x,y,z) for rock properties
-  std::size_t n_default_vars() const;
-  // get property from cell->v_props by key
-  double get_property(const std::size_t cell,
-                      const std::string & key) const;
-  // wrapper around get_property that aborts if no perm data available
-  angem::Point<3,double> get_permeability(const std::size_t cell) const;
-  // wrapper around get_property that aborts if no perm data available
-  double get_volume_factor(const std::size_t cell) const;
-  // compute flow data between two edfm fracs
-  void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
-                                              const std::vector<std::vector<std::size_t>> & polys,
-                                              const std::vector<int>                      & markers,
-                                              flow::FlowData                              & flow_data) const;
-  // get flow volume index of an edfm element
-  // create a well that occupies a single cell in z direction
-  void setupSimpleWell(Well & well);
-  // create a complex well that occupies multiple cells and is arbitrarily-oriented
-  void setupComplexWell(Well & well);
-  // compute productivities of all well segments
-  void computeWellIndex(Well & well);
-  // get dimensions of a cell bounding box
-  angem::Point<3,double> get_dx_dy_dz(const std::size_t icell) const;
+// protected:
+//   // number of default variables (such as cell x,y,z) for rock properties
+//   std::size_t n_default_vars() const;
+//   // get property from cell->v_props by key
+//   double get_property(const std::size_t cell,
+//                       const std::string & key) const;
+//   // wrapper around get_property that aborts if no perm data available
+//   angem::Point<3,double> get_permeability(const std::size_t cell) const;
+//   // wrapper around get_property that aborts if no perm data available
+//   double get_volume_factor(const std::size_t cell) const;
+//   // compute flow data between two edfm fracs
+//   void compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>   & verts,
+//                                               const std::vector<std::vector<std::size_t>> & polys,
+//                                               const std::vector<int>                      & markers,
+//                                               flow::FlowData                              & flow_data) const;
+//   // get flow volume index of an edfm element
+//   // create a well that occupies a single cell in z direction
+//   void setupSimpleWell(Well & well);
+//   // create a complex well that occupies multiple cells and is arbitrarily-oriented
+//   void setupComplexWell(Well & well);
+//   // compute productivities of all well segments
+//   void computeWellIndex(Well & well);
+//   // get dimensions of a cell bounding box
+//   angem::Point<3,double> get_dx_dy_dz(const std::size_t icell) const;
 
-  // is given flow element an embedded fracture
-  // \param [in] // flow_element_index: index of the flow control volume
-  //
-  // Note:
-  // edfm control volumes span from 0 to n_edfm_intersections
-  // reservoir control volumes space from n_edfm to n_edfm + n_cells
-  // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
-  bool is_embedded_fracture(const std::size_t flow_element_index) const;
-  // whether given flow element a discrete fracture
-  // Params [in]
-  // flow_element_index: index of the flow control volume
-  //
-  // Note:
-  // edfm control volumes span from 0 to n_edfm_intersections
-  // reservoir control volumes space from n_edfm to n_edfm + n_cells
-  // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
-  bool is_discrete_fracture(const std::size_t flow_element_index) const;
-  // is given flow element a reservoir cell
-  //
-  // Note:
-  // edfm control volumes span from 0 to n_edfm_intersections
-  // reservoir control volumes space from n_edfm to n_edfm + n_cells
-  // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
-  bool is_reservoir_element(const std::size_t flow_element_index) const;
-  // return global flow index of an ielement element of embedded fracture i
-  std::size_t efrac_flow_index(const std::size_t ifrac,
-                               const std::size_t ielement) const;
-  std::size_t res_cell_flow_index(const std::size_t icell) const
-  {return n_flow_dfm_faces + icell;}
+//   // is given flow element an embedded fracture
+//   // \param [in] // flow_element_index: index of the flow control volume
+//   //
+//   // Note:
+//   // edfm control volumes span from 0 to n_edfm_intersections
+//   // reservoir control volumes space from n_edfm to n_edfm + n_cells
+//   // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
+//   bool is_embedded_fracture(const std::size_t flow_element_index) const;
+//   // whether given flow element a discrete fracture
+//   // Params [in]
+//   // flow_element_index: index of the flow control volume
+//   //
+//   // Note:
+//   // edfm control volumes span from 0 to n_edfm_intersections
+//   // reservoir control volumes space from n_edfm to n_edfm + n_cells
+//   // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
+//   bool is_discrete_fracture(const std::size_t flow_element_index) const;
+//   // is given flow element a reservoir cell
+//   //
+//   // Note:
+//   // edfm control volumes span from 0 to n_edfm_intersections
+//   // reservoir control volumes space from n_edfm to n_edfm + n_cells
+//   // dfm control volumes span from n_edfm + n_cells to n_edfm + n_cells + n_dfm
+//   bool is_reservoir_element(const std::size_t flow_element_index) const;
+//   // return global flow index of an ielement element of embedded fracture i
+//   std::size_t efrac_flow_index(const std::size_t ifrac,
+//                                const std::size_t ielement) const;
+//   std::size_t res_cell_flow_index(const std::size_t icell) const
+//   {return n_flow_dfm_faces + icell;}
 
-  // connect embedded fractures to cells in a physical way
-  // Params [in]
-  // ifrac: embedded frac index ndex of embedded fracture
-  // ielement: frac element index  / fracture element index
-  // icell: reservoir cell index
-  // split: result of dissecting a cell with a fracture polygon
-  void apply_projection_edfm(const std::size_t                ifrac,
-                             const std::size_t                ielement,
-                             const std::size_t                icell,
-                             const angem::PolyGroup<double> & split);
-  // face selection method for pedfm
-  // pedfm projects fracture onto the smaller faces of the
-  // intersected cell
-  // Params [in]
-  // cell: iterator pointing to the intersecting cell
-  // split: result of dissecting a cell with a fracture polygon
-  std::vector<const mesh::Face*>
-  pedfm_select_faces(const mesh::Cell      & cell,
-                     const angem::PolyGroup<double> & split) const;
+//   // connect embedded fractures to cells in a physical way
+//   // Params [in]
+//   // ifrac: embedded frac index ndex of embedded fracture
+//   // ielement: frac element index  / fracture element index
+//   // icell: reservoir cell index
+//   // split: result of dissecting a cell with a fracture polygon
+//   void apply_projection_edfm(const std::size_t                ifrac,
+//                              const std::size_t                ielement,
+//                              const std::size_t                icell,
+//                              const angem::PolyGroup<double> & split);
+//   // face selection method for pedfm
+//   // pedfm projects fracture onto the smaller faces of the
+//   // intersected cell
+//   // Params [in]
+//   // cell: iterator pointing to the intersecting cell
+//   // split: result of dissecting a cell with a fracture polygon
+//   std::vector<const mesh::Face*>
+//   pedfm_select_faces(const mesh::Cell      & cell,
+//                      const angem::PolyGroup<double> & split) const;
 
-public:
+// public:
   // user-defined program config defined in json or yaml files
   SimdataConfig config;
   // class that handles mesh (cells, faces, neighbors, face-splitting)

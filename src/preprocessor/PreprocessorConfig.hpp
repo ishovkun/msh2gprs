@@ -86,7 +86,7 @@ struct WellConfig
 };
 
 
-struct SimdataConfig
+struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  fractures;  //  embedded  fractures
   std::vector<DiscreteFractureConfig>  discrete_fractures;

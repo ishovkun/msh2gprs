@@ -5,13 +5,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_DIR}/yaml)
 ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/src/parsers/yaml)
 
 ADD_LIBRARY(parsers
-  # HEADERS
-  json.hpp
-  JsonParser.hpp
-  YamlParser.hpp
-  GmshReader.hpp
   # IMPLEMENTATION
-  JsonParser.cpp
   YamlParser.cpp
   GmshReader.cpp
 )

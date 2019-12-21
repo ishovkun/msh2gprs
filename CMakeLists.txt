@@ -58,9 +58,12 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/preprocessor)
 ADD_SUBDIRECTORY(src/preprocessor)
 
 # parser
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/parsers)
-ADD_SUBDIRECTORY(src/parsers)
+# INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/parsers)
+# ADD_SUBDIRECTORY(src/parsers)
 
+# yaml parser
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/yaml)
+ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/src/yaml)
 
 # targets
 set(CMAKE_BUILD_TYPE Debug)
@@ -83,7 +86,7 @@ endif()
 # TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh uint256 -lstdc++fs -lasan)
 
 # last flag for std::filesystem
-TARGET_LINK_LIBRARIES(msh2gprs preprocessor parsers mesh -lstdc++fs)
+TARGET_LINK_LIBRARIES(msh2gprs preprocessor yaml-cpp mesh -lstdc++fs)
 
 enable_testing()
 add_subdirectory(tests)
