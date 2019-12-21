@@ -38,25 +38,12 @@ class Mesh
 {
  public:
   Mesh();
-  // insert a cell assigned as angem::Polygon
-  // Note: this method does not allow duplicates in vertices
-  // infers type by number of vertices
- //  void insert(const Polyhedron & poly,
- //              const int          marker = -1);
- //  // insert a cell element assigned as vertex global indices
   std::size_t insert_cell(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
                           const int                        marker = DEFAULT_CELL_MARKER);
   std::size_t insert_face(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
                           const int                        marker = DEFAULT_CELL_MARKER);
- //  // insert marker into map_physical_faces
- //  void insert(const Polygon & poly,
- //              const int       marker);
- //  // insert element without searching vertices
- //  void insert_face(const std::vector<std::size_t> & ivertices,
- //                   const int                        vtk_id,
- //                   const int                        marker);
 
   // ITERATORS
 
@@ -118,8 +105,8 @@ class Mesh
   inline std::size_t n_faces() const {return m_faces.size();}
 
   // MANIPULATION
-  // delete an element from the mesh
-  //  void delete_element(const std::size_t ielement);
+  // delete a cell mesh
+   void delete_cell(const std::size_t ielement);
   //  // merges jcell into icell if they have a common face
   std::size_t merge_cells(const std::size_t icell, const std::size_t jcell);
   // tell grid which faces to split before calling split_faces method
@@ -132,7 +119,6 @@ class Mesh
    * retults in adding new vertices (pushed to the back of vertices set) */
   void split_vertex(const std::size_t               vertex_index,
                     const std::vector<std::size_t> &splitted_face_indices);
-
 
  private:
   void insert_vertex(const std::size_t vertex,

@@ -164,8 +164,7 @@ void SimData::computeCellClipping()
     /* loop faces:
      * if any neighbor cell is in collision list,
      * determine the intersection points of the face with the fracture plane
-     * add these points to the point set for cells
-     */
+     * add these points to the point set for cells */
     for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
     {
       // vector of cells containing efrac and neighboring face

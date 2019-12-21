@@ -66,8 +66,8 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     }
     else if (key == "fracture")
     {
-      config.fractures.emplace_back();
-      embedded_fracture(it->second, config.fractures.back());
+      config.embedded_fractures.emplace_back();
+      embedded_fracture(it->second, config.embedded_fractures.back());
     }
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;

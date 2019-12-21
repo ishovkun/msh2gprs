@@ -108,7 +108,7 @@ struct CellPropertyConfig
 
 struct PreprocessorConfig
 {
-  std::vector<EmbeddedFractureConfig>  fractures;  //  embedded  fractures
+  std::vector<EmbeddedFractureConfig>  embedded_fractures;  //  embedded  fractures
   std::vector<DiscreteFractureConfig>  discrete_fractures;
   std::vector<BCConfig>                bc_faces;
   std::vector<BCNodeConfig>            bc_nodes;
