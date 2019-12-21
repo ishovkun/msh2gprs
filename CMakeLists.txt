@@ -13,13 +13,13 @@ IF( EXISTS "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json" )
   )
 ENDIF()
 
-# boost is optional for 256-bit integers (for mesh library)
+# boost is optional for 256-bit integers (angem point set)
 # but it works muuuch faster with it
 find_package(Boost 1.65.1)
 if(Boost_FOUND)
   message("Boost found. Using boost libraries for hashing.")
   message("To turn off edit the CMakeLists file.")
-  INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
+  INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
   add_definitions(-DUSE_BOOST)
 else()
   # 256 bit integer lib (for mesh)
@@ -51,9 +51,9 @@ ADD_SUBDIRECTORY(src/mesh)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/muparser)
 ADD_SUBDIRECTORY(src/muparser)
 
-# simdata
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/gprs-data)
-ADD_SUBDIRECTORY(src/gprs-data)
+# preprocessor
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/preprocessor)
+ADD_SUBDIRECTORY(src/preprocessor)
 
 # parser
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/parsers)
@@ -61,8 +61,8 @@ ADD_SUBDIRECTORY(src/parsers)
 
 
 # targets
-# set(CMAKE_BUILD_TYPE Debug)
-# set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 ADD_EXECUTABLE(msh2gprs ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
@@ -74,14 +74,14 @@ if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra")
 endif()
 
-# memory leak debugging
-# set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-# set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-
+# # memory leak debugging
+# # set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+# # set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 # for profiling memory leaks
 # TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh uint256 -lstdc++fs -lasan)
+
 # last flag for std::filesystem
-TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh -lstdc++fs)
+TARGET_LINK_LIBRARIES(msh2gprs preprocessor parsers mesh -lstdc++fs)
 
 enable_testing()
 add_subdirectory(tests)
