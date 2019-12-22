@@ -131,12 +131,6 @@ class Mesh
   group_cells_based_on_split_faces(const std::vector<std::size_t> & affected_cells,
                                    const std::vector<std::size_t> & splitted_face_indices) const;
 
- //  // get global indices of polygon face vertices
- //  std::vector<std::vector<std::size_t>> get_faces(const Polyhedron & poly) const;
-
- //  // vector of faces that are markerd for split by the user via mark_for_split
- //  // Note: the vector is cleared after split_faces is performed
- //  std::vector<hash_type> marked_for_split;
  private:
   // ATTRIBUTES
   std::vector<angem::Point<3,double>>   m_vertices;      // vector of vertex coordinates

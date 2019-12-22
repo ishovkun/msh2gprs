@@ -62,7 +62,8 @@ class Cell
   int m_marker, m_vtk_id;
   std::vector<std::size_t> m_vertices;
   std::vector<std::size_t> m_faces;
-  // grid stuff
+
+  // global grid stuff
   std::vector<Point> & m_grid_vertices;
   std::vector<Cell> & m_grid_cells;
   std::vector<Face> & m_grid_faces;
