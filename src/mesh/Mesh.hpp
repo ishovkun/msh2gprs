@@ -138,8 +138,7 @@ class Mesh
   std::vector<Face>                     m_faces;
   std::vector<std::vector<std::size_t>> m_vertex_cells;  // vertex neighboring cells
   std::vector<std::vector<std::size_t>> m_vertex_faces;  // vertex neighboring faces
-
-  //
+  // Used as a tmp container when splitting faces for dfm
   std::vector<std::size_t> m_faces_marked_for_split;
 };
 
