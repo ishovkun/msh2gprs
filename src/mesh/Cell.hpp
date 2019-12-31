@@ -3,6 +3,7 @@
 #include "angem/Point.hpp"
 #include "angem/Polyhedron.hpp"
 #include "Face.hpp"
+#include "constants.hpp"
 #include <vector>
 #include <functional>  // std::reference_wrapper
 
@@ -17,15 +18,16 @@ class Cell
 {
  public:
   // constructor
-  Cell(const std::size_t          cell_index,
+  Cell(const std::size_t                cell_index,
        const std::vector<std::size_t> & vertices,
        const std::vector<std::size_t> & faces,
-       std::vector<Point>        & grid_vertices,
-       std::vector<Cell>        & grid_cells,
-       std::vector<Face>        & grid_faces,
-       const int                  vtk_id,
-       const int                  marker);
-  // access operators
+       std::vector<Point>             & grid_vertices,
+       std::vector<Cell>              & grid_cells,
+       std::vector<Face>              & grid_faces,
+       const int                        vtk_id,
+       const int                        marker,
+       const std::size_t                parent = constants::invalid_index);
+  // ---------------------- ACCESS OPERATORS ------------------------------- //
   // get cell index
   inline std::size_t index() const { return m_index; }
   // get cell marker
@@ -62,11 +64,13 @@ class Cell
   int m_marker, m_vtk_id;
   std::vector<std::size_t> m_vertices;
   std::vector<std::size_t> m_faces;
-
   // global grid stuff
   std::vector<Point> & m_grid_vertices;
   std::vector<Cell> & m_grid_cells;
   std::vector<Face> & m_grid_faces;
+  // refinement
+  std::size_t m_parent;
+  std::vector<std::size_t> m_children;
   friend class Mesh;
 };
 

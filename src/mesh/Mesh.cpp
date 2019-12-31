@@ -2,6 +2,7 @@
 #include <SurfaceMesh.hpp>
 #include "Cell.hpp"
 #include "angem/PolyhedronFactory.hpp"
+#include "angem/Collisions.hpp"    // angem::split
 #include <unordered_set>
 #include <algorithm>  // std::max
 
@@ -22,13 +23,34 @@ std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
   // get faces: vectors of vertexindices based on vtk numbering
   const std::vector<std::vector<std::size_t>> poly_faces =
       angem::PolyhedronFactory::get_global_faces<double>(ivertices, vtk_id);
+  return insert_cell_(ivertices, poly_faces, vtk_id, marker);
+}
 
+std::size_t Mesh::
+insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
+            const int                        marker)
+{
+  // cells don't have many vertices: don't need a hashmap here
+  std::set<size_t> unique_vertices;
+  for (const auto & face : cell_faces)
+    for (const size_t v : face)
+      unique_vertices.insert(v);
+  std::vector<size_t> ivertices(unique_vertices.begin(), unique_vertices.end());
+  return insert_cell_( ivertices, cell_faces, -1, marker );
+}
+
+std::size_t Mesh::
+insert_cell_(const std::vector<std::size_t> & ivertices,
+             const std::vector<std::vector<std::size_t>> & cell_faces,
+             const int                        vtk_id,
+             const int                        marker)
+{
   const std::size_t new_cell_index = n_cells();
 
   std::vector<std::size_t> face_indices;
-  face_indices.reserve(poly_faces.size());
+  face_indices.reserve(cell_faces.size());
 
-  for (const vector<size_t> & face : poly_faces)
+  for (const vector<size_t> & face : cell_faces)
   {
     size_t face_vtk_id;
     switch (face.size())
@@ -339,55 +361,58 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
 }
 
 
-// std::vector<face_iterator> Mesh::get_ordered_faces()
-// {
-//   std::vector<face_iterator> ordered_faces(this->n_faces(), this->begin_faces());
-//   for (auto face=begin_faces(); face!=end_faces(); ++face)
-//     ordered_faces[face.index()] = face;
-//   return ordered_faces;
-// }
+void Mesh::split_cell(Cell & cell,
+                      const angem::Plane<double> & plane)
+{
+  const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
+  // Bookkeeping:
+  //  fill polygroup's internal set with the existing vertex coordinates
+  // in order to have a map of those to the global vertex indices,
+  // which will come in handy when inserting new splitted cells into grid.
+  // We can do it because splitting will insert the same vertices plus
+  // those that appeared due to plase-face intersection.
+  angem::PolyGroup<double> split;
+  std::vector<size_t> global_vertex_indices;
+  for (const Point & p : polyhedron->get_points())
+    global_vertex_indices.push_back(split.vertices.insert(p));
 
+  // the actual geometry happens here
+  angem::split(*polyhedron, plane, split,
+               constants::marker_below_splitting_plane,
+               constants::marker_above_splitting_plane,
+               constants::marker_splitting_plane);
 
-//  const angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i) const
-// {
-//   assert(i < n_vertices());
-//   return vertices.points[i];
-// }
+  // check we actually split something
+  assert( split.vertices.size() > global_vertex_indices.size() );
 
+  // insert new vertices (those that occured due to splitting)
+  for (size_t i = global_vertex_indices.size(); i < split.vertices.size(); ++i)
+  {
+    const size_t new_vertex_index = n_vertices();
+    m_vertices.push_back(split.vertices[i]);
+    global_vertex_indices.push_back(new_vertex_index);
+  }
 
-// angem::Point<3,double> & Mesh::vertex_coordinates(const std::size_t i)
-// {
-//   assert(i < n_vertices());
-//   return vertices.points[i];
-// }
+  // make two groups of faces (polyhedra) that will form the new cells
+  vector<vector<size_t>> cell_above_faces, cell_below_faces;
+  for (size_t i = 0; i < split.polygons.size(); i++)
+  {
+    if ( split.markers[i] == constants::marker_below_splitting_plane ||
+         split.markers[i] == constants::marker_splitting_plane )
+      cell_below_faces.push_back(split.polygons[i]);
+    if ( split.markers[i] == constants::marker_above_splitting_plane ||
+         split.markers[i] == constants::marker_splitting_plane )
+      cell_above_faces.push_back(split.polygons[i]);
+  }
 
+  // insert new cells
+  const size_t child_cell_index1 = insert_cell_(cell_above_faces, cell.marker());
+  const size_t child_cell_index2 = insert_cell_(cell_below_faces, cell.marker());
 
-// void Mesh::add_vertex_to_split(const std::size_t                                        vertex,
-//                                const std::vector<std::size_t>                         & edge_neighbors,
-//                                const std::unordered_map<std::size_t, size_t>       & map_2d_3d,
-//                                std::unordered_set<size_t> & vertices_to_split)
-// {
-//   auto & faces = vertices_to_split[vertex];
-//   for (const auto & neighbor : edge_neighbors)
-//   {
-//     auto it = create_face_iterator(map_faces.find(map_2d_3d.find(neighbor)->second));
-//     if (find(faces.begin(), faces.end(), it) == faces.end())
-//       faces.push_back(std::move(it));
-//   }
-
-// }
-
-
-// std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell)
-// {
-//   return cells[cell];
-// }
-
-
-// const std::vector<std::size_t> & Mesh::get_vertices(const std::size_t cell) const
-// {
-//   return cells[cell];
-// }
-
-
+  // handle parent/child dependencies
+  cell.m_children = {child_cell_index1, child_cell_index2};
+  m_cells[child_cell_index1].m_parent = cell.index();
+  m_cells[child_cell_index2].m_parent = cell.index();
 }
+
+}  // end namespace mesh

@@ -11,7 +11,8 @@ Cell::Cell(const std::size_t          cell_index,
            std::vector<Cell>        & grid_cells,
            std::vector<Face>        & grid_faces,
            const int                  vtk_id,
-           const int                  marker)
+           const int                  marker,
+           const std::size_t          parent )
     : m_index(cell_index),
       m_vertices(vertices),
       m_faces(faces),
@@ -19,7 +20,8 @@ Cell::Cell(const std::size_t          cell_index,
       m_grid_cells(grid_cells),
       m_grid_faces(grid_faces),
       m_vtk_id(vtk_id),
-      m_marker(marker)
+      m_marker(marker),
+      m_parent(parent)
 {}
 
 std::unique_ptr<Polyhedron> Cell::polyhedron() const

@@ -38,9 +38,11 @@ class Mesh
 {
  public:
   Mesh();
+  /* Insert a standard vtk polyhedron cell into grid */
   std::size_t insert_cell(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
                           const int                        marker = DEFAULT_CELL_MARKER);
+  /* insert a face into the grid */
   std::size_t insert_face(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
                           const int                        marker = DEFAULT_CELL_MARKER);
@@ -115,6 +117,9 @@ class Mesh
   // returns SurfaceMesh of master DFM faces
   // cleans marked_for_split array upon completion
   SurfaceMesh<double> split_faces();
+
+  /* Split a cell by cutting it with a plane */
+  void split_cell(Cell & cell, const angem::Plane<double> & plane);
   /* split a vertex
    * retults in adding new vertices (pushed to the back of vertices set) */
   void split_vertex(const std::size_t               vertex_index,
@@ -130,6 +135,18 @@ class Mesh
   std::vector<std::vector<std::size_t>>
   group_cells_based_on_split_faces(const std::vector<std::size_t> & affected_cells,
                                    const std::vector<std::size_t> & splitted_face_indices) const;
+
+
+  /* private insert cell class that does all the cell insertion work */
+  std::size_t insert_cell_(const std::vector<std::size_t> & ivertices,
+                           const std::vector<std::vector<std::size_t>> & cell_faces,
+                           const int                        vtk_id,
+                           const int                        marker);
+  /* Insert an arbitrary polyhedron cell into grid .
+   * A wrapper on the above function to minimize bookkeeping. */
+  std::size_t insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
+                           const int                        marker = DEFAULT_CELL_MARKER);
+
 
  private:
   // ATTRIBUTES
