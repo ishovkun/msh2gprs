@@ -58,6 +58,8 @@ class Cell
   std::unique_ptr<Polyhedron> polyhedron() const;
   // true if cell hace a vertex, false otherwise
   bool has_vertex(const std::size_t vertex_index) const;
+  // returns 1 if has no children
+  inline bool is_active() const {return m_parent == constants::invalid_index;}
 
  protected:
   // this cell stuff

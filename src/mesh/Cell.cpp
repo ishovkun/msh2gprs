@@ -101,6 +101,4 @@ std::vector<const Cell*> Cell::neighbors() const
   return neighbor_cells;
 }
 
-
-
 }  // end namespace

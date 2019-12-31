@@ -27,13 +27,15 @@ bool active_cell_iterator::operator!=(const active_cell_iterator & other) const
 active_cell_iterator &
 active_cell_iterator::operator++()
 {
-  while ( p_cell->m_parent != constants::invalid_index )
+  while ( !p_cell->is_active() )
   {
     if (p_cell->index() == p_cell->m_grid_cells.size() - 1)
     {
       p_cell = nullptr;
       return *this;
     }
+    const size_t next_cell_index = p_cell->index() + 1;
+    p_cell = &(p_cell->m_grid_cells[next_cell_index]);
   }
   return *this;
 }

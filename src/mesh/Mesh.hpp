@@ -1,19 +1,15 @@
 #pragma once
 
-// internal
+#include "Face.hpp"
+#include "Cell.hpp"
+#include "active_cell_iterator.hpp"
+#include "SurfaceMesh.hpp"
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
 #include <angem/Polygon.hpp>
-// #include <mesh_methods.hpp>
-// #include "ShapeID.hpp"
-#include "Face.hpp"
-#include "Cell.hpp"
-#include "SurfaceMesh.hpp"
 // #include <cell_const_iterator.hpp>
 // #include <face_iterator.hpp>
 // #include <face_const_iterator.hpp>
-// external
-// standard
 #include <algorithm> // std::sort
 #include <unordered_set>
 
@@ -48,14 +44,22 @@ class Mesh
                           const int                        marker = DEFAULT_CELL_MARKER);
 
   // ITERATORS
-
-  // create cell iterator for the first cell
+  //  create cell iterator for the first active cell
+  active_cell_iterator begin_active_cells();
+  // Returns an iterator referring to the past-the-end active cell
+  inline active_cell_iterator end_active_cells() {return active_cell_iterator(nullptr);}
+  /* RAW cell iterators, use with caution */
+  //  create cell iterator for the first cell
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Cell>::iterator begin_cells() {return m_cells.begin();}
   // create cell const_iterator for the first cell
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Cell>::const_iterator begin_cells() const {return m_cells.begin();}
   // Returns an iterator referring to the past-the-end element in the cell container
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Cell>::iterator end_cells()   {return m_cells.end();}
   // end iterator for cells. Must only be used as the range indicator
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Cell>::const_iterator end_cells() const {return m_cells.end();}
   // create a face iterator
   inline std::vector<Face>::iterator begin_faces(){return m_faces.begin();}
