@@ -27,6 +27,7 @@ class Cell
        const int                        vtk_id,
        const int                        marker,
        const std::size_t                parent = constants::invalid_index);
+  inline bool operator==(const Cell & other) { return index() == other.index(); }
   // ---------------------- ACCESS OPERATORS ------------------------------- //
   // get cell index
   inline std::size_t index() const { return m_index; }
@@ -72,6 +73,7 @@ class Cell
   std::size_t m_parent;
   std::vector<std::size_t> m_children;
   friend class Mesh;
+  friend class active_cell_iterator;
 };
 
 }  // end namespace
