@@ -3,6 +3,7 @@
 #include "Face.hpp"
 #include "Cell.hpp"
 #include "active_cell_iterator.hpp"
+#include "active_cell_const_iterator.hpp"
 #include "SurfaceMesh.hpp"
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
@@ -28,8 +29,7 @@ using FaceiVertices = std::vector<std::size_t>;
  * for faces, cells, and their neighbors.
  * Due to this feature though, the order of faces is not guaranteed
  * so that unordered_map[hash]->value should be used to store
- * data related to faces
- */
+ * data related to faces */
 class Mesh
 {
  public:
@@ -46,8 +46,12 @@ class Mesh
   // ITERATORS
   //  create cell iterator for the first active cell
   active_cell_iterator begin_active_cells();
+  //  create cell iterator for the first active cell
+  active_cell_const_iterator begin_active_cells() const;
   // Returns an iterator referring to the past-the-end active cell
   inline active_cell_iterator end_active_cells() {return active_cell_iterator(nullptr);}
+  // Returns an iterator referring to the past-the-end active cell
+  inline active_cell_const_iterator end_active_cells() const {return active_cell_const_iterator(nullptr);}
   /* RAW cell iterators, use with caution */
   //  create cell iterator for the first cell
   //  NOTE: RAW cell iterator, use with caution
@@ -122,7 +126,8 @@ class Mesh
   // cleans marked_for_split array upon completion
   SurfaceMesh<double> split_faces();
 
-  /* Split a cell by cutting it with a plane */
+  /* Split a cell by cutting it with a plane. New cell indices are appended
+   * at the back, so it is safe to split multiple cells in a row. */
   void split_cell(Cell & cell, const angem::Plane<double> & plane);
   /* split a vertex
    * retults in adding new vertices (pushed to the back of vertices set) */

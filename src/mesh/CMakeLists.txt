@@ -10,6 +10,7 @@ ADD_LIBRARY(mesh
   # mesh_methods.cpp
   surface_mesh_methods.cpp
   active_cell_iterator.cpp
+  active_cell_const_iterator.cpp
 )
 
 SET_TARGET_PROPERTIES (

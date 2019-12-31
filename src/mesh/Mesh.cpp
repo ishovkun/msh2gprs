@@ -415,13 +415,19 @@ void Mesh::split_cell(Cell & cell,
   m_cells[child_cell_index2].m_parent = cell.index();
 }
 
+active_cell_const_iterator Mesh::begin_active_cells() const
+{
+  for (auto cell = begin_cells(); cell != end_cells(); ++ cell)
+    if (!cell->is_active()) cell++;
+    else return active_cell_const_iterator(&*cell);
+  return active_cell_const_iterator(nullptr);
+}
+
 active_cell_iterator Mesh::begin_active_cells()
 {
   for (auto cell = begin_cells(); cell != end_cells(); ++ cell)
-    if (!cell->is_active())
-      cell++;
-    else
-      return active_cell_iterator(&*cell);
+    if (!cell->is_active()) cell++;
+    else return active_cell_iterator(&*cell);
   return active_cell_iterator(nullptr);
 }
 

@@ -50,7 +50,8 @@ void CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
   const std::size_t n_expressions = domain.expressions.size();
   const std::size_t n_variables = config.all_vars.size();
   const auto & grid = data.grid;
-  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell) {
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+  {
     if (cell->marker() == domain.label) // cells
     {
       std::fill(vars.begin(), vars.end(), 0);

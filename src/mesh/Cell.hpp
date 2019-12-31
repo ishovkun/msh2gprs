@@ -27,7 +27,7 @@ class Cell
        const int                        vtk_id,
        const int                        marker,
        const std::size_t                parent = constants::invalid_index);
-  inline bool operator==(const Cell & other) { return index() == other.index(); }
+  inline bool operator==(const Cell & other) const { return index() == other.index(); }
   // ---------------------- ACCESS OPERATORS ------------------------------- //
   // get cell index
   inline std::size_t index() const { return m_index; }
@@ -59,7 +59,7 @@ class Cell
   // true if cell hace a vertex, false otherwise
   bool has_vertex(const std::size_t vertex_index) const;
   // returns 1 if has no children
-  inline bool is_active() const {return m_parent == constants::invalid_index;}
+  inline bool is_active() const {return m_children.empty();}
 
  protected:
   // this cell stuff
@@ -76,6 +76,7 @@ class Cell
   std::vector<std::size_t> m_children;
   friend class Mesh;
   friend class active_cell_iterator;
+  friend class active_cell_const_iterator;
 };
 
 }  // end namespace

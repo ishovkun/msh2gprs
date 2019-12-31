@@ -37,13 +37,11 @@ void EmbeddedFractureManager::split_cells()
 void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
                                            std::vector<size_t> & cells)
 {
-  const auto & plane = fracture.plane;
+  const auto & plane = fracture.plane();
   for (const size_t icell : cells)
   {
-    std::cout << "icell = " << icell << std::endl;
     mesh::Cell & old_cell = m_split_grid.cell(icell);
     m_split_grid.split_cell(old_cell, plane);
-    exit(0);
   }
 }
 
@@ -54,7 +52,7 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
   // performs fast collision check
   angem::CollisionGJK<double> collision;
 
-  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
     const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell->polyhedron();
     // const angem::Polyhedron<double> & poly_cell = *pol;
@@ -68,10 +66,10 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
       for (const Point & vertex : vertices)
       {
         const double dist_vert_center = (polyhedron->center() - vertex).norm();
-        if ( std::fabs( fracture.plane.signed_distance(vertex) / dist_vert_center) < 1e-4 )
+        if ( std::fabs( fracture.plane().signed_distance(vertex) / dist_vert_center) < 1e-4 )
         {
           const double h = vertices[1].distance(vertices[0]);
-          const Point shift = h/5 * fracture.plane.normal();
+          const Point shift = h/5 * fracture.plane().normal();
           fracture.move(shift);
           return false;
         }
