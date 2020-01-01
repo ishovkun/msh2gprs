@@ -128,6 +128,8 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
                          ivertices, vtk_id, marker,
                          m_cells, m_vertices, m_vertex_cells,
                          face_parent);
+    if (face_parent != constants::invalid_index)
+        m_faces[face_parent].m_children.push_back(face_index);
   }
   else
   {
@@ -396,7 +398,6 @@ void Mesh::split_cell(Cell & cell,
                constants::marker_below_splitting_plane,
                constants::marker_above_splitting_plane,
                constants::marker_splitting_plane);
-  std::cout << "split.polygons.size() = " << split.polygons.size() << std::endl;
 
   // check we actually split something
   assert( split.vertices.size() > global_vertex_indices.size() );
@@ -457,12 +458,6 @@ void Mesh::split_cell(Cell & cell,
   cell.m_children = {child_cell_index1, child_cell_index2};
   m_cells[child_cell_index1].m_parent = cell.index();
   m_cells[child_cell_index2].m_parent = cell.index();
-
-  for (size_t i : faces_above_parents)
-    std::cout << "parent = " << i << std::endl;
-
-  // TODO: write code for childre/parent faces
-  assert(false && "Write code for children/parent faces");
 }
 
 active_cell_const_iterator Mesh::begin_active_cells() const
