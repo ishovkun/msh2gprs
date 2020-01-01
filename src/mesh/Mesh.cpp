@@ -15,7 +15,6 @@ using std::vector;
 Mesh::Mesh()
 {}
 
-
 std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
                               const int                        vtk_id,
                               const int                        marker)
@@ -50,8 +49,7 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
   std::vector<std::size_t> face_indices;
   face_indices.reserve(cell_faces.size());
 
-  for (const vector<size_t> & face : cell_faces)
-  {
+  for (const vector<size_t> & face : cell_faces) {
     size_t face_vtk_id;
     switch (face.size())
     {
@@ -365,6 +363,7 @@ void Mesh::split_cell(Cell & cell,
                       const angem::Plane<double> & plane)
 {
   const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
+
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
   // in order to have a map of those to the global vertex indices,
@@ -373,14 +372,18 @@ void Mesh::split_cell(Cell & cell,
   // those that appeared due to plase-face intersection.
   angem::PolyGroup<double> split;
   std::vector<size_t> global_vertex_indices;
-  for (const Point & p : polyhedron->get_points())
-    global_vertex_indices.push_back(split.vertices.insert(p));
+  for (const size_t vertex : cell.vertices())
+  {
+    split.vertices.insert(m_vertices[vertex]);
+    global_vertex_indices.push_back(vertex);
+  }
 
   // the actual geometry happens here
   angem::split(*polyhedron, plane, split,
                constants::marker_below_splitting_plane,
                constants::marker_above_splitting_plane,
                constants::marker_splitting_plane);
+  std::cout << "split.polygons.size() = " << split.polygons.size() << std::endl;
 
   // check we actually split something
   assert( split.vertices.size() > global_vertex_indices.size() );
@@ -393,26 +396,57 @@ void Mesh::split_cell(Cell & cell,
     global_vertex_indices.push_back(new_vertex_index);
   }
 
+  // map local indices to global
+  std::vector<std::vector<size_t>> face_vertex_global_numbering;
+  for (size_t i = 0; i < split.polygons.size(); i++)
+      face_vertex_global_numbering.push_back(std::move(
+          build_global_face_indices_(split.polygons[i], global_vertex_indices)));
+
+  size_t split_face_local_index;  // need this to figure out parent/child faces
+  for (size_t i = 0; i < split.polygons.size(); i++)
+    if ( split.markers[i] == constants::marker_splitting_plane )
+      split_face_local_index = i;
+
   // make two groups of faces (polyhedra) that will form the new cells
   vector<vector<size_t>> cell_above_faces, cell_below_faces;
+  std::vector<size_t> faces_above_parents, faces_below_parents;
   for (size_t i = 0; i < split.polygons.size(); i++)
   {
     if ( split.markers[i] == constants::marker_below_splitting_plane ||
          split.markers[i] == constants::marker_splitting_plane )
-      cell_below_faces.push_back(split.polygons[i]);
-    if ( split.markers[i] == constants::marker_above_splitting_plane ||
-         split.markers[i] == constants::marker_splitting_plane )
-      cell_above_faces.push_back(split.polygons[i]);
+    {
+      cell_below_faces.push_back(face_vertex_global_numbering[i]);
+      const size_t face_parent =
+          determine_face_parent_(face_vertex_global_numbering[i], cell,
+                                 face_vertex_global_numbering[split_face_local_index]);
+      faces_below_parents.push_back(face_parent);
+    }
+
+    if (split.markers[i] == constants::marker_above_splitting_plane ||
+        split.markers[i] == constants::marker_splitting_plane)
+    {
+      cell_above_faces.push_back(face_vertex_global_numbering[i]);
+      const size_t face_parent =
+          determine_face_parent_(face_vertex_global_numbering[i], cell,
+                                 face_vertex_global_numbering[split_face_local_index]);
+      faces_above_parents.push_back(face_parent);
+    }
   }
 
   // insert new cells
   const size_t child_cell_index1 = insert_cell_(cell_above_faces, cell.marker());
   const size_t child_cell_index2 = insert_cell_(cell_below_faces, cell.marker());
 
-  // handle parent/child dependencies
+  // handle parent/child cell dependencies
   cell.m_children = {child_cell_index1, child_cell_index2};
   m_cells[child_cell_index1].m_parent = cell.index();
   m_cells[child_cell_index2].m_parent = cell.index();
+
+  for (size_t i : faces_above_parents)
+    std::cout << "parent = " << i << std::endl;
+
+  // TODO: write code for childre/parent faces
+  assert(false && "Write code for children/parent faces");
 }
 
 active_cell_const_iterator Mesh::begin_active_cells() const
@@ -429,6 +463,66 @@ active_cell_iterator Mesh::begin_active_cells()
     if (!cell->is_active()) cell++;
     else return active_cell_iterator(&*cell);
   return active_cell_iterator(nullptr);
+}
+
+std::vector<std::size_t>
+Mesh::build_global_face_indices_(const std::vector<size_t> & polygon_local_indices,
+                                 const std::vector<size_t> & local_to_global) const
+{
+  std::vector<std::size_t> global_face_indices(polygon_local_indices.size());
+  for (std::size_t i=0; i<polygon_local_indices.size(); ++i)
+    global_face_indices[i] = local_to_global[polygon_local_indices[i]];
+  return global_face_indices;
+}
+
+std::size_t Mesh::determine_face_parent_(const std::vector<size_t> & face_vertices,
+                                         const Cell                & parent_cell,
+                                         const std::vector<size_t> & splitting_face_vertices) const
+{
+  if ( face_vertices == splitting_face_vertices )
+    return constants::invalid_index;  // new face
+
+  // if a face has common vertices with the splitting face then it is a chld face
+  std::set<size_t> common_vertices;
+  for (const size_t v : face_vertices)
+    common_vertices.insert(v);
+  for (const size_t v : splitting_face_vertices)
+    common_vertices.insert(v);
+  if ( common_vertices.size() < face_vertices.size() + splitting_face_vertices.size())
+  {
+    // there are common vertices + the face normal should match
+    for (const Face* face : parent_cell.faces())
+    {
+      std::set<size_t> common_vertices;
+      for (const size_t v : face_vertices)
+        common_vertices.insert(v);
+      for (const size_t v : face->vertices())
+        common_vertices.insert(v);
+
+      if (common_vertices.size() < face_vertices.size() + face->vertices().size())
+      { // now compare normals
+        const angem::Polygon<double> face_polygon(m_vertices, face_vertices);
+        if ( face_polygon.normal().cross( face->normal() ).norm() < 1e-4 )
+          return face->index();
+      }
+    }
+  }
+  else
+  {
+    // no common vertices: face should match its parent
+    std::vector<size_t> sorted(face_vertices);
+    std::sort(sorted.begin(), sorted.end());
+    for (const Face* face : parent_cell.faces())
+    {
+      std::vector<size_t> other_sorted( face->vertices() );
+      std::sort( other_sorted.begin() , other_sorted.end() );
+      if ( sorted == other_sorted )
+        return face->index();
+    }
+  }
+
+  throw std::runtime_error("Should not be here");
+  return constants::invalid_index;  // shut up compiler
 }
 
 }  // end namespace mesh

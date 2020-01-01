@@ -23,13 +23,10 @@ void Preprocessor::run()
   CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
   property_mgr.generate_properties();
 
-  if (!config.embedded_fractures.empty())
-  {
-    EmbeddedFractureManager edfm_mgr(config.embedded_fractures,
-                                     config.edfm_method, data);
-    edfm_mgr.split_cells();
-    
-  }
+  /* Split cells due to edfm intersection */
+  EmbeddedFractureManager edfm_mgr(config.embedded_fractures,
+                                   config.edfm_method, data);
+  edfm_mgr.split_cells();
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

@@ -22,7 +22,10 @@ Cell::Cell(const std::size_t          cell_index,
       m_vtk_id(vtk_id),
       m_marker(marker),
       m_parent(parent)
-{}
+{
+  if (m_parent == constants::invalid_index)
+    m_parent = m_index;
+}
 
 std::unique_ptr<Polyhedron> Cell::polyhedron() const
 {

@@ -20,8 +20,6 @@ class active_cell_const_iterator
   bool operator!=(const active_cell_const_iterator & other) const;
   // incrementing
   active_cell_const_iterator & operator++();
-  // derementing
-  // active_cell_iterator & operator--();
   // access operator
   inline const Cell* operator->() const { return p_cell; }
   // access operator

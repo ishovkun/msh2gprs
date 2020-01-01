@@ -21,6 +21,8 @@ class Face
        std::vector<Cell>              &        grid_cells,
        std::vector<Point> &                    grid_vertices,
        std::vector<std::vector<std::size_t>> & grid_vertex_cells);
+  // comparison operator
+  inline bool operator==(const Face & other) const { return index() == other.index(); }
   // ACCESS
   // get face marker
   inline int marker() const { return m_marker; }
@@ -44,6 +46,8 @@ class Face
   Point normal() const;
   Polygon polygon() const;
   bool has_vertex(const std::size_t vertex_index) const;
+  // returns true if has no children; else returns false
+  // inline bool is_active() const {return m_children.empty();}
 
  protected:
   std::size_t m_index;              // face index

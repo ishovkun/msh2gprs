@@ -155,8 +155,16 @@ class Mesh
    * A wrapper on the above function to minimize bookkeeping. */
   std::size_t insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
                            const int                        marker = DEFAULT_CELL_MARKER);
-
-
+  /* get a vector of polygon global vertex indices given a vector with
+   * local polygon vertex indices and a mapping vector. */
+  std::vector<std::size_t>
+  build_global_face_indices_(const std::vector<size_t> & polygon_local_indices,
+                             const std::vector<size_t> & local_to_global) const;
+  /* find out whether the face is a parent or child cell based on the
+   * split information. returns parent index. */
+  std::size_t determine_face_parent_(const std::vector<size_t> & face_vertices,
+                                     const Cell                & parent_cell,
+                                     const std::vector<size_t> & splitting_face_vertices) const;
  private:
   // ATTRIBUTES
   std::vector<angem::Point<3,double>>   m_vertices;      // vector of vertex coordinates

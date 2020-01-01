@@ -27,6 +27,7 @@ class Cell
        const int                        vtk_id,
        const int                        marker,
        const std::size_t                parent = constants::invalid_index);
+  // comparison operator
   inline bool operator==(const Cell & other) const { return index() == other.index(); }
   // ---------------------- ACCESS OPERATORS ------------------------------- //
   // get cell index
@@ -58,8 +59,10 @@ class Cell
   std::unique_ptr<Polyhedron> polyhedron() const;
   // true if cell hace a vertex, false otherwise
   bool has_vertex(const std::size_t vertex_index) const;
-  // returns 1 if has no children
+  // returns true if has no children; else returns false
   inline bool is_active() const {return m_children.empty();}
+  // returns the parent index. If cell has not parents, returns it's cell index
+  inline std::size_t parent() const { return m_parent; }
 
  protected:
   // this cell stuff
