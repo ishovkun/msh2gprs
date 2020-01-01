@@ -4,6 +4,7 @@
 #include "Cell.hpp"
 #include "active_cell_iterator.hpp"
 #include "active_cell_const_iterator.hpp"
+#include "active_face_const_iterator.hpp"
 #include "SurfaceMesh.hpp"
 #include <angem/Point.hpp>
 #include <angem/Polyhedron.hpp>
@@ -65,13 +66,21 @@ class Mesh
   // end iterator for cells. Must only be used as the range indicator
   //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Cell>::const_iterator end_cells() const {return m_cells.end();}
+  // create an active face iterator
+  active_face_const_iterator begin_active_faces() const;
+  // create an active face end-iterator
+  inline active_face_const_iterator end_active_faces() const {return active_face_const_iterator(nullptr, m_faces);}
   // create a face iterator
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Face>::iterator begin_faces(){return m_faces.begin();}
   // create a face const_iterator
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Face>::const_iterator begin_faces() const {return m_faces.begin();}
   // create an end iterator for faces
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Face>::iterator end_faces(){return m_faces.end();}
   // create an end const_iterator for faces
+  //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Face>::const_iterator end_faces() const {return m_faces.end();}
   // create a vertex iterator pointing to the first vertex
   inline std::vector<Point>::iterator begin_vertices() { return m_vertices.begin(); }

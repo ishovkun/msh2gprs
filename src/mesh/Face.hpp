@@ -53,7 +53,7 @@ class Face
   Polygon polygon() const;
   bool has_vertex(const std::size_t vertex_index) const;
   // returns true if has no children; else returns false
-  // inline bool is_active() const {return m_children.empty();}
+  inline bool is_active() const {return m_children.empty();}
 
  protected:
   std::size_t m_index;              // face index

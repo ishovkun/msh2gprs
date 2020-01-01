@@ -377,8 +377,6 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
 void Mesh::split_cell(Cell & cell,
                       const angem::Plane<double> & plane)
 {
-  const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
-
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
   // in order to have a map of those to the global vertex indices,
@@ -394,6 +392,7 @@ void Mesh::split_cell(Cell & cell,
   }
 
   // the actual geometry happens here
+  const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
   angem::split(*polyhedron, plane, split,
                constants::marker_below_splitting_plane,
                constants::marker_above_splitting_plane,
@@ -422,6 +421,7 @@ void Mesh::split_cell(Cell & cell,
       split_face_local_index = i;
 
   // make two groups of faces (polyhedra) that will form the new cells
+  // also keep track of face parents
   vector<vector<size_t>> cell_above_faces, cell_below_faces;
   std::vector<size_t> faces_above_parents, faces_below_parents;
   for (size_t i = 0; i < split.polygons.size(); i++)
@@ -535,5 +535,15 @@ std::size_t Mesh::determine_face_parent_(const std::vector<size_t> & face_vertic
   throw std::runtime_error("Should not be here");
   return constants::invalid_index;  // shut up compiler
 }
+
+active_face_const_iterator Mesh::begin_active_faces() const
+{
+  for (auto face = begin_faces(); face != end_faces(); ++face)
+    if (!face->is_active()) face++;
+    else return active_face_const_iterator(&*face, m_faces);
+  return active_face_const_iterator(nullptr, m_faces);  // end iterator
+}
+
+
 
 }  // end namespace mesh
