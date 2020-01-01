@@ -1,5 +1,6 @@
 #pragma once
 
+#include "constants.hpp"
 #include "angem/Point.hpp"
 #include "angem/Polygon.hpp"
 #include <vector>
@@ -20,7 +21,8 @@ class Face
        const int                               face_marker,
        std::vector<Cell>              &        grid_cells,
        std::vector<Point> &                    grid_vertices,
-       std::vector<std::vector<std::size_t>> & grid_vertex_cells);
+       std::vector<std::vector<std::size_t>> & grid_vertex_cells,
+       const std::size_t                       parent = constants::default_face_marker);
   // comparison operator
   inline bool operator==(const Face & other) const { return index() == other.index(); }
   // ACCESS
@@ -30,6 +32,10 @@ class Face
   inline std::size_t index() const { return m_index; }
   // get index of master face (before splitting)
   inline std::size_t master_index() const { return m_master_face_index; }
+  // get index of parent face. if no parent, simply return the index
+  inline std::size_t parent() const { return m_parent; }
+  // return indices of child faces
+  inline const std::vector<std::size_t> & children() const { return m_children; }
   // get the indices of face vertices
   inline std::vector<std::size_t> & vertices() { return m_vertices; }
   // get the indices of face vertices
@@ -55,6 +61,8 @@ class Face
   std::vector<std::size_t> m_vertices;  // face vertex indices
   int m_vtk_id;                         // face vtk id
   int m_marker;                         // face marker
+  std::size_t m_parent;                 // parent face
+  std::vector<std::size_t> m_children;  // child faces
   // grid stuff
   std::vector<Cell> & m_grid_cells;  // all grid cells
   std::vector<Point> & m_grid_vertices;                        // grid vertex coordinates

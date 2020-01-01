@@ -27,7 +27,8 @@ std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
 
 std::size_t Mesh::
 insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
-            const int                        marker)
+             std::vector<std::size_t> face_parents,
+             const int                        marker)
 {
   // cells don't have many vertices: don't need a hashmap here
   std::set<size_t> unique_vertices;
@@ -35,21 +36,29 @@ insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
     for (const size_t v : face)
       unique_vertices.insert(v);
   std::vector<size_t> ivertices(unique_vertices.begin(), unique_vertices.end());
-  return insert_cell_( ivertices, cell_faces, -1, marker );
+  return insert_cell_( ivertices, cell_faces,
+                       constants::vtk_index_general_polyhedron, marker );
 }
 
 std::size_t Mesh::
 insert_cell_(const std::vector<std::size_t> & ivertices,
              const std::vector<std::vector<std::size_t>> & cell_faces,
              const int                        vtk_id,
-             const int                        marker)
+             const int                        marker,
+             std::vector<std::size_t> face_parents)
 {
+  // parent so that function can be reused for adding cells after splitting
+  if (face_parents.empty())
+  {
+    face_parents.resize(cell_faces.size());
+    std::fill( face_parents.begin(), face_parents.end(), constants::invalid_index );
+  }
   const std::size_t new_cell_index = n_cells();
-
   std::vector<std::size_t> face_indices;
   face_indices.reserve(cell_faces.size());
 
-  for (const vector<size_t> & face : cell_faces) {
+  for (std::size_t i=0; i<cell_faces.size(); ++i) {
+    const auto & face = cell_faces[i];
     size_t face_vtk_id;
     switch (face.size())
     {
@@ -64,7 +73,9 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
         break;
     }
 
-    const std::size_t face_index = insert_face(face, face_vtk_id, DEFAULT_FACE_MARKER);
+    const std::size_t face_index = insert_face(face, face_vtk_id,
+                                               constants::default_face_marker,
+                                               face_parents[i]);
     face_indices.push_back(face_index);
   }
 
@@ -79,8 +90,9 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
 
 
 size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
-                         const int                        vtk_id,
-                         const int                        marker)
+                          const int                        vtk_id,
+                          const int                        marker,
+                          const std::size_t                face_parent)
 {
   if (m_vertex_cells.size() < n_vertices())
     m_vertex_cells.resize(n_vertices());
@@ -114,11 +126,12 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
   {
     m_faces.emplace_back(face_index, face_index,
                          ivertices, vtk_id, marker,
-                         m_cells, m_vertices, m_vertex_cells);
+                         m_cells, m_vertices, m_vertex_cells,
+                         face_parent);
   }
   else
   {
-    if (marker != DEFAULT_FACE_MARKER)
+    if (marker != constants::default_face_marker)
       m_faces[face_index].m_marker = marker;
     assert( m_faces[face_index].m_vtk_id == vtk_id );
   }
@@ -434,8 +447,11 @@ void Mesh::split_cell(Cell & cell,
   }
 
   // insert new cells
-  const size_t child_cell_index1 = insert_cell_(cell_above_faces, cell.marker());
-  const size_t child_cell_index2 = insert_cell_(cell_below_faces, cell.marker());
+  const size_t child_cell_index1 = insert_cell_(cell_above_faces,
+                                                faces_above_parents, cell.marker());
+  const size_t child_cell_index2 = insert_cell_(cell_below_faces,
+                                                faces_below_parents,
+                                                cell.marker());
 
   // handle parent/child cell dependencies
   cell.m_children = {child_cell_index1, child_cell_index2};

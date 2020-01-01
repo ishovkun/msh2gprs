@@ -18,7 +18,6 @@
 namespace mesh
 {
 
-static const int DEFAULT_FACE_MARKER = -1;
 using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
@@ -37,11 +36,12 @@ class Mesh
   /* Insert a standard vtk polyhedron cell into grid */
   std::size_t insert_cell(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
-                          const int                        marker = DEFAULT_CELL_MARKER);
+                          const int                        marker = constants::default_face_marker);
   /* insert a face into the grid */
   std::size_t insert_face(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
-                          const int                        marker = DEFAULT_CELL_MARKER);
+                          const int                        marker = constants::default_face_marker,
+                          const std::size_t                face_parent = constants::invalid_index);
 
   // ITERATORS
   //  create cell iterator for the first active cell
@@ -150,11 +150,13 @@ class Mesh
   std::size_t insert_cell_(const std::vector<std::size_t> & ivertices,
                            const std::vector<std::vector<std::size_t>> & cell_faces,
                            const int                        vtk_id,
-                           const int                        marker);
+                           const int                        marker,
+                           std::vector<std::size_t> face_parents = std::vector<std::size_t>());
   /* Insert an arbitrary polyhedron cell into grid .
    * A wrapper on the above function to minimize bookkeeping. */
   std::size_t insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
-                           const int                        marker = DEFAULT_CELL_MARKER);
+                           std::vector<std::size_t> face_parents,
+                           const int                        marker = constants::default_cell_marker);
   /* get a vector of polygon global vertex indices given a vector with
    * local polygon vertex indices and a mapping vector. */
   std::vector<std::size_t>

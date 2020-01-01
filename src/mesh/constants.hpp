@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstddef>  // provides std::size_t
+#include <limits>  // provides std::numeric_limits
+
 namespace mesh
 {
 
@@ -11,6 +14,9 @@ const std::size_t invalid_index = std::numeric_limits<std::size_t>::max();
 const int marker_below_splitting_plane = -1;
 const int marker_above_splitting_plane = -2;
 const int marker_splitting_plane = -3;
+const int default_face_marker = -1;
+const int default_cell_marker = -1;
+const int vtk_index_general_polyhedron = -1;
 
 }
 

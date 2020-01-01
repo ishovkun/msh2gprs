@@ -253,7 +253,7 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
     const int entity = std::atoi(tokens[0].c_str());
     const int n_physical_tags = std::atoi(tokens[7].c_str());
     const int tag = (n_physical_tags == 1) ?
-        std::atoi(tokens[8].c_str()) : mesh::DEFAULT_FACE_MARKER;
+        std::atoi(tokens[8].c_str()) : mesh::constants::default_face_marker;
     if (n_physical_tags > 1)
     {
       std::cout << "error in line: " << line << std::endl;

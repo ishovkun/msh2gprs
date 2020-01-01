@@ -12,8 +12,6 @@ namespace mesh
 using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 
-static const int DEFAULT_CELL_MARKER = -1;
-
 class Cell
 {
  public:

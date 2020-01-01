@@ -11,7 +11,8 @@ Face::Face(const std::size_t                       face_index,
            const int                               face_marker,
            std::vector<Cell>              &        grid_cells,
            std::vector<Point> &                    grid_vertices,
-           std::vector<std::vector<std::size_t>> & grid_vertex_cells)
+           std::vector<std::vector<std::size_t>> & grid_vertex_cells,
+           const std::size_t                       parent)
     : m_index(face_index),
       m_master_face_index(master_face_index),
       m_vertices(face_vertices),
@@ -19,8 +20,12 @@ Face::Face(const std::size_t                       face_index,
       m_marker(face_marker),
       m_grid_cells(grid_cells),
       m_grid_vertices(grid_vertices),
-      m_grid_vertex_cells(grid_vertex_cells)
-{}
+      m_grid_vertex_cells(grid_vertex_cells),
+      m_parent(parent)
+  {
+    if (m_parent == constants::invalid_index)
+      m_parent = index();
+  }
 
 
 std::vector<Cell*> Face::neighbors()
