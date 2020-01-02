@@ -3,6 +3,7 @@
 #include "parsers/GmshReader.hpp"
 #include "CellPropertyManager.hpp"
 #include "EmbeddedFractureManager.hpp"
+#include "discretization/DiscretizationTPFA.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -23,10 +24,14 @@ void Preprocessor::run()
   CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
   property_mgr.generate_properties();
 
+  discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
+
   /* Split cells due to edfm intersection */
   EmbeddedFractureManager edfm_mgr(config.embedded_fractures,
                                    config.edfm_method, data);
   edfm_mgr.split_cells();
+
+  
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

@@ -51,6 +51,7 @@ class Face
   // get face normal
   Point normal() const;
   Polygon polygon() const;
+  double area() const;
   bool has_vertex(const std::size_t vertex_index) const;
   // returns true if has no children; else returns false
   inline bool is_active() const {return m_children.empty();}

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "mesh/Mesh.hpp"
-#include "PhysicalFace.hpp"
+#include "PreprocessorConfig.hpp"
+#include "SimData.hpp"
 #include "angem/Tensor2.hpp"
 
 namespace discretization
 {
 
-using PhysicalFace = gprs_data::FractureFace;
+// using PhysicalFace = gprs_data::FractureFace;
 
 
 enum ControlVolumeType
@@ -54,10 +54,12 @@ struct ControlVolumeData
 class DiscretizationBase
 {
  public:
-  DiscretizationBase(const mesh::Mesh                                    & grid,
-                     const std::set<int>                                 & dfm_markers,
-                     const std::vector<std::vector<double>>              & props,
-                     const std::vector<std::string>                      & keys);
+  // DiscretizationBase(const mesh::Mesh                                    & grid,
+  //                    const std::set<int>                                 & dfm_markers,
+  //                    const std::vector<std::vector<double>>              & props,
+  //                    const std::vector<std::string>                      & keys);
+  DiscretizationBase(const std::vector<DiscreteFractureConfig> & dfm_fractures,
+                     gprs_data::SimData & data);
 
   // get a reference to the face_data vector
   std::vector<ConnectionData> & get_face_data();
@@ -72,7 +74,7 @@ class DiscretizationBase
   // build control volumes data
   virtual void build_cell_data();
   // is a face a dfm fracture
-  bool is_fracture (const int marker);
+  bool is_fracture (const int marker) const;
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const;
   double get_porosity(const std::size_t cell) const;
   // calculate the positions of the perm keys (in keys array)
@@ -81,20 +83,28 @@ class DiscretizationBase
   void infer_poro_assignment();
   // calculate keys that are not reserved (poro, perm)
   void infer_custom_keys();
-
+  // bould a set of dfm face markers
+  void build_dfm_markers_();
+  // count the number of dfm faces
+  size_t count_dfm_faces_() const;
   // ATTRIBUTES
-  // input
-  const mesh::Mesh & grid;
-  const std::set<int> & dfm_markers;
-  const std::vector<std::vector<double>> & props;
-  const std::vector<std::string> & keys;
+  // const std::vector<std::vector<double>> & props;
+  // const std::vector<std::string> & keys;
 
   //  computed
-  std::array<int, 9> perm_keys = {-1,-1,-1,-1,-1,-1,-1,-1,-1};
-  int poro_key = -1;
-  std::vector<size_t> custom_keys;
+  // std::array<int, 9> perm_keys = {-1,-1,-1,-1,-1,-1,-1,-1,-1};
+  // int poro_key = -1;
+  // std::vector<size_t> custom_keys;
   std::vector<ConnectionData> con_data;
   std::vector<ControlVolumeData> cv_data;
+
+ protected:
+  //  input
+  const mesh::Mesh & m_grid;
+  gprs_data::SimData & m_data;
+  const std::vector<DiscreteFractureConfig> & m_dfm_config;
+  // stores dfm face markers
+  std::set<int> m_dfm_markers;
 };
 
 }

@@ -22,6 +22,9 @@ class CellPropertyManager
   void evaluate_expressions_(const DomainConfig& domain,
                            std::vector<mu::Parser> & parsers,
                            std::vector<double> & vars);
+  void build_permeability_function_();
+  void build_porosity_function_();
+  void build_flow_output_property_keys_();
 
   const CellPropertyConfig        & config;
   const std::vector<DomainConfig> & domains;

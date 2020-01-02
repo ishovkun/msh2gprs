@@ -108,6 +108,11 @@ Point Face::normal() const
   return polygon().normal();
 }
 
+double Face::area() const
+{
+  return polygon().area();
+}
+
 
 Point Face::center() const
 {

@@ -1,0 +1,169 @@
+#include "DiscretizationTPFA.hpp"
+#include "angem/Point.hpp"
+#include "angem/Tensor2.hpp"
+
+namespace discretization
+{
+
+using Point = angem::Point<3,double>;
+using Tensor = angem::Tensor2<3,double>;
+
+// DiscretizationTPFA::
+// DiscretizationTPFA(const mesh::Mesh                       & grid,
+//                    const std::set<int>                    & dfm_markers,
+//                    const std::vector<std::vector<double>> & props,
+//                    const std::vector<std::string>         & keys,
+//                    const size_t                             numbering_shift)
+//     :
+//     DiscretizationBase(grid, dfm_markers, props, keys),
+//     shift(numbering_shift),
+//     method(tpfa_method::mo)
+// {}
+DiscretizationTPFA::
+DiscretizationTPFA(const std::vector<DiscreteFractureConfig> & dfm_fractures,
+                   gprs_data::SimData & data)
+    :
+    DiscretizationBase(dfm_fractures, data),
+    m_method(tpfa_method::mo)
+{
+  m_shift = count_dfm_faces_();
+}
+
+
+void DiscretizationTPFA::build()
+{
+  DiscretizationBase::build_cell_data();
+
+  con_data.reserve(m_grid.n_faces());
+  size_t iface = 0;
+  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+  {
+    if (face->neighbors().size() == 2)
+      if (!is_fracture(face->marker()))
+      {
+        con_data.emplace_back();
+        if (m_method == tpfa_method::kirill)
+          build_kirill(*face, con_data.back());
+        else // if (method == tpfa_method::mo)
+          build_mo(*face, con_data.back());
+        iface++;
+      }
+  }
+}
+
+
+void DiscretizationTPFA::build_kirill(const mesh::Face & face,
+                                      ConnectionData   & data)
+{
+  // Point nfmf, center0, center1, center_face;
+  const auto cells = face.neighbors();
+  const size_t i = m_shift + cells[0]->index();
+  const size_t j = m_shift + cells[1]->index();
+  const auto & cell1 = cv_data[cells[0]->index()];
+  const auto & cell2 = cv_data[cells[1]->index()];
+
+  const Point center_face = face.center();
+  const Point d1 = cell1.center - center_face;
+  const Point d2 = cell2.center - center_face;
+
+  const Point face_normal = face.normal();
+  const Tensor & K1 = cell1.permeability;
+  const Tensor & K2 = cell2.permeability;
+
+  // project permeability on face normal
+  const Point K1_n = K1*face_normal;
+  const Point K2_n = K2*face_normal;
+
+  // projection of distance along normal
+  const double dd1 = fabs(face_normal.dot(d1));
+  const double dd2 = fabs(face_normal.dot(d2));
+
+  // projection of conormal along normal
+  const double n_K1_n = face_normal.dot(K1_n);
+  const double n_K2_n = face_normal.dot(K2_n);
+
+  double T; // transmissibility
+  double D; // projection distance
+  static const double eps = 1e-8;
+  if (dd1 > eps && dd2 > eps)
+  {
+    T = n_K1_n * n_K2_n / (dd1*n_K2_n + dd2*n_K1_n + 1.0e-35);
+    D = 1.0 / (dd1 + dd2 + 1.0e-35);
+  }
+  else if (dd1 > eps)
+  {
+    T = n_K1_n / dd1;
+    D = 1.0 / dd1;
+  }
+  else if (dd2 > eps)
+  {
+    T = n_K2_n / dd2;
+    D = 1.0 / dd2;
+  }
+  else
+  {
+    T = 0;
+    D = 0.0;
+  }
+
+  // T /= D;
+  T *= face.area();
+
+  // NOTE: We need to save D for the TPFACONNSN keyword
+
+  data.elements.resize(2);
+  data.elements[0] = i;
+  data.elements[1] = j;
+
+  data.coefficients.resize(2);
+  data.coefficients[0] = -T;
+  data.coefficients[1] =  T;
+  data.type = ConnectionType::matrix_matrix;
+}
+
+
+void DiscretizationTPFA::build_mo(const mesh::Face & face,
+                                  ConnectionData   & data)
+{
+  const auto cells = face.neighbors();
+  const size_t cv1 = m_shift + cells[0]->index();
+  const size_t cv2 = m_shift + cells[1]->index();
+
+  const auto & cell1 = cv_data[cells[0]->index()];
+  const auto & cell2 = cv_data[cells[1]->index()];
+
+  // define face projection point
+  const Point & c1 = cell1.center;
+  const Point & c2 = cell2.center;
+  const Point cf = face.center();
+  const Point n = face.normal();
+  // projection point
+  const double t =  (cf - c1).dot(n) / (c2 - c1).dot(n);
+  const Point cp = c1 + t*(c2 - c1);
+  // project permeability
+  const Tensor & K1 = cell1.permeability;
+  const Tensor & K2 = cell2.permeability;
+  // perm projection
+  // const double Kp1 = n * K1 * (c1 - cp).normalize();
+  // const double Kp2 = n * K2 * (c2 - cp).normalize();
+  const double Kp1 = (K1 * (c1 - cp).normalize()).norm();
+  const double Kp2 = (K2 * (c2 - cp).normalize()).norm();
+  // cell-face transmissibility
+  const double face_area = face.area();
+  const double T1 = face_area * Kp1 / (c1 - cp).norm();
+  const double T2 = face_area * Kp2 / (c2 - cp).norm();
+  // face transmissibility
+  const double T = T1*T2 / ( T1 + T2 );
+
+  // save into container
+  data.elements.resize(2);
+  data.elements[0] = cv1;
+  data.elements[1] = cv2;
+
+  data.coefficients.resize(2);
+  data.coefficients[0] = -T;
+  data.coefficients[1] =  T;
+  data.type = ConnectionType::matrix_matrix;
+}
+
+}

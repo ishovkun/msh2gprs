@@ -41,6 +41,9 @@ void CellPropertyManager::generate_properties()
     evaluate_expressions_(domain, parsers, vars);
   }
 
+  build_permeability_function_();
+  build_porosity_function_();
+  build_flow_output_property_keys_();
 }
 
 void CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
@@ -126,6 +129,70 @@ void CellPropertyManager::print_setup_message_()
       std::cout << std::endl;
   }
   std::cout << std::endl;
+}
+
+void CellPropertyManager::build_permeability_function_()
+{
+  bool found_perm_x = false;
+  bool found_perm_y = false;
+  bool found_perm_z = false;
+  for (std::size_t i = 0; i < data.property_names.size(); i++)
+  {
+    const auto & key = data.property_names[i];
+    if (key == "PERMX")
+    {
+      found_perm_x = true;
+      data.permeability_keys[0] = i;
+    }
+    else if (key == "PERMY")
+    {
+      found_perm_y = true;
+      data.permeability_keys[1*3 + 1] = i;
+    }
+    else if (key == "PERMZ")
+    {
+      found_perm_z = true;
+      data.permeability_keys[2*3 + 2] = i;
+    }
+    else if (key == "PERM")
+    {
+      data.permeability_keys[0] = i;
+      data.permeability_keys[1*3 + 1] = i;
+      data.permeability_keys[2*3 + 2] = i;
+      found_perm_x = true;
+      found_perm_y = true;
+      found_perm_z = true;
+    }
+  }
+  if (found_perm_x && found_perm_y && found_perm_z)
+        return;
+  else
+    throw std::invalid_argument("permebility is undefined");
+}
+
+void CellPropertyManager::build_porosity_function_()
+{
+  for (std::size_t i = 0; i < data.property_names.size(); i++)
+  {
+    const auto & key = data.property_names[i];
+    if (key == "PORO")
+    {
+      data.porosity_key_index = i;
+      return;
+    }
+  }
+}
+
+void CellPropertyManager::build_flow_output_property_keys_()
+{
+  for (size_t j = 0; j < data.property_names.size(); j++)
+  {
+    if (std::find(data.permeability_keys.begin(),
+                  data.permeability_keys.end(), j) ==
+                  data.permeability_keys.end())
+        if (j != data.porosity_key_index)
+      data.output_flow_properties.push_back(j);
+  }
 }
 
 }  // end namespace gprs_data

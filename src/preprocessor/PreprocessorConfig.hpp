@@ -115,20 +115,10 @@ struct PreprocessorConfig
   std::vector<WellConfig>              wells;
 
   EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
-
   // global container for all cell properties
   CellPropertyConfig cell_properties;
   // vector of cell properties for each subdomain
   std::vector<DomainConfig>            domains;
-
-  // all variables used for function parsing
-  // std::vector<std::string> all_vars = {"x", "y", "z"};
-  // std::vector<int>         expression_type;  // (0 - flow, 1 - mechanics, -1 -no output)
-  // std::vector<std::string> special_keywords =
-  // {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
-  // static constexpr double default_permeability = 1;
-  // static constexpr double default_volume_factor = 1;
-  // 
   // special keywords needed for computing fluid data
   // (they are not outputted)
   static constexpr double nan = -999.999;
