@@ -1,5 +1,7 @@
 #pragma once
 
+#include "discretization/ControlVolumeData.hpp"
+#include "discretization/ConnectionData.hpp"
 #include "mesh/Mesh.hpp"
 #include "angem/Tensor2.hpp"
 #include <unordered_map>
@@ -30,7 +32,9 @@ struct SimData
   std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces
   mesh::SurfaceMesh<double> dfm_grid;
-
+  // ----------------------- Flow data ---------------------- //
+  std::vector<discretization::ControlVolumeData> cv_data;
+  std::vector<discretization::ConnectionData> flow_connection_data;
   // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {

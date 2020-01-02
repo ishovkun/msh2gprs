@@ -1,6 +1,8 @@
 #pragma once
 
 #include "PreprocessorConfig.hpp"
+// #include "ControlVolumeData.hpp"
+// #include "ConnectionData.hpp"
 #include "SimData.hpp"
 
 namespace gprs_data {
@@ -15,7 +17,13 @@ class EmbeddedFractureManager
   // generate DiscreteFractureConfig object that form due to
   // cell splitting
   std::vector<DiscreteFractureConfig> generate_dfm_config();
+  // true if face marker belongs to an edfm fracture after splitting cells
   bool is_fracture(const int face_marker) const;
+
+  // extract cv data pertaining to edfm fractures from the mixed assembly
+  void extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
+                         const std::vector<discretization::ConnectionData> & mixed_connection_data);
+
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture,

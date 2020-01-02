@@ -113,4 +113,11 @@ bool EmbeddedFractureManager::is_fracture(const int face_marker) const
   else return false;
 }
 
+void EmbeddedFractureManager::
+extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
+                  const std::vector<discretization::ConnectionData> & mixed_connection_data)
+{
+  assert ( false && "write extraction code" );
+}
+
 }  // end namespace gprs_data

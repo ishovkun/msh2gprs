@@ -52,8 +52,9 @@ void Preprocessor::run()
   discretization::DiscretizationDFM discr_edfm_dfm(combined_fracture_config, data);
   discr_edfm_dfm.build();
 
-  // TODO: write code for grid coarsening
-  assert( false && "Write code for grid coarsening" );
+  edfm_mgr.extract_flow_data(discr_edfm_dfm.get_cell_data(),
+                             discr_edfm_dfm.get_face_data());
+
   // TODO: write code for combining flow data
   assert( false && "Write code for combining flow data" );
 

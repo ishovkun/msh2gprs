@@ -27,7 +27,7 @@ bool DiscretizationBase::is_fracture(const int marker) const
   else return false;
 }
 
-void DiscretizationBase::build_cell_data()
+void DiscretizationBase::build_cell_data_()
 {
   cv_data.resize(m_grid.n_cells());
   for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)

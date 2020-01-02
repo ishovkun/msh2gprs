@@ -18,7 +18,7 @@ DiscretizationDFM::DiscretizationDFM(const std::vector<DiscreteFractureConfig> &
 void DiscretizationDFM::build()
 {
   std::cout << "build cv data" << std::endl;
-  build_cell_data();
+  build_cell_data_();
 
   // build connection lists (no data)
   build_fracture_matrix_connections();
@@ -33,7 +33,7 @@ void DiscretizationDFM::build()
 }
 
 
-void DiscretizationDFM::build_cell_data()
+void DiscretizationDFM::build_cell_data_()
 {
   // could be less though, just to be save
   const size_t cv_data_size = find_max_cv_index_() + 1;

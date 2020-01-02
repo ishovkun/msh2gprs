@@ -14,11 +14,6 @@ enum tpfa_method
 class DiscretizationTPFA : public DiscretizationBase
 {
  public:
-  // DiscretizationTPFA(const mesh::Mesh                       & grid,
-  //                    const std::set<int>                    & dfm_markers,
-  //                    const std::vector<std::vector<double>> & props,
-  //                    const std::vector<std::string>         & keys,
-  //                    const size_t                             numbering_shift = 0);
   DiscretizationTPFA(const std::vector<DiscreteFractureConfig> & dfm_fractures,
                      gprs_data::SimData & data);
 

@@ -8,17 +8,6 @@ namespace discretization
 using Point = angem::Point<3,double>;
 using Tensor = angem::Tensor2<3,double>;
 
-// DiscretizationTPFA::
-// DiscretizationTPFA(const mesh::Mesh                       & grid,
-//                    const std::set<int>                    & dfm_markers,
-//                    const std::vector<std::vector<double>> & props,
-//                    const std::vector<std::string>         & keys,
-//                    const size_t                             numbering_shift)
-//     :
-//     DiscretizationBase(grid, dfm_markers, props, keys),
-//     shift(numbering_shift),
-//     method(tpfa_method::mo)
-// {}
 DiscretizationTPFA::
 DiscretizationTPFA(const std::vector<DiscreteFractureConfig> & dfm_fractures,
                    gprs_data::SimData & data)
@@ -32,7 +21,7 @@ DiscretizationTPFA(const std::vector<DiscreteFractureConfig> & dfm_fractures,
 
 void DiscretizationTPFA::build()
 {
-  DiscretizationBase::build_cell_data();
+  DiscretizationBase::build_cell_data_();
 
   con_data.reserve(m_grid.n_faces());
   size_t iface = 0;
