@@ -56,6 +56,8 @@ void Preprocessor::run()
   assert( false && "Write code for grid coarsening" );
   // TODO: write code for combining flow data
   assert( false && "Write code for combining flow data" );
+
+  data.grid.coarsen_cells();
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

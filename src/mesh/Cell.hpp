@@ -25,6 +25,8 @@ class Cell
        const int                        vtk_id,
        const int                        marker,
        const std::size_t                parent = constants::invalid_index);
+  // assignment operator
+  Cell & operator=(const Cell & other);
   // comparison operator
   inline bool operator==(const Cell & other) const { return index() == other.index(); }
   // ---------------------- ACCESS OPERATORS ------------------------------- //
@@ -61,6 +63,8 @@ class Cell
   inline bool is_active() const {return m_children.empty();}
   // returns the parent index. If cell has not parents, returns it's cell index
   inline std::size_t parent() const { return m_parent; }
+  // return a vector of child cell indices
+  inline const std::vector<size_t> & children() const { return m_children; }
 
  protected:
   // this cell stuff
@@ -69,10 +73,10 @@ class Cell
   std::vector<std::size_t> m_vertices;
   std::vector<std::size_t> m_faces;
   // global grid stuff
-  std::vector<Point> & m_grid_vertices;
-  std::vector<Cell> & m_grid_cells;
-  std::vector<Face> & m_grid_faces;
-  // refinement
+  std::vector<Point> * pm_grid_vertices;
+  std::vector<Cell> * pm_grid_cells;
+  std::vector<Face> * pm_grid_faces;
+  //  refinement
   std::size_t m_parent;
   std::vector<std::size_t> m_children;
   friend class Mesh;

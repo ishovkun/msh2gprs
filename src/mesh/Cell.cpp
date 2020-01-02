@@ -16,9 +16,9 @@ Cell::Cell(const std::size_t          cell_index,
     : m_index(cell_index),
       m_vertices(vertices),
       m_faces(faces),
-      m_grid_vertices(grid_vertices),
-      m_grid_cells(grid_cells),
-      m_grid_faces(grid_faces),
+      pm_grid_vertices(&grid_vertices),
+      pm_grid_cells(&grid_cells),
+      pm_grid_faces(&grid_faces),
       m_vtk_id(vtk_id),
       m_marker(marker),
       m_parent(parent)
@@ -32,7 +32,7 @@ std::unique_ptr<Polyhedron> Cell::polyhedron() const
   std::vector<std::vector<std::size_t>> faces_vertices;
   for (const Face* face : faces())
     faces_vertices.push_back(face->vertices());
-  return std::make_unique<angem::Polyhedron<double>>(m_grid_vertices,
+  return std::make_unique<angem::Polyhedron<double>>(*pm_grid_vertices,
                                                      faces_vertices, vtk_id());
 }
 
@@ -41,7 +41,7 @@ std::vector<Face*> Cell::faces()
 {
   std::vector<Face*> cell_faces;   cell_faces.reserve(m_faces.size());
   for (const std::size_t face_index: m_faces)
-    cell_faces.push_back(&m_grid_faces[face_index]);
+    cell_faces.push_back(&(*pm_grid_faces)[face_index]);
   return cell_faces;
  }
 
@@ -51,7 +51,7 @@ std::vector<const Face*> Cell::faces() const
   std::vector<const Face*> cell_faces;
   cell_faces.reserve(m_faces.size());
   for (const std::size_t face_index: m_faces)
-    cell_faces.push_back(&m_grid_faces[face_index]);
+    cell_faces.push_back(&(*pm_grid_faces)[face_index]);
   return cell_faces;
 }
 
@@ -73,7 +73,7 @@ std::vector<Cell*> Cell::neighbors()
   std::vector<size_t> neighbors_indices;
   neighbors_indices.reserve(m_faces.size());
   for (const size_t iface : m_faces)
-    for ( const Cell * neighbor : m_grid_faces[iface].neighbors() )
+    for ( const Cell * neighbor : (*pm_grid_faces)[iface].neighbors() )
       if (neighbor->index() != index())
         if (std::find(neighbors_indices.begin(), neighbors_indices.end(),
                       neighbor->index()) == neighbors_indices.end())
@@ -81,7 +81,7 @@ std::vector<Cell*> Cell::neighbors()
   std::vector<Cell*> neighbor_cells;
   neighbor_cells.reserve(neighbors_indices.size());
   for (const size_t icell : neighbors_indices)
-    neighbor_cells.push_back( &(m_grid_cells[icell]) );
+    neighbor_cells.push_back( &((*pm_grid_cells)[icell]) );
   return neighbor_cells;
 }
 
@@ -92,7 +92,7 @@ std::vector<const Cell*> Cell::neighbors() const
   neighbors_indices.reserve(m_faces.size());
   for (const size_t iface : m_faces)
   {
-    for ( const Cell * neighbor : m_grid_faces[iface].neighbors() )
+    for ( const Cell * neighbor : (*pm_grid_faces)[iface].neighbors() )
     {
       if (neighbor->index() != index())
         if (std::find(neighbors_indices.begin(), neighbors_indices.end(),
@@ -103,8 +103,22 @@ std::vector<const Cell*> Cell::neighbors() const
   std::vector<const Cell*> neighbor_cells;
   neighbor_cells.reserve(neighbors_indices.size());
   for (const size_t icell : neighbors_indices)
-    neighbor_cells.push_back( &(m_grid_cells[icell]) );
+    neighbor_cells.push_back( &((*pm_grid_cells)[icell]) );
   return neighbor_cells;
+}
+
+Cell & Cell::operator=(const Cell & other)
+{
+  m_index = other.index();
+  m_vertices = other.vertices();
+  m_faces = other.m_faces;
+  pm_grid_vertices = other.pm_grid_vertices;
+  pm_grid_cells = other.pm_grid_cells;
+  pm_grid_faces = other.pm_grid_faces;
+  m_vtk_id = other.vtk_id();
+  m_marker = other.marker();
+  m_children = other.children();
+  return *this;
 }
 
 }  // end namespace

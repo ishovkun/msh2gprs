@@ -18,15 +18,29 @@ Face::Face(const std::size_t                       face_index,
       m_vertices(face_vertices),
       m_vtk_id(face_vtk_id),
       m_marker(face_marker),
-      m_grid_cells(grid_cells),
-      m_grid_vertices(grid_vertices),
-      m_grid_vertex_cells(grid_vertex_cells),
+      pm_grid_cells(&grid_cells),
+      pm_grid_vertices(&grid_vertices),
+      pm_grid_vertex_cells(&grid_vertex_cells),
       m_parent(parent)
-  {
-    if (m_parent == constants::invalid_index)
-      m_parent = index();
-  }
+{
+  if (m_parent == constants::invalid_index)
+    m_parent = index();
+}
 
+
+Face & Face::operator=(const Face & other)
+{
+  m_index = other.index();
+  m_master_face_index = other.master_index();
+  m_vertices = other.vertices();
+  m_vtk_id = other.vtk_id();
+  m_marker = other.marker();
+  pm_grid_cells = other.pm_grid_cells;
+  pm_grid_vertices = other.pm_grid_vertices;
+  pm_grid_vertex_cells = other.pm_grid_vertex_cells;
+  m_parent = other.parent();
+  return *this;
+}
 
 std::vector<Cell*> Face::neighbors()
 {
@@ -34,7 +48,7 @@ std::vector<Cell*> Face::neighbors()
   std::unordered_map<size_t, size_t> cell_time;
   for (const size_t vertex : m_vertices)
   {
-    for (const size_t cell_index: m_grid_vertex_cells[vertex])
+    for (const size_t cell_index: (*pm_grid_vertex_cells)[vertex])
     {
       auto it = cell_time.find(cell_index);
       if (it == cell_time.end())
@@ -51,7 +65,7 @@ std::vector<Cell*> Face::neighbors()
   {
     if (it.second == m_vertices.size())
     {
-      face_neighbors.push_back( &(m_grid_cells[it.first]) );
+      face_neighbors.push_back( &((*pm_grid_cells)[it.first]) );
     }
   }
   return face_neighbors;
@@ -64,7 +78,7 @@ std::vector<const Cell*> Face::neighbors() const
   std::unordered_map<size_t, size_t> cell_time;
   for (const size_t vertex : m_vertices)
   {
-    for (const size_t cell_index: m_grid_vertex_cells[vertex])
+    for (const size_t cell_index: (*pm_grid_vertex_cells)[vertex])
     {
       auto it = cell_time.find(cell_index);
       if (it == cell_time.end())
@@ -80,7 +94,7 @@ std::vector<const Cell*> Face::neighbors() const
   for (const auto it : cell_time)
   {
     if (it.second == m_vertices.size())
-      face_neighbors.push_back( &(m_grid_cells[it.first]) );
+      face_neighbors.push_back( &((*pm_grid_cells)[it.first]) );
   }
   return face_neighbors;
 }
@@ -92,7 +106,7 @@ std::vector<Point> Face::vertex_coordinates() const
   std::vector<Point> coordinates;
   coordinates.reserve(m_vertices.size());
   for (const std::size_t vertex_index : vertices())
-    coordinates.push_back( m_grid_vertices[vertex_index] );
+    coordinates.push_back( (*pm_grid_vertices)[vertex_index] );
   return coordinates;
 }
 

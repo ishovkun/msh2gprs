@@ -28,7 +28,7 @@ bool active_cell_const_iterator::operator!=(const active_cell_const_iterator & o
 active_cell_const_iterator &
 active_cell_const_iterator::operator++()
 {
-  if (p_cell->index() == p_cell->m_grid_cells.size() - 1)
+  if (p_cell->index() == p_cell->pm_grid_cells->size() - 1)
   {
     p_cell = nullptr;
     return *this;
@@ -37,7 +37,7 @@ active_cell_const_iterator::operator++()
   increment_raw_iterator_();
   while ( !p_cell->is_active() )
   {
-    if (p_cell->index() == p_cell->m_grid_cells.size() - 1)
+    if (p_cell->index() == p_cell->pm_grid_cells->size() - 1)
     {
       p_cell = nullptr;
       return *this;
@@ -50,7 +50,7 @@ active_cell_const_iterator::operator++()
 void active_cell_const_iterator::increment_raw_iterator_()
 {
   const size_t next_cell_index = p_cell->index() + 1;
-  p_cell = &(p_cell->m_grid_cells[next_cell_index]);
+  p_cell = &((*(p_cell->pm_grid_cells))[next_cell_index]);
 }
 
 }   // end namespace mesh

@@ -559,6 +559,44 @@ active_face_const_iterator Mesh::begin_active_faces() const
   return active_face_const_iterator(nullptr, m_faces);  // end iterator
 }
 
+void Mesh::coarsen_cells()
+{
+  // find all deleted cells
+  size_t min_cell_delete_index = std::numeric_limits<size_t>::max();
+  for (auto cell = begin_cells(); cell != end_cells(); ++cell)
+  {
+    if (!cell->children().empty())
+      cell->m_children.clear();
+    else if (cell->parent() != cell->index())  // to be deleted
+      min_cell_delete_index = std::min(min_cell_delete_index, cell->index());
+  }
 
+  //  clear unused vertices
+  for ( auto & vertex_cells : m_vertex_cells )
+    for (auto it_cell = vertex_cells.begin(); it_cell != vertex_cells.end(); ++it_cell)
+      if (*it_cell >= min_cell_delete_index)
+        vertex_cells.erase(it_cell);
+
+  // find minimum vertex to erase: new vertices are always at the end
+  size_t min_vertex_to_delete = std::numeric_limits<size_t>::max();
+  for (std::size_t i=0; i<m_vertex_cells.size(); ++i)
+    if (m_vertex_cells[i].empty())
+    {
+      min_vertex_to_delete = i;
+      break;
+    }
+  m_vertex_cells.erase(m_vertex_cells.begin() + min_vertex_to_delete, m_vertex_cells.end() );
+
+  // clear faces: if face has a deleted vertex then delete it
+  // these faces are also consequtive and put into the end
+  size_t min_face_to_delete = std::numeric_limits<size_t>::max();
+  for (const auto & vertex_faces : m_vertex_faces)
+    for (const size_t iface : vertex_faces )
+      min_face_to_delete = std::min( min_face_to_delete, iface );
+  m_faces.erase( m_faces.begin() + min_face_to_delete, m_faces.end() );
+  m_vertex_faces.erase( m_vertex_faces.begin() + min_vertex_to_delete, m_vertex_faces.end() );
+  // delete cells
+  m_cells.erase( m_cells.begin() + min_cell_delete_index, m_cells.end() );
+}
 
 }  // end namespace mesh

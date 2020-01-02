@@ -144,6 +144,9 @@ class Mesh
   void split_vertex(const std::size_t               vertex_index,
                     const std::vector<std::size_t> &splitted_face_indices);
 
+  // coarsen cells split built by split_cell method and restore active cells
+  void coarsen_cells();
+
  private:
   void insert_vertex(const std::size_t vertex,
                      const std::size_t face,
