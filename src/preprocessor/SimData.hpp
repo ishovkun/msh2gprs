@@ -25,6 +25,7 @@ struct SimData
   std::array<double,9> permeability_keys;  // permeability key indices in cell_properties
   size_t porosity_key_index;               // porosity key index in cell_properties
   std::vector<size_t> output_flow_properties;
+  std::vector<size_t> cell_cv_indices;
   // ----------------------- DFM ------------------------ //
   std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces

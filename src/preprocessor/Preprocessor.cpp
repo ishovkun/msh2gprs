@@ -5,6 +5,7 @@
 #include "EmbeddedFractureManager.hpp"
 #include "DiscreteFractureManager.hpp"
 #include "discretization/DiscretizationTPFA.hpp"
+#include "discretization/DiscretizationDFM.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -43,11 +44,13 @@ void Preprocessor::run()
   // property manager for all grid with split cells
   CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
   property_mgr.generate_properties();
+  // flow dof numbering
+  dfm_mgr.build_reservoir_cell_numbering();
 
   // edfm + dfm discretization
   // we will use only the edfm part from it
-
-  
+  discretization::DiscretizationDFM discr_edfm_dfm(combined_fracture_config, data);
+  discr_edfm_dfm.build();
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

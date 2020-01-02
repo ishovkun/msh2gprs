@@ -69,4 +69,16 @@ size_t DiscretizationBase::count_dfm_faces_() const
   return counter;
 }
 
+size_t DiscretizationBase::find_max_cv_index_() const
+{
+  size_t cv_index = 0;
+  // dfm fracs
+  for (auto & it_face : m_data.dfm_faces)
+    cv_index = std::max( cv_index, it_face.second.cv_index );
+  // cells
+  for (const size_t cv : m_data.cell_cv_indices)
+    cv_index = std::max( cv_index, cv );
+  return cv_index;
+}
+
 }

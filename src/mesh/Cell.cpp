@@ -29,8 +29,11 @@ Cell::Cell(const std::size_t          cell_index,
 
 std::unique_ptr<Polyhedron> Cell::polyhedron() const
 {
-  return angem::PolyhedronFactory::create<double>(m_grid_vertices,
-                                                  m_vertices, vtk_id());
+  std::vector<std::vector<std::size_t>> faces_vertices;
+  for (const Face* face : faces())
+    faces_vertices.push_back(face->vertices());
+  return std::make_unique<angem::Polyhedron<double>>(m_grid_vertices,
+                                                     faces_vertices, vtk_id());
 }
 
 

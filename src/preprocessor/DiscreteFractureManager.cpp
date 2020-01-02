@@ -44,7 +44,7 @@ void DiscreteFractureManager::distribute_properties()
         f.coupled = config.coupled;
         f.aperture = config.aperture;
         f.conductivity = config.conductivity;
-        m_data.dfm_faces.push_back(std::move(f));
+        m_data.dfm_faces.insert({face->index(), std::move(f)});
       }
 }
 
@@ -85,6 +85,19 @@ DiscreteFractureManager::combine_configs(const std::vector<DiscreteFractureConfi
   for (const auto & conf : config2)
     combined.push_back(conf);
   return combined;
+}
+
+void DiscreteFractureManager::build_reservoir_cell_numbering()
+{
+  size_t cv_index = 0;
+  // distribute dfm indices
+  for (auto & it_face: m_data.dfm_faces)
+    it_face.second.cv_index = ++cv_index;
+  // distribute cell indices
+  m_data.cell_cv_indices.clear();
+  m_data.cell_cv_indices.reserve( m_grid.n_cells() );
+  for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
+    m_data.cell_cv_indices.push_back( ++cv_index );
 }
 
 }  // end namespace gprs_data

@@ -9,6 +9,7 @@ namespace mesh
 {
 using Point = angem::Point<3,double>;
 using Polygon = angem::Polygon<double>;
+using vertex_pair = std::pair<size_t, size_t>;
 class Cell;
 
 class Face
@@ -40,6 +41,8 @@ class Face
   inline std::vector<std::size_t> & vertices() { return m_vertices; }
   // get the indices of face vertices
   inline const std::vector<std::size_t> & vertices() const { return m_vertices; }
+  // get vector of index pairs that represent edges
+  std::vector<vertex_pair> edges() const;
   // get the coordinates of face vertices
   std::vector<Point> vertex_coordinates() const;
   // get vector of neighboring cells

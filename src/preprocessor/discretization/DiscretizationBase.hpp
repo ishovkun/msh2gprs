@@ -87,6 +87,8 @@ class DiscretizationBase
   void build_dfm_markers_();
   // count the number of dfm faces
   size_t count_dfm_faces_() const;
+  // find the maximum control volume index
+  size_t find_max_cv_index_() const;
   // ATTRIBUTES
   // const std::vector<std::vector<double>> & props;
   // const std::vector<std::string> & keys;

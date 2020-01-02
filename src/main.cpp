@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
   }
   catch (const std::exception& error)
   {
-    std::cout << error.what() << std::endl;
+    std::cout << "Error: " << error.what() << std::endl;
     return 1;
   }
 
