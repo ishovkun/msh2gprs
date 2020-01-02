@@ -2,8 +2,19 @@
 
 #include "mesh/Mesh.hpp"
 #include "angem/Tensor2.hpp"
+#include <unordered_map>
 
 namespace gprs_data {
+
+/* Data of a single dfm fracture grid face */
+struct DiscreteFractureFace
+{
+  int    marker;                        // fracture marker
+  size_t cv_index;                      // index of the control volume
+  bool   coupled;                       // coupling with geomechanics
+  double aperture;                      // hydraulic aperture of the fracture [m]
+  double conductivity;                  // hydraulic conductivity of dfm fracture [m·md]
+};
 
 struct SimData
 {
@@ -11,12 +22,15 @@ struct SimData
   // cell properties
   std::vector<std::string> property_names;
   std::vector<std::vector<double>> cell_properties;
-  // permeability keys
-  std::array<double,9> permeability_keys;
-  size_t porosity_key_index;
+  std::array<double,9> permeability_keys;  // permeability key indices in cell_properties
+  size_t porosity_key_index;               // porosity key index in cell_properties
   std::vector<size_t> output_flow_properties;
+  // ----------------------- DFM ------------------------ //
+  std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
+  // grid comprised of dfm faces
+  mesh::SurfaceMesh<double> dfm_grid;
 
-
+  // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {
     assert(cell < cell_properties[permeability_keys[0]].size());
@@ -34,6 +48,8 @@ struct SimData
     assert(porosity_key_index > 0 && porosity_key_index < property_names.size());
     return cell_properties[porosity_key_index][cell];
   }
+
+  size_t n_dfm_faces() const { return dfm_faces.size(); }
 };
 
 

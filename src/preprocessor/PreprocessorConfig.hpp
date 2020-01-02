@@ -66,6 +66,7 @@ struct EmbeddedFractureConfig
   double dilation_angle = 0;
   double aperture = 1e-3;
   double conductivity = 10;
+  bool coupled = true;  // whether to couple with geomechanics
 };
 
 
@@ -74,6 +75,7 @@ struct DiscreteFractureConfig
   int label;
   double conductivity = 10;
   double aperture = 1e-3;
+  bool coupled = true;  // whether to couple with geomechanics
 };
 
 

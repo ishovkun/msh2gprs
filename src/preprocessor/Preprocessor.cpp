@@ -3,6 +3,7 @@
 #include "parsers/GmshReader.hpp"
 #include "CellPropertyManager.hpp"
 #include "EmbeddedFractureManager.hpp"
+#include "DiscreteFractureManager.hpp"
 #include "discretization/DiscretizationTPFA.hpp"
 #include <string>
 
@@ -31,7 +32,9 @@ void Preprocessor::run()
                                    config.edfm_method, data);
   edfm_mgr.split_cells();
 
-  
+  DiscreteFractureManager dfm_mgr(config.discrete_fractures, data);
+  dfm_mgr.distribute_properties();
+
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)
