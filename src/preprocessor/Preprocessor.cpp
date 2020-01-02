@@ -51,6 +51,11 @@ void Preprocessor::run()
   // we will use only the edfm part from it
   discretization::DiscretizationDFM discr_edfm_dfm(combined_fracture_config, data);
   discr_edfm_dfm.build();
+
+  // TODO: write code for grid coarsening
+  assert( false && "Write code for grid coarsening" );
+  // TODO: write code for combining flow data
+  assert( false && "Write code for combining flow data" );
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)
