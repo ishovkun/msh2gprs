@@ -1140,7 +1140,6 @@ void SimData::splitInternalFaces()
       grid.mark_for_split(face->index());
   }
 
-  std::cout << "running my awesome dfm alg" << std::endl;
   const size_t n_faces_old = grid.n_faces();
   const size_t n_vertices_old = grid.n_vertices();
   dfm_master_grid = grid.split_faces();

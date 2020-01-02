@@ -22,19 +22,32 @@ Preprocessor::Preprocessor(const Path config_file_path)
 void Preprocessor::run()
 {
   /* Distribute properties over cells */
+  // CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
+  // property_mgr.generate_properties();
+  // discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
+
+  /* Split cells due to edfm intersection */
+  EmbeddedFractureManager edfm_mgr(config.embedded_fractures, config.edfm_method, data);
+  edfm_mgr.split_cells();
+  /* Since we split edfm faces, we pretend that they are dfm fractures
+   * to reuse the discretization code. */
+  const std::vector<DiscreteFractureConfig> edfm_faces_conf = edfm_mgr.generate_dfm_config();
+  // combine dfm and edfm configs
+  const std::vector<DiscreteFractureConfig> combined_fracture_config =
+      DiscreteFractureManager::combine_configs(config.discrete_fractures,
+                                               edfm_faces_conf);
+
+  DiscreteFractureManager dfm_mgr(combined_fracture_config, data);
+  dfm_mgr.distribute_properties();
+
+  // property manager for all grid with split cells
   CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
   property_mgr.generate_properties();
 
-  discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
+  // edfm + dfm discretization
+  // we will use only the edfm part from it
 
-  /* Split cells due to edfm intersection */
-  EmbeddedFractureManager edfm_mgr(config.embedded_fractures,
-                                   config.edfm_method, data);
-  edfm_mgr.split_cells();
-
-  DiscreteFractureManager dfm_mgr(config.discrete_fractures, data);
-  dfm_mgr.distribute_properties();
-
+  
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

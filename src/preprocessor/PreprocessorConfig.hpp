@@ -64,8 +64,8 @@ struct EmbeddedFractureConfig
   double cohesion = 0;
   double friction_angle = 30;
   double dilation_angle = 0;
-  double aperture = 1e-3;
-  double conductivity = 10;
+  double aperture = 1e-3;  // hydraulic aperture of the fracture [m]
+  double conductivity = 10;  // hydraulic conductivity of dfm fracture [m·md]
   bool coupled = true;  // whether to couple with geomechanics
 };
 

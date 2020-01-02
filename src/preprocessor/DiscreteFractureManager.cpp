@@ -21,7 +21,8 @@ bool DiscreteFractureManager::is_fracture(const int face_marker) const
 
 void DiscreteFractureManager::distribute_properties()
 {
-  std:size_t cv_index;
+  m_data.dfm_faces.clear();
+  std:size_t cv_index = 0;
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 2)
       if (is_fracture(face->marker()))
@@ -43,6 +44,7 @@ void DiscreteFractureManager::distribute_properties()
         f.coupled = config.coupled;
         f.aperture = config.aperture;
         f.conductivity = config.conductivity;
+        m_data.dfm_faces.push_back(std::move(f));
       }
 }
 
@@ -70,6 +72,19 @@ void DiscreteFractureManager::split_faces()
   }
   else
     std::cout << "No DFM faces have been split" << std::endl;
+}
+
+std::vector<DiscreteFractureConfig>
+DiscreteFractureManager::combine_configs(const std::vector<DiscreteFractureConfig> & config1,
+                                         const std::vector<DiscreteFractureConfig> & config2)
+{
+  std::vector<DiscreteFractureConfig> combined;
+  combined.reserve( config1.size() + config2.size() );
+  for (const auto & conf : config1)
+    combined.push_back(conf);
+  for (const auto & conf : config2)
+    combined.push_back(conf);
+  return combined;
 }
 
 }  // end namespace gprs_data

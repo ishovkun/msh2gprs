@@ -3,15 +3,6 @@
 namespace discretization
 {
 
-// DiscretizationBase::
-// DiscretizationBase(const mesh::Mesh                                    & grid,
-//                    const std::set<int>                                 & dfm_markers,
-//                    const std::vector<std::vector<double>>              & props,
-//                    const std::vector<std::string>                      & keys)
-//     : grid(grid),
-//       dfm_markers(dfm_markers),
-//       props(props),
-//       keys(keys)
 DiscretizationBase::
 DiscretizationBase(const std::vector<DiscreteFractureConfig> & dfm_fractures,
                    gprs_data::SimData & data)
@@ -20,9 +11,6 @@ DiscretizationBase(const std::vector<DiscreteFractureConfig> & dfm_fractures,
       m_data(data)
 {
   build_dfm_markers_();
-  // infer_perm_assignment();
-  // infer_poro_assignment();
-  // infer_custom_keys();
 }
 
 void DiscretizationBase::build_dfm_markers_()

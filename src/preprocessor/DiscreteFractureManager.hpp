@@ -17,6 +17,11 @@ class DiscreteFractureManager
   bool is_fracture(const int face_marker) const;
   /* split grid dfm faces for geomechanics */
   void split_faces();
+  // combine two vectors
+  static std::vector<DiscreteFractureConfig>
+  combine_configs(const std::vector<DiscreteFractureConfig> & config1,
+                  const std::vector<DiscreteFractureConfig> & config2);
+
 
  protected:
   void build_dfm_markers_set_();

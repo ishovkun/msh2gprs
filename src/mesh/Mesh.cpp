@@ -28,7 +28,8 @@ std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
 std::size_t Mesh::
 insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
              std::vector<std::size_t> face_parents,
-             const int                        marker)
+             const int                        marker,
+             std::vector<int> face_markers)
 {
   // cells don't have many vertices: don't need a hashmap here
   std::set<size_t> unique_vertices;
@@ -45,13 +46,19 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
              const std::vector<std::vector<std::size_t>> & cell_faces,
              const int                        vtk_id,
              const int                        marker,
-             std::vector<std::size_t> face_parents)
+             std::vector<std::size_t>         face_parents,
+             std::vector<int>                 face_markers)
 {
   // parent so that function can be reused for adding cells after splitting
   if (face_parents.empty())
   {
     face_parents.resize(cell_faces.size());
     std::fill( face_parents.begin(), face_parents.end(), constants::invalid_index );
+  }
+  if (face_markers.empty())
+  {
+    face_markers.resize(cell_faces.size());
+    std::fill( face_markers.begin(), face_markers.end(), constants::default_face_marker );
   }
   const std::size_t new_cell_index = n_cells();
   std::vector<std::size_t> face_indices;
@@ -74,7 +81,7 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
     }
 
     const std::size_t face_index = insert_face(face, face_vtk_id,
-                                               constants::default_face_marker,
+                                               face_markers[i],
                                                face_parents[i]);
     face_indices.push_back(face_index);
   }
@@ -374,8 +381,8 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
 }
 
 
-void Mesh::split_cell(Cell & cell,
-                      const angem::Plane<double> & plane)
+void Mesh::split_cell(Cell & cell, const angem::Plane<double> & plane,
+                                        const int splitting_face_marker)
 {
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
@@ -424,6 +431,7 @@ void Mesh::split_cell(Cell & cell,
   // also keep track of face parents
   vector<vector<size_t>> cell_above_faces, cell_below_faces;
   std::vector<size_t> faces_above_parents, faces_below_parents;
+  std::vector<int> faces_above_markers, faces_below_markers;
   for (size_t i = 0; i < split.polygons.size(); i++)
   {
     if ( split.markers[i] == constants::marker_below_splitting_plane ||
@@ -434,6 +442,10 @@ void Mesh::split_cell(Cell & cell,
           determine_face_parent_(face_vertex_global_numbering[i], cell,
                                  face_vertex_global_numbering[split_face_local_index]);
       faces_below_parents.push_back(face_parent);
+      if ( split.markers[i] == constants::marker_splitting_plane )
+        faces_below_markers.push_back(splitting_face_marker);
+      else
+        faces_below_markers.push_back( m_faces[face_parent].marker() );
     }
 
     if (split.markers[i] == constants::marker_above_splitting_plane ||
@@ -444,15 +456,18 @@ void Mesh::split_cell(Cell & cell,
           determine_face_parent_(face_vertex_global_numbering[i], cell,
                                  face_vertex_global_numbering[split_face_local_index]);
       faces_above_parents.push_back(face_parent);
+      if ( split.markers[i] == constants::marker_splitting_plane )
+        faces_above_markers.push_back(splitting_face_marker);
+      else
+        faces_above_markers.push_back( m_faces[face_parent].marker() );
     }
   }
 
   // insert new cells
-  const size_t child_cell_index1 = insert_cell_(cell_above_faces,
-                                                faces_above_parents, cell.marker());
-  const size_t child_cell_index2 = insert_cell_(cell_below_faces,
-                                                faces_below_parents,
-                                                cell.marker());
+  const size_t child_cell_index1 = insert_cell_(cell_above_faces, faces_above_parents,
+                                                cell.marker(), faces_above_markers);
+  const size_t child_cell_index2 = insert_cell_(cell_below_faces, faces_below_parents,
+                                                cell.marker(), faces_below_markers);
 
   // handle parent/child cell dependencies
   cell.m_children = {child_cell_index1, child_cell_index2};
