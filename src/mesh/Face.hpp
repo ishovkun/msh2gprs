@@ -17,11 +17,11 @@ class Face
  public:
   Face(const std::size_t                       face_index,
        const std::size_t                       master_face_index,
-       const std::vector<std::size_t> &        face_vertices,
+       const std::vector<std::size_t>        & face_vertices,
        const int                               face_vtk_id,
        const int                               face_marker,
-       std::vector<Cell>              &        grid_cells,
-       std::vector<Point> &                    grid_vertices,
+       std::vector<Cell>                     & grid_cells,
+       std::vector<Point>                    & grid_vertices,
        std::vector<std::vector<std::size_t>> & grid_vertex_cells,
        const std::size_t                       parent = constants::default_face_marker);
   // assignment operator

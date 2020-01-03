@@ -37,7 +37,6 @@ void Preprocessor::run()
   const std::vector<DiscreteFractureConfig> combined_fracture_config =
       DiscreteFractureManager::combine_configs(config.discrete_fractures,
                                                edfm_faces_conf);
-
   DiscreteFractureManager dfm_mgr(combined_fracture_config, data);
   dfm_mgr.distribute_properties();
 

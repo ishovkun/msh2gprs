@@ -14,8 +14,7 @@ enum ControlVolumeType
 struct ControlVolumeData
 {
   ControlVolumeType type;
-  // map control volume to cell/face index
-  std::size_t       master;
+  std::size_t       master; // grid cell/face index
   angem::Point<3,double> center;
   double volume;
   double porosity;

@@ -17,6 +17,10 @@ void DiscretizationBase::build_dfm_markers_()
 {
   for (const auto & frac : m_dfm_config)
     m_dfm_markers.insert(frac.label);
+  std::cout << "dfm markers: " << std::endl;
+  for (int m : m_dfm_markers)
+    std::cout << m << " ";
+  std::cout << std::endl;
 }
 
 bool DiscretizationBase::is_fracture(const int marker) const

@@ -131,10 +131,8 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
 
   if (!face_exists)
   {
-    m_faces.emplace_back(face_index, face_index,
-                         ivertices, vtk_id, marker,
-                         m_cells, m_vertices, m_vertex_cells,
-                         face_parent);
+    m_faces.emplace_back(face_index, face_index, ivertices, vtk_id, marker,
+                         m_cells, m_vertices, m_vertex_cells, face_parent);
     if (face_parent != constants::invalid_index)
         m_faces[face_parent].m_children.push_back(face_index);
   }
@@ -381,8 +379,8 @@ group_cells_based_on_split_faces(const std::vector<size_t> & affected_cells,
 }
 
 
-void Mesh::split_cell(Cell & cell, const angem::Plane<double> & plane,
-                                        const int splitting_face_marker)
+void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
+                      const int splitting_face_marker)
 {
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
@@ -445,7 +443,10 @@ void Mesh::split_cell(Cell & cell, const angem::Plane<double> & plane,
       if ( split.markers[i] == constants::marker_splitting_plane )
         faces_below_markers.push_back(splitting_face_marker);
       else
-        faces_below_markers.push_back( m_faces[face_parent].marker() );
+      {
+        faces_below_markers.push_back(m_faces[face_parent].marker());
+      }
+
     }
 
     if (split.markers[i] == constants::marker_above_splitting_plane ||
@@ -459,7 +460,7 @@ void Mesh::split_cell(Cell & cell, const angem::Plane<double> & plane,
       if ( split.markers[i] == constants::marker_splitting_plane )
         faces_above_markers.push_back(splitting_face_marker);
       else
-        faces_above_markers.push_back( m_faces[face_parent].marker() );
+        faces_above_markers.push_back(m_faces[face_parent].marker());
     }
   }
 
@@ -470,7 +471,7 @@ void Mesh::split_cell(Cell & cell, const angem::Plane<double> & plane,
                                                 cell.marker(), faces_below_markers);
 
   // handle parent/child cell dependencies
-  cell.m_children = {child_cell_index1, child_cell_index2};
+  m_cells[cell.index()].m_children = {child_cell_index1, child_cell_index2};
   m_cells[child_cell_index1].m_parent = cell.index();
   m_cells[child_cell_index2].m_parent = cell.index();
 }

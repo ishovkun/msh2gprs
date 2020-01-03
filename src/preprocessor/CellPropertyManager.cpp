@@ -125,7 +125,7 @@ void CellPropertyManager::print_setup_message_()
   for (std::size_t i=0; i<config.all_vars.size(); ++i)
   {
     std::cout << config.all_vars[i] << "\t";
-    if ((i + 1)%3 == 0)
+    if ((i + 1) % 3 == 0)
       std::cout << std::endl;
   }
   std::cout << std::endl;

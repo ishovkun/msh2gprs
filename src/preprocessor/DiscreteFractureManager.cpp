@@ -5,7 +5,9 @@ namespace gprs_data {
 DiscreteFractureManager::DiscreteFractureManager(const std::vector<DiscreteFractureConfig> & config,
                                                  SimData & data)
     : m_config(config), m_grid(data.grid), m_data(data)
-{}
+{
+  build_dfm_markers_set_();
+}
 
 void DiscreteFractureManager::build_dfm_markers_set_()
 {
@@ -28,13 +30,14 @@ void DiscreteFractureManager::distribute_properties()
       if (is_fracture(face->marker()))
       {
         // find corresponding config
-        size_t fracture_index;
+        size_t fracture_index = std::numeric_limits<size_t>::max();
         for (size_t i = 0; i < m_config.size(); i++)
           if ( face->marker() == m_config[i].label)
           {
             fracture_index = i;
             break;
           }
+        assert( fracture_index != std::numeric_limits<size_t>::max() );
         const auto & config = m_config[fracture_index];
 
         // create a face and fill out the props
@@ -44,6 +47,19 @@ void DiscreteFractureManager::distribute_properties()
         f.coupled = config.coupled;
         f.aperture = config.aperture;
         f.conductivity = config.conductivity;
+        // compute custom data as weighted average of the bounding cells
+        const auto cells = face->neighbors();
+        const auto cell1 = *cells[0];
+        const auto cell2 = *cells[1];
+        f.custom_flow_data.resize(m_data.output_flow_properties.size());
+        for (size_t j = 0; j < m_data.output_flow_properties.size(); ++j)
+        {
+          const size_t key = m_data.output_flow_properties[j];
+          f.custom_flow_data[j] +=
+              (m_data.cell_properties[key][cell1.index()] * cell1.volume() +
+               m_data.cell_properties[key][cell2.index()] * cell2.volume() ) /
+              ( cell1.volume() + cell2.volume() ) ;
+        }
         m_data.dfm_faces.insert({face->index(), std::move(f)});
       }
 }

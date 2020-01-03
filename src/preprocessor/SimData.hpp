@@ -16,6 +16,7 @@ struct DiscreteFractureFace
   bool   coupled;                       // coupling with geomechanics
   double aperture;                      // hydraulic aperture of the fracture [m]
   double conductivity;                  // hydraulic conductivity of dfm fracture [m·md]
+  std::vector<double> custom_flow_data;
 };
 
 struct SimData

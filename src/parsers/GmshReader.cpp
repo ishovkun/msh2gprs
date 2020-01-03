@@ -155,8 +155,7 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
       mesh.insert_cell(ivertices, vtk_id, marker);
     }
     // 2D element
-    else if (std::find(begin(polygons), end(polygons), element_type) !=
-             polygons.end())
+    else if (std::find(begin(polygons), end(polygons), element_type) != polygons.end())
     {
       mesh.insert_face(ivertices, vtk_id, marker);
     }

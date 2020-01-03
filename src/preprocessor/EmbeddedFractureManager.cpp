@@ -103,7 +103,9 @@ int EmbeddedFractureManager::find_maximum_face_marker_() const
 {
   int max_face_index = m_grid.begin_active_faces()->marker();
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
-    max_face_index = std::max( max_face_index, face->marker());
+    max_face_index = std::max(max_face_index, face->marker());
+
+  std::cout << "max_face_index = " << max_face_index << std::endl;
   return max_face_index;
 }
 
@@ -114,9 +116,10 @@ bool EmbeddedFractureManager::is_fracture(const int face_marker) const
 }
 
 void EmbeddedFractureManager::
-extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
-                  const std::vector<discretization::ConnectionData> & mixed_connection_data)
+extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data,
+                  const std::vector<discretization::ConnectionData> & con_data)
 {
+  std::cout << "n_cvs = " << cv_data.size() << std::endl;
   assert ( false && "write extraction code" );
 }
 

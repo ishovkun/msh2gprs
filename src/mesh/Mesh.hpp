@@ -136,8 +136,9 @@ class Mesh
   SurfaceMesh<double> split_faces();
 
   /* Split a cell by cutting it with a plane. New cell indices are appended
-   * at the back, so it is safe to split multiple cells in a row. */
-  void split_cell(Cell & cell, const angem::Plane<double> & plane,
+   * at the back, so it is safe to split multiple cells in a row.
+   * Note: cell is copied since inserting new cells invalidates the pointers. */
+  void split_cell(Cell cell, const angem::Plane<double> & plane,
                   const int splitting_face_marker = constants::marker_splitting_plane);
   /* split a vertex
    * retults in adding new vertices (pushed to the back of vertices set) */
