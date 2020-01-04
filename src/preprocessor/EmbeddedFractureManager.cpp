@@ -117,9 +117,18 @@ bool EmbeddedFractureManager::is_fracture(const int face_marker) const
 
 void EmbeddedFractureManager::
 extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data,
-                  const std::vector<discretization::ConnectionData> & con_data)
+                  const std::vector<discretization::ConnectionData> & con_data,
+                  const size_t n_dfm_faces, const size_t n_cells)
 {
   std::cout << "n_cvs = " << cv_data.size() << std::endl;
+  // for (std::size_t i=0; i<n_dfm_faces; ++i)
+  for (std::size_t i=0; i<cv_data.size(); ++i)
+    if ( cv_data[i].porosity != 0 )
+  {
+    std::cout << i << " " << cv_data[i].porosity << std::endl;
+  }
+
+  exit(0);
   assert ( false && "write extraction code" );
 }
 

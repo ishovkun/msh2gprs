@@ -22,8 +22,8 @@ class EmbeddedFractureManager
 
   // extract cv data pertaining to edfm fractures from the mixed assembly
   void extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
-                         const std::vector<discretization::ConnectionData> & mixed_connection_data);
-
+                         const std::vector<discretization::ConnectionData> & mixed_connection_data,
+                         const size_t n_dfm_faces, const size_t n_cells);
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture,

@@ -11,6 +11,8 @@ class DiscreteFractureManager
  public:
   DiscreteFractureManager(const std::vector<DiscreteFractureConfig> & config,
                           SimData & data);
+  // count the number of dfm faces
+  size_t count_dfm_faces() const;
   /* Assign flow properties to dfm control volumes */
   void distribute_properties();
   /* returns true if the marker corresponds to a fracture marker */
@@ -22,7 +24,7 @@ class DiscreteFractureManager
   combine_configs(const std::vector<DiscreteFractureConfig> & config1,
                   const std::vector<DiscreteFractureConfig> & config2);
   // distribute control volume indices
-  void build_reservoir_cell_numbering();
+  void build_flow_cv_numbering();
 
  protected:
   void build_dfm_markers_set_();

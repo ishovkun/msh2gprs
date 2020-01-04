@@ -103,17 +103,31 @@ DiscreteFractureManager::combine_configs(const std::vector<DiscreteFractureConfi
   return combined;
 }
 
-void DiscreteFractureManager::build_reservoir_cell_numbering()
+void DiscreteFractureManager::build_flow_cv_numbering()
 {
   size_t cv_index = 0;
   // distribute dfm indices
   for (auto & it_face: m_data.dfm_faces)
-    it_face.second.cv_index = ++cv_index;
+    it_face.second.cv_index = cv_index++;
   // distribute cell indices
   m_data.cell_cv_indices.clear();
   m_data.cell_cv_indices.reserve( m_grid.n_cells() );
   for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
-    m_data.cell_cv_indices.push_back( ++cv_index );
+    m_data.cell_cv_indices.push_back( cv_index++ );
+}
+
+size_t DiscreteFractureManager::count_dfm_faces() const
+{
+  size_t n_dfm_faces = 0;
+  m_data.dfm_faces.clear();
+  std:size_t cv_index = 0;
+  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+    if (face->neighbors().size() == 2)
+      if (is_fracture(face->marker()))
+      {
+        n_dfm_faces++;
+      }
+  return n_dfm_faces;
 }
 
 }  // end namespace gprs_data

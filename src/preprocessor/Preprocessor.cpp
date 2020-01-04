@@ -22,10 +22,9 @@ Preprocessor::Preprocessor(const Path config_file_path)
 
 void Preprocessor::run()
 {
-  /* Distribute properties over cells */
-  // CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
-  // property_mgr.generate_properties();
-  // discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
+  DiscreteFractureManager dfm_mgr(config.discrete_fractures, data);
+  const size_t n_dfm_faces = dfm_mgr.count_dfm_faces();
+  const size_t n_cells = data.grid.n_cells();
 
   /* Split cells due to edfm intersection */
   EmbeddedFractureManager edfm_mgr(config.embedded_fractures, config.edfm_method, data);
@@ -37,14 +36,15 @@ void Preprocessor::run()
   const std::vector<DiscreteFractureConfig> combined_fracture_config =
       DiscreteFractureManager::combine_configs(config.discrete_fractures,
                                                edfm_faces_conf);
-  DiscreteFractureManager dfm_mgr(combined_fracture_config, data);
-  dfm_mgr.distribute_properties();
+  DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
+  fracture_flow_mgr.distribute_properties();
 
-  // property manager for all grid with split cells
+  // property manager for grid with split cells (due to edfm splitting)
   CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
   property_mgr.generate_properties();
+
   // flow dof numbering
-  dfm_mgr.build_reservoir_cell_numbering();
+  fracture_flow_mgr.build_flow_cv_numbering();
 
   // edfm + dfm discretization
   // we will use only the edfm part from it
@@ -52,12 +52,15 @@ void Preprocessor::run()
   discr_edfm_dfm.build();
 
   edfm_mgr.extract_flow_data(discr_edfm_dfm.get_cell_data(),
-                             discr_edfm_dfm.get_face_data());
+                             discr_edfm_dfm.get_face_data(),
+                             n_dfm_faces, n_cells);
 
   // TODO: write code for combining flow data
   assert( false && "Write code for combining flow data" );
 
   data.grid.coarsen_cells();
+  // property_mgr.generate_properties();
+  // discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)
