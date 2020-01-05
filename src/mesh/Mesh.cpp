@@ -27,9 +27,9 @@ std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
 
 std::size_t Mesh::
 insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
-             std::vector<std::size_t> face_parents,
+             const std::vector<std::size_t> & face_parents,
              const int                        marker,
-             std::vector<int> face_markers)
+             std::vector<int>                 face_markers)
 {
   // cells don't have many vertices: don't need a hashmap here
   std::set<size_t> unique_vertices;
@@ -38,7 +38,8 @@ insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
       unique_vertices.insert(v);
   std::vector<size_t> ivertices(unique_vertices.begin(), unique_vertices.end());
   return insert_cell_( ivertices, cell_faces,
-                       constants::vtk_index_general_polyhedron, marker );
+                       constants::vtk_index_general_polyhedron, marker,
+                       face_parents, face_markers);
 }
 
 std::size_t Mesh::
@@ -53,18 +54,19 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
   if (face_parents.empty())
   {
     face_parents.resize(cell_faces.size());
-    std::fill( face_parents.begin(), face_parents.end(), constants::invalid_index );
+    std::fill(face_parents.begin(), face_parents.end(), constants::invalid_index);
   }
   if (face_markers.empty())
   {
     face_markers.resize(cell_faces.size());
-    std::fill( face_markers.begin(), face_markers.end(), constants::default_face_marker );
+    std::fill(face_markers.begin(), face_markers.end(), constants::default_face_marker);
   }
   const std::size_t new_cell_index = n_cells();
   std::vector<std::size_t> face_indices;
   face_indices.reserve(cell_faces.size());
 
-  for (std::size_t i=0; i<cell_faces.size(); ++i) {
+  for (std::size_t i=0; i<cell_faces.size(); ++i)
+  {
     const auto & face = cell_faces[i];
     size_t face_vtk_id;
     switch (face.size())
@@ -79,9 +81,7 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
         face_vtk_id = 7;  //  vtk_polygon
         break;
     }
-
-    const std::size_t face_index = insert_face(face, face_vtk_id,
-                                               face_markers[i],
+    const std::size_t face_index = insert_face(face, face_vtk_id, face_markers[i],
                                                face_parents[i]);
     face_indices.push_back(face_index);
   }
@@ -443,10 +443,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
       if ( split.markers[i] == constants::marker_splitting_plane )
         faces_below_markers.push_back(splitting_face_marker);
       else
-      {
         faces_below_markers.push_back(m_faces[face_parent].marker());
-      }
-
     }
 
     if (split.markers[i] == constants::marker_above_splitting_plane ||

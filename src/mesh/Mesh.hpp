@@ -170,7 +170,7 @@ class Mesh
   /* Insert an arbitrary polyhedron cell into grid .
    * A wrapper on the above function to minimize bookkeeping. */
   std::size_t insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
-                           std::vector<std::size_t> face_parents,
+                           const std::vector<std::size_t> & face_parents,
                            const int                        marker = constants::default_cell_marker,
                            std::vector<int> face_markers = std::vector<int>());
   /* get a vector of polygon global vertex indices given a vector with

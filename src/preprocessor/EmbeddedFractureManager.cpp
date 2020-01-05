@@ -30,9 +30,14 @@ void EmbeddedFractureManager::split_cells()
     }
 
     split_cells_(*frac.body, cells, face_marker);
+    std::cout << "should be new face marker " << face_marker << std::endl;
     m_edfm_markers.insert(face_marker);
     face_marker++;
   }
+  for (auto f = m_grid.begin_active_faces(); f != m_grid.end_active_faces(); ++f)
+    if (f->marker() > 0)
+      std::cout << f->index() << " " << f->marker() << std::endl;
+  exit(0);
 }
 
 void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
@@ -43,6 +48,7 @@ void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
   for (const size_t icell : cells)
   {
     mesh::Cell & old_cell = m_grid.cell(icell);
+    // std::cout << "splitting " << old_cell.index() << std::endl;
     m_grid.split_cell(old_cell, plane, face_marker);
   }
 }
@@ -130,6 +136,7 @@ extract_control_volume_data(const std::vector<discretization::ControlVolumeData>
       edfm_cv_data.push_back( cv_data[i] );
   return edfm_cv_data;
 }
+
 void EmbeddedFractureManager::
 extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data,
                   const std::vector<discretization::ConnectionData> & con_data,
@@ -141,13 +148,33 @@ extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data
   for (std::size_t i=n_dfm_faces; i<cv_data.size(); ++i)
     if ( cv_data[i].type == discretization::ControlVolumeType::face)
       n_edfm_faces++;
+  std::cout << "n_edfm_faces = " << n_edfm_faces << std::endl;
 
   const size_t max_edfm_index = min_edfm_index + n_edfm_faces - 1;
+  std::cout << "here it comes: " << min_edfm_index << " " << max_edfm_index << std::endl;
   for (const auto & con: con_data)
     if (con.type == discretization::ConnectionType::matrix_fracture)
     {
+      assert( con.elements.size() == 2 );
+      std::cout << "here " << con.elements[0] << " " << con.elements[1] << std::endl;
+      // identify which of connection elements is edfm
+      size_t frac_element = con.elements.size();
+      if      ( min_edfm_index <= con.elements[0] &&
+                max_edfm_index >= con.elements[0])
+        frac_element = 0;
+      else if ( min_edfm_index <= con.elements[1] &&
+                max_edfm_index >= con.elements[1])
+        frac_element = 1;
+      if (frac_element == 2) continue;
+
+      std::cout << con.elements[frac_element] << std::endl;
 
     }
+    else if (con.type == discretization::ConnectionType::fracture_fracture)
+    {
+      
+    }
+
   assert ( false && "write extraction code" );
 }
 
