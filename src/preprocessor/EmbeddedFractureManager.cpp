@@ -34,10 +34,6 @@ void EmbeddedFractureManager::split_cells()
     m_edfm_markers.insert(face_marker);
     face_marker++;
   }
-  for (auto f = m_grid.begin_active_faces(); f != m_grid.end_active_faces(); ++f)
-    if (f->marker() > 0)
-      std::cout << f->index() << " " << f->marker() << std::endl;
-  exit(0);
 }
 
 void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,

@@ -63,6 +63,11 @@ class Face
   // returns true if has no children; else returns false
   inline bool is_active() const {return m_children.empty();}
 
+  // ---------------------------------- Setters ---------------------------- //
+
+  //  set face marker
+  void set_marker(const int marker) { m_marker = marker; }
+
  protected:
   std::size_t m_index;              // face index
   std::size_t m_master_face_index;  // index before split
