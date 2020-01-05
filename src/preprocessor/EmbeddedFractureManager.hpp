@@ -21,6 +21,10 @@ class EmbeddedFractureManager
   bool is_fracture(const int face_marker) const;
 
   // extract cv data pertaining to edfm fractures from the mixed assembly
+  std::vector<discretization::ControlVolumeData>
+  extract_control_volume_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
+                              const size_t n_dfm_faces);
+  // compute edfm transmissibility from cut-cell transmissibility
   void extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
                          const std::vector<discretization::ConnectionData> & mixed_connection_data,
                          const size_t n_dfm_faces, const size_t n_cells);
@@ -43,6 +47,7 @@ class EmbeddedFractureManager
   SimData & data;
   mesh::Mesh & m_grid;
   std::set<int> m_edfm_markers;
+  // std::unordered_set<size_t> m_edfm_faces;
 };
 
 }  // end namespace gprs_data

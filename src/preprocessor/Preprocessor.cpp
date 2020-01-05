@@ -51,6 +51,7 @@ void Preprocessor::run()
   discretization::DiscretizationDFM discr_edfm_dfm(combined_fracture_config, data);
   discr_edfm_dfm.build();
 
+  edfm_mgr.extract_control_volume_data(discr_edfm_dfm.get_cell_data(), n_dfm_faces);
   edfm_mgr.extract_flow_data(discr_edfm_dfm.get_cell_data(),
                              discr_edfm_dfm.get_face_data(),
                              n_dfm_faces, n_cells);

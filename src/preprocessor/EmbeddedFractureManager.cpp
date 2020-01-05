@@ -115,20 +115,39 @@ bool EmbeddedFractureManager::is_fracture(const int face_marker) const
   else return false;
 }
 
+std::vector<discretization::ControlVolumeData> EmbeddedFractureManager::
+extract_control_volume_data(const std::vector<discretization::ControlVolumeData> & cv_data,
+                            const size_t n_dfm_faces)
+{
+  std::vector<discretization::ControlVolumeData> edfm_cv_data;
+  size_t n_edfm_faces = 0;
+  for (std::size_t i=n_dfm_faces; i<cv_data.size(); ++i)
+    if ( cv_data[i].type == discretization::ControlVolumeType::face)
+      n_edfm_faces++;
+  edfm_cv_data.reserve(n_edfm_faces);
+  for (std::size_t i=n_dfm_faces; i<n_dfm_faces + n_edfm_faces; ++i)
+    if ( cv_data[i].type == discretization::ControlVolumeType::face)
+      edfm_cv_data.push_back( cv_data[i] );
+  return edfm_cv_data;
+}
 void EmbeddedFractureManager::
 extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data,
                   const std::vector<discretization::ConnectionData> & con_data,
                   const size_t n_dfm_faces, const size_t n_cells)
 {
-  std::cout << "n_cvs = " << cv_data.size() << std::endl;
-  // for (std::size_t i=0; i<n_dfm_faces; ++i)
-  for (std::size_t i=0; i<cv_data.size(); ++i)
-    if ( cv_data[i].porosity != 0 )
-  {
-    std::cout << i << " " << cv_data[i].porosity << std::endl;
-  }
+  // count edfm entries
+  const size_t min_edfm_index = n_dfm_faces;
+  size_t n_edfm_faces = 0;
+  for (std::size_t i=n_dfm_faces; i<cv_data.size(); ++i)
+    if ( cv_data[i].type == discretization::ControlVolumeType::face)
+      n_edfm_faces++;
 
-  exit(0);
+  const size_t max_edfm_index = min_edfm_index + n_edfm_faces - 1;
+  for (const auto & con: con_data)
+    if (con.type == discretization::ConnectionType::matrix_fracture)
+    {
+
+    }
   assert ( false && "write extraction code" );
 }
 
