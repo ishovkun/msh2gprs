@@ -59,13 +59,14 @@ void DiscretizationEDFM::build_connection_data_()
         build_edfm_dfm_(con);
     }
   }
+  convert_flow_map_to_vector_();
 }
 
 void DiscretizationEDFM::build_matrix_fracture_(const ConnectionData &con)
 {
   assert(con.elements.size() == 2);
   // first element is fracture
-  std::cout << con.elements[0] << std::endl;
+  // std::cout << con.elements[0] << std::endl;
   assert(m_cv[con.elements[0]].type == discretization::ControlVolumeType::face);
 
   const auto &cell = m_grid.cell(m_cv[con.elements[1]].master);
@@ -80,9 +81,9 @@ void DiscretizationEDFM::build_matrix_fracture_(const ConnectionData &con)
   auto &new_con = m_con_map.get_data(con_index);
 
   // transmissibility is weighted average of two halves m-F transmissibilities
-  new_con.coefficients.resize(2);
-  new_con.coefficients[0] = con.coefficients[0] * cell.volume() / parent_cell.volume();
-  new_con.coefficients[1] = - new_con.coefficients[0];
+  if (new_con.coefficients.empty()) new_con.coefficients = {0.0, 0.0};
+  new_con.coefficients[0] += con.coefficients[0] * cell.volume() / parent_cell.volume();
+  new_con.coefficients[1] -= - new_con.coefficients[0];
 }
 
 std::vector<size_t> DiscretizationEDFM::find_edfm_elements_(const ConnectionData & con)
@@ -96,12 +97,43 @@ std::vector<size_t> DiscretizationEDFM::find_edfm_elements_(const ConnectionData
 
 void DiscretizationEDFM::build_edfm_edfm_(const ConnectionData & con)
 {
-  assert ( false && "write extraction code" );
+  assert(con.elements.size() == 2);
+  std::cout << "edfm-edfm " << con.elements[0] << " " << con.elements[1] << std::endl;
+
+  size_t con_index;
+  if (m_con_map.contains(con.elements[0], con.elements[1]))
+    con_index = m_con_map.index(con.elements[0], con.elements[1]);
+  else
+    con_index = m_con_map.insert(con.elements[0], con.elements[1]);
+  auto &new_con = m_con_map.get_data(con_index);
+  new_con = con;
 }
 
 void DiscretizationEDFM::build_edfm_dfm_(const ConnectionData & con)
 {
-  assert ( false && "write extraction code" );
+  assert (m_min_edfm_index <= con.elements[1] && m_min_edfm_index + m_n_edfm_faces > con.elements[1]);
+  assert(con.elements.size() == 2);
+  std::cout << "edfm-dfm " << con.elements[0] << " " << con.elements[1] << std::endl;
+
+  // first element is dfm, second is dfm
+  size_t con_index;
+  if (m_con_map.contains(con.elements[0], con.elements[1]))
+    con_index = m_con_map.index(con.elements[0], con.elements[1]);
+  else
+    con_index = m_con_map.insert(con.elements[0], con.elements[1]);
+  auto &new_con = m_con_map.get_data(con_index);
+  new_con = con;
+}
+
+void DiscretizationEDFM::convert_flow_map_to_vector_()
+{
+  con_data.reserve( m_con_map.size() );
+  for (const auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
+  {
+    con_data.emplace_back();
+    auto & con = con_data.back();
+    con = *it;
+  }
 }
 
 }  // end namespace discretization

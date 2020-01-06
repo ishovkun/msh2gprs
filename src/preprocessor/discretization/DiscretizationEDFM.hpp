@@ -29,6 +29,7 @@ class DiscretizationEDFM : public DiscretizationBase
   void build_edfm_dfm_(const ConnectionData & con);
   size_t calculate_edfm_faces_() const;
   std::vector<size_t> find_edfm_elements_(const ConnectionData & con);
+  void convert_flow_map_to_vector_();
   // ---------------------------- Variables --------------------- //
   // references to combiined mixed external props
   const std::vector<ConnectionData> & m_con;
