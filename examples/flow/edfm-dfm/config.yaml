@@ -1,0 +1,31 @@
+Mesh file: geom.msh
+
+Embedded Fractures :
+  method: projection
+  fracture:
+    type: Rectangle
+    center: [0, 0, 0]
+    length: 30
+    width: 10
+    dip: 90
+    strike: 140
+    aperture: 5e-3
+    conductivity: 500
+
+Discrete Fractures :
+  fracture:
+    label: 1
+    conductivity : 1
+    aperture : 0.01
+
+Domain Flow Properties:
+  file: domain.txt
+  # domain id is matched with the physical volume id in gmsh
+  domain:
+    label: 9999992
+    Coupled: true                  # true/false on by default
+    RTEMP: 340
+    PORO: 0.2
+    PERM: 10
+    SWAT: 0.0
+    PRESSURE: 100
