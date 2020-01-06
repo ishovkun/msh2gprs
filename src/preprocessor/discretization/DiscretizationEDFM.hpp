@@ -24,10 +24,9 @@ class DiscretizationEDFM : public DiscretizationBase
  protected:
   void extract_control_volume_data_();
   void build_connection_data_();
-  void build_matrix_fracture_(const ConnectionData & con,
-                              const size_t min_edfm_index,
-                              const size_t max_edfm_index);
-  void build_fracture_fracture_(const ConnectionData & con);
+  void build_matrix_fracture_(const ConnectionData & con);
+  void build_edfm_edfm_(const ConnectionData & con);
+  void build_edfm_dfm_(const ConnectionData & con);
   size_t calculate_edfm_faces_() const;
   std::vector<size_t> find_edfm_elements_(const ConnectionData & con);
   // ---------------------------- Variables --------------------- //
