@@ -47,13 +47,12 @@ void DiscretizationEDFM::build_connection_data_()
     if (con.type == discretization::ConnectionType::matrix_fracture)
     {
   // std::cout << "here " << con.elements[0] << " " << con.elements[1] << std::endl;
-      if (m_min_edfm_index <= con.elements[0] && max_edfm_index >= con.elements[0])
+      // if (m_min_edfm_index <= con.elements[0] && max_edfm_index >= con.elements[0])
+      if (!find_edfm_elements_(con).empty())
         build_matrix_fracture_(con, m_min_edfm_index, max_edfm_index);
     }
     else if (con.type == discretization::ConnectionType::fracture_fracture)
-    {
-        assert( false && "Write edfm trans code" );
-    }
+      build_fracture_fracture_(con);
 
   assert ( false && "write extraction code" );
 }
@@ -82,6 +81,21 @@ void DiscretizationEDFM::build_matrix_fracture_(const ConnectionData &con,
   new_con.coefficients[0] =
       con.coefficients[0] * cell.volume() / parent_cell.volume();
   new_con.coefficients[1] = new_con.coefficients[0];
+}
+
+std::vector<size_t> DiscretizationEDFM::find_edfm_elements_(const ConnectionData & con)
+{
+  std::vector<size_t> result;
+  for (size_t i = 0; i < con.elements.size(); i++ )
+    if (m_min_edfm_index <= con.elements[i] && m_min_edfm_index + m_n_edfm_faces > con.elements[i])
+      result.push_back(i);
+  return result;
+  
+}
+
+void DiscretizationEDFM::build_fracture_fracture_(const ConnectionData & con)
+{
+  // find_edfm_elements_(con);
 }
 
 }  // end namespace discretization
