@@ -10,9 +10,10 @@ DiscretizationEDFM(const std::vector<DiscreteFractureConfig> & dfm_fractures,
                    const size_t n_dfm_faces, // const size_t n_cells,
                    gprs_data::SimData & data)
     : DiscretizationBase(dfm_fractures, data),
-      m_n_dfm_faces(n_dfm_faces),
       m_cv(mixed_cv_data),
-      m_con(mixed_connection_data)
+      m_con(mixed_connection_data),
+      m_min_edfm_index(n_dfm_faces),
+      m_n_edfm_faces(calculate_edfm_faces_())
 {}
 
 void DiscretizationEDFM::build()
@@ -21,29 +22,33 @@ void DiscretizationEDFM::build()
   build_connection_data_();
 }
 
-void DiscretizationEDFM::extract_control_volume_data_()
+size_t DiscretizationEDFM::calculate_edfm_faces_() const
 {
   size_t n_edfm_faces = 0;
-  for (std::size_t i=m_n_dfm_faces; i<cv_data.size(); ++i)
+  for (std::size_t i=m_min_edfm_index; i<m_cv.size(); ++i)
     if ( m_cv[i].type == discretization::ControlVolumeType::face)
       n_edfm_faces++;
-  cv_data.reserve(n_edfm_faces);
-  for (std::size_t i=m_n_dfm_faces; i<m_n_dfm_faces + n_edfm_faces; ++i)
+  assert ( m_min_edfm_index + n_edfm_faces > 0 );
+  return n_edfm_faces;
+}
+
+void DiscretizationEDFM::extract_control_volume_data_()
+{
+  for (std::size_t i=m_min_edfm_index; i<m_min_edfm_index + m_n_edfm_faces; ++i)
     if ( m_cv[i].type == discretization::ControlVolumeType::face)
       cv_data.push_back( m_cv[i] );
 }
 
 void DiscretizationEDFM::build_connection_data_()
 {
-  if (m_n_dfm_faces + cv_data.size() == 0) return;
-  const size_t min_edfm_index = m_n_dfm_faces;
-  const size_t max_edfm_index = min_edfm_index + cv_data.size() - 1;
+  if (cv_data.size() == 0) return;
+  const size_t max_edfm_index = m_min_edfm_index + cv_data.size() - 1;
   for (const auto & con: m_con)
     if (con.type == discretization::ConnectionType::matrix_fracture)
     {
   // std::cout << "here " << con.elements[0] << " " << con.elements[1] << std::endl;
-      if (min_edfm_index <= con.elements[0] && max_edfm_index >= con.elements[0])
-        build_matrix_fracture_(con, min_edfm_index, max_edfm_index);
+      if (m_min_edfm_index <= con.elements[0] && max_edfm_index >= con.elements[0])
+        build_matrix_fracture_(con, m_min_edfm_index, max_edfm_index);
     }
     else if (con.type == discretization::ConnectionType::fracture_fracture)
     {

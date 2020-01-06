@@ -27,12 +27,14 @@ class DiscretizationEDFM : public DiscretizationBase
   void build_matrix_fracture_(const ConnectionData & con,
                               const size_t min_edfm_index,
                               const size_t max_edfm_index);
+  size_t calculate_edfm_faces_() const;
   // ---------------------------- Variables --------------------- //
   // references to combiined mixed external props
-  const size_t m_n_dfm_faces;
   const std::vector<ConnectionData> & m_con;
   const std::vector<ControlVolumeData> & m_cv;
   hash_algorithms::ConnectionMap<ConnectionData> m_con_map;
+  const size_t m_min_edfm_index;
+  const size_t m_n_edfm_faces;
 };
 
 }  // end namespace discretization
