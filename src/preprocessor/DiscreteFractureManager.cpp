@@ -111,9 +111,9 @@ void DiscreteFractureManager::build_flow_cv_numbering()
     it_face.second.cv_index = cv_index++;
   // distribute cell indices
   m_data.cell_cv_indices.clear();
-  m_data.cell_cv_indices.reserve( m_grid.n_cells() );
+  m_data.cell_cv_indices.resize( m_grid.n_cells() );
   for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
-    m_data.cell_cv_indices.push_back( cv_index++ );
+    m_data.cell_cv_indices[cell->index()] = cv_index++;
 }
 
 size_t DiscreteFractureManager::count_dfm_faces() const
@@ -124,9 +124,7 @@ size_t DiscreteFractureManager::count_dfm_faces() const
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 2)
       if (is_fracture(face->marker()))
-      {
         n_dfm_faces++;
-      }
   return n_dfm_faces;
 }
 

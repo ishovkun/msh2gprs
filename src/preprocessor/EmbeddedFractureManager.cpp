@@ -152,7 +152,7 @@ extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data
     if (con.type == discretization::ConnectionType::matrix_fracture)
     {
       assert( con.elements.size() == 2 );
-      std::cout << "here " << con.elements[0] << " " << con.elements[1] << std::endl;
+      // std::cout << "here " << con.elements[0] << " " << con.elements[1] << std::endl;
       // identify which of connection elements is edfm
       size_t frac_element = con.elements.size();
       if      ( min_edfm_index <= con.elements[0] &&
@@ -164,6 +164,7 @@ extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data
       if (frac_element == 2) continue;
 
       std::cout << con.elements[frac_element] << std::endl;
+      // connect to cell parent since we split edfm cells
 
     }
     else if (con.type == discretization::ConnectionType::fracture_fracture)

@@ -63,8 +63,12 @@ class Cell
   inline bool is_active() const {return m_children.empty();}
   // returns the parent index. If cell has not parents, returns it's cell index
   inline std::size_t parent() const { return m_parent; }
+  // returns index of the parent of parent of parent of ....
+  std::size_t ultimate_parent() const;
   // return a vector of child cell indices
   inline const std::vector<size_t> & children() const { return m_children; }
+  // returns a vector of indices of children of children of...
+  std::vector<size_t> ultimate_children() const;
 
  protected:
   // this cell stuff

@@ -6,6 +6,7 @@
 #include "DiscreteFractureManager.hpp"
 #include "discretization/DiscretizationTPFA.hpp"
 #include "discretization/DiscretizationDFM.hpp"
+#include "discretization/DiscretizationEDFM.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -36,6 +37,7 @@ void Preprocessor::run()
   const std::vector<DiscreteFractureConfig> combined_fracture_config =
       DiscreteFractureManager::combine_configs(config.discrete_fractures,
                                                edfm_faces_conf);
+  // manages dofs of dfm and edfm after splitting
   DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
   fracture_flow_mgr.distribute_properties();
 
@@ -51,10 +53,12 @@ void Preprocessor::run()
   discretization::DiscretizationDFM discr_edfm_dfm(combined_fracture_config, data);
   discr_edfm_dfm.build();
 
-  edfm_mgr.extract_control_volume_data(discr_edfm_dfm.get_cell_data(), n_dfm_faces);
-  edfm_mgr.extract_flow_data(discr_edfm_dfm.get_cell_data(),
-                             discr_edfm_dfm.get_face_data(),
-                             n_dfm_faces, n_cells);
+  discretization::DiscretizationEDFM discr_edfm(combined_fracture_config,
+                                                discr_edfm_dfm.get_cell_data(),
+                                                discr_edfm_dfm.get_face_data(),
+                                                n_dfm_faces, data);
+  discr_edfm.build();
+
 
   // TODO: write code for combining flow data
   assert( false && "Write code for combining flow data" );

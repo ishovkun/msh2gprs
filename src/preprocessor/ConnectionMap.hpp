@@ -20,25 +20,25 @@ class ConnectionMap
   ConnectionMap(const std::size_t max_elements = 1e10);
 
   connection_map_iterator<DataType> begin() {
-    return connection_map_iterator<DataType>(connections.begin(), data, max_elements);
+    return connection_map_iterator<DataType>(connections.begin(), m_data, max_elements);
   }
   connection_map_iterator<DataType> end() {
-    return connection_map_iterator<DataType>(connections.end(), data, max_elements);
+    return connection_map_iterator<DataType>(connections.end(), m_data, max_elements);
   }
   connection_map_const_iterator<DataType> begin() const {
-    return connection_map_const_iterator<DataType>(connections.begin(), data, max_elements);
+    return connection_map_const_iterator<DataType>(connections.begin(), m_data, max_elements);
   }
   connection_map_const_iterator<DataType> end() const {
-    return connection_map_const_iterator<DataType>(connections.end(), data, max_elements);
+    return connection_map_const_iterator<DataType>(connections.end(), m_data, max_elements);
   }
 
   // get number of connections
   std::size_t size() const {return connections.size();}
 
   inline
-  DataType & get_data(const std::size_t connection_index) {return data[connection_index];}
+  DataType & get_data(const std::size_t connection_index) {return m_data[connection_index];}
   inline const
-  DataType & get_data(const std::size_t connection_index) const {return data[connection_index];}
+  DataType & get_data(const std::size_t connection_index) const {return m_data[connection_index];}
   DataType & get_data(const std::size_t ielement, const std::size_t jelement);
   const DataType & get_data(const std::size_t ielement, const std::size_t jelement) const;
 
@@ -71,7 +71,7 @@ class ConnectionMap
   std::unordered_map<std::size_t, std::size_t> connections;
   std::vector<std::vector<std::size_t>> v_neighbors;
 
-  std::vector<DataType> data;
+  std::vector<DataType> m_data;
 };
 
 
@@ -140,7 +140,7 @@ void ConnectionMap<DataType>::clear_connection(const std::size_t ielement,
   auto it_dead_conn = connections.find(hash);
   std::size_t dead_conn = it_dead_conn->second;
   connections.erase(it_dead_conn);
-  data.erase(data.begin() + dead_conn);
+  m_data.erase(m_data.begin() + dead_conn);
 
   // shift connection indices
   for (auto iter = connections.begin();
@@ -252,7 +252,7 @@ std::size_t ConnectionMap<DataType>::insert(const std::size_t ielement,
   v_neighbors[jelement].push_back(ielement);
 
   if (sizeof(DataType) > sizeof(empty))  // don't waste space if hash_algorithms::empty
-    data.resize(data.size() + 1);
+    m_data.resize(m_data.size() + 1);
 
   return conn;
 }
@@ -271,7 +271,7 @@ template <typename DataType>
 DataType &
 ConnectionMap<DataType>::get_data(const std::size_t ielement, const std::size_t jelement)
 {
-  return data[index(ielement, jelement)];
+  return m_data[index(ielement, jelement)];
 }
 
 
@@ -279,7 +279,7 @@ template <typename DataType>
 const DataType &
 ConnectionMap<DataType>::get_data(const std::size_t ielement, const std::size_t jelement) const
 {
-  return data[index(ielement, jelement)];
+  return m_data[index(ielement, jelement)];
 }
 
 }  // end namespace
