@@ -155,13 +155,13 @@ void DiscretizationDFM::build_fracture_matrix_connections()
       con_data.emplace_back();
       auto &con = con_data.back();
       con.elements.push_back(cv_frac);
-      con.elements.push_back(m_data.cell_cv_indices[neighbors[0]->index()]);
+      const size_t cv_cell = m_data.cell_cv_indices[neighbors[0]->index()];
+      con.elements.push_back(cv_cell);
       con.type = ConnectionType::matrix_fracture;
       con.area = face.area();
       con.normal = face.normal();
       con.center = face.center();
     }
-
     //  connection fracture-cell2
     {
       con_data.emplace_back();
@@ -234,4 +234,4 @@ void DiscretizationDFM::build_fracture_fracture_connections()
 
 }
 
-} // end namespace
+}  // end namespace discretization
