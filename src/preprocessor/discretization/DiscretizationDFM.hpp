@@ -14,8 +14,8 @@ class DiscretizationDFM : public DiscretizationBase
 
   virtual void build() override;
 
-  void merge_matrix_discretization(const std::vector<discretization::ControlVolumeData> & matrix_cv_data,
-                                   const std::vector<discretization::ConnectionData> & matrix_connection_data);
+  void merge_from_matrix_discretization(const std::vector<discretization::ControlVolumeData> & matrix_cv_data,
+                                        const std::vector<discretization::ConnectionData> & matrix_connection_data);
 
  protected:
   // build data like volumes, depth, poro, etc.

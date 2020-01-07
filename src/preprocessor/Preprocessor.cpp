@@ -69,13 +69,12 @@ void Preprocessor::run()
   discr_dfm.build();
 
   // merge dfm and matrix discretizations
-  discr_dfm.merge_matrix_discretization(matrix_discr.get_cell_data(),
-                                        matrix_discr.get_face_data());
+  discr_dfm.merge_from_matrix_discretization(matrix_discr.get_cell_data(),
+                                             matrix_discr.get_face_data());
 
   // finally, merge edfm, dfm, and matrix discretizations
-
-  // TODO: write code for combining flow data
-  assert( false && "Write code for combining flow data" );
+  discr_edfm.merge_into_matrix_dfm_discretization(discr_dfm.get_cell_data(),
+                                                  discr_dfm.get_face_data());
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

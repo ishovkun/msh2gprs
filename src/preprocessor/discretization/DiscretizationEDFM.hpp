@@ -20,6 +20,8 @@ class DiscretizationEDFM : public DiscretizationBase
                      const size_t n_dfm_faces, // const size_t n_cells,
                      gprs_data::SimData & data);
   virtual void build() override;
+  void merge_into_matrix_dfm_discretization(std::vector<discretization::ControlVolumeData> & matrix_dfm_cv_data,
+                                            std::vector<discretization::ConnectionData> & matrix_dfm_con_data);
 
  protected:
   void extract_control_volume_data_();

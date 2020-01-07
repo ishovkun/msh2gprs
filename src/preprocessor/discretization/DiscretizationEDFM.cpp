@@ -136,4 +136,15 @@ void DiscretizationEDFM::convert_flow_map_to_vector_()
   }
 }
 
+void DiscretizationEDFM::
+merge_into_matrix_dfm_discretization(std::vector<discretization::ControlVolumeData> & res_cv_data,
+                                     std::vector<discretization::ConnectionData> & res_con_data)
+{
+  res_cv_data.reserve(cv_data.size() + res_cv_data.size());
+  for ( const auto & cv : cv_data )
+    res_cv_data.push_back(cv);
+  for (const auto & con : con_data)
+    res_con_data.push_back(con);
+}
+
 }  // end namespace discretization

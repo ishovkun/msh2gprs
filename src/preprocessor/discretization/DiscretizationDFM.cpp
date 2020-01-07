@@ -235,8 +235,8 @@ void DiscretizationDFM::build_fracture_fracture_connections()
 }
 
 void DiscretizationDFM::
-merge_matrix_discretization(const std::vector<discretization::ControlVolumeData> & matrix_cv_data,
-                            const std::vector<discretization::ConnectionData> & matrix_con_data)
+merge_from_matrix_discretization(const std::vector<discretization::ControlVolumeData> & matrix_cv_data,
+                                 const std::vector<discretization::ConnectionData> & matrix_con_data)
 {
   // first remove cv's pertaining to cells from the internal struture
   cv_data.erase( cv_data.begin() + m_data.dfm_faces.size(), cv_data.end());
