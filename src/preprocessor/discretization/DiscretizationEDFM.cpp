@@ -128,7 +128,7 @@ void DiscretizationEDFM::build_edfm_dfm_(const ConnectionData & con)
 void DiscretizationEDFM::convert_flow_map_to_vector_()
 {
   con_data.reserve( m_con_map.size() );
-  for (const auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
+  for (auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
   {
     con_data.emplace_back();
     auto & con = con_data.back();

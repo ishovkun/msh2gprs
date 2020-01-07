@@ -53,19 +53,29 @@ void Preprocessor::run()
   discretization::DiscretizationDFM discr_edfm_dfm(combined_fracture_config, data);
   discr_edfm_dfm.build();
 
+  // build edfm discretization from mixed dfm-edfm discretization
   discretization::DiscretizationEDFM discr_edfm(combined_fracture_config,
                                                 discr_edfm_dfm.get_cell_data(),
                                                 discr_edfm_dfm.get_face_data(),
                                                 n_dfm_faces, data);
   discr_edfm.build();
+  // now coarsen all cells to remove edfm splits and compute normal
+  // flow dfm-matrix discretizations
+  data.grid.coarsen_cells();
+  property_mgr.generate_properties();
+  discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
+  dfm_mgr.distribute_properties();
+  discretization::DiscretizationDFM discr_dfm(config.discrete_fractures, data);
+  discr_dfm.build();
 
+  // merge dfm and matrix discretizations
+  discr_dfm.merge_matrix_discretization(matrix_discr.get_cell_data(),
+                                        matrix_discr.get_face_data());
+
+  // finally, merge edfm, dfm, and matrix discretizations
 
   // TODO: write code for combining flow data
   assert( false && "Write code for combining flow data" );
-
-  data.grid.coarsen_cells();
-  // property_mgr.generate_properties();
-  // discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)
