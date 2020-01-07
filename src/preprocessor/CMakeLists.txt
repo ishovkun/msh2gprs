@@ -7,6 +7,8 @@ ADD_LIBRARY(preprocessor
   CellPropertyManager.cpp
   EmbeddedFractureManager.cpp
   DiscreteFractureManager.cpp
+  WellManager.cpp
+  Well.cpp
   discretization/DiscretizationBase.cpp
   discretization/DiscretizationTPFA.cpp
   discretization/DiscretizationDFM.cpp

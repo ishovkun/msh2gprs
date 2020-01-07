@@ -3,6 +3,7 @@
 #include "discretization/ControlVolumeData.hpp"
 #include "discretization/ConnectionData.hpp"
 #include "mesh/Mesh.hpp"
+#include "Well.hpp"
 #include "angem/Tensor2.hpp"
 #include <unordered_map>
 
@@ -37,12 +38,13 @@ struct SimData
 {
   mesh::Mesh grid;
   // cell properties
+  // ----------------------- Reservoir cells ------------------------ //
   std::vector<std::string> property_names;
   std::vector<std::vector<double>> cell_properties;
   std::array<double,9> permeability_keys;  // permeability key indices in cell_properties
   size_t porosity_key_index;               // porosity key index in cell_properties
   std::vector<size_t> output_flow_properties;
-  std::vector<size_t> cell_cv_indices;
+  std::vector<size_t> cell_cv_indices;  // flow control indices of reservoir cells
   // ----------------------- DFM ------------------------ //
   std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces
@@ -52,6 +54,11 @@ struct SimData
   // ----------------------- Flow data ---------------------- //
   std::vector<discretization::ControlVolumeData> cv_data;
   std::vector<discretization::ConnectionData> flow_connection_data;
+  // ----------------------- Well data ---------------------- //
+  std::vector<Well> wells;  // vector of well properties
+  angem::PointSet<3,double> well_vertices;  // set of well coordinatees: used for vtk output.
+  // vector of well segments: indices of well coordinate points. used for vtk output.
+  std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
   // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {

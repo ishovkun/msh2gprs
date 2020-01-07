@@ -126,7 +126,7 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
     sda[i].points.assign( n_frac_cells, config[i].body->center() );
     sda[i].dip   .assign( n_frac_cells, config[i].body->plane().dip_angle() );
     sda[i].strike.assign( n_frac_cells, config[i].body->plane().strike_angle() );
-    sda[i].cohesion = config[i].cohesion;
+    sda[i].cohesion       = config[i].cohesion;
     sda[i].friction_angle = config[i].friction_angle;
     sda[i].dilation_angle = config[i].dilation_angle;
   }

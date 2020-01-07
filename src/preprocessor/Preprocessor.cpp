@@ -7,6 +7,7 @@
 #include "discretization/DiscretizationTPFA.hpp"
 #include "discretization/DiscretizationDFM.hpp"
 #include "discretization/DiscretizationEDFM.hpp"
+#include "WellManager.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -59,6 +60,11 @@ void Preprocessor::run()
                                                 discr_edfm_dfm.get_face_data(),
                                                 n_dfm_faces, data);
   discr_edfm.build();
+
+  // setup wells
+  WellManager well_mgr(config.wells, data);
+  well_mgr.setup();
+
   // now coarsen all cells to remove edfm splits and compute normal
   // flow dfm-matrix discretizations
   data.grid.coarsen_cells();
@@ -75,6 +81,7 @@ void Preprocessor::run()
   // finally, merge edfm, dfm, and matrix discretizations
   discr_edfm.merge_into_matrix_dfm_discretization(discr_dfm.get_cell_data(),
                                                   discr_dfm.get_face_data());
+  // generate geomechanics sda properties
   edfm_mgr.distribute_mechanical_properties();
 }
 
