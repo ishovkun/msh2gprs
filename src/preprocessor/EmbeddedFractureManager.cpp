@@ -17,11 +17,11 @@ EmbeddedFractureManager(const std::vector<EmbeddedFractureConfig> &config,
 void EmbeddedFractureManager::split_cells()
 {
   int face_marker = find_maximum_face_marker_() + 1;
-  data.sda_properties.reserve( config.size() );
+  data.sda_data.reserve( config.size() );
   for (auto & frac : config)  // non-const since we can shift it
   {
-    data.sda_properties.emplace_back();
-    vector<size_t> & cells = data.sda_properties.back().cells;
+    data.sda_data.emplace_back();
+    vector<size_t> & cells = data.sda_data.back().cells;
     // iteratively shift fracture if it collides with any grid vertices
     size_t iter = 0;
     while (!find_edfm_cells_(*frac.body, cells))
@@ -52,7 +52,7 @@ void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
 }
 
 bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture,
-                                               std::vector<size_t> & cells) const
+                                               std::vector<size_t> & cells)
 {
   // performs fast collision check
   angem::CollisionGJK<double> collision;
@@ -108,8 +108,6 @@ int EmbeddedFractureManager::find_maximum_face_marker_() const
   int max_face_index = m_grid.begin_active_faces()->marker();
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     max_face_index = std::max(max_face_index, face->marker());
-
-  std::cout << "max_face_index = " << max_face_index << std::endl;
   return max_face_index;
 }
 
@@ -119,67 +117,19 @@ bool EmbeddedFractureManager::is_fracture(const int face_marker) const
   else return false;
 }
 
-std::vector<discretization::ControlVolumeData> EmbeddedFractureManager::
-extract_control_volume_data(const std::vector<discretization::ControlVolumeData> & cv_data,
-                            const size_t n_dfm_faces)
-{
-  std::vector<discretization::ControlVolumeData> edfm_cv_data;
-  size_t n_edfm_faces = 0;
-  for (std::size_t i=n_dfm_faces; i<cv_data.size(); ++i)
-    if ( cv_data[i].type == discretization::ControlVolumeType::face)
-      n_edfm_faces++;
-  edfm_cv_data.reserve(n_edfm_faces);
-  for (std::size_t i=n_dfm_faces; i<n_dfm_faces + n_edfm_faces; ++i)
-    if ( cv_data[i].type == discretization::ControlVolumeType::face)
-      edfm_cv_data.push_back( cv_data[i] );
-  return edfm_cv_data;
-}
-
-void EmbeddedFractureManager::
-extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data,
-                  const std::vector<discretization::ConnectionData> & con_data,
-                  const size_t n_dfm_faces, const size_t n_cells)
-{
-  // count edfm entries
-  const size_t min_edfm_index = n_dfm_faces;
-  size_t n_edfm_faces = 0;
-  for (std::size_t i=n_dfm_faces; i<cv_data.size(); ++i)
-    if ( cv_data[i].type == discretization::ControlVolumeType::face)
-      n_edfm_faces++;
-  std::cout << "n_edfm_faces = " << n_edfm_faces << std::endl;
-
-  const size_t max_edfm_index = min_edfm_index + n_edfm_faces - 1;
-  std::cout << "here it comes: " << min_edfm_index << " " << max_edfm_index << std::endl;
-  for (const auto & con: con_data)
-    if (con.type == discretization::ConnectionType::matrix_fracture)
-    {
-      assert( con.elements.size() == 2 );
-      // std::cout << "here " << con.elements[0] << " " << con.elements[1] << std::endl;
-      // identify which of connection elements is edfm
-      size_t frac_element = con.elements.size();
-      if      ( min_edfm_index <= con.elements[0] &&
-                max_edfm_index >= con.elements[0])
-        frac_element = 0;
-      else if ( min_edfm_index <= con.elements[1] &&
-                max_edfm_index >= con.elements[1])
-        frac_element = 1;
-      if (frac_element == 2) continue;
-
-      std::cout << con.elements[frac_element] << std::endl;
-      // connect to cell parent since we split edfm cells
-
-    }
-    else if (con.type == discretization::ConnectionType::fracture_fracture)
-    {
-      
-    }
-
-  assert ( false && "write extraction code" );
-}
-
 void EmbeddedFractureManager::distribute_mechanical_properties()
 {
-
+  auto & sda = data.sda_data;
+  for (std::size_t i=0; i<config.size(); ++i)
+  {
+    const size_t n_frac_cells = sda[i].cells.size();
+    sda[i].points.assign( n_frac_cells, config[i].body->center() );
+    sda[i].dip   .assign( n_frac_cells, config[i].body->plane().dip_angle() );
+    sda[i].strike.assign( n_frac_cells, config[i].body->plane().strike_angle() );
+    sda[i].cohesion = config[i].cohesion;
+    sda[i].friction_angle = config[i].friction_angle;
+    sda[i].dilation_angle = config[i].dilation_angle;
+  }
 }
 
 }  // end namespace gprs_data

@@ -23,13 +23,13 @@ struct EmbeddedFractureMechanicalProperties
 {
   std::vector<std::size_t>  cells;            // cells that the fracture crosses
   std::vector<angem::Point<3,double>> points; // points in the frac plane within the intersected cells
-  std::vector<double> dip;                    // fracture dip angle in a cell
-  std::vector<double> strike;                 // fracture strike angle in a cell
-  double cohesion;                            // fracture cohesive strength
-  double friction_angle;                      // fracture friction angle
-  double dilation_angle;                      // fracture dilation angle
-  double aperture;                            // hydfraulic aperture [m]
-  double conductivity;                        // hydraulic conductivity [md-m]
+  std::vector<double> dip;                    // fracture dip angle in a cell [°]
+  std::vector<double> strike;                 // fracture strike angle in a cell [°]
+  double cohesion;                            // fracture cohesive strength [bar]
+  double friction_angle;                      // fracture friction angle [°]
+  double dilation_angle;                      // fracture dilation angle [°]
+  // double aperture;                            // hydfraulic aperture [m]
+  // double conductivity;                        // hydraulic conductivity [md-m]
   mesh::SurfaceMesh<double> mesh;             // combined grid discretization of all embedded fractures
 };
 
@@ -48,7 +48,7 @@ struct SimData
   // grid comprised of dfm faces
   mesh::SurfaceMesh<double> dfm_grid;
   // ---------------------- EDFM ------------------------ //
-  std::vector<EmbeddedFractureMechanicalProperties> sda_properties;
+  std::vector<EmbeddedFractureMechanicalProperties> sda_data;
   // ----------------------- Flow data ---------------------- //
   std::vector<discretization::ControlVolumeData> cv_data;
   std::vector<discretization::ConnectionData> flow_connection_data;

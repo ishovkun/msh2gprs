@@ -19,26 +19,14 @@ class EmbeddedFractureManager
   std::vector<DiscreteFractureConfig> generate_dfm_config();
   // true if face marker belongs to an edfm fracture after splitting cells
   bool is_fracture(const int face_marker) const;
-
-  // extract cv data pertaining to edfm fractures from the mixed assembly
-  std::vector<discretization::ControlVolumeData>
-  extract_control_volume_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
-                              const size_t n_dfm_faces);
-  // compute edfm transmissibility from cut-cell transmissibility
-  void extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
-                         const std::vector<discretization::ConnectionData> & mixed_connection_data,
-                         const size_t n_dfm_faces, const size_t n_cells);
   // distribute SDA properties
-  void distribute_mechanical_properties() const;
+  void distribute_mechanical_properties();
 
  private:
-  bool find_edfm_cells_(angem::Polygon<double> & fracture,
-                        std::vector<size_t> & cells) const;
+  bool find_edfm_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells);
   // split internal grid cells due to intersection with
   // embedded fracture
-  void split_cells_(angem::Polygon<double> & fracture,
-                    std::vector<size_t> & cells,
-                    const int face_marker);
+  void split_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells, const int face_marker);
   // find the maximum face marker of the grid
   int find_maximum_face_marker_() const;
   // ------------------ Variables -----------------
