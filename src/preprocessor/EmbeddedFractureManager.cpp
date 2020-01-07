@@ -17,9 +17,11 @@ EmbeddedFractureManager(const std::vector<EmbeddedFractureConfig> &config,
 void EmbeddedFractureManager::split_cells()
 {
   int face_marker = find_maximum_face_marker_() + 1;
+  data.sda_properties.reserve( config.size() );
   for (auto & frac : config)  // non-const since we can shift it
   {
-    vector<size_t> cells;
+    data.sda_properties.emplace_back();
+    vector<size_t> & cells = data.sda_properties.back().cells;
     // iteratively shift fracture if it collides with any grid vertices
     size_t iter = 0;
     while (!find_edfm_cells_(*frac.body, cells))
@@ -173,6 +175,11 @@ extract_flow_data(const std::vector<discretization::ControlVolumeData> & cv_data
     }
 
   assert ( false && "write extraction code" );
+}
+
+void EmbeddedFractureManager::distribute_mechanical_properties()
+{
+
 }
 
 }  // end namespace gprs_data

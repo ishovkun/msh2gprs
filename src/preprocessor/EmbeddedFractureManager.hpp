@@ -28,6 +28,8 @@ class EmbeddedFractureManager
   void extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
                          const std::vector<discretization::ConnectionData> & mixed_connection_data,
                          const size_t n_dfm_faces, const size_t n_cells);
+  // distribute SDA properties
+  void distribute_mechanical_properties() const;
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture,
