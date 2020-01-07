@@ -569,11 +569,13 @@ void Mesh::coarsen_cells()
       min_cell_delete_index = std::min(min_cell_delete_index, cell->index());
   }
 
+  std::cout << "puk" << std::endl;
   //  clear unused vertices
   for ( auto & vertex_cells : m_vertex_cells )
-    for (auto it_cell = vertex_cells.begin(); it_cell != vertex_cells.end(); ++it_cell)
+    for (auto it_cell = vertex_cells.begin(); it_cell != vertex_cells.end();)
       if (*it_cell >= min_cell_delete_index)
         vertex_cells.erase(it_cell);
+      else ++it_cell;
 
   // find minimum vertex to erase: new vertices are always at the end
   size_t min_vertex_to_delete = std::numeric_limits<size_t>::max();
