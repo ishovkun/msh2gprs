@@ -19,15 +19,8 @@ class EmbeddedFractureManager
   std::vector<DiscreteFractureConfig> generate_dfm_config();
   // true if face marker belongs to an edfm fracture after splitting cells
   bool is_fracture(const int face_marker) const;
-
-  // extract cv data pertaining to edfm fractures from the mixed assembly
-  std::vector<discretization::ControlVolumeData>
-  extract_control_volume_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
-                              const size_t n_dfm_faces);
-  // compute edfm transmissibility from cut-cell transmissibility
-  void extract_flow_data(const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
-                         const std::vector<discretization::ConnectionData> & mixed_connection_data,
-                         const size_t n_dfm_faces, const size_t n_cells);
+  // populate simdata with sda mechanics properties
+  void generate_mechanical_properties() const;
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture,

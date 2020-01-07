@@ -75,6 +75,8 @@ void Preprocessor::run()
   // finally, merge edfm, dfm, and matrix discretizations
   discr_edfm.merge_into_matrix_dfm_discretization(discr_dfm.get_cell_data(),
                                                   discr_dfm.get_face_data());
+
+  edfm_mgr.generate_mechanical_properties();
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)
