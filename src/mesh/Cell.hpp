@@ -77,6 +77,9 @@ class Cell
   std::vector<size_t> ultimate_children() const;
 
  protected:
+  // recursive part of the public ultimate_children() method
+  void ultimate_children_(std::vector<size_t> & uc) const;
+
   // this cell stuff
   std::size_t m_index;
   int m_marker, m_vtk_id;

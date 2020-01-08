@@ -18,15 +18,47 @@ void DiscretizationEDFM::build()
 {
   DiscretizationDFM discr_dfm(m_split_dofs, m_data, m_split_cv, m_split_con);
   discr_dfm.build();
-  // extract_control_volume_data_();
+  build_control_volume_data_();
   // build_connection_data_();
 }
 
-void DiscretizationEDFM::extract_control_volume_data_()
+void DiscretizationEDFM::build_control_volume_data_()
 {
-  // for (std::size_t i=m_min_edfm_index; i<m_min_edfm_index + m_n_edfm_faces; ++i)
-  //   if ( m_cv[i].type == discretization::ControlVolumeType::face)
-  //     cv_data.push_back( m_cv[i] );
+  for (auto & cv : m_cv_data)
+  {
+    cv.volume = 0;
+    cv.center = {0.0, 0.0, 0.0};
+  }
+
+  // first compute parent volumes since some props are weighted by them
+  for (const auto & cv : m_split_cv)
+  {
+    size_t parent_dof;
+    if (cv.type == ControlVolumeType::cell)
+      parent_dof = m_dofs.cell_dof(cv.master);
+    else // if (cv.type == ControlVolumeType::face)
+      parent_dof = m_dofs.face_dof( cv.master );
+    m_cv_data[parent_dof].volume += cv.volume;
+  }
+
+  for (const auto & cv : m_split_cv)
+  {
+    size_t parent_dof;
+    if (cv.type == ControlVolumeType::cell)
+    {
+      parent_dof = m_dofs.cell_dof(cv.master);
+    }
+    else // if (cv.type == ControlVolumeType::face)
+      parent_dof = m_dofs.face_dof( cv.master );
+
+    auto & parent_cv = m_cv_data[parent_dof];
+    parent_cv.type = cv.type;
+    const double volume_fraction = cv.volume / parent_cv.volume;
+    parent_cv.center += cv.center * volume_fraction;
+    parent_cv.porosity += cv.porosity * volume_fraction;
+    parent_cv.permeability = cv.permeability;  // assume they are the same
+    parent_cv.custom = cv.custom;  // assume they are the same
+  }
 }
 
 void DiscretizationEDFM::build_connection_data_()

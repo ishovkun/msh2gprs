@@ -22,7 +22,7 @@ class DiscretizationEDFM : public DiscretizationBase
   virtual void build() override;
 
  protected:
-  void extract_control_volume_data_();
+  void build_control_volume_data_();
   void build_connection_data_();
   void build_matrix_fracture_(const ConnectionData & con);
   void build_edfm_edfm_(const ConnectionData & con);

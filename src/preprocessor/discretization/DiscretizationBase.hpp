@@ -29,13 +29,13 @@ class DiscretizationBase
 
  protected:
   //  input
-  const mesh::Mesh & m_grid;
-  gprs_data::SimData & m_data;
+  const mesh::Mesh & m_grid;   // reference to grid class
+  gprs_data::SimData & m_data;  //reference to data class
   // stores dfm face markers
-  const DoFNumbering & m_dofs;
+  const DoFNumbering & m_dofs;  // dof numbering
   // computed properties
-  std::vector<ControlVolumeData> & m_cv_data;
-  std::vector<ConnectionData> & m_con_data;
+  std::vector<ControlVolumeData> & m_cv_data;  // [out]  reference to CVs to be filled
+  std::vector<ConnectionData> & m_con_data;    // [out]  reference to connections to be filled
 };
 
 }

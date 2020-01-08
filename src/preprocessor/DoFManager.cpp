@@ -35,49 +35,57 @@ DoFNumbering DoFManager::distribute_split_dofs()
 DoFNumbering DoFManager::distribute_unsplit_dofs()
 {
   DoFNumbering dofs;
-  // size_t dof = 0;
-  // dofs.m_n_dofs = dof;
+  const auto & grid = m_data.grid;
+  size_t dof = 0;
+
+  // dfm faces
+  std::unordered_map<size_t, std::vector<size_t>> face_children;
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+    if (is_dfm_(face->marker()))
+    {
+     const size_t parent_index = grid.ultimate_parent(*face).index();
+     face_children[parent_index].push_back( face->index() );
+    }
+  for (const auto & pair_parent_children : face_children)
+  {
+    for (const size_t child : pair_parent_children.second)
+      dofs.m_faces[child] = dof;
+    dof++;
+  }
+
+  // edfm faces
+  for (const int marker : m_set_edfm_markers)
+  {
+    std::unordered_map<size_t,std::vector<size_t>> cell_frac_faces;
+    for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+      if (face->marker() == marker)
+      {
+        const auto & neighbor_cell = *face->neighbors()[0];
+        const auto & parent_cell = neighbor_cell.ultimate_parent();
+        cell_frac_faces[parent_cell.index()].push_back(face->index());
+      }
+
+    for (const auto & frac_faces : cell_frac_faces)
+    {
+      for (const auto &iface : frac_faces.second)
+        dofs.m_faces[iface] = dof;
+      dof++;
+    }
+  }
+
+  // reservoir cells
+  dofs.m_cells.resize(grid.n_cells());
+  // NOTE: raw iterator
+  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+    if (cell->parent() == *cell)  // skip refined cells here
+    {
+      for (const size_t icell : cell->ultimate_children())
+        dofs.m_cells[icell] = dof;
+      dof++;
+    }
+
+  dofs.m_n_dofs = dof;
   return dofs;
-
-  // discretization::DoFNumbering & dofs = m_data.unsplit_dofs;
-  // const auto & grid = m_data.grid;
-  // size_t dof = 0;
-  // // dfm faces
-  // std::unordered_set<size_t> unsplit_faces;
-  // for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-  //   if (is_dfm_(face->marker()))
-  //     unsplit_faces.insert( grid.ultimate_parent(*face).index() );
-  // for (const size_t dfm_face : unsplit_faces)
-  //   dofs.faces[dfm_face] = dof++;
-
-  // // edfm faces
-  // for (const int marker : m_set_edfm_markers)
-  // {
-  //   std::unordered_map<size_t,std::vector<size_t>> cell_frac_faces;
-  //   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-  //     if (face->marker() == marker)
-  //     {
-  //       const auto & neighbor_cell = *face->neighbors()[0];
-  //       const auto & parent_cell = neighbor_cell.ultimate_parent();
-  //       cell_frac_faces[parent_cell.index()].push_back(face->index());
-  //     }
-
-  //   for (const auto & frac_faces : cell_frac_faces)
-  //   {
-  //     for (const auto &iface : frac_faces.second)
-  //       dofs.faces[iface] = dof;
-  //     dof++;
-  //   }
-  // }
-
-  // // reservoir cells
-  // // NOTE: raw iterator
-  // for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
-  //   if (cell->parent() == cell.index())  // skip refined cells here
-  //   {
-  //     for (const size_t icell : cell->ultimate_children)
-
-  //   }
 }
 
 }  // end namespace gprs_data
