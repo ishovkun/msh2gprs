@@ -2,6 +2,7 @@
 
 #include "angem/Point.hpp"
 #include "angem/Tensor2.hpp"
+#include <unordered_map>
 
 namespace discretization {
 

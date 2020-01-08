@@ -13,6 +13,7 @@ ADD_LIBRARY(preprocessor
   discretization/DiscretizationTPFA.cpp
   discretization/DiscretizationDFM.cpp
   discretization/DiscretizationEDFM.cpp
+  DoFManager.cpp
   # element.cpp
   # OutputDataGPRS.cpp
   # OutputDataVTK.cpp

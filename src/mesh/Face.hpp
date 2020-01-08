@@ -57,8 +57,12 @@ class Face
   Point center() const;
   // get face normal
   Point normal() const;
+  // return a polygon that forms a face
   Polygon polygon() const;
+  // return face polygon area
   double area() const;
+  // returns if the face contains a vertex
+  // NOTE: complexity is O(n_face_vertices)
   bool has_vertex(const std::size_t vertex_index) const;
   // returns true if has no children; else returns false
   inline bool is_active() const {return m_children.empty();}

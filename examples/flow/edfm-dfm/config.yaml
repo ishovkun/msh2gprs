@@ -11,6 +11,15 @@ Embedded Fractures :
     strike: 140
     aperture: 5e-3
     conductivity: 500
+  fracture:
+    type: Rectangle
+    center: [20, 0, 0]
+    length: 30
+    width: 10
+    dip: 90
+    strike: 140
+    aperture: 5e-3
+    conductivity: 500
 
 Discrete Fractures :
   fracture:

@@ -118,11 +118,20 @@ class Mesh
   bool empty() const {return m_cells.empty();}
   // get number of cells
   inline std::size_t n_cells() const {return m_cells.size();}
+  // get number of active cells
+  inline std::size_t n_active_cells() const { return n_cells() - m_n_split_cells; }
   // get number of vertices
   inline std::size_t n_vertices() const {return m_vertices.size();}
   // get number of faces
   inline std::size_t n_faces() const {return m_faces.size();}
-
+  // return a const reference to face parent
+  inline const Face & parent(const Face & face) const { return m_faces[face.parent()] ;}
+  // return a reference to face parent
+  inline Face & parent(const Face & face) { return m_faces[face.parent()] ;}
+  // returns a const reference to a face parent of parent of...
+  const Face & ultimate_parent(const Face & face) const;
+  // returns a reference to a face parent of parent of...
+  Face & ultimate_parent(const Face & face);
   // MANIPULATION
   // delete a cell mesh
    void delete_cell(const std::size_t ielement);
@@ -192,6 +201,7 @@ class Mesh
   std::vector<std::vector<std::size_t>> m_vertex_faces;  // vertex neighboring faces
   // Used as a tmp container when splitting faces for dfm
   std::vector<std::size_t> m_faces_marked_for_split;
+  size_t m_n_split_cells;
 };
 
 

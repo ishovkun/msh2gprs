@@ -9,55 +9,51 @@ namespace discretization
 using Point = angem::Point<3,double>;
 using Tensor = angem::Tensor2<3,double>;
 
-DiscretizationDFM::DiscretizationDFM(const std::vector<DiscreteFractureConfig> & dfm_fractures,
-                                     gprs_data::SimData & data)
-    : DiscretizationBase(dfm_fractures, data)
+DiscretizationDFM::DiscretizationDFM(const DoFNumbering & dof_numbering,
+                                     gprs_data::SimData & data,
+                                     std::vector<ControlVolumeData> & cv_data,
+                                     std::vector<ConnectionData> & connection_data)
+    : DiscretizationBase(dof_numbering, data, cv_data, connection_data)
 {}
 
 
 void DiscretizationDFM::build()
 {
-  std::cout << "build cv data" << std::endl;
   build_cell_data_();
 
   // build connection lists (no data)
   build_fracture_matrix_connections();
 
-  std::cout << "build F-M discretization" << std::endl;
-  for (auto & con : con_data)
+  for (auto & con : m_con_data)
     build_matrix_fracture(con);
 
   // build fracture-fracture transes
-  std::cout << "build F-F discretization" << std::endl;
   build_fracture_fracture_connections();
 }
 
 
 void DiscretizationDFM::build_cell_data_()
 {
-  // could be less though, just to be save
-  const size_t cv_data_size = find_max_cv_index_() + 1;
-  m_apertures.resize(cv_data_size);
-  cv_data.resize(cv_data_size);
+  m_apertures.resize(m_dofs.n_dofs());
   std::unordered_set<size_t> bounding_cells;
-
-  for (auto it_face = m_data.dfm_faces.begin(); it_face != m_data.dfm_faces.end(); ++it_face)
+  for (const auto & pair_face_index_property : m_data.dfm_faces)
   {
     // this should be some other container
-    const auto &face_props = it_face->second;
-    assert(face_props.cv_index < cv_data.size());
-    auto &data = cv_data[face_props.cv_index];
+    const size_t face_index = pair_face_index_property.first;
+    const auto & face_props = pair_face_index_property.second;
+    const size_t idof = m_dofs.face_dof(face_index);
+    assert(idof < m_cv_data.size());
+    auto &data = m_cv_data[idof];
     data.type = ControlVolumeType::face;
-    data.master = it_face->first;
-    const mesh::Face & face = m_grid.face(it_face->first);
+    data.master = face_index;
+    const mesh::Face & face = m_grid.face(face_index);
     data.center = face.center();
     data.volume = face_props.aperture * face.area();
     data.permeability = Tensor::make_unit_tensor();
     data.permeability *= (face_props.conductivity / face_props.aperture);
     data.porosity = 1.0;
-    m_apertures[face_props.cv_index] = face_props.aperture;
+    m_apertures[idof] = face_props.aperture;
     data.custom = face_props.custom_flow_data;
-
     const auto cells = face.neighbors();
     bounding_cells.insert(cells[0]->index());
     bounding_cells.insert(cells[1]->index());
@@ -68,8 +64,8 @@ void DiscretizationDFM::build_cell_data_()
   for (const std::size_t i : bounding_cells)
   {
     const auto & cell = m_grid.cell(i);
-    const size_t cv = m_data.cell_cv_indices[cell.index()];
-    auto & data = cv_data[cv];
+    const size_t idof = m_dofs.cell_dof(cell.index());
+    auto & data = m_cv_data[idof];
     data.type = ControlVolumeType::cell;
     data.master = i;
     data.center = cell.center();
@@ -88,7 +84,9 @@ DiscretizationDFM::map_edge_to_faces()
   hash_algorithms::ConnectionMap<std::vector<size_t>> edge_face_connections;
   for (auto it_face = m_data.dfm_faces.begin(); it_face != m_data.dfm_faces.end(); ++it_face)
   {
-    const mesh::Face & face = m_grid.face(it_face->first);
+    const size_t face_index = it_face->first;
+    const mesh::Face & face = m_grid.face(face_index);
+    const size_t idof = m_dofs.face_dof(face_index);
     const auto &props = it_face->second;
 
     for (const auto &edge : face.edges())
@@ -100,9 +98,7 @@ DiscretizationDFM::map_edge_to_faces()
         index = edge_face_connections.insert(edge.first, edge.second);
 
       auto &cvs = edge_face_connections.get_data(index);
-
-      // get frac properties
-      cvs.push_back(props.cv_index);
+      cvs.push_back(idof);
     }
   }
   return edge_face_connections;
@@ -111,8 +107,8 @@ DiscretizationDFM::map_edge_to_faces()
 void DiscretizationDFM::build_matrix_fracture(ConnectionData & con)
 {
   // cause I built them that way
-  const auto & cv_frac = cv_data[con.elements[0]];
-  const auto & cv_cell = cv_data[con.elements[1]];
+  const auto & cv_frac = m_cv_data[con.elements[0]];
+  const auto & cv_cell = m_cv_data[con.elements[1]];
   assert(cv_frac.type == ControlVolumeType::face);
   assert(cv_cell.type == ControlVolumeType::cell);
   assert(con.type == ConnectionType::matrix_fracture);
@@ -144,18 +140,14 @@ void DiscretizationDFM::build_fracture_matrix_connections()
   {
     const mesh::Face & face = m_grid.face(it_face->first);
     const auto &neighbors = face.neighbors();
-    // find frac cv index
-    const auto it = m_data.dfm_faces.find(face.index());
-    assert(it != m_data.dfm_faces.end());
-    const std::size_t cv_frac = it->second.cv_index;
+    const std::size_t cv_frac = m_dofs.face_dof(face.index());
 
-    const auto &face_props = it->second;
     // connection fracture-cell1
     {
-      con_data.emplace_back();
-      auto &con = con_data.back();
+      m_con_data.emplace_back();
+      auto & con = m_con_data.back();
       con.elements.push_back(cv_frac);
-      const size_t cv_cell = m_data.cell_cv_indices[neighbors[0]->index()];
+      const size_t cv_cell = m_dofs.cell_dof(neighbors[0]->index());
       con.elements.push_back(cv_cell);
       con.type = ConnectionType::matrix_fracture;
       con.area = face.area();
@@ -164,11 +156,12 @@ void DiscretizationDFM::build_fracture_matrix_connections()
     }
     //  connection fracture-cell2
     {
-      con_data.emplace_back();
-      auto &con = con_data.back();
+      m_con_data.emplace_back();
+      auto &con = m_con_data.back();
       con.type = ConnectionType::matrix_fracture;
       con.elements.push_back(cv_frac);
-      con.elements.push_back(m_data.cell_cv_indices[neighbors[1]->index()]);
+      const size_t cv_cell = m_dofs.cell_dof(neighbors[1]->index());
+      con.elements.push_back(cv_cell);
       con.area = face.area();
       con.normal = face.normal();
       con.center = face.center();
@@ -183,9 +176,8 @@ void DiscretizationDFM::build_fracture_fracture_connections()
   auto edge_face_connections = map_edge_to_faces();
   // we won't need all of those since there are edges connected to
   // only one face
-  con_data.reserve(2*m_data.dfm_faces.size() + edge_face_connections.size());
-  for (auto edge = edge_face_connections.begin();
-       edge != edge_face_connections.end(); ++edge)
+  m_con_data.reserve(2*m_data.dfm_faces.size() + edge_face_connections.size());
+  for (auto edge = edge_face_connections.begin(); edge != edge_face_connections.end(); ++edge)
   {
     const std::vector<size_t> & face_cvs = *edge;
     if (face_cvs.size() > 1)
@@ -201,7 +193,7 @@ void DiscretizationDFM::build_fracture_fracture_connections()
       Point cv_projection = edge_center;
       for (std::size_t i = 0; i < face_cvs.size(); ++i)
       {
-        const double t = de.dot(cv_data[face_cvs[i]].center - edge_center) / edge_length;
+        const double t = de.dot(m_cv_data[face_cvs[i]].center - edge_center) / edge_length;
         cv_projection += t * de / face_cvs.size();
       }
 
@@ -211,8 +203,8 @@ void DiscretizationDFM::build_fracture_fracture_connections()
       {
         // aperture * edge length
         const double area = m_apertures[face_cvs[i]] * edge_length;
-        const double dist_to_edge = (cv_data[face_cvs[i]].center - edge_center).norm();
-        const double perm = cv_data[face_cvs[i]].permeability(0, 0);
+        const double dist_to_edge = (m_cv_data[face_cvs[i]].center - edge_center).norm();
+        const double perm = m_cv_data[face_cvs[i]].permeability(0, 0);
         transmissibility_part[i] = area * perm / dist_to_edge;
       }
 
@@ -221,7 +213,7 @@ void DiscretizationDFM::build_fracture_fracture_connections()
       for (std::size_t i = 0; i < face_cvs.size(); ++i)
         for (std::size_t j = i+1; j < face_cvs.size(); ++j)
         {
-          auto & con = con_data.emplace_back();
+          auto & con = m_con_data.emplace_back();
           con.type = ConnectionType::fracture_fracture;
           con.elements = {face_cvs[i], face_cvs[j]};
           con.coefficients.resize(2);
@@ -231,24 +223,6 @@ void DiscretizationDFM::build_fracture_fracture_connections()
         }
     }
   }
-
-}
-
-void DiscretizationDFM::
-merge_from_matrix_discretization(const std::vector<discretization::ControlVolumeData> & matrix_cv_data,
-                                 const std::vector<discretization::ConnectionData> & matrix_con_data)
-{
-  // first remove cv's pertaining to cells from the internal struture
-  cv_data.erase( cv_data.begin() + m_data.dfm_faces.size(), cv_data.end());
-  // then copy the matrix cv data
-  cv_data.reserve(cv_data.size() + matrix_cv_data.size());
-  for ( const auto & cv : matrix_cv_data )
-    cv_data.push_back(cv);
-
-  // next copy connection data
-  con_data.reserve(con_data.size() + matrix_con_data.size());
-  for ( const auto & con : matrix_con_data )
-    con_data.push_back(con);
 }
 
 }  // end namespace discretization

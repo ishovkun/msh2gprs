@@ -1,6 +1,7 @@
 #pragma once
 
 #include "angem/Point.hpp"
+#include <vector>
 
 namespace discretization {
 

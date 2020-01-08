@@ -43,7 +43,6 @@ void DiscreteFractureManager::distribute_properties()
         // create a face and fill out the props
         DiscreteFractureFace f;
         f.marker = face->marker();
-        f.cv_index = ++cv_index;
         f.coupled = config.coupled;
         f.aperture = config.aperture;
         f.conductivity = config.conductivity;
@@ -103,19 +102,6 @@ DiscreteFractureManager::combine_configs(const std::vector<DiscreteFractureConfi
   return combined;
 }
 
-void DiscreteFractureManager::build_flow_cv_numbering()
-{
-  size_t cv_index = 0;
-  // distribute dfm indices
-  for (auto & it_face: m_data.dfm_faces)
-    it_face.second.cv_index = cv_index++;
-  // distribute cell indices
-  m_data.cell_cv_indices.clear();
-  m_data.cell_cv_indices.resize( m_grid.n_cells() );
-  for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
-    m_data.cell_cv_indices[cell->index()] = cv_index++;
-}
-
 size_t DiscreteFractureManager::count_dfm_faces() const
 {
   size_t n_dfm_faces = 0;
@@ -127,5 +113,11 @@ size_t DiscreteFractureManager::count_dfm_faces() const
         n_dfm_faces++;
   return n_dfm_faces;
 }
+
+std::vector<int> DiscreteFractureManager::get_face_markers() const
+{
+  return std::vector<int>(m_dfm_markers.begin(), m_dfm_markers.end());
+}
+
 
 }  // end namespace gprs_data

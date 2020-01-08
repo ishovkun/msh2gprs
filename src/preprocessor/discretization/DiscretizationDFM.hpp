@@ -9,13 +9,12 @@ namespace discretization
 class DiscretizationDFM : public DiscretizationBase
 {
  public:
-  DiscretizationDFM(const std::vector<DiscreteFractureConfig> & dfm_fractures,
-                    gprs_data::SimData & data);
+  DiscretizationDFM(const DoFNumbering & dof_numbering,
+                    gprs_data::SimData & data,
+                    std::vector<ControlVolumeData> & cv_data,
+                    std::vector<ConnectionData> & connection_data);
 
   virtual void build() override;
-
-  void merge_from_matrix_discretization(const std::vector<discretization::ControlVolumeData> & matrix_cv_data,
-                                        const std::vector<discretization::ConnectionData> & matrix_connection_data);
 
  protected:
   // build data like volumes, depth, poro, etc.
@@ -29,14 +28,6 @@ class DiscretizationDFM : public DiscretizationBase
   // build matrix-fracture connection
   void build_matrix_fracture(ConnectionData & con);
 
-  // storage for the properties of dfm fractures
-  // //  numbering shift of matrix CVs
-  // const size_t shift_matrix;
-  // // numbering shift of dfm CVs
-  // const size_t shift_dfm;
-  // map cell index -> control volume
-  // std::vector<std::size_t> m_cell_to_cv;
-  // vector of fracture apertures
   std::vector<double> m_apertures;
 };
 
