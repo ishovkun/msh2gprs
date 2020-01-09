@@ -28,8 +28,7 @@ class EmbeddedFractureManager
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells);
-  // split internal grid cells due to intersection with
-  // embedded fracture
+  // split internal grid cells due to intersection with embedded fracture
   void split_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells, const int face_marker);
   // find the maximum face marker of the grid
   int find_maximum_face_marker_() const;

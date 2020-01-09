@@ -119,7 +119,6 @@ void DiscretizationDFM::build_matrix_fracture(ConnectionData & con)
 
   // frac perm is just conductivilty / aperture
   const double K_frac = cv_frac.permeability(0, 0);
-
   const double T_cell = con.area * K_cell / f.norm();
   const double T_face = con.area * K_frac;
 

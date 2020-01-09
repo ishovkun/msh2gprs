@@ -18,8 +18,9 @@ void DiscretizationEDFM::build()
 {
   DiscretizationDFM discr_dfm(m_split_dofs, m_data, m_split_cv, m_split_con);
   discr_dfm.build();
+  identify_edfm_faces_();
   build_control_volume_data_();
-  // build_connection_data_();
+  build_connection_data_();
 }
 
 void DiscretizationEDFM::build_control_volume_data_()
@@ -31,26 +32,23 @@ void DiscretizationEDFM::build_control_volume_data_()
   }
 
   // first compute parent volumes since some props are weighted by them
-  for (const auto & cv : m_split_cv)
+  m_dof_mapping.resize(m_split_cv.size());
+  for (size_t i = 0; i < m_split_cv.size(); i++)
   {
+    const auto & cv = m_split_cv[i];
     size_t parent_dof;
     if (cv.type == ControlVolumeType::cell)
       parent_dof = m_dofs.cell_dof(cv.master);
     else // if (cv.type == ControlVolumeType::face)
       parent_dof = m_dofs.face_dof( cv.master );
+    m_dof_mapping[i] = parent_dof;
     m_cv_data[parent_dof].volume += cv.volume;
   }
 
-  for (const auto & cv : m_split_cv)
+  for (size_t i = 0; i < m_split_cv.size(); i++)
   {
-    size_t parent_dof;
-    if (cv.type == ControlVolumeType::cell)
-    {
-      parent_dof = m_dofs.cell_dof(cv.master);
-    }
-    else // if (cv.type == ControlVolumeType::face)
-      parent_dof = m_dofs.face_dof( cv.master );
-
+    const auto & cv = m_split_cv[i];
+    const size_t parent_dof = m_dof_mapping[i];
     auto & parent_cv = m_cv_data[parent_dof];
     parent_cv.type = cv.type;
     const double volume_fraction = cv.volume / parent_cv.volume;
@@ -63,9 +61,43 @@ void DiscretizationEDFM::build_control_volume_data_()
 
 void DiscretizationEDFM::build_connection_data_()
 {
-  // if (cv_data.size() == 0) return;
-  // const size_t max_edfm_index = m_min_edfm_index + cv_data.size() - 1;
-  // for (const auto & con: m_con)
+  // first build the connection map
+  for (const auto &con : m_split_con)
+    if ( !find_edfm_elements_(con).empty() )
+    {
+      size_t con_index;
+      const size_t dof1 = m_dof_mapping[con.elements[0]];
+      const size_t dof2 = m_dof_mapping[con.elements[1]];
+      if (dof1 != dof2)
+      {
+        if (m_con_map.contains(dof1, dof2))
+          con_index = m_con_map.index(dof1, dof2);
+        else
+        {
+          con_index = m_con_map.insert(dof1, dof2);
+          auto &new_con = m_con_map.get_data(con_index);
+          new_con.area = 0;
+          new_con.normal = {0,0,0};
+          new_con.center = {0,0,0};
+          new_con.distances = {0,0};
+        }
+      }
+
+      auto &new_con = m_con_map.get_data(con_index);
+      if (con.type == discretization::ConnectionType::matrix_fracture)
+      {
+        new_con.area += 2 * con.area;
+        const auto & cell = m_split_cv[con.elements[1]];
+        const auto & face = m_split_cv[con.elements[0]];
+        const auto & parent_cell = m_cv_data[dof2];
+        const double dist = (cell.center - face.center).dot( con.normal );
+        const double volume_ratio = cell.volume / parent_cell.volume;
+        new_con.distances[1] += std::fabs(dist) * volume_ratio;
+      }
+    }
+
+
+  // for (const auto & con: m_split_con)
   // {
   //   const auto edfm_elements = find_edfm_elements_(con);
   //   if (con.type == discretization::ConnectionType::matrix_fracture)
@@ -147,6 +179,27 @@ void DiscretizationEDFM::convert_flow_map_to_vector_()
   //   auto & con = con_data.back();
   //   con = *it;
   // }
+}
+
+
+void DiscretizationEDFM::identify_edfm_faces_()
+{
+  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+  {
+    const auto & face_parent = m_grid.ultimate_parent(*face);
+    const auto & neighbor = *(face_parent.neighbors()[0]);
+    if (neighbor.ultimate_parent() == neighbor)
+      m_edfm_faces.insert( face->index() );
+  }
+}
+
+std::vector<size_t> DiscretizationEDFM::find_edfm_elements_(const ConnectionData & con)
+{
+  std::vector<size_t> result;
+  for (std::size_t i=0; i<con.elements.size(); ++i)
+    if (m_edfm_faces.find(con.elements[i]) != m_edfm_faces.end())
+      result.push_back(i);
+  return result;
 }
 
 }  // end namespace discretization
