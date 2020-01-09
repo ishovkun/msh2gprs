@@ -21,6 +21,9 @@ struct ConnectionData
   double area;                       // connection area
   angem::Point<3,double> normal;
   angem::Point<3,double> center;
+  angem::Point<3,double> edge_direction;
+  double edge_length;                              // star delta
+  std::vector<size_t> all_participants;      // star delta participants
 };
 
 }  // end namespace discretization

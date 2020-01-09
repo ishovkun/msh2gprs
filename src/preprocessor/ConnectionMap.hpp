@@ -35,12 +35,12 @@ class ConnectionMap
   // get number of connections
   std::size_t size() const {return connections.size();}
 
-  inline
-  DataType & get_data(const std::size_t connection_index) {return m_data[connection_index];}
-  inline const
-  DataType & get_data(const std::size_t connection_index) const {return m_data[connection_index];}
+  inline DataType & get_data(const std::size_t connection_index) {return m_data[connection_index];}
+  inline const DataType & get_data(const std::size_t connection_index) const {return m_data[connection_index];}
   DataType & get_data(const std::size_t ielement, const std::size_t jelement);
   const DataType & get_data(const std::size_t ielement, const std::size_t jelement) const;
+  inline std::vector<DataType> & get_data() { return m_data; }
+  inline const std::vector<DataType> & get_data() const { return m_data; }
 
   // creates a new connection and returns the connection index
   std::size_t insert(const std::size_t ielement, const std::size_t jelement);

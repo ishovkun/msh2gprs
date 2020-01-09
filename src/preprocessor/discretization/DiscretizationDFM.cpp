@@ -214,10 +214,12 @@ void DiscretizationDFM::build_fracture_fracture_connections()
           auto & con = m_con_data.emplace_back();
           con.type = ConnectionType::fracture_fracture;
           con.elements = {face_cvs[i], face_cvs[j]};
-          con.center = cv_projection;
+          con.center = edge_center;
+          con.edge_length = edge_length;
+          con.all_participants = face_cvs;
+          con.edge_direction = (e2 - e1).normalize();
           con.coefficients.resize(2);
-          con.coefficients[0] = transmissibility_part[i] *
-                                transmissibility_part[j] / t_sum;
+          con.coefficients[0] = transmissibility_part[i] * transmissibility_part[j] / t_sum;
           con.coefficients[1] = -con.coefficients[0];
         }
     }
