@@ -202,19 +202,19 @@ void DiscretizationDFM::build_fracture_fracture_connections()
       {
         // aperture * edge length
         const double area = m_apertures[face_cvs[i]] * edge_length;
-        const double dist_to_edge = (m_cv_data[face_cvs[i]].center - edge_center).norm();
+        const double dist_to_edge = (m_cv_data[face_cvs[i]].center - cv_projection).norm();
         const double perm = m_cv_data[face_cvs[i]].permeability(0, 0);
         transmissibility_part[i] = area * perm / dist_to_edge;
       }
 
-      const double t_sum = std::accumulate(transmissibility_part.begin(),
-                                           transmissibility_part.end(), 0);
+      const double t_sum = std::accumulate(transmissibility_part.begin(), transmissibility_part.end(), 0);
       for (std::size_t i = 0; i < face_cvs.size(); ++i)
         for (std::size_t j = i+1; j < face_cvs.size(); ++j)
         {
           auto & con = m_con_data.emplace_back();
           con.type = ConnectionType::fracture_fracture;
           con.elements = {face_cvs[i], face_cvs[j]};
+          con.center = cv_projection;
           con.coefficients.resize(2);
           con.coefficients[0] = transmissibility_part[i] *
                                 transmissibility_part[j] / t_sum;
