@@ -84,6 +84,7 @@ void DiscretizationEDFM::build_connection_data_()
       }
 
       auto &new_con = m_con_map.get_data(con_index);
+      new_con.type = con.type;
       if (con.type == discretization::ConnectionType::matrix_fracture)
       {
         new_con.area += 2 * con.area;
@@ -91,8 +92,16 @@ void DiscretizationEDFM::build_connection_data_()
         const auto & face = m_split_cv[con.elements[0]];
         const auto & parent_cell = m_cv_data[dof2];
         const double dist = (cell.center - face.center).dot( con.normal );
-        const double volume_ratio = cell.volume / parent_cell.volume;
-        new_con.distances[1] += std::fabs(dist) * volume_ratio;
+        const double cell_volume_ratio = cell.volume / parent_cell.volume;
+        new_con.distances[1] += std::fabs(dist) * cell_volume_ratio;
+        new_con.normal = con.normal;
+        const auto & parent_face = m_cv_data[dof1];
+        const double face_volume_ratio = face.volume / parent_face.volume;
+        new_con.center += con.center * face_volume_ratio;
+      }
+      else if (con.type == discretization::ConnectionType::fracture_fracture)
+      {
+        // new_con.center;
       }
     }
 
