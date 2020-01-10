@@ -4,6 +4,8 @@
 namespace discretization
 {
 
+using Point = angem::Point<3,double>;
+
 DiscretizationEDFM::
 DiscretizationEDFM(const DoFNumbering & split_dof_numbering,
                    const DoFNumbering & combined_dof_numbering,
@@ -206,6 +208,7 @@ void DiscretizationEDFM::create_connections_()
         const auto & parent_face = m_cv_data[dof1];
         const double face_volume_ratio = face.volume / parent_face.volume;
         new_con.center += con.center * face_volume_ratio;
+        new_con.edge_direction = con.edge_direction;
         // all elements of star transformation
         for (const size_t i : con.all_elements)
           if ( new_con.all_elemenets.find( m_dof_mapping[i] ) == new_con.all_elements.end() )
@@ -242,12 +245,23 @@ void DiscretizationEDFM::build_fracture_fracture_connection_data_()
       else
         it_elements->second.push_back({con.all_elements, i});
     }
-
   }
 
+  // star transformation
   for (auto it = map_junction_connections.begin(); it != map_junction_connections.end(); ++it)
   {
+    const auto & fcon = it->second[0];  // pick first connection to get edge data
+    const std::vector<size_t> & elements =  it->first;  // junction elements
+    const Point & edge_center = fcon.center;
+    const Point de = fcon.edge_direction * fcon.edge_length;
 
+    // compute average (by number) projection onto the edge
+    Point cv_projection = edge_center;
+    for (std::size_t i = 0; i < elements.size(); ++i)
+    {
+      const double t = de.dot(m_cv_data[elements[i]].center - edge_center) / fcon.edge_length;
+      cv_projection += t * de / elements.size();
+    }
   }
 }
 

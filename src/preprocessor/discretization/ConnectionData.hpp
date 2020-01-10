@@ -22,9 +22,8 @@ struct ConnectionData
   angem::Point<3,double> normal;
   angem::Point<3,double> center;
   // for fractures only
-  double edge_length;                              // frac-frac edge length
-  // angem::Point<3,double> projection;               // projection of cell/face onto connecting face/edge
-  // angem::Point<3,double> edge_direction;           // normalizer unit vector from one vertex to another
+  double edge_length;                    // frac-frac edge length
+  angem::Point<3,double> edge_direction; // unit vector from one vertex to another
   std::vector<size_t> all_elements;      // star delta participants
 };
 

@@ -215,6 +215,7 @@ void DiscretizationDFM::build_fracture_fracture_connections()
           con.elements = {face_cvs[i], face_cvs[j]};
           con.center = edge_center;
           con.edge_length = edge_length;
+          con.edge_direction = de / edge_length;
           con.all_elements = face_cvs;
           const double T = transmissibility_part[i] * transmissibility_part[j] / t_sum;
           con.coefficients = {-T, T};
