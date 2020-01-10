@@ -34,7 +34,6 @@ void DiscretizationDFM::build()
 
 void DiscretizationDFM::build_cell_data_()
 {
-  m_apertures.resize(m_dofs.n_dofs());
   std::unordered_set<size_t> bounding_cells;
   for (const auto & pair_face_index_property : m_data.dfm_faces)
   {
@@ -52,7 +51,7 @@ void DiscretizationDFM::build_cell_data_()
     data.permeability = Tensor::make_unit_tensor();
     data.permeability *= (face_props.conductivity / face_props.aperture);
     data.porosity = 1.0;
-    m_apertures[idof] = face_props.aperture;
+    data.aperture = face_props.aperture;
     data.custom = face_props.custom_flow_data;
     const auto cells = face.neighbors();
     bounding_cells.insert(cells[0]->index());
@@ -201,7 +200,7 @@ void DiscretizationDFM::build_fracture_fracture_connections()
       for (std::size_t i = 0; i < face_cvs.size(); ++i)
       {
         // aperture * edge length
-        const double area = m_apertures[face_cvs[i]] * edge_length;
+        const double area = m_cv_data[face_cvs[i]].aperture * edge_length;
         const double dist_to_edge = (m_cv_data[face_cvs[i]].center - cv_projection).norm();
         const double perm = m_cv_data[face_cvs[i]].permeability(0, 0);
         transmissibility_part[i] = area * perm / dist_to_edge;
@@ -216,11 +215,9 @@ void DiscretizationDFM::build_fracture_fracture_connections()
           con.elements = {face_cvs[i], face_cvs[j]};
           con.center = edge_center;
           con.edge_length = edge_length;
-          con.all_participants = face_cvs;
-          con.edge_direction = (e2 - e1).normalize();
-          con.coefficients.resize(2);
-          con.coefficients[0] = transmissibility_part[i] * transmissibility_part[j] / t_sum;
-          con.coefficients[1] = -con.coefficients[0];
+          con.all_elements = face_cvs;
+          const double T = transmissibility_part[i] * transmissibility_part[j] / t_sum;
+          con.coefficients = {-T, T};
         }
     }
   }

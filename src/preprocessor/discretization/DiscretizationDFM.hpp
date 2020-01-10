@@ -27,8 +27,6 @@ class DiscretizationDFM : public DiscretizationBase
   hash_algorithms::ConnectionMap<std::vector<size_t>> map_edge_to_faces();
   // build matrix-fracture connection
   void build_matrix_fracture(ConnectionData & con);
-
-  std::vector<double> m_apertures;
 };
 
 

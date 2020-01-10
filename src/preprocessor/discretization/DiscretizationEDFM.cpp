@@ -29,6 +29,7 @@ void DiscretizationEDFM::build_control_volume_data_()
   {
     cv.volume = 0;
     cv.center = {0.0, 0.0, 0.0};
+    cv.aperture = 0;
   }
 
   // first compute parent volumes since some props are weighted by them
@@ -61,6 +62,7 @@ void DiscretizationEDFM::build_control_volume_data_()
         std::cout << "face" << std::endl;
 
       const double volume_fraction = cv.volume / parent_cv.volume;
+      parent_cv.aperture += cv.aperture * volume_fraction;
       parent_cv.center += cv.center * volume_fraction;
       parent_cv.porosity += cv.porosity * volume_fraction;
       parent_cv.permeability = cv.permeability; // assume they are the same
@@ -80,22 +82,22 @@ void DiscretizationEDFM::build_connection_data_()
     {
       if (!edfm_elements.empty())
         build_matrix_fracture_(con);
-     
     }
-    else if (con.type == ConnectionType::fracture_fracture)
-    {
-      if (edfm_elements.size() == con.elements.size())
-        build_edfm_edfm_(con);
-      else if (edfm_elements.empty())
-        build_edfm_dfm_(con);
-      else
-      {
-        for (size_t i : con.elements)
-        abort();
-      }
-    }
+    // else if (con.type == ConnectionType::fracture_fracture)
+    // {
+    //   if (edfm_elements.size() == con.elements.size())
+    //     build_edfm_edfm_(con);
+    //   else if (edfm_elements.empty())
+    //     build_edfm_dfm_(con);
+    //   else
+    //   {
+    //     for (size_t i : con.elements) std::cout << i << " ";
+    //     std::cout << std::endl;
+    //     abort();
+    //   }
+    // }
   }
-  // convert_flow_map_to_vector_();
+  build_fracture_fracture_connection_data_();
 }
 
 void DiscretizationEDFM::build_matrix_fracture_(ConnectionData &con)
@@ -106,7 +108,7 @@ void DiscretizationEDFM::build_matrix_fracture_(ConnectionData &con)
   const auto & frac = m_cv_data[con.elements[0]];
   assert ( cell.type == ControlVolumeType::cell );
   assert ( frac.type == ControlVolumeType::face );
-  const double k_d = cell.permeability * con.normal * con.normal;  // directional permeability
+  const double k_d = con.normal * (cell.permeability * con.normal);  // directional permeability
   const double T = k_d * con.area / con.distances[1]; // average distance from cell to fracture
   con.coefficients = {-T, T};
 }
@@ -184,12 +186,13 @@ void DiscretizationEDFM::create_connections_()
           new_con.center = {0,0,0};
           new_con.distances = {0,0};
           new_con.elements = {dof1, dof2};
+          new_con.edge_length = 0;
         }
       }
 
       auto &new_con = con_map.get_data(con_index);
       new_con.type = con.type;
-      if (con.type == discretization::ConnectionType::matrix_fracture)
+      if (con.type == ConnectionType::matrix_fracture)
       {
         new_con.area += 2 * con.area;
         const auto & cell = m_split_cv[con.elements[1]];
@@ -203,14 +206,49 @@ void DiscretizationEDFM::create_connections_()
         const auto & parent_face = m_cv_data[dof1];
         const double face_volume_ratio = face.volume / parent_face.volume;
         new_con.center += con.center * face_volume_ratio;
+        // all elements of star transformation
+        for (const size_t i : con.all_elements)
+          if ( new_con.all_elemenets.find( m_dof_mapping[i] ) == new_con.all_elements.end() )
+            new_con.all_elements.push_back( m_dof_mapping[i] );
       }
-      else if (con.type == discretization::ConnectionType::fracture_fracture)
+      else if (con.type == ConnectionType::fracture_fracture)
       {
-        // new_con.center;
+        new_con.center += con.center;  // edge center
+        new_con.edge_length += con.edge_length;
       }
     }
 
-  m_con_data = con_map.get_data();
+  // normalize by edge length
+  for (auto & con : con_map)
+    if (con.type == ConnectionType::fracture_fracture)
+      con.center /= con.edge_length;
+
+  m_con_data = std::move(con_map.get_data());
+}
+
+
+void DiscretizationEDFM::build_fracture_fracture_connection_data_()
+{
+  // build a connection to compute data for star transformation
+  std::map< std::vector<size_t>, std::vector<size_t> > map_junction_connections;
+  for (std::size_t i=0; i<m_con_data.size(); ++i)
+  {
+    const auto & con = m_con_data[i];
+    if (con.type == ConnectionType::fracture_fracture)
+    {
+      auto it_elements = map_junction_connections.find(con.all_elements);
+      if (it_elements == map_junction_connections.end())
+        map_junction_connections.insert({con.all_elements, {i}});
+      else
+        it_elements->second.push_back({con.all_elements, i});
+    }
+
+  }
+
+  for (auto it = map_junction_connections.begin(); it != map_junction_connections.end(); ++it)
+  {
+
+  }
 }
 
 }  // end namespace discretization

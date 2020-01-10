@@ -49,9 +49,6 @@ class ConnectionMap
   // throws std::out_of_range if connection does not exist
   std::size_t index(const std::size_t ielement, const std::size_t jelement) const;
   // returns true if the connection between elements exists
-  // bool connection_exists(const std::size_t ielement,
-  //                        const std::size_t jelement) const;
-  // returns true if the connection between elements exists
   bool contains(const std::size_t ielement, const std::size_t jelement) const;
   // get neighbors of the connection map element
   const std::vector<std::size_t> & get_neighbors(std::size_t ielement) const;

@@ -31,12 +31,12 @@ class DiscretizationEDFM : public DiscretizationBase
   void identify_edfm_faces_();
   std::vector<size_t> find_edfm_elements_(const ConnectionData & con);
   void create_connections_();
+  void build_fracture_fracture_connection_data_();
   // ---------------------------- Variables --------------------- //
   const DoFNumbering & m_split_dofs;
   // internal structures to compute dfm discretization after edfm cell splitting
   std::vector<ControlVolumeData> m_split_cv;
   std::vector<ConnectionData> m_split_con;
-  // hash_algorithms::ConnectionMap<ConnectionData> m_con_map;
   std::unordered_set<size_t> m_edfm_faces;
 };
 
