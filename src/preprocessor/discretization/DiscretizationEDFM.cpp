@@ -213,6 +213,7 @@ void DiscretizationEDFM::create_connections_()
         for (const size_t i : con.all_elements)
           if ( new_con.all_elemenets.find( m_dof_mapping[i] ) == new_con.all_elements.end() )
             new_con.all_elements.push_back( m_dof_mapping[i] );
+        std::sort( new_con.all_elements.begin(); new_con.all_elements.end() );
       }
       else if (con.type == ConnectionType::fracture_fracture)
       {
