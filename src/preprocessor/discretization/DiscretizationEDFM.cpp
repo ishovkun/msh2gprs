@@ -208,17 +208,18 @@ void DiscretizationEDFM::create_connections_()
         const auto & parent_face = m_cv_data[dof1];
         const double face_volume_ratio = face.volume / parent_face.volume;
         new_con.center += con.center * face_volume_ratio;
-        new_con.edge_direction = con.edge_direction;
-        // all elements of star transformation
-        for (const size_t i : con.all_elements)
-          if ( new_con.all_elemenets.find( m_dof_mapping[i] ) == new_con.all_elements.end() )
-            new_con.all_elements.push_back( m_dof_mapping[i] );
-        std::sort( new_con.all_elements.begin(); new_con.all_elements.end() );
       }
       else if (con.type == ConnectionType::fracture_fracture)
       {
         new_con.center += con.center;  // edge center
         new_con.edge_length += con.edge_length;
+        new_con.edge_direction = con.edge_direction;
+        // all elements of star transformation
+        for (const size_t i : con.all_elements)
+          if (std::find( new_con.all_elements.begin(), new_con.all_elements.end(),
+                         m_dof_mapping[i]) == new_con.all_elements.end())
+            new_con.all_elements.push_back( m_dof_mapping[i] );
+        std::sort( new_con.all_elements.begin(); new_con.all_elements.end() );
       }
     }
 
