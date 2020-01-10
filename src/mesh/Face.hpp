@@ -49,10 +49,12 @@ class Face
   std::vector<vertex_pair> edges() const;
   // get the coordinates of face vertices
   std::vector<Point> vertex_coordinates() const;
-  // get vector of neighboring cells
+  // get vector of neighboring cells. NOTE: this is a raw function
   std::vector<Cell*> neighbors();
-  // get vector of neighboring const cells
+  // get vector of neighboring const cells. NOTE: this is a raw function
   std::vector<const Cell*> neighbors() const;
+  // get vector of neighboring const active cells.
+  std::vector<const Cell*> active_neighbors() const;
   // get face center of mass
   Point center() const;
   // get face normal
