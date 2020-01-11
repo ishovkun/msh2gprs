@@ -1,23 +1,32 @@
 Mesh file: geom.msh
 
 Embedded Fractures :
-  method: projection
+  # method: projection
   fracture:
     type: Rectangle
     center: [0, 0, 0]
-    length: 30
+    length: 10
     width: 10
     dip: 90
     strike: 140
     aperture: 5e-3
     conductivity: 500
+  # fracture:
+  #   type: Rectangle
+  #   center: [20, 0, 0]
+  #   length: 30
+  #   width: 10
+  #   dip: 90
+  #   strike: 140
+  #   aperture: 5e-3
+  #   conductivity: 500
   fracture:
     type: Rectangle
-    center: [20, 0, 0]
+    center: [0, -14, 0]
     length: 30
     width: 10
     dip: 90
-    strike: 140
+    strike: 40
     aperture: 5e-3
     conductivity: 500
 
@@ -31,7 +40,7 @@ Domain Flow Properties:
   file: domain.txt
   # domain id is matched with the physical volume id in gmsh
   domain:
-    label: 9999992
+    label: 2
     Coupled: true                  # true/false on by default
     RTEMP: 340
     PORO: 0.2

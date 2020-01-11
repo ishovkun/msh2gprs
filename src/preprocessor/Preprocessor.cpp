@@ -40,7 +40,7 @@ void Preprocessor::run()
   const std::vector<DiscreteFractureConfig> combined_fracture_config =
       DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
 
-  // manages dofs of dfm and edfm after splitting
+  // manages properties of dfm and edfm after splitting
   DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
   fracture_flow_mgr.distribute_properties();
  
@@ -49,13 +49,15 @@ void Preprocessor::run()
   property_mgr.generate_properties();
 
   // // flow dof numbering
-  DoFManager dof_manager(data, dfm_mgr.get_face_markers(), edfm_mgr.get_face_markers());
-  DoFNumbering split_dofs = dof_manager.distribute_split_dofs();
+  const std::vector<int> edfm_markers = edfm_mgr.get_face_markers();
+  DoFManager dof_manager(data.grid, dfm_mgr.get_face_markers(), edfm_mgr.get_face_markers());
+  DoFNumbering split_dofs = dof_manager.distribute_dofs();
   DoFNumbering unsplit_dofs = dof_manager.distribute_unsplit_dofs();
 
   // build edfm discretization from mixed dfm-edfm discretization
   discretization::DiscretizationEDFM discr_edfm(split_dofs, unsplit_dofs,
-                                                data, data.cv_data, data.flow_connection_data);
+                                                data, data.cv_data, data.flow_connection_data,
+                                                edfm_markers);
   discr_edfm.build();
   exit(0);
 

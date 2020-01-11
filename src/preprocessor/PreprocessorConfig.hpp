@@ -52,8 +52,9 @@ struct BCConfig
 
 enum EDFMMethod
 {
-  simple,  // old and frankly shitty but default by Li and Lee 2008
-  projection  // pEDFM by Tene 2017
+  simple,      // old and frankly shitty but default by Li and Lee 2008
+  projection,  // pEDFM by Tene 2017
+  compartmental, // cEDFM by Chai 2018
 };
 
 

@@ -19,21 +19,19 @@ EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
 void EmbeddedFractureManager::split_cells()
 {
   int face_marker = find_maximum_face_marker_() + 1;
-  data.sda_data.reserve( config.size() );
   for (auto & frac : config)  // non-const since we can shift it
   {
-    data.sda_data.emplace_back();
-    vector<size_t> & cells = data.sda_data.back().cells;
+    std::vector<size_t> cells_to_split;
     // iteratively shift fracture if it collides with any grid vertices
     size_t iter = 0;
-    while (!find_edfm_cells_(*frac.body, cells))
+    while (!find_edfm_cells_(*frac.body, cells_to_split))
     {
-      cells.clear();
+      cells_to_split.clear();
       if (++iter > 100)
         throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
     }
 
-    split_cells_(*frac.body, cells, face_marker);
+    split_cells_(*frac.body, cells_to_split, face_marker);
     m_edfm_markers.insert(face_marker);
     face_marker++;
   }

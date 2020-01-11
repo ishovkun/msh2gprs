@@ -202,6 +202,10 @@ class Mesh
   // Used as a tmp container when splitting faces for dfm
   std::vector<std::size_t> m_faces_marked_for_split;
   size_t m_n_split_cells;
+  // for keeping track of cell vertices during cell splitting
+  angem::PointSet<3, double> m_vertices_from_cell_splitting;
+  // for keeping track of cell vertices during cell splitting
+  std::vector<size_t> m_vertices_from_cell_splitting_indices;
 };
 
 

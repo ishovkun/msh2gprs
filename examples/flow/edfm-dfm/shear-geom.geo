@@ -2,8 +2,8 @@
 alpha = 30 * Pi / 180;
 
 domain_size = 200; // outer
-lfrac = 30;
-inner_size = 4*lfrac;
+lfrac = 60;
+inner_size = 2*lfrac;
 thickness = -10;
 nz = 1;
 

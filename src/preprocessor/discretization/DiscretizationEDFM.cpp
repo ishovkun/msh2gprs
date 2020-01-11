@@ -11,8 +11,10 @@ DiscretizationEDFM(const DoFNumbering & split_dof_numbering,
                    const DoFNumbering & combined_dof_numbering,
                    gprs_data::SimData & data,
                    std::vector<ControlVolumeData> & cv_data,
-                   std::vector<ConnectionData> & connection_data)
+                   std::vector<ConnectionData> & connection_data,
+                   const std::vector<int> & edfm_markers)
     : m_split_dofs(split_dof_numbering),
+      m_edfm_markers( edfm_markers.begin(), edfm_markers.end() ),
       DiscretizationBase(combined_dof_numbering, data, cv_data, connection_data)
 {}
 
@@ -99,7 +101,7 @@ void DiscretizationEDFM::build_connection_data_()
     //   }
     // }
   }
-  build_fracture_fracture_connection_data_();
+  // build_fracture_fracture_connection_data_();
 }
 
 void DiscretizationEDFM::build_matrix_fracture_(ConnectionData &con)
@@ -149,10 +151,8 @@ void DiscretizationEDFM::identify_edfm_faces_()
 {
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
   {
-    const auto & face_parent = m_grid.ultimate_parent(*face);
-    const auto & neighbor = *(face_parent.neighbors()[0]);
-    if (neighbor.ultimate_parent() == neighbor)
-      m_edfm_faces.insert( face->index() );
+    if (m_edfm_markers.find(face->marker()) != m_edfm_markers.end())
+      m_edfm_faces.insert(m_split_dofs.face_dof(face->index()));
   }
 }
 
@@ -168,60 +168,70 @@ std::vector<size_t> DiscretizationEDFM::find_edfm_elements_(const ConnectionData
 void DiscretizationEDFM::create_connections_()
 {
   hash_algorithms::ConnectionMap<ConnectionData> con_map;
-  // first build the connection map
   for (const auto &con : m_split_con)
-    if ( !find_edfm_elements_(con).empty() )
+  {
+    const size_t dof1 = m_dof_mapping[con.elements[0]];
+    const size_t dof2 = m_dof_mapping[con.elements[1]];
+    if ((con.type != ConnectionType::matrix_matrix) && (dof1 == dof2))
     {
-      size_t con_index;
-      const size_t dof1 = m_dof_mapping[con.elements[0]];
-      const size_t dof2 = m_dof_mapping[con.elements[1]];
-      if (dof1 != dof2)
-      {
-        if (con_map.contains(dof1, dof2))
-          con_index = con_map.index(dof1, dof2);
-        else
-        {
-          con_index = con_map.insert(dof1, dof2);
-          auto &new_con = con_map.get_data(con_index);
-          new_con.area = 0;
-          new_con.normal = {0,0,0};
-          new_con.center = {0,0,0};
-          new_con.distances = {0,0};
-          new_con.elements = {dof1, dof2};
-          new_con.edge_length = 0;
-        }
-      }
-
-      auto &new_con = con_map.get_data(con_index);
+      auto &new_con = con_map.get_data(dof1, dof2);
+      new_con.elements = {dof1, dof2};
       new_con.type = con.type;
+      new_con.center = con.center;
+
       if (con.type == ConnectionType::matrix_fracture)
-      {
-        new_con.area += 2 * con.area;
-        const auto & cell = m_split_cv[con.elements[1]];
-        const auto & face = m_split_cv[con.elements[0]];
-        const auto & parent_cell = m_cv_data[dof2];
-        const double dist = (cell.center - face.center).dot( con.normal );
-        const double cell_volume_ratio = cell.volume / parent_cell.volume;
-        new_con.distances[0] += 0.0;  // from fracture to connection
-        new_con.distances[1] += std::fabs(dist) * cell_volume_ratio;  // from cell to connection
         new_con.normal = con.normal;
-        const auto & parent_face = m_cv_data[dof1];
-        const double face_volume_ratio = face.volume / parent_face.volume;
-        new_con.center += con.center * face_volume_ratio;
-      }
-      else if (con.type == ConnectionType::fracture_fracture)
-      {
-        new_con.center += con.center;  // edge center
-        new_con.edge_length += con.edge_length;
-        new_con.edge_direction = con.edge_direction;
-        // all elements of star transformation
-        for (const size_t i : con.all_elements)
-          if (std::find( new_con.all_elements.begin(), new_con.all_elements.end(),
-                         m_dof_mapping[i]) == new_con.all_elements.end())
-            new_con.all_elements.push_back( m_dof_mapping[i] );
-        std::sort( new_con.all_elements.begin(); new_con.all_elements.end() );
-      }
+
     }
+  }
+    // if ( !find_edfm_elements_(con).empty() )
+    // {
+    //   size_t con_index;
+    //   std::cout << "connection " << dof1 << " " << dof2 << std::endl;
+    //   if (dof1 != dof2)
+    //   {
+    //     if (con_map.contains(dof1, dof2))
+    //       con_index = con_map.index(dof1, dof2);
+    //     else
+    //     {
+    //       con_index = con_map.insert(dof1, dof2);
+    //       auto &new_con = con_map.get_data(con_index);
+    //       new_con.area = 0;
+    //       new_con.normal = {0,0,0};
+    //       new_con.center = {0,0,0};
+    //       new_con.elements = {dof1, dof2};
+    //       new_con.edge_length = 0;
+    //       for (const size_t i : con.all_elements)
+    //         if (std::find( new_con.all_elements.begin(), new_con.all_elements.end(),
+    //                        m_dof_mapping[i]) == new_con.all_elements.end())
+    //           new_con.all_elements.push_back( m_dof_mapping[i] );
+    //       new_con.distances.assign(new_con.all_elements.size(), 0.0);
+    //     }
+
+    //     auto &new_con = con_map.get_data(con_index);
+    //     new_con.type = con.type;
+    //     if (con.type == ConnectionType::matrix_fracture)
+    //     {
+    //       new_con.area += 2 * con.area;
+    //       const auto & cell = m_split_cv[con.elements[1]];
+    //       const auto & face = m_split_cv[con.elements[0]];
+    //       const auto & parent_cell = m_cv_data[dof2];
+    //       const double dist = (cell.center - face.center).dot( con.normal );
+    //       const double cell_volume_ratio = cell.volume / parent_cell.volume;
+    //       new_con.distances[0] += 0.0;  // from fracture to connection
+    //       new_con.distances[1] += std::fabs(dist) * cell_volume_ratio;  // from cell to connection
+    //       new_con.normal = con.normal;
+    //       const auto & parent_face = m_cv_data[dof1];
+    //       const double face_volume_ratio = face.volume / parent_face.volume;
+    //       new_con.center += con.center * face_volume_ratio;
+    //     }
+    //     else if (con.type == ConnectionType::fracture_fracture)
+    //     {
+    //       // Since we do split both dfms and edfm we just copy this stuff
+    //       new_con = con;
+    //     }
+    //   }
+    // }
 
   // normalize by edge length
   for (auto & con : con_map)
@@ -234,37 +244,39 @@ void DiscretizationEDFM::create_connections_()
 
 void DiscretizationEDFM::build_fracture_fracture_connection_data_()
 {
-  // build a connection to compute data for star transformation
-  std::map< std::vector<size_t>, std::vector<size_t> > map_junction_connections;
-  for (std::size_t i=0; i<m_con_data.size(); ++i)
-  {
-    const auto & con = m_con_data[i];
-    if (con.type == ConnectionType::fracture_fracture)
-    {
-      auto it_elements = map_junction_connections.find(con.all_elements);
-      if (it_elements == map_junction_connections.end())
-        map_junction_connections.insert({con.all_elements, {i}});
-      else
-        it_elements->second.push_back({con.all_elements, i});
-    }
-  }
+  // // build a connection to compute data for star transformation
+  // std::map< std::vector<size_t>, std::vector<size_t> > map_junction_connections;
+  // for (std::size_t i=0; i<m_con_data.size(); ++i)
+  // {
+  //   const auto & con = m_con_data[i];
+  //   if (con.type == ConnectionType::fracture_fracture)
+  //   {
+  //     auto it_elements = map_junction_connections.find(con.all_elements);
+  //     if (it_elements == map_junction_connections.end())
+  //       map_junction_connections.insert({con.all_elements, {i}});
+  //     else
+  //       it_elements->second.push_back(i);
+  //   }
+  // }
 
-  // star transformation
-  for (auto it = map_junction_connections.begin(); it != map_junction_connections.end(); ++it)
-  {
-    const auto & fcon = it->second[0];  // pick first connection to get edge data
-    const std::vector<size_t> & elements =  it->first;  // junction elements
-    const Point & edge_center = fcon.center;
-    const Point de = fcon.edge_direction * fcon.edge_length;
-
-    // compute average (by number) projection onto the edge
-    Point cv_projection = edge_center;
-    for (std::size_t i = 0; i < elements.size(); ++i)
-    {
-      const double t = de.dot(m_cv_data[elements[i]].center - edge_center) / fcon.edge_length;
-      cv_projection += t * de / elements.size();
-    }
-  }
+  // /* Two options:
+  //  * (1) edfm-edfm X-intersection
+  //  * (2) edfm-dfm-edfm intersection (two T-intersections) */
+  // for (auto it = map_junction_connections.begin(); it != map_junction_connections.end(); ++it)
+  // {
+  //   const auto & edge_con = m_con_data[ it->second[0] ];  // pick first connection to get edge data
+  //   const std::vector<size_t> & elements =  it->first;  // junc
+  //   /* Two options:
+  //    * (1) edfm-edfm X-intersection
+  //    * (2) edfm-dfm-edfm intersection (two T-intersections)
+  //    * In either case, we need to compute average distances to the connection
+  //    * In case (1) we need average distances from both edfms to the edge center
+  //    * In case (2) we need only the average distance from dfm to the edge
+  //    * center. We just compute all average distances. */
+  //    // since we don't split dfm faces we can compute the average distance by discretizing the
+  //    // master grid cells.
+  //    // For edfms we
+  // }
 }
 
 }  // end namespace discretization

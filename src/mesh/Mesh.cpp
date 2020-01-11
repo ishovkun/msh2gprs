@@ -9,7 +9,6 @@
 namespace mesh
 {
 
-// using std::unordered_map;
 using std::vector;
 
 Mesh::Mesh()
@@ -82,8 +81,7 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
         face_vtk_id = 7;  //  vtk_polygon
         break;
     }
-    const std::size_t face_index = insert_face(face, face_vtk_id, face_markers[i],
-                                               face_parents[i]);
+    const std::size_t face_index = insert_face(face, face_vtk_id, face_markers[i], face_parents[i]);
     face_indices.push_back(face_index);
   }
 
@@ -117,7 +115,7 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
     for (const size_t iface: m_vertex_faces[vertex])
     {
       assert( n_faces() > iface );
-      Face & f = m_faces[iface];
+      const Face & f = m_faces[iface];
       std::vector<size_t> face_vertices(f.vertices());
       std::sort(face_vertices.begin(), face_vertices.end());
       if ( std::equal( face_vertices.begin(), face_vertices.end(),
@@ -410,8 +408,18 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   // insert new vertices (those that occured due to splitting)
   for (size_t i = global_vertex_indices.size(); i < split.vertices.size(); ++i)
   {
-    const size_t new_vertex_index = n_vertices();
-    m_vertices.push_back(split.vertices[i]);
+    size_t new_vertex_index = n_vertices();
+    // first check that the vertex isn't already present because it's been split
+    const size_t split_v_index = m_vertices_from_cell_splitting.find(split.vertices[i]);
+    if (split_v_index == m_vertices_from_cell_splitting.size())
+    {
+      m_vertices_from_cell_splitting.insert( split.vertices[i] );
+      m_vertices_from_cell_splitting_indices.push_back(new_vertex_index);
+      m_vertices.push_back(split.vertices[i]);
+    }
+    else
+      new_vertex_index = m_vertices_from_cell_splitting_indices[split_v_index];
+
     global_vertex_indices.push_back(new_vertex_index);
   }
 

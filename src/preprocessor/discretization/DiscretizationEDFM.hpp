@@ -18,7 +18,8 @@ class DiscretizationEDFM : public DiscretizationBase
                      const DoFNumbering & combined_dof_numbering,
                      gprs_data::SimData & data,
                      std::vector<ControlVolumeData> & cv_data,
-                     std::vector<ConnectionData> & connection_data);
+                     std::vector<ConnectionData> & connection_data,
+                     const std::vector<int> & edfm_markers);
   virtual void build() override;
 
  protected:
@@ -38,6 +39,7 @@ class DiscretizationEDFM : public DiscretizationBase
   std::vector<ControlVolumeData> m_split_cv;
   std::vector<ConnectionData> m_split_con;
   std::unordered_set<size_t> m_edfm_faces;
+  std::unordered_set<int> m_edfm_markers;
 };
 
 }  // end namespace discretization

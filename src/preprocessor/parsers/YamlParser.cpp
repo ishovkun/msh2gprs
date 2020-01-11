@@ -61,6 +61,8 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
         config.edfm_method = EDFMMethod::simple;
       else if (str_method == "projection")
         config.edfm_method = EDFMMethod::projection;
+      else if (str_method == "compartmental")
+        config.edfm_method = EDFMMethod::compartmental;
       else
         throw std::invalid_argument(str_method);
     }
@@ -182,7 +184,6 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
   conf.conductivity = conductivity;
   conf.n1 = n1; conf.n2 = n2;
 }
-
 
 void YamlParser::discrete_fracture(const YAML::Node       & node,
                                    DiscreteFractureConfig & conf)

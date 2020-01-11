@@ -7,8 +7,8 @@ namespace discretization {
 
 enum ConnectionType
 {
-  matrix_matrix = 1,
-  matrix_fracture = 2,
+  matrix_matrix     = 1,
+  matrix_fracture   = 2,
   fracture_fracture = 3
 };
 
