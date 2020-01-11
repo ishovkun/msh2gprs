@@ -81,7 +81,7 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
   // gprs output
 
   // GEOMETRY
-  const std::string outstring = output_path + data.config.mechanics_domain_file;
+  const std::string outstring = output_path + "gm_geometry.txt";// Jaewoo An data.config.mechanics_domain_file;
   std::cout << "writing file " << outstring << std::endl;
 
   std::ofstream geomechfile;

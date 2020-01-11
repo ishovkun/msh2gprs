@@ -374,23 +374,23 @@ void CalcTranses::PrepareConnectionList()
     // M-M and M-F
 
     NbConnections = 0;
-    for (std::size_t i=0; i<NbPolygons; i++)
-    {
-      // if (ListV1[i] < 0)
-      if (CodePolygon[i] < 0)
-      {
-        if (ListV2[i] != -1)
-          NbConnections++;
-      }
-      else
-      {
-        if (ListV2[i] == -1)
-          NbConnections++;
-        else
-          NbConnections += 2;
-      }
-
-    }
+    if (NbPolyhedra > 0) // Jaewoo An; syncronize this part as the same as in the ConstructConnectionList
+        for (std::size_t i=0; i<NbPolygons; i++)
+        {
+          // if (ListV1[i] < 0)
+          if (CodePolygon[i] < 0)
+          {
+            if (ListV2[i] != -1)
+              NbConnections++;
+          }
+          else
+          {
+            if (ListV2[i] == -1)
+              NbConnections++;
+            else
+              NbConnections += 2;
+          }
+        }
 
     // F-F
 
@@ -450,11 +450,6 @@ void CalcTranses::ConstructConnectionList()
     if (NbPolyhedra > 0)
     for (std::size_t i=0; i<NbPolygons; i++)
     {
-      // if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
-      // if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
-      // if (CodePolygon[i]>=0 && ListV2[i]>=0)	// M-F and F-M
-
-      // if (ListV1[i] < 0 && ListV2[i] >= 0)  // M-M
       if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
       {
         // std::cout << "M-M " << i << std::endl;
@@ -1398,12 +1393,77 @@ void CalcTranses::extractData(FlowData & data) const
     data.cells[i].depth    = -CVz[i];
   }
 
-  // Transmissibility
-  for (std::size_t i=0;i<NbTransmissibility; i++)
+  // Transmissibility, Jaewoo An
+  for (std::size_t i=0;i<NbConnections; i++)
   {
-    auto & face = data.insert_connection(iTr[i], jTr[i]);
-    face.transmissibility = Tij[i];
-    face.thermal_conductivity = TConductionIJ[i];
+    if(ConType[i]==1 || ConType[i]==2)  // M-M, M-F /
+    {
+        auto & face = data.insert_connection(iTr[i], jTr[i]);
+        face.transmissibility = Tij[i];
+        face.thermal_conductivity = TConductionIJ[i];
+        face.ConType = ConType[i]; // Jaewoo An
+        face.ConN = ConN[i];
+        face.ConCV.resize(ConN[i]);
+        face.ConTr.resize(ConN[i]);
+        face.ConArea.resize(ConN[i]);
+        face.ConPerm.resize(ConN[i]);
+        face.ZVolumeFactor.resize(ConN[i]);
+        for(std::size_t m=0; m < ConN[i]; m++){
+            face.ConCV[m] = ConCV[i][m];
+            face.ConTr[m] = ConTr[i][m];
+            face.ConArea[m] = ConArea[i][m];
+            face.ConPerm[m] = ConPerm[i][m];
+            face.ZVolumeFactor[m] = ZVolumeFactor[CVZone[ConCV[i][m]]];
+        }
+    } else{
+        double SumTr = 0;
+        double SumTr2 = 0;
+        for ( std::size_t j=0; j<ConN[i]; j++ )
+          SumTr+=ConTr[i][j];
+
+        for ( std::size_t j=0; j<ConN[i]; j++ )
+          SumTr2+=ConGeom[i][j];
+
+        for ( std::size_t j=0; j<ConN[i]-1; j++ ){
+            for ( std::size_t n=j+1; n<ConN[i]; n++ )
+            {// eventhough the name is face; treat as connection.
+                // IN edfm intersection, acturally there in only one connection in frac. THINK ABOUT HOW TO APPROXIMATE THIS.
+                std::size_t iTr_ = ConCV[i][j];
+                std::size_t jTr_ = ConCV[i][n];
+                double Tij_ = ( ConTr[i][j]*ConTr[i][n] ) / SumTr;
+                double TConductionIJ_ = ( ConGeom[i][j]*ConGeom[i][n] ) / SumTr2;
+                auto & face = data.insert_connection(iTr_, jTr_);
+                face.transmissibility = Tij_;
+                face.thermal_conductivity = TConductionIJ_;
+                face.ConType = ConType[i];
+                face.ConN = ConN[i];
+                face.ConCV.resize(ConN[i]);
+                face.ConTr.resize(ConN[i]);
+                face.ConArea.resize(ConN[i]);
+                face.ConPerm.resize(ConN[i]);
+                face.ZVolumeFactor.resize(ConN[i]);
+
+                std::vector<std::size_t> vecIndex(ConN[i]);
+                vecIndex[0] = j;
+                vecIndex[1] = n;
+                std::size_t tempI = 2;
+                for(std::size_t m=0; m < ConN[i]; m++){
+                    if(m!=j && m!=n){
+                        vecIndex[tempI] = m;
+                        tempI++;
+                    }
+                }
+
+                for(std::size_t m=0; m < ConN[i]; m++){
+                    face.ConCV[m] = ConCV[i][vecIndex[m]];
+                    face.ConTr[m] = ConTr[i][vecIndex[m]];
+                    face.ConArea[m] = ConArea[i][vecIndex[m]];
+                    face.ConPerm[m] = ConPerm[i][vecIndex[m]];
+                    face.ZVolumeFactor[m] = ZVolumeFactor[CVZone[ConCV[i][vecIndex[m]]]];
+                }
+            }
+        }
+    }
   }
 
   // Geomechanics
@@ -1420,6 +1480,7 @@ void CalcTranses::save_output(const FlowData    & data,
 {
   const std::string fname_cell_data = "fl_cell_data.txt";
   const std::string fname_face_data = "fl_face_data.txt";
+  const std::string fname_gmupdate_data = "fl_trans_data.txt"; // 191217 Jaewoo An
 
   {  // Write cell data
     ofstream out;
@@ -1489,6 +1550,80 @@ void CalcTranses::save_output(const FlowData    & data,
     out << "/" << std::endl;
 
     out.close();
+  }
+
+  { // Geometric part of transmissibilities
+      ofstream out;
+      out.open((output_dir + fname_gmupdate_data).c_str());
+
+
+      out << "GMUPDATETRANS" << std::endl;
+      int k=0;
+      for (const auto & conn : data.map_connection)
+        {
+        const auto face = conn.second;
+        if(face.ConType==1 || face.ConType==2)	// M-M, M-F ////////////////////////////
+          {
+          if(face.ConType==1)		// M-M ////////////////////////////
+          {
+              // Con# ConType i ai j aj -> Tij=ai*aj/(ai+aj)
+              out << k << "\t"
+                  << face.ConType << "\t"
+                  << face.ConCV[0] << "\t"
+                  << face.ConTr[0] << "\t"
+                  << face.ConCV[1] << "\t"
+                  << face.ConTr[1] << std::endl;
+          }
+          if(face.ConType==2)		// M-F ////////////////////////////
+          {
+              //Con# ConType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
+              out << k << "\t"
+                  << face.ConType << "\t"
+                  << face.ConCV[0] << "\t"
+                  << face.ConTr[0] << "\t"
+                  << face.ConCV[1] << "\t"
+                  << 2.*face.ConArea[1]  << "\t"
+                  << face.ZVolumeFactor[1] << "\t"
+                  << face.ConPerm[1] << "\t"
+                  << std::endl;
+          }
+          k++;
+          }
+        if(face.ConType==3)	// F-F /////////////////////////////////////////////////
+          {
+           //Con# ConType i ci ei ki j cj ej kj N n cn en kn
+           //ai=ci*ki*ei aj=cj*kj*ej an=cn*kn*en
+           //-> Tij=ai*aj/(SUM an)
+           //
+ //         for(std::size_t j=0; j<face.ConN-1; j++)
+ //            for(std::size_t n=j+1; n<face.ConN; n++)
+  //             {
+            std::size_t j = 0;
+            std::size_t n = 1;
+                  out << k << "\t"
+                      << face.ConType << "\t"
+                      << face.ConCV[j] << "\t"
+                      << face.ConTr[j]/(face.ConPerm[j]*face.ZVolumeFactor[j]) << "\t"
+                      << face.ZVolumeFactor[j] << "\t"
+                      << face.ConPerm[j]  << "\t"
+                      << face.ConCV[n] << "\t"
+                      << face.ConTr[n]/(face.ConPerm[n]*face.ZVolumeFactor[n])<< "\t"
+                      << face.ZVolumeFactor[n] << "\t"
+                      << face.ConPerm[n] << "\t"
+                      << face.ConN << "\t";
+                  for(std::size_t m=0; m< face.ConN; m++)
+                      out << face.ConCV[m] << "\t"
+                          << face.ConTr[m]/(face.ConPerm[m]*face.ZVolumeFactor[m]) << "\t"
+                          << face.ZVolumeFactor[m] << "\t"
+                          << face.ConPerm[m] << "\t";
+                  out << std::endl;
+                  k++;
+  //              }
+           }
+        }
+      out << "/" << std::endl;
+
+      out.close();
   }
 
 }

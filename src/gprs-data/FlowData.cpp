@@ -38,8 +38,8 @@ void FlowData::merge_elements(const std::size_t updated_element,
   // const double v0 = volumes[u];
   // const double v1 = volumes[d];
   // volumes[u] += v1;
-  // poro[u] += (v0*poro[u] + v1*poro[d]) / (v0 + v1);
-  // depth[u] += (v0*depth[u] + v1*depth[d]) / (v0 + v1);
+  // poro[u] = (v0*poro[u] + v1*poro[d]) / (v0 + v1);
+  // depth[u] = (v0*depth[u] + v1*depth[d]) / (v0 + v1);
 
   // for (std::size_t i=0; i<custom_data[u].size(); ++i)
   //   custom_data[u][i] = (v0*custom_data[u][i] + v1*custom_data[d][i]) / (v0 + v1);
@@ -47,8 +47,8 @@ void FlowData::merge_elements(const std::size_t updated_element,
   const double v0 = cells[u].volume;
   const double v1 = cells[d].volume;
   cells[u].volume += v1;
-  cells[u].porosity += (v0*cells[u].porosity + v1*cells[d].porosity) / (v0 + v1);
-  cells[u].depth += (v0*cells[u].depth + v1*cells[d].depth) / (v0 + v1);
+  cells[u].porosity = (v0*cells[u].porosity + v1*cells[d].porosity) / (v0 + v1); // Jaewoo An
+  cells[u].depth = (v0*cells[u].depth + v1*cells[d].depth) / (v0 + v1);
 
   for (std::size_t i=0; i<cells[u].custom.size(); ++i)
     cells[u].custom[i] = (v0*cells[u].custom[i] + v1*cells[d].custom[i]) / (v0 + v1);
@@ -72,6 +72,27 @@ void FlowData::merge_elements(const std::size_t updated_element,
         // faces.back().transmissibility = faces[dead_conn].transmissibility;
         // trans_ij.push_back(trans_ij[dead_conn]);
         flow::FaceData new_face = insert_connection(d, neighbor);
+        flow::FaceData modified_face = get_connection(u, neighbor);
+        new_face.transmissibility = modified_face.transmissibility;
+        new_face.thermal_conductivity = modified_face.thermal_conductivity;
+        new_face.ConType = modified_face.ConType; // Jaewoo An
+        new_face.ConN = modified_face.ConN;
+        new_face.ConCV.resize(modified_face.ConN);
+        new_face.ConTr.resize(modified_face.ConN);
+        new_face.ConArea.resize(modified_face.ConN);
+        new_face.ConPerm.resize(modified_face.ConN);
+        for(std::size_t m=0; m < modified_face.ConN; m++){
+            new_face.ZVolumeFactor.resize(modified_face.ConN);
+            if(modified_face.ConCV[m] == d){
+                new_face.ConCV[m] = u;
+            } else{
+                new_face.ConCV[m] = modified_face.ConCV[m];
+            }
+            new_face.ConTr[m] = modified_face.ConTr[m];
+            new_face.ConArea[m] = modified_face.ConArea[m];
+            new_face.ConPerm[m] = modified_face.ConPerm[m];
+            new_face.ZVolumeFactor[m] = modified_face.ZVolumeFactor[m];
+        }
       }
       else
       {
@@ -79,6 +100,13 @@ void FlowData::merge_elements(const std::size_t updated_element,
         // trans_ij[conn] += trans_ij[dead_conn];
         flow::FaceData modified_face = get_connection(u, neighbor);
         modified_face.transmissibility += dead_connection.transmissibility;
+        modified_face.thermal_conductivity += dead_connection.thermal_conductivity;
+        for(std::size_t m=0; m < modified_face.ConN; m++){
+            modified_face.ConTr[m] += dead_connection.ConTr[m];
+            modified_face.ConArea[m] += dead_connection.ConArea[m];
+            modified_face.ZVolumeFactor[m] = (v0*modified_face.ZVolumeFactor[m] + v1*dead_connection.ZVolumeFactor[m]) / (v0 + v1);
+            modified_face.ConPerm[m] = modified_face.ConTr[m]*modified_face.ZVolumeFactor[m]/modified_face.ConArea[m];
+        }
       }
     }
   }

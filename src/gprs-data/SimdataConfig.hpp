@@ -100,7 +100,8 @@ struct SimdataConfig
   std::vector<BCNodeConfig>            bc_nodes;
   std::vector<WellConfig>              wells;
 
-  EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
+  EDFMMethod edfm_method = EDFMMethod::simple;
+  //EDFMMethod edfm_method = EDFMMethod::projection;       // method to simulate flow in embedded fracs; EDFMMethod::simple or EDFMMethod::projection
 
   // all variables used for function parsing
   std::vector<std::string> all_vars = {"x", "y", "z"};

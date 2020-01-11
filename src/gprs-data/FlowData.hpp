@@ -23,6 +23,14 @@ struct FaceData
 {
   double transmissibility;
   double thermal_conductivity;
+
+  std::size_t ConType;
+  std::size_t ConN;
+  std::vector<double> ConCV;
+  std::vector<double> ConTr;
+  std::vector<double> ConArea;
+  std::vector<double> ZVolumeFactor;
+  std::vector<double> ConPerm;
 };
 
 
