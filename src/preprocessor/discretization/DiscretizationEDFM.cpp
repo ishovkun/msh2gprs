@@ -175,12 +175,14 @@ void DiscretizationEDFM::create_connections_()
     if ((con.type != ConnectionType::matrix_matrix) && (dof1 == dof2))
     {
       auto &new_con = con_map.get_data(dof1, dof2);
+      new_con = con;
       new_con.elements = {dof1, dof2};
-      new_con.type = con.type;
-      new_con.center = con.center;
+      // new_con.type = con.type;
+      // new_con.center = con.center;
 
-      if (con.type == ConnectionType::matrix_fracture)
-        new_con.normal = con.normal;
+
+      // if (con.type == ConnectionType::matrix_fracture)
+      //   new_con.normal = con.normal;
 
     }
   }
