@@ -25,7 +25,7 @@ void DiscretizationDFM::build()
   build_fracture_matrix_connections();
 
   for (auto & con : m_con_data)
-    build_matrix_fracture(con);
+    build_matrix_fracture_(con);
 
   // build fracture-fracture transes
   build_fracture_fracture_connections();
@@ -103,11 +103,10 @@ DiscretizationDFM::map_edge_to_faces()
   return edge_face_connections;
 }
 
-void DiscretizationDFM::build_matrix_fracture(ConnectionData & con)
+void DiscretizationDFM::build_matrix_fracture(ConnectionData & con,
+                                              const ControlVolumeData & cv_frac,
+                                              const ControlVolumeData & cv_cell)
 {
-  // cause I built them that way
-  const auto & cv_frac = m_cv_data[con.elements[0]];
-  const auto & cv_cell = m_cv_data[con.elements[1]];
   assert(cv_frac.type == ControlVolumeType::face);
   assert(cv_cell.type == ControlVolumeType::cell);
   assert(con.type == ConnectionType::matrix_fracture);
@@ -125,10 +124,15 @@ void DiscretizationDFM::build_matrix_fracture(ConnectionData & con)
   double T = 0;
   if ( !std::isnan(1. / (T_cell + T_face) ) )
     T = T_cell*T_face / (T_cell + T_face);
+  con.coefficients = {-T, T};
+}
 
-  con.coefficients.resize(2);
-  con.coefficients[0] = -T;
-  con.coefficients[1] =  T;
+void DiscretizationDFM::build_matrix_fracture_(ConnectionData & con)
+{
+  // cause I built them that way
+  const auto & cv_frac = m_cv_data[con.elements[0]];
+  const auto & cv_cell = m_cv_data[con.elements[1]];
+  build_matrix_fracture(con, cv_frac, cv_cell);
 }
 
 

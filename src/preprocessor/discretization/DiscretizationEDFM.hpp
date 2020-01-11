@@ -25,14 +25,11 @@ class DiscretizationEDFM : public DiscretizationBase
  protected:
   void build_control_volume_data_();
   void build_connection_data_();
-  void build_matrix_fracture_(ConnectionData & con);
-  void build_edfm_edfm_(ConnectionData & con);
-  void build_edfm_dfm_(ConnectionData & con);
-  void convert_flow_map_to_vector_();
+  void build_matrix_edfm_(ConnectionData & con);
+  void build_matrix_dfm_(ConnectionData & con);
   void identify_edfm_faces_();
   std::vector<size_t> find_edfm_elements_(const ConnectionData & con);
   void create_connections_();
-  void build_fracture_fracture_connection_data_();
   // ---------------------------- Variables --------------------- //
   const DoFNumbering & m_split_dofs;
   // internal structures to compute dfm discretization after edfm cell splitting
