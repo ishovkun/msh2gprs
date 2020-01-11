@@ -23,8 +23,8 @@ class DiscreteFractureManager
   static std::vector<DiscreteFractureConfig>
   combine_configs(const std::vector<DiscreteFractureConfig> & config1,
                   const std::vector<DiscreteFractureConfig> & config2);
-  // distribute control volume indices
-  void build_flow_cv_numbering();
+  // return vector of split fracture face markers
+  std::vector<int> get_face_markers() const;
 
  protected:
   void build_dfm_markers_set_();

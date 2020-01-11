@@ -7,6 +7,8 @@
 #include "discretization/DiscretizationTPFA.hpp"
 #include "discretization/DiscretizationDFM.hpp"
 #include "discretization/DiscretizationEDFM.hpp"
+#include "DoFManager.hpp"
+#include "WellManager.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -30,53 +32,62 @@ void Preprocessor::run()
   /* Split cells due to edfm intersection */
   EmbeddedFractureManager edfm_mgr(config.embedded_fractures, config.edfm_method, data);
   edfm_mgr.split_cells();
+
   /* Since we split edfm faces, we pretend that they are dfm fractures
    * to reuse the discretization code. */
   const std::vector<DiscreteFractureConfig> edfm_faces_conf = edfm_mgr.generate_dfm_config();
   // combine dfm and edfm configs
   const std::vector<DiscreteFractureConfig> combined_fracture_config =
-      DiscreteFractureManager::combine_configs(config.discrete_fractures,
-                                               edfm_faces_conf);
-  // manages dofs of dfm and edfm after splitting
+      DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
+
+  // manages properties of dfm and edfm after splitting
   DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
   fracture_flow_mgr.distribute_properties();
-
+ 
   // property manager for grid with split cells (due to edfm splitting)
   CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
   property_mgr.generate_properties();
 
-  // flow dof numbering
-  fracture_flow_mgr.build_flow_cv_numbering();
-
-  // edfm + dfm discretization
-  // we will use only the edfm part from it
-  discretization::DiscretizationDFM discr_edfm_dfm(combined_fracture_config, data);
-  discr_edfm_dfm.build();
+  // // flow dof numbering
+  const std::vector<int> edfm_markers = edfm_mgr.get_face_markers();
+  DoFManager dof_manager(data.grid, dfm_mgr.get_face_markers(), edfm_mgr.get_face_markers());
+  DoFNumbering split_dofs = dof_manager.distribute_dofs();
+  DoFNumbering unsplit_dofs = dof_manager.distribute_unsplit_dofs();
 
   // build edfm discretization from mixed dfm-edfm discretization
-  discretization::DiscretizationEDFM discr_edfm(combined_fracture_config,
-                                                discr_edfm_dfm.get_cell_data(),
-                                                discr_edfm_dfm.get_face_data(),
-                                                n_dfm_faces, data);
+  discretization::DiscretizationEDFM discr_edfm(split_dofs, unsplit_dofs,
+                                                data, data.cv_data, data.flow_connection_data,
+                                                edfm_markers);
   discr_edfm.build();
+  exit(0);
+
+  // // setup wells
+  // if (config.wells.empty())
+  // {
+  //   std::cout << "setup wells" << std::endl;
+  //   WellManager well_mgr(config.wells, data);
+  //   well_mgr.setup();
+  // }
+
   // now coarsen all cells to remove edfm splits and compute normal
   // flow dfm-matrix discretizations
-  data.grid.coarsen_cells();
-  property_mgr.generate_properties();
-  discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
-  dfm_mgr.distribute_properties();
-  discretization::DiscretizationDFM discr_dfm(config.discrete_fractures, data);
-  discr_dfm.build();
+  // data.grid.coarsen_cells();
+  // property_mgr.generate_properties();
+  // discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
+  // dfm_mgr.distribute_properties();
+  // discretization::DiscretizationDFM discr_dfm(config.discrete_fractures, data);
+  // discr_dfm.build();
 
-  // merge dfm and matrix discretizations
-  discr_dfm.merge_from_matrix_discretization(matrix_discr.get_cell_data(),
-                                             matrix_discr.get_face_data());
+  // // merge dfm and matrix discretizations
+  // discr_dfm.merge_from_matrix_discretization(matrix_discr.get_cell_data(),
+  //                                            matrix_discr.get_face_data());
 
-  // finally, merge edfm, dfm, and matrix discretizations
-  discr_edfm.merge_into_matrix_dfm_discretization(discr_dfm.get_cell_data(),
-                                                  discr_dfm.get_face_data());
-
-  edfm_mgr.generate_mechanical_properties();
+  // // finally, merge edfm, dfm, and matrix discretizations
+  // discr_edfm.merge_into_matrix_dfm_discretization(discr_dfm.get_cell_data(),
+  //                                                 discr_dfm.get_face_data());
+  // // generate geomechanics sda properties
+  // edfm_mgr.map_mechanics_to_control_volumes();
+  // edfm_mgr.distribute_mechanical_properties();
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

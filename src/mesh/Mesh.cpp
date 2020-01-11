@@ -9,10 +9,10 @@
 namespace mesh
 {
 
-// using std::unordered_map;
 using std::vector;
 
 Mesh::Mesh()
+    : m_n_split_cells(0)
 {}
 
 std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
@@ -81,8 +81,7 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
         face_vtk_id = 7;  //  vtk_polygon
         break;
     }
-    const std::size_t face_index = insert_face(face, face_vtk_id, face_markers[i],
-                                               face_parents[i]);
+    const std::size_t face_index = insert_face(face, face_vtk_id, face_markers[i], face_parents[i]);
     face_indices.push_back(face_index);
   }
 
@@ -116,7 +115,7 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
     for (const size_t iface: m_vertex_faces[vertex])
     {
       assert( n_faces() > iface );
-      Face & f = m_faces[iface];
+      const Face & f = m_faces[iface];
       std::vector<size_t> face_vertices(f.vertices());
       std::sort(face_vertices.begin(), face_vertices.end());
       if ( std::equal( face_vertices.begin(), face_vertices.end(),
@@ -409,8 +408,18 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   // insert new vertices (those that occured due to splitting)
   for (size_t i = global_vertex_indices.size(); i < split.vertices.size(); ++i)
   {
-    const size_t new_vertex_index = n_vertices();
-    m_vertices.push_back(split.vertices[i]);
+    size_t new_vertex_index = n_vertices();
+    // first check that the vertex isn't already present because it's been split
+    const size_t split_v_index = m_vertices_from_cell_splitting.find(split.vertices[i]);
+    if (split_v_index == m_vertices_from_cell_splitting.size())
+    {
+      m_vertices_from_cell_splitting.insert( split.vertices[i] );
+      m_vertices_from_cell_splitting_indices.push_back(new_vertex_index);
+      m_vertices.push_back(split.vertices[i]);
+    }
+    else
+      new_vertex_index = m_vertices_from_cell_splitting_indices[split_v_index];
+
     global_vertex_indices.push_back(new_vertex_index);
   }
 
@@ -466,6 +475,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
                                                 cell.marker(), faces_above_markers);
   const size_t child_cell_index2 = insert_cell_(cell_below_faces, faces_below_parents,
                                                 cell.marker(), faces_below_markers);
+  m_n_split_cells++;
 
   // handle parent/child cell dependencies
   m_cells[cell.index()].m_children = {child_cell_index1, child_cell_index2};
@@ -565,11 +575,10 @@ void Mesh::coarsen_cells()
   {
     if (!cell->children().empty())
       cell->m_children.clear();
-    else if (cell->parent() != cell->index())  // to be deleted
+    else if (cell->parent() != *cell)  // to be deleted
       min_cell_delete_index = std::min(min_cell_delete_index, cell->index());
   }
 
-  std::cout << "puk" << std::endl;
   //  clear unused vertices
   for ( auto & vertex_cells : m_vertex_cells )
     for (auto it_cell = vertex_cells.begin(); it_cell != vertex_cells.end();)
@@ -597,6 +606,21 @@ void Mesh::coarsen_cells()
   m_vertex_faces.erase( m_vertex_faces.begin() + min_vertex_to_delete, m_vertex_faces.end() );
   // delete cells
   m_cells.erase( m_cells.begin() + min_cell_delete_index, m_cells.end() );
+  // no more split cells
+  m_n_split_cells = n_cells();
+}
+
+const Face & Mesh::ultimate_parent(const Face & face) const
+{
+  const Face * par = &m_faces[ face.parent() ];
+  while (par->parent() != par->index())
+    par = &m_faces[ par->parent() ];
+  return *par;
+}
+
+Face & Mesh::ultimate_parent(const Face & face)
+{
+  return const_cast<Face&>(ultimate_parent(face));
 }
 
 }  // end namespace mesh

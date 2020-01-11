@@ -49,16 +49,22 @@ class Face
   std::vector<vertex_pair> edges() const;
   // get the coordinates of face vertices
   std::vector<Point> vertex_coordinates() const;
-  // get vector of neighboring cells
+  // get vector of neighboring cells. NOTE: this is a raw function
   std::vector<Cell*> neighbors();
-  // get vector of neighboring const cells
+  // get vector of neighboring const cells. NOTE: this is a raw function
   std::vector<const Cell*> neighbors() const;
+  // get vector of neighboring const active cells.
+  std::vector<const Cell*> active_neighbors() const;
   // get face center of mass
   Point center() const;
   // get face normal
   Point normal() const;
+  // return a polygon that forms a face
   Polygon polygon() const;
+  // return face polygon area
   double area() const;
+  // returns if the face contains a vertex
+  // NOTE: complexity is O(n_face_vertices)
   bool has_vertex(const std::size_t vertex_index) const;
   // returns true if has no children; else returns false
   inline bool is_active() const {return m_children.empty();}

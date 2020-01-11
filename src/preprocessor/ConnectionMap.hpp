@@ -35,12 +35,12 @@ class ConnectionMap
   // get number of connections
   std::size_t size() const {return connections.size();}
 
-  inline
-  DataType & get_data(const std::size_t connection_index) {return m_data[connection_index];}
-  inline const
-  DataType & get_data(const std::size_t connection_index) const {return m_data[connection_index];}
+  inline DataType & get_data(const std::size_t connection_index) {return m_data[connection_index];}
+  inline const DataType & get_data(const std::size_t connection_index) const {return m_data[connection_index];}
   DataType & get_data(const std::size_t ielement, const std::size_t jelement);
   const DataType & get_data(const std::size_t ielement, const std::size_t jelement) const;
+  inline std::vector<DataType> & get_data() { return m_data; }
+  inline const std::vector<DataType> & get_data() const { return m_data; }
 
   // creates a new connection and returns the connection index
   std::size_t insert(const std::size_t ielement, const std::size_t jelement);
@@ -48,9 +48,6 @@ class ConnectionMap
   void delete_element(const std::size_t ielement);
   // throws std::out_of_range if connection does not exist
   std::size_t index(const std::size_t ielement, const std::size_t jelement) const;
-  // returns true if the connection between elements exists
-  // bool connection_exists(const std::size_t ielement,
-  //                        const std::size_t jelement) const;
   // returns true if the connection between elements exists
   bool contains(const std::size_t ielement, const std::size_t jelement) const;
   // get neighbors of the connection map element

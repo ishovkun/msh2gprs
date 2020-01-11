@@ -9,32 +9,32 @@ using Point = angem::Point<3,double>;
 using Tensor = angem::Tensor2<3,double>;
 
 DiscretizationTPFA::
-DiscretizationTPFA(const std::vector<DiscreteFractureConfig> & dfm_fractures,
-                   gprs_data::SimData & data)
+DiscretizationTPFA(const DoFNumbering & dof_numbering,
+                   gprs_data::SimData & data,
+                   std::vector<ControlVolumeData> & cv_data,
+                   std::vector<ConnectionData> & connection_data)
     :
-    DiscretizationBase(dfm_fractures, data),
+    DiscretizationBase(dof_numbering, data, cv_data, connection_data),
     m_method(tpfa_method::mo)
-{
-  m_shift = count_dfm_faces_();
-}
+{}
 
 
 void DiscretizationTPFA::build()
 {
   DiscretizationBase::build_cell_data_();
 
-  con_data.reserve(m_grid.n_faces());
+  m_con_data.reserve(m_con_data.size() + m_grid.n_faces());
   size_t iface = 0;
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
   {
     if (face->neighbors().size() == 2)
-      if (!is_fracture(face->marker()))
+      if (!m_dofs.is_active_face(face->index()))
       {
-        con_data.emplace_back();
+        m_con_data.emplace_back();
         if (m_method == tpfa_method::kirill)
-          build_kirill(*face, con_data.back());
+          build_kirill(*face, m_con_data.back());
         else // if (method == tpfa_method::mo)
-          build_mo(*face, con_data.back());
+          build_mo(*face, m_con_data.back());
         iface++;
       }
   }
@@ -48,8 +48,8 @@ void DiscretizationTPFA::build_kirill(const mesh::Face & face,
   const auto cells = face.neighbors();
   const size_t i = m_shift + cells[0]->index();
   const size_t j = m_shift + cells[1]->index();
-  const auto & cell1 = cv_data[cells[0]->index()];
-  const auto & cell2 = cv_data[cells[1]->index()];
+  const auto & cell1 = m_cv_data[ m_dofs.cell_dof(cells[0]->index()) ];
+  const auto & cell2 = m_cv_data[ m_dofs.cell_dof(cells[1]->index()) ];
 
   const Point center_face = face.center();
   const Point d1 = cell1.center - center_face;
@@ -118,8 +118,8 @@ void DiscretizationTPFA::build_mo(const mesh::Face & face,
   const size_t cv1 = m_shift + cells[0]->index();
   const size_t cv2 = m_shift + cells[1]->index();
 
-  const auto & cell1 = cv_data[cells[0]->index()];
-  const auto & cell2 = cv_data[cells[1]->index()];
+  const auto & cell1 = m_cv_data[ m_dofs.cell_dof(cells[0]->index()) ];
+  const auto & cell2 = m_cv_data[ m_dofs.cell_dof(cells[1]->index()) ];
 
   // define face projection point
   const Point & c1 = cell1.center;
@@ -133,8 +133,6 @@ void DiscretizationTPFA::build_mo(const mesh::Face & face,
   const Tensor & K1 = cell1.permeability;
   const Tensor & K2 = cell2.permeability;
   // perm projection
-  // const double Kp1 = n * K1 * (c1 - cp).normalize();
-  // const double Kp2 = n * K2 * (c2 - cp).normalize();
   const double Kp1 = (K1 * (c1 - cp).normalize()).norm();
   const double Kp2 = (K2 * (c2 - cp).normalize()).norm();
   // cell-face transmissibility

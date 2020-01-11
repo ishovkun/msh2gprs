@@ -1,14 +1,16 @@
 #include "EmbeddedFractureManager.hpp"
 #include "angem/CollisionGJK.hpp"  // collisionGJK
 #include "angem/Collisions.hpp"    // angem::split
+#include <utility>                 // provides std::pair
 
 namespace gprs_data {
 
 using std::vector;
 using Point = angem::Point<3,double>;
+using std::pair;
 
 EmbeddedFractureManager::
-EmbeddedFractureManager(const std::vector<EmbeddedFractureConfig> &config,
+EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
                         const EDFMMethod edfm_method,
                         SimData & data)
     : config(config), m_method(edfm_method), data(data), m_grid(data.grid)
@@ -19,18 +21,17 @@ void EmbeddedFractureManager::split_cells()
   int face_marker = find_maximum_face_marker_() + 1;
   for (auto & frac : config)  // non-const since we can shift it
   {
-    vector<size_t> cells;
+    std::vector<size_t> cells_to_split;
     // iteratively shift fracture if it collides with any grid vertices
     size_t iter = 0;
-    while (!find_edfm_cells_(*frac.body, cells))
+    while (!find_edfm_cells_(*frac.body, cells_to_split))
     {
-      cells.clear();
+      cells_to_split.clear();
       if (++iter > 100)
         throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
     }
 
-    split_cells_(*frac.body, cells, face_marker);
-    std::cout << "should be new face marker " << face_marker << std::endl;
+    split_cells_(*frac.body, cells_to_split, face_marker);
     m_edfm_markers.insert(face_marker);
     face_marker++;
   }
@@ -44,13 +45,12 @@ void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
   for (const size_t icell : cells)
   {
     mesh::Cell & old_cell = m_grid.cell(icell);
-    // std::cout << "splitting " << old_cell.index() << std::endl;
     m_grid.split_cell(old_cell, plane, face_marker);
   }
 }
 
 bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture,
-                                               std::vector<size_t> & cells) const
+                                               std::vector<size_t> & cells)
 {
   // performs fast collision check
   angem::CollisionGJK<double> collision;
@@ -106,8 +106,6 @@ int EmbeddedFractureManager::find_maximum_face_marker_() const
   int max_face_index = m_grid.begin_active_faces()->marker();
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     max_face_index = std::max(max_face_index, face->marker());
-
-  std::cout << "max_face_index = " << max_face_index << std::endl;
   return max_face_index;
 }
 
@@ -117,5 +115,52 @@ bool EmbeddedFractureManager::is_fracture(const int face_marker) const
   else return false;
 }
 
+void EmbeddedFractureManager::distribute_mechanical_properties()
+{
+  auto & sda = data.sda_data;
+  for (std::size_t i=0; i<config.size(); ++i)
+  {
+    const size_t n_frac_cells = sda[i].cells.size();
+    sda[i].points.assign( n_frac_cells, config[i].body->center() );
+    sda[i].dip   .assign( n_frac_cells, config[i].body->plane().dip_angle() );
+    sda[i].strike.assign( n_frac_cells, config[i].body->plane().strike_angle() );
+    sda[i].cohesion       = config[i].cohesion;
+    sda[i].friction_angle = config[i].friction_angle;
+    sda[i].dilation_angle = config[i].dilation_angle;
+  }
+}
+
+void EmbeddedFractureManager::map_mechanics_to_control_volumes()
+{
+  // auto & sda = data.sda_data;
+  // // first map edfm face to pair frac-index
+  // std::unordered_map<size_t, pair<size_t, size_t>> cell_to_frac;
+  // for (std::size_t ifrac=0; ifrac<sda.size(); ++ifrac)
+  //   for (std::size_t icell=0; icell<sda[ifrac].cells.size(); ++icell)
+  //     cell_to_frac[sda[ifrac][icell]] = {ifrac, icell};
+
+  // for (std::size_t i=0; i<config.size(); ++i)
+  //   if (!sda[i].cells.empty())
+  //     sda[i].cvs.resize(sda[i].cells.size());
+
+  // for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+  //   if (is_fracture(face->marker()))
+  //   {
+  //     const mesh::Cell *p_neighbor_cell = face->neighbors()[0];
+  //     const mesh::Cell &cell_parent = p_neighbor_cell->ultimate_parent();
+  //     const auto it_pair_ifrac_icell = cell_to_frac.find(cell_parent.index());
+  //     const size_t ifrac = it_pair_ifrac_icell->second.first;
+  //     const size_t icell = it_pair_ifrac_icell->second.second;
+  //     // sda[ifrac].cvs[icell].push_back();
+  //   }
+
+  //   //   }
+  //   // }
+}
+
+std::vector<int> EmbeddedFractureManager::get_face_markers() const
+{
+  return std::vector<int>(m_edfm_markers.begin(), m_edfm_markers.end());
+}
 
 }  // end namespace gprs_data

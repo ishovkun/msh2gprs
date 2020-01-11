@@ -1,12 +1,3 @@
-// #include <preprocessor/simdata.hpp>
-// #include <preprocessor/OutputDataGPRS.hpp>
-// #include "preprocessor/OutputDataVTK.hpp"
-// #include <parsers/JsonParser.hpp>
-// #include <parsers/YamlParser.hpp>
-// #include <uint256/uint256_t.h>
-// #include <parsers/GmshReader.hpp>
-// #include <mesh/Mesh.hpp>
-
 #include "preprocessor/Preprocessor.hpp"
 #include <iostream>
 #include <string>
@@ -102,10 +93,6 @@ int main(int argc, char *argv[])
 
   // std::cout << "Handle flow embedded fractures" << std::endl;
   // preprocessor.handleEmbeddedFractures();
-
-  // // timur's legacy
-  // // cout << "Create simple wells" << endl;
-  // // pSimData->createSimpleWells();
 
   // std::cout << "Setup wells" << std::endl;
   // preprocessor.setupWells();

@@ -29,6 +29,8 @@ class Cell
   Cell & operator=(const Cell & other);
   // comparison operator
   inline bool operator==(const Cell & other) const { return index() == other.index(); }
+  // comparison operator
+  inline bool operator!=(const Cell & other) const { return !(*this == other); }
   // ---------------------- ACCESS OPERATORS ------------------------------- //
   // get cell index
   inline std::size_t index() const { return m_index; }
@@ -61,16 +63,23 @@ class Cell
   bool has_vertex(const std::size_t vertex_index) const;
   // returns true if has no children; else returns false
   inline bool is_active() const {return m_children.empty();}
-  // returns the parent index. If cell has not parents, returns it's cell index
-  inline std::size_t parent() const { return m_parent; }
-  // returns index of the parent of parent of parent of ....
-  std::size_t ultimate_parent() const;
+  // returns the parent cell. If cell has not parents, returns itself.
+  inline const Cell & parent() const { return (*pm_grid_cells)[m_parent]; }
+  // returns the parent cell. If cell has not parents, returns itself.
+  inline Cell & parent() { return (*pm_grid_cells)[m_parent]; }
+  // returns the parent of parent of parent of ....
+  const Cell & ultimate_parent() const;
+  // returns the parent of parent of parent of ....
+  Cell & ultimate_parent();
   // return a vector of child cell indices
   inline const std::vector<size_t> & children() const { return m_children; }
   // returns a vector of indices of children of children of...
   std::vector<size_t> ultimate_children() const;
 
  protected:
+  // recursive part of the public ultimate_children() method
+  void ultimate_children_(std::vector<size_t> & uc) const;
+
   // this cell stuff
   std::size_t m_index;
   int m_marker, m_vtk_id;

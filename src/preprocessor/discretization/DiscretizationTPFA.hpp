@@ -14,8 +14,10 @@ enum tpfa_method
 class DiscretizationTPFA : public DiscretizationBase
 {
  public:
-  DiscretizationTPFA(const std::vector<DiscreteFractureConfig> & dfm_fractures,
-                     gprs_data::SimData & data);
+  DiscretizationTPFA(const DoFNumbering & dof_numbering,
+                     gprs_data::SimData & data,
+                     std::vector<ControlVolumeData> & cv_data,
+                     std::vector<ConnectionData> & connection_data);
 
   virtual void build() override;
 

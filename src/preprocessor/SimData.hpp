@@ -3,6 +3,7 @@
 #include "discretization/ControlVolumeData.hpp"
 #include "discretization/ConnectionData.hpp"
 #include "mesh/Mesh.hpp"
+#include "Well.hpp"
 #include "angem/Tensor2.hpp"
 #include <unordered_map>
 
@@ -12,30 +13,56 @@ namespace gprs_data {
 struct DiscreteFractureFace
 {
   int    marker;                        // fracture marker
-  size_t cv_index;                      // index of the control volume
+  // size_t cv_index;                      // index of the control volume
   bool   coupled;                       // coupling with geomechanics
   double aperture;                      // hydraulic aperture of the fracture [m]
   double conductivity;                  // hydraulic conductivity of dfm fracture [m·md]
   std::vector<double> custom_flow_data;
 };
 
+struct EmbeddedFractureMechanicalProperties
+{
+  std::vector<std::size_t>  cells;            // cells that the fracture crosses
+  std::vector<angem::Point<3,double>> points; // points in the frac plane within the intersected cells
+  std::vector<double> dip;                    // fracture dip angle in a cell [°]
+  std::vector<double> strike;                 // fracture strike angle in a cell [°]
+  double cohesion;                            // fracture cohesive strength [bar]
+  double friction_angle;                      // fracture friction angle [°]
+  double dilation_angle;                      // fracture dilation angle [°]
+  // double aperture;                            // hydfraulic aperture [m]
+  // double conductivity;                        // hydraulic conductivity [md-m]
+  mesh::SurfaceMesh<double> mesh;             // combined grid discretization of all embedded fractures
+  std::vector<std::vector<size_t>> cvs;       // vector of vectors of connected control volumes
+};
+
 struct SimData
 {
   mesh::Mesh grid;
   // cell properties
+  // ----------------------- Reservoir cells ------------------------ //
   std::vector<std::string> property_names;
   std::vector<std::vector<double>> cell_properties;
   std::array<double,9> permeability_keys;  // permeability key indices in cell_properties
   size_t porosity_key_index;               // porosity key index in cell_properties
   std::vector<size_t> output_flow_properties;
-  std::vector<size_t> cell_cv_indices;
   // ----------------------- DFM ------------------------ //
   std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces
   mesh::SurfaceMesh<double> dfm_grid;
+  // ---------------------- EDFM ------------------------ //
+  std::vector<EmbeddedFractureMechanicalProperties> sda_data;
+  // std::unordered_map<size_t,size_t> face_to_fracture;
   // ----------------------- Flow data ---------------------- //
   std::vector<discretization::ControlVolumeData> cv_data;
   std::vector<discretization::ConnectionData> flow_connection_data;
+  // ----------------------- Well data ---------------------- //
+  std::vector<Well> wells;  // vector of well properties
+  angem::PointSet<3,double> well_vertices;  // set of well coordinatees: used for vtk output.
+  // vector of well segments: indices of well coordinate points. used for vtk output.
+  std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
+  // ----------------------- Flow degrees of freedom ---------------------- //
+  // discretization::DoFNumbering unsplit_dofs;
+  // discretization::DoFNumbering split_dofs;
   // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {

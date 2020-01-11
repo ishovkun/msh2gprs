@@ -44,33 +44,23 @@ Face & Face::operator=(const Face & other)
 
 std::vector<Cell*> Face::neighbors()
 {
-  // find how many times each vertex neighboring cell is encountered
-  std::unordered_map<size_t, size_t> cell_time;
-  for (const size_t vertex : m_vertices)
-  {
-    for (const size_t cell_index: (*pm_grid_vertex_cells)[vertex])
-    {
-      auto it = cell_time.find(cell_index);
-      if (it == cell_time.end())
-        cell_time.insert({cell_index, 1});
-      else
-        it->second++;
-    }
-  }
-
-  // cells with the count == n_vertices are the face neighbors
-  std::vector<Cell*> face_neighbors;
-  face_neighbors.reserve(2);
-  for (const auto it : cell_time)
-  {
-    if (it.second == m_vertices.size())
-    {
-      face_neighbors.push_back( &((*pm_grid_cells)[it.first]) );
-    }
-  }
-  return face_neighbors;
+  std::vector<Cell*> result;
+  const Face & this_face = *this;
+  std::vector<const Cell*> const_neibs = this_face.neighbors();
+  for (const Cell* p_cell : const_neibs)
+    result.push_back( const_cast<Cell*>(p_cell) );
+  return result;
 }
 
+std::vector<const Cell*> Face::active_neighbors() const
+{
+  std::vector<const Cell*> neibs = neighbors();
+  std::vector<const Cell*> result;
+  for (const Cell* p_cell : neibs)
+    if (p_cell->is_active())
+      result.push_back(p_cell);
+  return result;
+}
 
 std::vector<const Cell*> Face::neighbors() const
 {

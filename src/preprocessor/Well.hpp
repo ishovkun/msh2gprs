@@ -1,7 +1,7 @@
 #pragma once
 
-#include <angem/Point.hpp>
-#include <SimdataConfig.hpp>
+#include "angem/Point.hpp"
+#include "PreprocessorConfig.hpp"
 
 #include <utility>  // pair
 #include <vector>

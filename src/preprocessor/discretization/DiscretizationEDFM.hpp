@@ -14,31 +14,32 @@ namespace discretization
 class DiscretizationEDFM : public DiscretizationBase
 {
  public:
-  DiscretizationEDFM(const std::vector<DiscreteFractureConfig> & dfm_fractures,
-                     const std::vector<discretization::ControlVolumeData> & mixed_cv_data,
-                     const std::vector<discretization::ConnectionData> & mixed_connection_data,
-                     const size_t n_dfm_faces, // const size_t n_cells,
-                     gprs_data::SimData & data);
+  DiscretizationEDFM(const DoFNumbering & split_dof_numbering,
+                     const DoFNumbering & combined_dof_numbering,
+                     gprs_data::SimData & data,
+                     std::vector<ControlVolumeData> & cv_data,
+                     std::vector<ConnectionData> & connection_data,
+                     const std::vector<int> & edfm_markers);
   virtual void build() override;
-  void merge_into_matrix_dfm_discretization(std::vector<discretization::ControlVolumeData> & matrix_dfm_cv_data,
-                                            std::vector<discretization::ConnectionData> & matrix_dfm_con_data);
 
  protected:
-  void extract_control_volume_data_();
+  void build_control_volume_data_();
   void build_connection_data_();
-  void build_matrix_fracture_(const ConnectionData & con);
-  void build_edfm_edfm_(const ConnectionData & con);
-  void build_edfm_dfm_(const ConnectionData & con);
-  size_t calculate_edfm_faces_() const;
-  std::vector<size_t> find_edfm_elements_(const ConnectionData & con);
+  void build_matrix_fracture_(ConnectionData & con);
+  void build_edfm_edfm_(ConnectionData & con);
+  void build_edfm_dfm_(ConnectionData & con);
   void convert_flow_map_to_vector_();
+  void identify_edfm_faces_();
+  std::vector<size_t> find_edfm_elements_(const ConnectionData & con);
+  void create_connections_();
+  void build_fracture_fracture_connection_data_();
   // ---------------------------- Variables --------------------- //
-  // references to combiined mixed external props
-  const std::vector<ConnectionData> & m_con;
-  const std::vector<ControlVolumeData> & m_cv;
-  hash_algorithms::ConnectionMap<ConnectionData> m_con_map;
-  const size_t m_min_edfm_index;
-  const size_t m_n_edfm_faces;
+  const DoFNumbering & m_split_dofs;
+  // internal structures to compute dfm discretization after edfm cell splitting
+  std::vector<ControlVolumeData> m_split_cv;
+  std::vector<ConnectionData> m_split_con;
+  std::unordered_set<size_t> m_edfm_faces;
+  std::unordered_set<int> m_edfm_markers;
 };
 
 }  // end namespace discretization

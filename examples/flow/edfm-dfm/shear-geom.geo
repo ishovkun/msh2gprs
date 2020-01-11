@@ -2,13 +2,12 @@
 alpha = 30 * Pi / 180;
 
 domain_size = 200; // outer
-/* l = domain_size / 30; */
-lfrac = 30;
-inner_size = 4*lfrac;
+lfrac = 60;
+inner_size = 2*lfrac;
 thickness = -10;
 nz = 1;
 
-nf = 8;
+nf = 4;
 h = lfrac / nf;  // outer boundary element size
 hf = lfrac / nf;   // fracture element size - width
 

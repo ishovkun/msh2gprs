@@ -7,10 +7,13 @@ ADD_LIBRARY(preprocessor
   CellPropertyManager.cpp
   EmbeddedFractureManager.cpp
   DiscreteFractureManager.cpp
+  WellManager.cpp
+  Well.cpp
   discretization/DiscretizationBase.cpp
   discretization/DiscretizationTPFA.cpp
   discretization/DiscretizationDFM.cpp
   discretization/DiscretizationEDFM.cpp
+  DoFManager.cpp
   # element.cpp
   # OutputDataGPRS.cpp
   # OutputDataVTK.cpp

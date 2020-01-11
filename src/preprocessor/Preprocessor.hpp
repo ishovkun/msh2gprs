@@ -20,7 +20,6 @@ class Preprocessor
   void read_config_file_(const Path config_file_path);
   void read_mesh_file_(const Path mesh_file_path);
 
-
   // ------------------ Variables ----------------------- //
   PreprocessorConfig config;
   SimData data;

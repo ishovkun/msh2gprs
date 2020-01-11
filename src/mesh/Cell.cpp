@@ -121,24 +121,37 @@ Cell & Cell::operator=(const Cell & other)
   return *this;
 }
 
-std::size_t Cell::ultimate_parent() const
+const Cell & Cell::ultimate_parent() const
 {
-  size_t par = parent();
-  while ((*pm_grid_cells)[par].parent() != (*pm_grid_cells)[par].index())
-    par = (*pm_grid_cells)[par].parent();
-  return par;
+  const Cell * par = &parent();
+  while (par->parent().index() != par->index())
+    par = &par->parent();
+  return *par;
 }
+
+Cell & Cell::ultimate_parent()
+{
+  return const_cast<Cell&>(ultimate_parent());
+}
+
 
 std::vector<size_t> Cell::ultimate_children() const
 {
-  std::vector<size_t>  ch = children();
-  for (const size_t child_index : ch)
-  {
-    const Cell & child = (*pm_grid_cells)[child_index];
-    for (const size_t grand_child : child.ultimate_children())
-      ch.push_back( grand_child );
-  }
-  return ch;
+  std::vector<size_t>  uc;
+  this->ultimate_children_(uc);
+  return uc;
 }
+
+void Cell::ultimate_children_(std::vector<size_t> & uc) const
+{
+  if ( children().empty() )
+    uc.push_back(index());
+  else
+  {
+    for (const size_t ichild : children())
+      (*pm_grid_cells)[ichild].ultimate_children_(uc);
+  }
+}
+
 
 }  // end namespace
