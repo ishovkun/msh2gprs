@@ -9,6 +9,7 @@
 #include "discretization/DiscretizationEDFM.hpp"
 #include "DoFManager.hpp"
 #include "WellManager.hpp"
+#include "OutputDataVTK.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -21,6 +22,7 @@ Preprocessor::Preprocessor(const Path config_file_path)
   const Path config_dir_path = config_file_path.parent_path();
   const Path grid_file_path = config_dir_path / config.mesh_file;
   read_mesh_file_(grid_file_path);
+  m_output_dir = config_dir_path / config.output_dir;
 }
 
 void Preprocessor::run()
@@ -59,7 +61,8 @@ void Preprocessor::run()
                                                 data, data.cv_data, data.flow_connection_data,
                                                 edfm_markers);
   discr_edfm.build();
-  exit(0);
+
+  edfm_mgr.build_edfm_grid();
 
   // // setup wells
   // if (config.wells.empty())
@@ -88,6 +91,64 @@ void Preprocessor::run()
   // // generate geomechanics sda properties
   // edfm_mgr.map_mechanics_to_control_volumes();
   // edfm_mgr.distribute_mechanical_properties();
+  // size_t cnt = 0;
+  // for (auto cell = data.grid.begin_active_cells(); cell != data.grid.end_active_cells(); ++cell)
+  // {
+  //   if (cnt == 200)
+  //   {
+  //     for (auto v: cell->vertices())
+  //       std::cout << v << std::endl;
+  //     std::cout << "faces" << std::endl;
+  //     for (auto face : cell->faces())
+  //     {
+  //       for (auto v : face->vertices())
+  //         std::cout << v << " ";
+  //       std::cout << std::endl;
+  //     }
+  //     std::cout << "cell->vtk_id() = " << cell->vtk_id() << std::endl;
+
+  //   }
+  //   cnt++;
+  // }
+  // exit(0);
+  write_output_();
+}
+
+void Preprocessor::create_output_dir_()
+{
+  if (filesystem::exists(m_output_dir))
+  {
+    std::cout << "cleaning directory " << m_output_dir << std::endl;
+    filesystem::remove_all(m_output_dir);
+  }
+  std::cout << "creating directory " << m_output_dir << std::endl;
+  filesystem::create_directory(m_output_dir);
+}
+
+void Preprocessor::write_output_()
+{
+  std::cout << "Write Output data\n";
+  create_output_dir_();
+  for (auto format : config.output_formats)
+  {
+    switch (format) {
+      case OutputFormat::gprs :
+        {
+          // std::cout << "Output gprs format" << std::endl;
+          // gprs_data::OutputDataGPRS output_data(preprocessor, msh);
+          // output_data.write_output(output_dir);
+          break;
+        }
+        case OutputFormat::vtk :
+          {
+            std::cout << "Output vtk format" << std::endl;
+            gprs_data::OutputDataVTK output_data(data, config.vtk_config);
+            output_data.write_output(m_output_dir);
+            break;
+          }
+    }
+  }
+  
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

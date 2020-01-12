@@ -5,6 +5,7 @@
 
 namespace IO
 {
+using std::endl;
 
 // edfm
 void VTKWriter::write_surface_geometry(const std::vector<Point>    & vertices,
@@ -77,97 +78,8 @@ write_surface_geometry(const std::vector<Point>                    & vertices,
   out.close();
 }
 
-void VTKWriter::write_geometry(const std::vector<Point>    & vertices,
-                               const std::vector<Gelement> & elements,
-                               std::ofstream               & out)
-{
-  out << "# vtk DataFile Version 2.0 \n";
-  out << "3D Fractures \n";
-  out << "ASCII \n \n";
-  out << "DATASET UNSTRUCTURED_GRID \n";
-
-  // points
-  const std::size_t n_points = vertices.size();
-  out << "POINTS" << "\t"
-      << n_points << " float"
-      << std::endl;
-
-  for (const auto & p : vertices)
-    out << p << std::endl;
-
-  // cells
-  const std::size_t n_cells = elements.size();
-  std::size_t vind_size_total = 0;
-  for (const auto & cell : elements)
-    vind_size_total += cell.vVertices.size();
-
-  out << "CELLS" << "\t"
-      << n_cells << "\t"
-      << vind_size_total + n_cells
-      << std::endl;
-
-  for (const auto & cell : elements)
-  {
-    out << cell.vVertices.size() << "\t";
-
-    if(cell.vtkIndex == 25) // super wierd element 25
-    {
-      for (int j = 0; j < 8; j++)
-        out << cell.vVertices[j] << "\t";
-
-      out << cell.vVertices[8]  << "\t";
-      out << cell.vVertices[11] << "\t";
-      out << cell.vVertices[13] << "\t";
-      out << cell.vVertices[9]  << "\t";
-
-      out << cell.vVertices[16] << "\t";
-      out << cell.vVertices[18] << "\t";
-      out << cell.vVertices[19] << "\t";
-      out << cell.vVertices[17] << "\t";
-
-      out << cell.vVertices[10] << "\t";
-      out << cell.vVertices[12] << "\t";
-      out << cell.vVertices[14] << "\t";
-      out << cell.vVertices[15] << "\t";
-      out << std::endl;
-    }
-    else if (cell.vtkIndex == 26)
-    {
-      for (int j = 0; j < 6; j++)
-        out << cell.vVertices[j] << "\t";
-
-      out << cell.vVertices[6] << "\t";
-      out << cell.vVertices[9] << "\t";
-      out << cell.vVertices[7] << "\t";
-
-      out << cell.vVertices[12] << "\t";
-      out << cell.vVertices[14] << "\t";
-      out << cell.vVertices[13] << "\t";
-
-      out << cell.vVertices[8]  << "\t";
-      out << cell.vVertices[10] << "\t";
-      out << cell.vVertices[11] << "\t";
-      out << std::endl;
-    }
-    else
-    {
-      for (int j = 0; j < cell.vVertices.size(); j++)
-        out << cell.vVertices[j] << "\t";
-      out << std::endl;
-    }
-
-  }
-
-  // cell type
-  out << "CELL_TYPES" << "\t" << n_cells << std::endl;
-  for (const auto & cell : elements)
-    out <<  cell.vtkIndex << std::endl;
-
-}
-
-
-void VTKWriter::write_geometry(const Mesh               & grid,
-                               const std::string               & fname)
+void VTKWriter::write_geometry(const Mesh        & grid,
+                               const std::string & fname)
 {
   std::ofstream out;
   out.open(fname.c_str());
@@ -179,6 +91,15 @@ void VTKWriter::write_geometry(const Mesh               & grid,
 void VTKWriter::write_geometry(const Mesh               & grid,
                                std::ofstream            & out)
 {
+  if (grid.n_cells() == grid.n_active_cells())
+    write_geometry_classic_(grid, out);
+  else
+    write_geometry_face_based_(grid,out);
+}
+
+void VTKWriter::write_geometry_classic_(const Mesh               & grid,
+                                        std::ofstream            & out)
+{
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Fractures \n";
   out << "ASCII \n \n";
@@ -186,12 +107,8 @@ void VTKWriter::write_geometry(const Mesh               & grid,
 
   // points
   const std::size_t n_points = grid.n_vertices();
-  out << "POINTS" << "\t"
-      << n_points << " float"
-      << std::endl;
-
-  for (const auto & p : grid.vertices())
-    out << p << std::endl;
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+  for (const auto & p : grid.vertices()) out << p << std::endl;
 
   // cells
   const std::size_t n_cells = grid.n_cells();
@@ -218,6 +135,67 @@ void VTKWriter::write_geometry(const Mesh               & grid,
     out << cell->vtk_id() << std::endl;
 }
 
+void VTKWriter::write_geometry_face_based_(const Mesh & grid,
+                                           std::ofstream            & out)
+{
+  out << "# vtk DataFile Version 2.0" << endl;
+  out << "3D Fractures \n";
+  out << "ASCII" << endl;
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  // points
+  const std::size_t n_points = grid.n_vertices();
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+  for (const auto & p : grid.vertices()) out << p << std::endl;
+
+  const size_t n_entries_total = count_number_of_cell_entries_(grid);
+
+  out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << endl;
+
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+  {
+    out << count_number_of_cell_entries_(*cell) << endl;
+    const auto & faces = cell->faces();
+    out << faces.size() << endl;
+    for (const auto & face : faces)
+    {
+      const auto & vertices = face->vertices();
+      out << vertices.size() << " ";
+      for (const size_t v : vertices)
+        out << v << " ";
+      out << endl;
+    }
+  }
+
+  out << "CELL_TYPES" << "\t" << grid.n_active_cells() << std::endl;
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+    out << 42 << endl;
+    // out << cell->vtk_id() << std::endl;
+}
+
+size_t VTKWriter::count_number_of_cell_entries_(const Mesh & grid)
+{
+  size_t n = 0;
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+  {
+    n++; // n_entries
+    n += count_number_of_cell_entries_(*cell);
+  }
+  return n;
+}
+
+size_t VTKWriter::count_number_of_cell_entries_(const Cell & cell)
+{
+  size_t n = 0;
+  const auto & faces = cell.faces();
+  n++; // n_faces
+  for (const auto & face : faces)
+  {
+    n++;  // face.vertices.size()
+    n += face->vertices().size();
+  }
+  return n;
+}
 
 // this function is used to write line segments to show wells in paraview
 void VTKWriter::write_well_trajectory(const std::vector<Point>                              & vertices,

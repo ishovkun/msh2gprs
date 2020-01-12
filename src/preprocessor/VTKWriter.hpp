@@ -1,6 +1,5 @@
 #pragma once
 
-#include <GElement.hpp>
 #include "angem/Point.hpp"
 #include "Mesh.hpp"
 #include <fstream>
@@ -10,6 +9,7 @@ namespace IO
 
 using Point = angem::Point<3,double>;
 using Mesh = mesh::Mesh;
+using mesh::Cell;
 
 class VTKWriter
 {
@@ -23,20 +23,8 @@ class VTKWriter
                                      const std::vector<std::vector<std::size_t>> & cells,
                                      std::ofstream                               & out);
 
-  static void write_geometry(const Mesh               & grid,
-                             const std::string        & fname);
-
-  static void write_geometry(const Mesh               & grid,
-                             std::ofstream            & out);
-
-  // wicked old timur's Gelement format for reservoir
-  static void write_geometry(const std::vector<Point>    & vertices,
-                             const std::vector<Gelement> & elements,
-                             std::ofstream               & out);
-
-  static void write_geometry(const std::vector<Point>    & vertices,
-                             const std::vector<Gelement> & elements,
-                             const std::string           & fname);
+  static void write_geometry(const Mesh & grid, const std::string & fname);
+  static void write_geometry(const Mesh & grid, std::ofstream & out);
 
   static void write_well_trajectory(const std::vector<Point>                              & vertices,
                                     const std::vector<std::pair<std::size_t,std::size_t>> & indices,
@@ -51,6 +39,11 @@ class VTKWriter
                                       std::ofstream & out);
   static void enter_section_point_data(const std::size_t n_vertices,
                                        std::ofstream & out);
+ protected:
+  static void write_geometry_classic_(const Mesh & grid, std::ofstream & out);
+  static void write_geometry_face_based_(const Mesh & grid, std::ofstream & out);
+  static size_t count_number_of_cell_entries_(const Mesh & grid);
+  static size_t count_number_of_cell_entries_(const Cell & cell);
 
  private:
   VTKWriter();

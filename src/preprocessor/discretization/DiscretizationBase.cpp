@@ -15,7 +15,7 @@ DiscretizationBase(const DoFNumbering & dof_numbering,
       m_con_data(connection_data)
 {
   assert ( &m_cv_data );
-  if (m_cv_data.size() != m_dofs.n_dofs())
+  if (m_cv_data.size() < m_dofs.n_dofs())
     m_cv_data.resize( m_dofs.n_dofs() );
 }
 

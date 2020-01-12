@@ -16,12 +16,12 @@ ADD_LIBRARY(preprocessor
   DoFManager.cpp
   # element.cpp
   # OutputDataGPRS.cpp
-  # OutputDataVTK.cpp
+  OutputDataVTK.cpp
+  VTKWriter.cpp
   # renum.cpp
   # simdata.cpp
   # FlowData.cpp
   # transes.cpp
-  # VTKWriter.cpp
   # Well.cpp
   # MultiScaleDataMSRSB.cpp
   # MultiScaleDataMech.cpp

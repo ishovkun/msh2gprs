@@ -52,6 +52,7 @@ struct SimData
   // ---------------------- EDFM ------------------------ //
   std::vector<EmbeddedFractureMechanicalProperties> sda_data;
   // std::unordered_map<size_t,size_t> face_to_fracture;
+  mesh::SurfaceMesh<double> edfm_grid;
   // ----------------------- Flow data ---------------------- //
   std::vector<discretization::ControlVolumeData> cv_data;
   std::vector<discretization::ConnectionData> flow_connection_data;
@@ -60,9 +61,6 @@ struct SimData
   angem::PointSet<3,double> well_vertices;  // set of well coordinatees: used for vtk output.
   // vector of well segments: indices of well coordinate points. used for vtk output.
   std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
-  // ----------------------- Flow degrees of freedom ---------------------- //
-  // discretization::DoFNumbering unsplit_dofs;
-  // discretization::DoFNumbering split_dofs;
   // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {

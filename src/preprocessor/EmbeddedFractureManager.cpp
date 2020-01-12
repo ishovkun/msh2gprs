@@ -13,7 +13,7 @@ EmbeddedFractureManager::
 EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
                         const EDFMMethod edfm_method,
                         SimData & data)
-    : config(config), m_method(edfm_method), data(data), m_grid(data.grid)
+    : config(config), m_method(edfm_method), m_data(data), m_grid(data.grid)
 {}
 
 void EmbeddedFractureManager::split_cells()
@@ -117,7 +117,7 @@ bool EmbeddedFractureManager::is_fracture(const int face_marker) const
 
 void EmbeddedFractureManager::distribute_mechanical_properties()
 {
-  auto & sda = data.sda_data;
+  auto & sda = m_data.sda_data;
   for (std::size_t i=0; i<config.size(); ++i)
   {
     const size_t n_frac_cells = sda[i].cells.size();
@@ -132,7 +132,7 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
 
 void EmbeddedFractureManager::map_mechanics_to_control_volumes()
 {
-  // auto & sda = data.sda_data;
+  // auto & sda = m_data.sda_data;
   // // first map edfm face to pair frac-index
   // std::unordered_map<size_t, pair<size_t, size_t>> cell_to_frac;
   // for (std::size_t ifrac=0; ifrac<sda.size(); ++ifrac)
@@ -161,6 +161,15 @@ void EmbeddedFractureManager::map_mechanics_to_control_volumes()
 std::vector<int> EmbeddedFractureManager::get_face_markers() const
 {
   return std::vector<int>(m_edfm_markers.begin(), m_edfm_markers.end());
+}
+
+void EmbeddedFractureManager::build_edfm_grid()
+{
+  mesh::SurfaceMesh<double> edfm_grid(1e-6);
+  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+    if (is_fracture(face->marker()))
+      edfm_grid.insert(face->polygon());
+  m_data.edfm_grid = std::move(edfm_grid);
 }
 
 }  // end namespace gprs_data

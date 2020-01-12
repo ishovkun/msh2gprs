@@ -25,6 +25,8 @@ class EmbeddedFractureManager
   void map_mechanics_to_control_volumes();
   // return vector of split fracture face markers
   std::vector<int> get_face_markers() const;
+  // build edfm surface grid for vtk output
+  void build_edfm_grid();
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells);
@@ -38,7 +40,7 @@ class EmbeddedFractureManager
   // simple or pedfm
   EDFMMethod m_method;
   // will be filled
-  SimData & data;
+  SimData & m_data;
   mesh::Mesh & m_grid;
   std::set<int> m_edfm_markers;
   // std::unordered_map<size_t> m_edfm_faces;

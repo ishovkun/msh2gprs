@@ -88,7 +88,6 @@ struct WellConfig
   std::vector<bool> perforated;
 };
 
-
 struct CellPropertyConfig
 {
   // all variables used for function parsing
@@ -108,6 +107,13 @@ struct CellPropertyConfig
   }
 };
 
+struct VTKOutputConfig
+{
+  std::string reservoir_grid_file = "reservoir_mesh.vtk";
+  std::string edfm_grid_file      = "edfm.vtk";
+  std::string dfm_grid_file       = "dfm.vtk";
+  std::string wells_file          = "wells.vtk";
+};
 
 struct PreprocessorConfig
 {
@@ -137,6 +143,7 @@ struct PreprocessorConfig
   std::vector<OutputFormat> output_formats = {OutputFormat::gprs, OutputFormat::vtk};
 
   // output file names
+  std::string output_dir            = "output";
   // GPRS format
   std::string mesh_file;
   std::string domain_file           = "domain.txt";
@@ -148,10 +155,7 @@ struct PreprocessorConfig
   std::string mech_ms_file          = "ms_mech.txt";
   std::string flow_ms_file          = "ms_flow.txt";
   // VTK format
-  std::string reservoir_grid_vtk_file = "reservoir_mesh.vtk";
-  std::string edfm_grid_vtk_file      = "efrac.vtk";
-  std::string dfm_grid_vtk_file       = "dfm.vtk";
-  std::string wells_vtk_file          = "wells.vtk";
+  VTKOutputConfig vtk_config;
 };
 
 
