@@ -1,4 +1,5 @@
 #include "CellPropertyManager.hpp"
+#include "discretization/DoFNumbering.hpp"
 
 namespace gprs_data {
 
@@ -6,7 +7,7 @@ CellPropertyManager::
 CellPropertyManager(const CellPropertyConfig & cell_properties,
                     const std::vector<DomainConfig> & domain_configs,
                     SimData & data)
-    : config(cell_properties), data(data), domains(domain_configs),
+    : config(cell_properties), m_data(data), domains(domain_configs),
       m_shift(config.n_default_vars())
 {}
 
@@ -17,14 +18,14 @@ void CellPropertyManager::generate_properties()
   // current number of variables
   const std::size_t n_variables = config.all_vars.size();
   // set up container
-  data.cell_properties.resize(n_variables);
-  for (auto & property : data.cell_properties)
-    property.resize(data.grid.n_cells());
+  m_data.cell_properties.resize(n_variables);
+  for (auto & property : m_data.cell_properties)
+    property.resize(m_data.grid.n_cells());
 
   // save variables name for output
-  data.property_names.resize(n_variables - m_shift);
+  m_data.property_names.resize(n_variables - m_shift);
   for (std::size_t i=m_shift; i<config.all_vars.size(); ++i)
-    data.property_names[i - m_shift] = config.all_vars[i];
+    m_data.property_names[i - m_shift] = config.all_vars[i];
 
   // container for evaluated expressions: the properties of a current cell
   std::vector<double> vars(n_variables);
@@ -52,7 +53,7 @@ void CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
 {
   const std::size_t n_expressions = domain.expressions.size();
   const std::size_t n_variables = config.all_vars.size();
-  const auto & grid = data.grid;
+  const auto & grid = m_data.grid;
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
     if (cell->marker() == domain.label) // cells
@@ -79,9 +80,9 @@ void CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
       for (std::size_t j = m_shift; j < n_variables; ++j) {
         const size_t property_index = j - m_shift;
         try {
-          data.cell_properties[property_index][cell->index()] = vars[j];
+          m_data.cell_properties[property_index][cell->index()] = vars[j];
         } catch (std::out_of_range &e) {  // if subdomain doesn't have property assigned
-          data.cell_properties[property_index][cell->index()] = 0;
+          m_data.cell_properties[property_index][cell->index()] = 0;
         }
       }
     } // end match label
@@ -136,29 +137,29 @@ void CellPropertyManager::build_permeability_function_()
   bool found_perm_x = false;
   bool found_perm_y = false;
   bool found_perm_z = false;
-  for (std::size_t i = 0; i < data.property_names.size(); i++)
+  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
   {
-    const auto & key = data.property_names[i];
+    const auto & key = m_data.property_names[i];
     if (key == "PERMX")
     {
       found_perm_x = true;
-      data.permeability_keys[0] = i;
+      m_data.permeability_keys[0] = i;
     }
     else if (key == "PERMY")
     {
       found_perm_y = true;
-      data.permeability_keys[1*3 + 1] = i;
+      m_data.permeability_keys[1*3 + 1] = i;
     }
     else if (key == "PERMZ")
     {
       found_perm_z = true;
-      data.permeability_keys[2*3 + 2] = i;
+      m_data.permeability_keys[2*3 + 2] = i;
     }
     else if (key == "PERM")
     {
-      data.permeability_keys[0] = i;
-      data.permeability_keys[1*3 + 1] = i;
-      data.permeability_keys[2*3 + 2] = i;
+      m_data.permeability_keys[0] = i;
+      m_data.permeability_keys[1*3 + 1] = i;
+      m_data.permeability_keys[2*3 + 2] = i;
       found_perm_x = true;
       found_perm_y = true;
       found_perm_z = true;
@@ -172,12 +173,12 @@ void CellPropertyManager::build_permeability_function_()
 
 void CellPropertyManager::build_porosity_function_()
 {
-  for (std::size_t i = 0; i < data.property_names.size(); i++)
+  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
   {
-    const auto & key = data.property_names[i];
+    const auto & key = m_data.property_names[i];
     if (key == "PORO")
     {
-      data.porosity_key_index = i;
+      m_data.porosity_key_index = i;
       return;
     }
   }
@@ -185,13 +186,24 @@ void CellPropertyManager::build_porosity_function_()
 
 void CellPropertyManager::build_flow_output_property_keys_()
 {
-  for (size_t j = 0; j < data.property_names.size(); j++)
+  for (size_t j = 0; j < m_data.property_names.size(); j++)
   {
-    if (std::find(data.permeability_keys.begin(),
-                  data.permeability_keys.end(), j) ==
-                  data.permeability_keys.end())
-        if (j != data.porosity_key_index)
-      data.output_flow_properties.push_back(j);
+    if (std::find(m_data.permeability_keys.begin(),
+                  m_data.permeability_keys.end(), j) ==
+                  m_data.permeability_keys.end())
+        if (j != m_data.porosity_key_index)
+      m_data.output_flow_properties.push_back(j);
+  }
+}
+
+void CellPropertyManager::map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
+{
+  const auto & grid = m_data.grid;
+  m_data.gmcell_to_flowcells.resize(grid.n_active_cells());
+  // simdata vector coupled
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+  {
+    m_data.gmcell_to_flowcells[cell->index()].push_back(dofs.cell_dof(cell->index()));
   }
 }
 

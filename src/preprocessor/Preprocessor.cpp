@@ -4,6 +4,7 @@
 #include "CellPropertyManager.hpp"
 #include "EmbeddedFractureManager.hpp"
 #include "DiscreteFractureManager.hpp"
+#include "BoundaryConditionManager.hpp"
 #include "discretization/DiscretizationTPFA.hpp"
 #include "discretization/DiscretizationDFM.hpp"
 #include "discretization/DiscretizationEDFM.hpp"
@@ -63,6 +64,12 @@ void Preprocessor::run()
   discr_edfm.build();
 
   edfm_mgr.build_edfm_grid();
+  // generate geomechanics sda properties
+  edfm_mgr.distribute_mechanical_properties();
+  // map mechanics cells to control volumes
+  property_mgr.map_mechanics_to_control_volumes(unsplit_dofs);
+  // map sda cells to flow dofs
+  edfm_mgr.map_mechanics_to_control_volumes(unsplit_dofs);
 
   // // setup wells
   // if (config.wells.empty())
@@ -77,40 +84,9 @@ void Preprocessor::run()
   // data.grid.coarsen_cells();
   // property_mgr.generate_properties();
   // discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
-  // dfm_mgr.distribute_properties();
-  // discretization::DiscretizationDFM discr_dfm(config.discrete_fractures, data);
-  // discr_dfm.build();
 
-  // // merge dfm and matrix discretizations
-  // discr_dfm.merge_from_matrix_discretization(matrix_discr.get_cell_data(),
-  //                                            matrix_discr.get_face_data());
-
-  // // finally, merge edfm, dfm, and matrix discretizations
-  // discr_edfm.merge_into_matrix_dfm_discretization(discr_dfm.get_cell_data(),
-  //                                                 discr_dfm.get_face_data());
-  // // generate geomechanics sda properties
-  // edfm_mgr.map_mechanics_to_control_volumes();
-  // edfm_mgr.distribute_mechanical_properties();
-  // size_t cnt = 0;
-  // for (auto cell = data.grid.begin_active_cells(); cell != data.grid.end_active_cells(); ++cell)
-  // {
-  //   if (cnt == 200)
-  //   {
-  //     for (auto v: cell->vertices())
-  //       std::cout << v << std::endl;
-  //     std::cout << "faces" << std::endl;
-  //     for (auto face : cell->faces())
-  //     {
-  //       for (auto v : face->vertices())
-  //         std::cout << v << " ";
-  //       std::cout << std::endl;
-  //     }
-  //     std::cout << "cell->vtk_id() = " << cell->vtk_id() << std::endl;
-
-  //   }
-  //   cnt++;
-  // }
-  // exit(0);
+  BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
+  bc_mgr.create_properties();
   write_output_();
 }
 
@@ -148,7 +124,6 @@ void Preprocessor::write_output_()
           }
     }
   }
-  
 }
 
 void Preprocessor::read_config_file_(const Path config_file_path)

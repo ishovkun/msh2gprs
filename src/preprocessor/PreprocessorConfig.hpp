@@ -40,12 +40,16 @@ struct BCNodeConfig
   angem::Point<3,double> coord;
 };
 
+enum BoundaryConditionType : int
+{
+  dirichlet = 1, neumann = 2
+};
 
 // Structure that holds info on mechanical user-defined boundary conditions
 struct BCConfig
 {
   int label;
-  int type;
+  BoundaryConditionType type;
   angem::Point<3,double> value;
 };
 

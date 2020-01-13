@@ -1,14 +1,18 @@
 #include "YamlParser.hpp"
 #include "yaml-cpp/node/parse.h"  // loadfile
 #include "angem/Rectangle.hpp"
+#include <algorithm>  // std::foreach
+#include <string>
+#include <cctype>  // tolower
 
 
 namespace Parsers
 {
 
+using std::string;
+
 YamlParser::YamlParser()
 {}
-
 
 void YamlParser::parse_file(const std::string & fname)
 {
@@ -41,9 +45,7 @@ void YamlParser::parse_file(const std::string & fname)
     else
       std::cout << "Unknown key: " << key << " skipping" << std::endl;
   }
-
 }
-
 
 void YamlParser::embedded_fracs(const YAML::Node & node)
 {
@@ -76,7 +78,6 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
   }
 }
 
-
 void YamlParser::discrete_fracs(const YAML::Node & node)
 {
   for (auto it = node.begin(); it!=node.end(); ++it)
@@ -104,7 +105,6 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
   }
 
 }
-
 
 void YamlParser::embedded_fracture(const YAML::Node       & node,
                                    EmbeddedFractureConfig & conf)
@@ -202,7 +202,6 @@ void YamlParser::discrete_fracture(const YAML::Node       & node,
   }
 }
 
-
 void YamlParser::section_domain_props(const YAML::Node & node,
                                       const int          var_type)
 {
@@ -249,9 +248,7 @@ void YamlParser::section_domain_props(const YAML::Node & node,
     else
       std::cout << "attribute " << key << " unknown: skipping" << std::endl;
   }
-
 }
-
 
 void YamlParser::domain(const YAML::Node & node,
                         const int          var_type,
@@ -318,7 +315,6 @@ void YamlParser::boundary_conditions(const YAML::Node & node)
 
 }
 
-
 void YamlParser::boundary_conditions_faces(const YAML::Node & node)
 {
   for (auto it = node.begin(); it!=node.end(); ++it)
@@ -337,7 +333,6 @@ void YamlParser::boundary_conditions_faces(const YAML::Node & node)
   }
 }
 
-
 void YamlParser::bc_face(const YAML::Node & node,
                          BCConfig         & conf)
 {
@@ -347,7 +342,15 @@ void YamlParser::bc_face(const YAML::Node & node,
     std::cout << "\t\t\treading entry " << key << std::endl;
 
     if (key == "type")
-      conf.type = it->second.as<int>();
+    {
+      string strkey = it->second.as<string>();
+      std::for_each(strkey.begin(), strkey.end(), [](char & c){c = ::tolower(c);});
+      if ( strkey == "1" || strkey == "dirichlet" )
+        conf.type = BoundaryConditionType::dirichlet;
+      else if ( strkey == "2" || strkey == "neumann" )
+        conf.type = BoundaryConditionType::neumann;
+      else throw std::invalid_argument("Wrong BC type");
+    }
     else if (key == "label")
       conf.label = it->second.as<int>();
     else if (key == "value")
@@ -367,7 +370,6 @@ void YamlParser::bc_face(const YAML::Node & node,
       std::cout << "attribute " << key << " unknown: skipping" << std::endl;
   }
 }
-
 
 void YamlParser::boundary_conditions_nodes(const YAML::Node & node)
 {
@@ -391,7 +393,6 @@ void YamlParser::boundary_conditions_nodes(const YAML::Node & node)
       std::cout << "attribute " << key << " unknown: skipping" << std::endl;
   }
 }
-
 
 void YamlParser::bc_node(const YAML::Node & node, BCNodeConfig & conf)
 {
@@ -422,7 +423,6 @@ void YamlParser::bc_node(const YAML::Node & node, BCNodeConfig & conf)
   }
 }
 
-
 DomainConfig & YamlParser::get_domain_config(const int label)
 {
   // find current domain id in existing config
@@ -446,7 +446,6 @@ DomainConfig & YamlParser::get_domain_config(const int label)
     return config.domains[counter];
 }
 
-
 void YamlParser::section_wells(const YAML::Node & node)
 {
   for (auto it = node.begin(); it!=node.end(); ++it)
@@ -465,7 +464,6 @@ void YamlParser::section_wells(const YAML::Node & node)
       std::cout << "\tSkipping unknown keyword" << std::endl;
   }
 }
-
 
 void YamlParser::read_well(const YAML::Node & node,
                            WellConfig       & well)
@@ -527,7 +525,6 @@ void YamlParser::read_well(const YAML::Node & node,
     }
   }
 }
-
 
 void YamlParser::section_multiscale(const YAML::Node & node)
 {

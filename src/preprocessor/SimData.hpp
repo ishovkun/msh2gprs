@@ -22,17 +22,15 @@ struct DiscreteFractureFace
 
 struct EmbeddedFractureMechanicalProperties
 {
-  std::vector<std::size_t>  cells;            // cells that the fracture crosses
+  std::vector<std::size_t>  cells;            // unsplit mechanics cells that the fracture crosses
+  std::vector<std::vector<size_t>> faces;     // split face indices
   std::vector<angem::Point<3,double>> points; // points in the frac plane within the intersected cells
   std::vector<double> dip;                    // fracture dip angle in a cell [°]
   std::vector<double> strike;                 // fracture strike angle in a cell [°]
   double cohesion;                            // fracture cohesive strength [bar]
   double friction_angle;                      // fracture friction angle [°]
   double dilation_angle;                      // fracture dilation angle [°]
-  // double aperture;                            // hydfraulic aperture [m]
-  // double conductivity;                        // hydraulic conductivity [md-m]
   mesh::SurfaceMesh<double> mesh;             // combined grid discretization of all embedded fractures
-  std::vector<std::vector<size_t>> cvs;       // vector of vectors of connected control volumes
 };
 
 struct SimData
@@ -61,6 +59,9 @@ struct SimData
   angem::PointSet<3,double> well_vertices;  // set of well coordinatees: used for vtk output.
   // vector of well segments: indices of well coordinate points. used for vtk output.
   std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
+  // ----------------------- Boundary conditions ------------ //
+  // ----------------------- Other ---------------------- //
+  std::vector<std::vector<size_t>> gmcell_to_flowcells;
   // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {

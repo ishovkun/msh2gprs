@@ -93,6 +93,7 @@ DoFNumbering DoFManager::distribute_unsplit_dofs()
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
     if (cell->parent() == *cell)  // skip refined cells here
     {
+      dofs.m_cells[cell->index()] = dof;
       for (const size_t icell : cell->ultimate_children())
         dofs.m_cells[icell] = dof;
       dof++;

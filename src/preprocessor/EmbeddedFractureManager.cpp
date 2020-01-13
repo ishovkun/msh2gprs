@@ -19,8 +19,9 @@ EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
 void EmbeddedFractureManager::split_cells()
 {
   int face_marker = find_maximum_face_marker_() + 1;
-  for (auto & frac : config)  // non-const since we can shift it
+  for (std::size_t i=0; i<config.size(); ++i)
   {
+    auto & frac = config[i];
     std::vector<size_t> cells_to_split;
     // iteratively shift fracture if it collides with any grid vertices
     size_t iter = 0;
@@ -32,7 +33,7 @@ void EmbeddedFractureManager::split_cells()
     }
 
     split_cells_(*frac.body, cells_to_split, face_marker);
-    m_edfm_markers.insert(face_marker);
+    m_marker_config.insert({ face_marker, i });
     face_marker++;
   }
 }
@@ -58,7 +59,6 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
   for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
   {
     const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell->polyhedron();
-    // const angem::Polyhedron<double> & poly_cell = *pol;
     if (collision.check(fracture, *polyhedron))
     {
       cells.push_back(cell->index());
@@ -86,16 +86,14 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
 std::vector<DiscreteFractureConfig> EmbeddedFractureManager::generate_dfm_config()
 {
   std::vector<DiscreteFractureConfig> dfms;
-  size_t i = 0;
-  for (const int marker : m_edfm_markers)
+  for ( const auto it : m_marker_config )
   {
-    const auto & conf = config[i];
+    const auto & conf = config[it.second];
     DiscreteFractureConfig dfm;
-    dfm.label = marker;
+    dfm.label = it.first;
     dfm.conductivity = conf.conductivity;
     dfm.aperture = conf.aperture;
     dfms.push_back(std::move(dfm));
-    i++;
   }
 
   return dfms;
@@ -111,12 +109,14 @@ int EmbeddedFractureManager::find_maximum_face_marker_() const
 
 bool EmbeddedFractureManager::is_fracture(const int face_marker) const
 {
-  if (m_edfm_markers.find(face_marker) != m_edfm_markers.end()) return true;
+  if (m_marker_config.find(face_marker) != m_marker_config.end()) return true;
   else return false;
 }
 
 void EmbeddedFractureManager::distribute_mechanical_properties()
 {
+  find_edfm_cells_and_faces_();
+
   auto & sda = m_data.sda_data;
   for (std::size_t i=0; i<config.size(); ++i)
   {
@@ -130,37 +130,61 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
   }
 }
 
-void EmbeddedFractureManager::map_mechanics_to_control_volumes()
+void EmbeddedFractureManager::
+map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
 {
-  // auto & sda = m_data.sda_data;
-  // // first map edfm face to pair frac-index
-  // std::unordered_map<size_t, pair<size_t, size_t>> cell_to_frac;
-  // for (std::size_t ifrac=0; ifrac<sda.size(); ++ifrac)
-  //   for (std::size_t icell=0; icell<sda[ifrac].cells.size(); ++icell)
-  //     cell_to_frac[sda[ifrac][icell]] = {ifrac, icell};
+  if (m_data.gmcell_to_flowcells.size() != m_grid.n_active_cells())
+    m_data.gmcell_to_flowcells.resize(m_grid.n_active_cells());
 
-  // for (std::size_t i=0; i<config.size(); ++i)
-  //   if (!sda[i].cells.empty())
-  //     sda[i].cvs.resize(sda[i].cells.size());
+  for (std::size_t ifrac=0; ifrac<m_data.sda_data.size(); ++ifrac)
+  {
+    const auto & frac = m_data.sda_data[ifrac];
+    // for (const size_t iface : frac.faces)
+    for (std::size_t icell=0; icell<frac.cells.size(); ++icell)
 
-  // for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
-  //   if (is_fracture(face->marker()))
-  //   {
-  //     const mesh::Cell *p_neighbor_cell = face->neighbors()[0];
-  //     const mesh::Cell &cell_parent = p_neighbor_cell->ultimate_parent();
-  //     const auto it_pair_ifrac_icell = cell_to_frac.find(cell_parent.index());
-  //     const size_t ifrac = it_pair_ifrac_icell->second.first;
-  //     const size_t icell = it_pair_ifrac_icell->second.second;
-  //     // sda[ifrac].cvs[icell].push_back();
-  //   }
+    {
+      // first map cell cv
+      const size_t cell_cv = dofs.cell_dof(frac.cells[icell]);
+      for (const size_t iface : frac.faces[icell])
+        m_data.gmcell_to_flowcells[cell_cv].push_back( dofs.face_dof(iface) );
+    }
 
-  //   //   }
-  //   // }
+  }
+}
+
+void EmbeddedFractureManager::find_edfm_cells_and_faces_()
+{
+  std::vector<std::unordered_map<size_t,std::vector<size_t>>> cells_frac_faces(config.size());
+  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+    if (is_fracture(face->marker()))
+    {
+      const mesh::Cell *p_neighbor_cell = face->active_neighbors()[0];
+      const mesh::Cell &cell_parent = p_neighbor_cell->ultimate_parent();
+      const size_t ifrac = fracture_index_(face->marker());
+      cells_frac_faces[ifrac][cell_parent.index()].push_back(face->index());
+    }
+  auto & sda = m_data.sda_data;
+  sda.resize(config.size());
+  for (std::size_t ifrac=0; ifrac<sda.size(); ++ifrac)
+  {
+    const auto & cells_faces = cells_frac_faces[ifrac];
+    sda[ifrac].cells.reserve( cells_faces.size() );
+    sda[ifrac].faces.reserve( cells_faces.size() );
+    for (const auto & it : cells_faces)
+    {
+      sda[ifrac].cells.push_back(it.first);
+      sda[ifrac].faces.push_back(it.second);
+    }
+  }
 }
 
 std::vector<int> EmbeddedFractureManager::get_face_markers() const
 {
-  return std::vector<int>(m_edfm_markers.begin(), m_edfm_markers.end());
+  std::vector<int> result;
+  result.reserve(m_marker_config.size());
+  for ( const auto it : m_marker_config )
+    result.push_back(it.first);
+  return result;
 }
 
 void EmbeddedFractureManager::build_edfm_grid()
@@ -171,5 +195,11 @@ void EmbeddedFractureManager::build_edfm_grid()
       edfm_grid.insert(face->polygon());
   m_data.edfm_grid = std::move(edfm_grid);
 }
+
+size_t EmbeddedFractureManager::fracture_index_(const int face_marker) const
+{
+  return m_marker_config.find(face_marker)->second;
+}
+
 
 }  // end namespace gprs_data

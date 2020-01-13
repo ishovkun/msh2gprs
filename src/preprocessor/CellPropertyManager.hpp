@@ -2,6 +2,7 @@
 
 #include "PreprocessorConfig.hpp"
 #include "SimData.hpp"
+#include "discretization/DoFNumbering.hpp"
 #include "muparser/muParser.h" // parser for user-defined expressions for reservoir data
 
 namespace gprs_data {
@@ -13,6 +14,7 @@ class CellPropertyManager
                       const std::vector<DomainConfig> & domain_configs,
                       SimData & data);
   void generate_properties();
+  void map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs);
 
  private:
   void print_setup_message_();
@@ -28,7 +30,7 @@ class CellPropertyManager
 
   const CellPropertyConfig        & config;
   const std::vector<DomainConfig> & domains;
-  SimData & data;
+  SimData & m_data;
   // number of default variable in config
   // these variables are not output, so I don't save them
   // should be 3=x+y+z
