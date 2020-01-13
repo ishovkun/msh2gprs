@@ -29,8 +29,6 @@ Preprocessor::Preprocessor(const Path config_file_path)
 void Preprocessor::run()
 {
   DiscreteFractureManager dfm_mgr(config.discrete_fractures, data);
-  const size_t n_dfm_faces = dfm_mgr.count_dfm_faces();
-  const size_t n_cells = data.grid.n_cells();
 
   /* Split cells due to edfm intersection */
   EmbeddedFractureManager edfm_mgr(config.embedded_fractures, config.edfm_method, data);

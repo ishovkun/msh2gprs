@@ -60,6 +60,8 @@ struct SimData
   // vector of well segments: indices of well coordinate points. used for vtk output.
   std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
   // ----------------------- Boundary conditions ------------ //
+  std::vector<size_t> neumann_face_indices;
+  std::vector<angem::Point<3,double>> neumann_face_traction;
   // ----------------------- Other ---------------------- //
   std::vector<std::vector<size_t>> gmcell_to_flowcells;
   // --------------------- Methods --------------------------------- //
