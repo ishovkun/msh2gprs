@@ -12,6 +12,7 @@ namespace discretization {
 class DoFNumbering
 {
  public:
+  DoFNumbering() : m_n_dofs(0) {};
   inline size_t cell_dof(const size_t cell_index) const {
     assert( cell_index < m_cells.size() );
     return m_cells[cell_index];
@@ -26,7 +27,6 @@ class DoFNumbering
   inline size_t n_dofs() const { return m_n_dofs; }
 
  protected:
-  DoFNumbering() : m_n_dofs(0) {};
   std::vector<size_t> m_cells;               // cell to cv
   std::unordered_map<size_t,size_t> m_faces; // face to cv
   size_t m_n_dofs;                           // total number of degrees of freedom

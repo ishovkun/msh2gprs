@@ -1,7 +1,7 @@
 Mesh file: geom.msh
 
 Embedded Fractures :
-  # method: projection
+  method: projection
   fracture:
     type: Rectangle
     center: [0, 0, 0]

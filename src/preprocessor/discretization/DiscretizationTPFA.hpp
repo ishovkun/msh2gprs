@@ -20,18 +20,14 @@ class DiscretizationTPFA : public DiscretizationBase
                      std::vector<ConnectionData> & connection_data);
 
   virtual void build() override;
+  static void build_mo(ConnectionData & connection,
+                       const ControlVolumeData & cell1,
+                       const ControlVolumeData & cell2);
 
  protected:
   void build_kirill(const mesh::Face & face,
                     ConnectionData                  & data);
-  void build_mo(const mesh::Face & face,
-                ConnectionData                  & data);
 
-  // shift of controle volume indices
-  // used i.e. when grid is a subdomain or when
-  // domain control volumes follow fracture control volumes
-  // in numbering
-  size_t m_shift;
   const int m_method;
 };
 

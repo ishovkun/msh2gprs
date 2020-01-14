@@ -13,7 +13,11 @@ class CellPropertyManager
   CellPropertyManager(const CellPropertyConfig & cell_properties,
                       const std::vector<DomainConfig> & domain_configs,
                       SimData & data);
+  // take config and fill out the grid with properties
   void generate_properties();
+  // create properties that occured after cell splitting
+  void downscale_properties();
+  // map coarse geomechanics cells to flow CVs
   void map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs);
 
  private:
@@ -35,6 +39,7 @@ class CellPropertyManager
   // these variables are not output, so I don't save them
   // should be 3=x+y+z
   const size_t m_shift;
+  const size_t m_n_unrefined_cells;
 };
 
 }  // end namespace gprs_data

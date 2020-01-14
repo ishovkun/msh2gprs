@@ -1,5 +1,6 @@
 #include "DiscretizationDFM.hpp"
 #include "angem/Tensor2.hpp"
+#include "DiscretizationTPFA.hpp"
 #include <cmath>  // std::isnan
 #include <numeric>  // std::accumulate
 
@@ -19,13 +20,17 @@ DiscretizationDFM::DiscretizationDFM(const DoFNumbering & dof_numbering,
 
 void DiscretizationDFM::build()
 {
+  DiscretizationTPFA matrix_discr(m_dofs, m_data, m_cv_data, m_con_data);
+  matrix_discr.build();
+
   build_cell_data_();
 
   // build connection lists (no data)
   build_fracture_matrix_connections();
 
   for (auto & con : m_con_data)
-    build_matrix_fracture_(con);
+    if (con.type == ConnectionType::fracture_fracture)
+      build_matrix_fracture_(con);
 
   // build fracture-fracture transes
   build_fracture_fracture_connections();
@@ -34,7 +39,6 @@ void DiscretizationDFM::build()
 
 void DiscretizationDFM::build_cell_data_()
 {
-  std::unordered_set<size_t> bounding_cells;
   for (const auto & pair_face_index_property : m_data.dfm_faces)
   {
     // this should be some other container
@@ -54,25 +58,6 @@ void DiscretizationDFM::build_cell_data_()
     data.aperture = face_props.aperture;
     data.custom = face_props.custom_flow_data;
     const auto cells = face.neighbors();
-    bounding_cells.insert(cells[0]->index());
-    bounding_cells.insert(cells[1]->index());
-  }
-
-  // we need bounding cell properties to build
-  // matrix-fracture connections
-  for (const std::size_t i : bounding_cells)
-  {
-    const auto & cell = m_grid.cell(i);
-    const size_t idof = m_dofs.cell_dof(cell.index());
-    auto & data = m_cv_data[idof];
-    data.type = ControlVolumeType::cell;
-    data.master = i;
-    data.center = cell.center();
-    data.volume = cell.volume();
-    data.permeability = m_data.get_permeability(i);
-    data.custom.resize(m_data.output_flow_properties.size());
-    for (size_t j = 0; j < m_data.output_flow_properties.size(); ++j)
-      data.custom[j] = m_data.cell_properties[m_data.output_flow_properties[j]][i];
   }
 }
 

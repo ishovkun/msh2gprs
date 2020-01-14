@@ -18,11 +18,11 @@ struct ConnectionData
   std::vector<double> coefficients;  // transmissibilities
   std::vector<size_t> elements;      // dofs that form a connection
   std::vector<double> distances;     // distance from cv center to connection
-  double area;                       // connection area
+  double area = 0;                   // connection area
   angem::Point<3,double> normal;
   angem::Point<3,double> center;
   // for fractures only
-  double edge_length;                    // frac-frac edge length
+  double edge_length = 0;                // frac-frac edge length
   angem::Point<3,double> edge_direction; // unit vector from one vertex to another
   std::vector<size_t> all_elements;      // star delta participants
 };

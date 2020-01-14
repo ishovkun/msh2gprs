@@ -78,8 +78,8 @@ struct SimData
 
   double get_porosity(const std::size_t cell) const
   {
-    assert(cell < property_names.size());
     assert(porosity_key_index > 0 && porosity_key_index < property_names.size());
+    assert ( cell < cell_properties[porosity_key_index].size() );
     return cell_properties[porosity_key_index][cell];
   }
 

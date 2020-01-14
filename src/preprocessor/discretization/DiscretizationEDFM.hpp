@@ -1,6 +1,7 @@
 #pragma once
 #include "DiscretizationBase.hpp"
 #include "ConnectionMap.hpp"
+#include "PreprocessorConfig.hpp"  // edfm_method
 
 namespace discretization
 {
@@ -19,7 +20,8 @@ class DiscretizationEDFM : public DiscretizationBase
                      gprs_data::SimData & data,
                      std::vector<ControlVolumeData> & cv_data,
                      std::vector<ConnectionData> & connection_data,
-                     const std::vector<int> & edfm_markers);
+                     const std::vector<int> & edfm_markers,
+                     const EDFMMethod method);
   virtual void build() override;
 
  protected:
@@ -29,7 +31,10 @@ class DiscretizationEDFM : public DiscretizationBase
   void build_matrix_dfm_(ConnectionData & con);
   void identify_edfm_faces_();
   std::vector<size_t> find_edfm_elements_(const ConnectionData & con);
-  void create_connections_();
+  std::vector<std::size_t> create_connections_();
+  void build_pedfm_();
+  std::vector<const mesh::Face*> pedfm_select_faces_(const mesh::Face & frac_face) const;
+  size_t pedfm_find_other_cell_(const mesh::Face & frac, const mesh::Face & other) const;
   // ---------------------------- Variables --------------------- //
   const DoFNumbering & m_split_dofs;
   // internal structures to compute dfm discretization after edfm cell splitting
@@ -37,6 +42,8 @@ class DiscretizationEDFM : public DiscretizationBase
   std::vector<ConnectionData> m_split_con;
   std::unordered_set<size_t> m_edfm_faces;
   std::unordered_set<int> m_edfm_markers;
+  const EDFMMethod m_method;
+  hash_algorithms::ConnectionMap<ConnectionData> m_con_map;
 };
 
 }  // end namespace discretization

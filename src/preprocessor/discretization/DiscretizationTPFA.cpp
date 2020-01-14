@@ -24,18 +24,21 @@ void DiscretizationTPFA::build()
   DiscretizationBase::build_cell_data_();
 
   m_con_data.reserve(m_con_data.size() + m_grid.n_faces());
-  size_t iface = 0;
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
   {
     if (face->neighbors().size() == 2)
       if (!m_dofs.is_active_face(face->index()))
       {
         m_con_data.emplace_back();
-        if (m_method == tpfa_method::kirill)
-          build_kirill(*face, m_con_data.back());
-        else // if (method == tpfa_method::mo)
-          build_mo(*face, m_con_data.back());
-        iface++;
+        auto & con = m_con_data.back();
+        const auto cells = face->neighbors();
+        const size_t cv1 = m_dofs.cell_dof(cells[0]->index());
+        const size_t cv2 = m_dofs.cell_dof(cells[1]->index());
+        con.elements = {cv1, cv2};
+        con.center = face->center();
+        con.normal = face->normal();
+        con.area = face->area();
+        build_mo(con, m_cv_data[ con.elements[0] ], m_cv_data[ con.elements[1] ]);
       }
   }
 }
@@ -46,10 +49,10 @@ void DiscretizationTPFA::build_kirill(const mesh::Face & face,
 {
   // Point nfmf, center0, center1, center_face;
   const auto cells = face.neighbors();
-  const size_t i = m_shift + cells[0]->index();
-  const size_t j = m_shift + cells[1]->index();
-  const auto & cell1 = m_cv_data[ m_dofs.cell_dof(cells[0]->index()) ];
-  const auto & cell2 = m_cv_data[ m_dofs.cell_dof(cells[1]->index()) ];
+  const size_t cv1 = m_dofs.cell_dof(cells[0]->index());
+  const size_t cv2 = m_dofs.cell_dof(cells[1]->index());
+  const auto & cell1 = m_cv_data[ cv1 ];
+  const auto & cell2 = m_cv_data[ cv2 ];
 
   const Point center_face = face.center();
   const Point d1 = cell1.center - center_face;
@@ -101,8 +104,8 @@ void DiscretizationTPFA::build_kirill(const mesh::Face & face,
   // NOTE: We need to save D for the TPFACONNSN keyword
 
   data.elements.resize(2);
-  data.elements[0] = i;
-  data.elements[1] = j;
+  data.elements[0] = cv1;
+  data.elements[1] = cv2;
 
   data.coefficients.resize(2);
   data.coefficients[0] = -T;
@@ -111,21 +114,16 @@ void DiscretizationTPFA::build_kirill(const mesh::Face & face,
 }
 
 
-void DiscretizationTPFA::build_mo(const mesh::Face & face,
-                                  ConnectionData   & data)
+void DiscretizationTPFA::build_mo(ConnectionData & con,
+                                  const ControlVolumeData & cell1,
+                                  const ControlVolumeData & cell2)
 {
-  const auto cells = face.neighbors();
-  const size_t cv1 = m_shift + cells[0]->index();
-  const size_t cv2 = m_shift + cells[1]->index();
-
-  const auto & cell1 = m_cv_data[ m_dofs.cell_dof(cells[0]->index()) ];
-  const auto & cell2 = m_cv_data[ m_dofs.cell_dof(cells[1]->index()) ];
 
   // define face projection point
   const Point & c1 = cell1.center;
   const Point & c2 = cell2.center;
-  const Point cf = face.center();
-  const Point n = face.normal();
+  const Point & cf = con.center;
+  const Point & n = con.normal;
   // projection point
   const double t =  (cf - c1).dot(n) / (c2 - c1).dot(n);
   const Point cp = c1 + t*(c2 - c1);
@@ -136,21 +134,13 @@ void DiscretizationTPFA::build_mo(const mesh::Face & face,
   const double Kp1 = (K1 * (c1 - cp).normalize()).norm();
   const double Kp2 = (K2 * (c2 - cp).normalize()).norm();
   // cell-face transmissibility
-  const double face_area = face.area();
+  const double face_area = con.area;
   const double T1 = face_area * Kp1 / (c1 - cp).norm();
   const double T2 = face_area * Kp2 / (c2 - cp).norm();
   // face transmissibility
   const double T = T1*T2 / ( T1 + T2 );
-
-  // save into container
-  data.elements.resize(2);
-  data.elements[0] = cv1;
-  data.elements[1] = cv2;
-
-  data.coefficients.resize(2);
-  data.coefficients[0] = -T;
-  data.coefficients[1] =  T;
-  data.type = ConnectionType::matrix_matrix;
+  con.coefficients = {-T, T};
+  con.type = ConnectionType::matrix_matrix;
 }
 
 }

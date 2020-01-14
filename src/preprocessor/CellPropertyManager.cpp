@@ -8,7 +8,7 @@ CellPropertyManager(const CellPropertyConfig & cell_properties,
                     const std::vector<DomainConfig> & domain_configs,
                     SimData & data)
     : config(cell_properties), m_data(data), domains(domain_configs),
-      m_shift(config.n_default_vars())
+      m_shift(config.n_default_vars()), m_n_unrefined_cells(data.grid.n_cells())
 {}
 
 void CellPropertyManager::generate_properties()
@@ -199,12 +199,22 @@ void CellPropertyManager::build_flow_output_property_keys_()
 void CellPropertyManager::map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
 {
   const auto & grid = m_data.grid;
-  m_data.gmcell_to_flowcells.resize(grid.n_active_cells());
+  m_data.gmcell_to_flowcells.resize(m_n_unrefined_cells);
   // simdata vector coupled
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-  {
-    m_data.gmcell_to_flowcells[cell->index()].push_back(dofs.cell_dof(cell->index()));
-  }
+    m_data.gmcell_to_flowcells[cell->ultimate_parent().index()].push_back(dofs.cell_dof(cell->index()));
+}
+
+void CellPropertyManager::downscale_properties()
+{
+  const auto & grid = m_data.grid;
+  const size_t n_raw_cells = grid.n_cells();
+  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
+    m_data.cell_properties[i].resize( n_raw_cells );
+
+  for (auto raw = grid.begin_cells() + m_n_unrefined_cells; raw != grid.end_cells(); ++raw )
+    for (std::size_t i = 0; i < m_data.property_names.size(); i++)
+      m_data.cell_properties[i][raw->index()] = m_data.cell_properties[i][raw->ultimate_parent().index()];
 }
 
 }  // end namespace gprs_data

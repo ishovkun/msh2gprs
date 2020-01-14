@@ -1,9 +1,6 @@
 #include "Preprocessor.hpp"
 #include "parsers/YamlParser.hpp"
 #include "parsers/GmshReader.hpp"
-#include "CellPropertyManager.hpp"
-#include "EmbeddedFractureManager.hpp"
-#include "DiscreteFractureManager.hpp"
 #include "BoundaryConditionManager.hpp"
 #include "discretization/DiscretizationTPFA.hpp"
 #include "discretization/DiscretizationDFM.hpp"
@@ -28,47 +25,18 @@ Preprocessor::Preprocessor(const Path config_file_path)
 
 void Preprocessor::run()
 {
-  DiscreteFractureManager dfm_mgr(config.discrete_fractures, data);
-
-  /* Split cells due to edfm intersection */
-  EmbeddedFractureManager edfm_mgr(config.embedded_fractures, config.edfm_method, data);
-  edfm_mgr.split_cells();
-
-  /* Since we split edfm faces, we pretend that they are dfm fractures
-   * to reuse the discretization code. */
-  const std::vector<DiscreteFractureConfig> edfm_faces_conf = edfm_mgr.generate_dfm_config();
-  // combine dfm and edfm configs
-  const std::vector<DiscreteFractureConfig> combined_fracture_config =
-      DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
-
-  // manages properties of dfm and edfm after splitting
-  DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
-  fracture_flow_mgr.distribute_properties();
- 
   // property manager for grid with split cells (due to edfm splitting)
-  CellPropertyManager property_mgr(config.cell_properties, config.domains, data);
-  property_mgr.generate_properties();
+  pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, config.domains, data);
+  pm_property_mgr->generate_properties();
 
-  // // flow dof numbering
-  const std::vector<int> edfm_markers = edfm_mgr.get_face_markers();
-  DoFManager dof_manager(data.grid, dfm_mgr.get_face_markers(), edfm_mgr.get_face_markers());
-  DoFNumbering split_dofs = dof_manager.distribute_dofs();
-  DoFNumbering unsplit_dofs = dof_manager.distribute_unsplit_dofs();
+  IO::VTKWriter::write_geometry(data.grid, "output/stuff.vtk");
+  // create discrete fracture manager
+  pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(config.discrete_fractures, data);
+  pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures, config.edfm_method, data);
 
-  // build edfm discretization from mixed dfm-edfm discretization
-  discretization::DiscretizationEDFM discr_edfm(split_dofs, unsplit_dofs,
-                                                data, data.cv_data, data.flow_connection_data,
-                                                edfm_markers);
-  discr_edfm.build();
+  build_flow_discretization_();
 
-  edfm_mgr.build_edfm_grid();
-  // generate geomechanics sda properties
-  edfm_mgr.distribute_mechanical_properties();
-  // map mechanics cells to control volumes
-  property_mgr.map_mechanics_to_control_volumes(unsplit_dofs);
-  // map sda cells to flow dofs
-  edfm_mgr.map_mechanics_to_control_volumes(unsplit_dofs);
-
+  // combine_flow_discretizations_();
   // // setup wells
   // if (config.wells.empty())
   // {
@@ -77,11 +45,13 @@ void Preprocessor::run()
   //   well_mgr.setup();
   // }
 
-  // now coarsen all cells to remove edfm splits and compute normal
-  // flow dfm-matrix discretizations
+  // build edfm grid for vtk output
+  pm_edfm_mgr->build_edfm_grid();
+
+  build_geomechanics_discretization_();
+
   // data.grid.coarsen_cells();
   // property_mgr.generate_properties();
-  // discretization::DiscretizationTPFA matrix_discr(config.discrete_fractures, data);
 
   BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
   bc_mgr.create_properties();
@@ -172,6 +142,46 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
     throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
 
   Parsers::GmshReader::read_input(filesystem::absolute(mesh_file_path), data.grid);
+}
+
+void Preprocessor::build_flow_discretization_()
+{
+  /* Split cells due to edfm intersection */
+  pm_edfm_mgr->split_cells();
+
+  // add properties for refined cells
+  pm_property_mgr->downscale_properties();
+  /* Since we split edfm faces, we pretend that they are dfm fractures
+   * to reuse the discretization code. */
+  const std::vector<DiscreteFractureConfig> edfm_faces_conf = pm_edfm_mgr->generate_dfm_config();
+  // combine dfm and edfm configs
+  const std::vector<DiscreteFractureConfig> combined_fracture_config =
+      DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
+  // manages properties of dfm and edfm after splitting
+  DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
+  fracture_flow_mgr.distribute_properties();
+
+  // flow dof numbering
+  const std::vector<int> edfm_markers = pm_edfm_mgr->get_face_markers();
+  DoFManager dof_manager(data.grid, pm_dfm_mgr->get_face_markers(), edfm_markers);
+  std::shared_ptr<DoFNumbering> p_split_dofs = dof_manager.distribute_dofs();
+  pm_unsplit_dofs = dof_manager.distribute_unsplit_dofs();
+
+  // build edfm discretization from mixed dfm-edfm discretization
+  discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *pm_unsplit_dofs, data, m_frac_cv_data,
+                                                m_frac_connection_data, edfm_markers, config.edfm_method);
+  discr_edfm.build();
+}
+
+void Preprocessor::build_geomechanics_discretization_()
+{
+  // generate geomechanics sda properties
+  pm_edfm_mgr->distribute_mechanical_properties();
+
+  // map mechanics cells to control volumes
+  pm_property_mgr->map_mechanics_to_control_volumes(*pm_unsplit_dofs);
+  // map sda cells to flow dofs
+  pm_edfm_mgr->map_mechanics_to_control_volumes(*pm_unsplit_dofs);
 }
 
 }  // end namespace gprs_data

@@ -3,6 +3,8 @@
 #include "PreprocessorConfig.hpp"  // EDFMMethod
 #include "Mesh.hpp"
 #include "discretization/DoFNumbering.hpp"
+#include "discretization/ControlVolumeData.hpp"
+#include "discretization/ConnectionData.hpp"
 #include <unordered_set>  //provides unordered_set
 
 namespace gprs_data {
@@ -15,8 +17,12 @@ class DoFManager
   DoFManager(mesh::Mesh & grid,
              const std::vector<int> dfm_markers,
              const std::vector<int> edfm_markers);
-  DoFNumbering distribute_unsplit_dofs();
-  DoFNumbering distribute_dofs();
+  std::shared_ptr<DoFNumbering> distribute_unsplit_dofs();
+  std::shared_ptr<DoFNumbering> distribute_dofs();
+  static void remap(std::vector<discretization::ControlVolumeData> & cv_data,
+                    std::vector<discretization::ConnectionData>    & connection_data,
+                    const DoFNumbering                             & old_dofs,
+                    const DoFNumbering                             & new_dofs);
 
  protected:
   inline bool is_dfm_(const int face_marker) const { return m_set_dfm_markers.find(face_marker) != m_set_dfm_markers.end(); }
