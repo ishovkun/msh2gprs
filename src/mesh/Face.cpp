@@ -10,6 +10,7 @@ Face::Face(const std::size_t                       face_index,
            const int                               face_vtk_id,
            const int                               face_marker,
            std::vector<Cell>              &        grid_cells,
+           std::vector<Face>                     & grid_faces,
            std::vector<Point> &                    grid_vertices,
            std::vector<std::vector<std::size_t>> & grid_vertex_cells,
            const std::size_t                       parent)
@@ -19,6 +20,7 @@ Face::Face(const std::size_t                       face_index,
       m_vtk_id(face_vtk_id),
       m_marker(face_marker),
       pm_grid_cells(&grid_cells),
+      pm_grid_faces(&grid_faces),
       pm_grid_vertices(&grid_vertices),
       pm_grid_vertex_cells(&grid_vertex_cells),
       m_parent(parent)
@@ -36,9 +38,10 @@ Face & Face::operator=(const Face & other)
   m_vtk_id = other.vtk_id();
   m_marker = other.marker();
   pm_grid_cells = other.pm_grid_cells;
+  pm_grid_faces = other.pm_grid_faces;
   pm_grid_vertices = other.pm_grid_vertices;
   pm_grid_vertex_cells = other.pm_grid_vertex_cells;
-  m_parent = other.parent();
+  m_parent = other.parent().index();
   return *this;
 }
 
@@ -86,6 +89,18 @@ std::vector<const Cell*> Face::neighbors() const
     if (it.second == m_vertices.size())
       face_neighbors.push_back( &((*pm_grid_cells)[it.first]) );
   }
+
+  // if this face is a child, we gotta loop up parent neighboring
+  if (ultimate_parent() != *this)
+  {
+    for (const auto & cell : ultimate_parent().neighbors())
+    {
+      const Cell& cell_parent = cell->ultimate_parent();
+      if ( std::find(face_neighbors.begin(), face_neighbors.end(), &cell_parent ) == face_neighbors.end())
+        face_neighbors.push_back( &cell_parent );
+    }
+  }
+
   return face_neighbors;
 }
 
@@ -149,6 +164,20 @@ std::vector<vertex_pair> Face::edges() const
     pairs[i] = std::make_pair(i1, i2);
   }
   return pairs;
+}
+
+const Face & Face::ultimate_parent() const
+{
+  const Face * par =  &parent();
+  while (par->parent() != *par)
+    par = &par->parent();
+  return *par;
+}
+
+Face & Face::ultimate_parent()
+{
+  const auto & cthis = *this;
+  return const_cast<Face&>(cthis.ultimate_parent());
 }
 
 }

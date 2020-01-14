@@ -124,14 +124,6 @@ class Mesh
   inline std::size_t n_vertices() const {return m_vertices.size();}
   // get number of faces
   inline std::size_t n_faces() const {return m_faces.size();}
-  // return a const reference to face parent
-  inline const Face & parent(const Face & face) const { return m_faces[face.parent()] ;}
-  // return a reference to face parent
-  inline Face & parent(const Face & face) { return m_faces[face.parent()] ;}
-  // returns a const reference to a face parent of parent of...
-  const Face & ultimate_parent(const Face & face) const;
-  // returns a reference to a face parent of parent of...
-  Face & ultimate_parent(const Face & face);
   // MANIPULATION
   // delete a cell mesh
    void delete_cell(const std::size_t ielement);

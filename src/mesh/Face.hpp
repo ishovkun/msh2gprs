@@ -21,6 +21,7 @@ class Face
        const int                               face_vtk_id,
        const int                               face_marker,
        std::vector<Cell>                     & grid_cells,
+       std::vector<Face>                     & grid_faces,
        std::vector<Point>                    & grid_vertices,
        std::vector<std::vector<std::size_t>> & grid_vertex_cells,
        const std::size_t                       parent = constants::default_face_marker);
@@ -28,6 +29,8 @@ class Face
   Face & operator=(const Face & other);
   // comparison operator
   inline bool operator==(const Face & other) const { return index() == other.index(); }
+  // comparison operator
+  inline bool operator!=(const Face & other) const { return !(*this == other); }
   // ACCESS
   // get face marker
   inline int marker() const { return m_marker; }
@@ -35,8 +38,6 @@ class Face
   inline std::size_t index() const { return m_index; }
   // get index of master face (before splitting)
   inline std::size_t master_index() const { return m_master_face_index; }
-  // get index of parent face. if no parent, simply return the index
-  inline std::size_t parent() const { return m_parent; }
   // get vtk index of a face polygon
   inline int vtk_id() const { return m_vtk_id; }
   // return indices of child faces
@@ -68,10 +69,16 @@ class Face
   bool has_vertex(const std::size_t vertex_index) const;
   // returns true if has no children; else returns false
   inline bool is_active() const {return m_children.empty();}
+  // get reference to parent face. if no parent, simply return itself
+  const Face & parent() const { return (*pm_grid_faces)[m_parent]; }
+  // get const reference to parent face. if no parent, simply return itself
+  Face & parent() { return (*pm_grid_faces)[m_parent]; }
+  const Face & ultimate_parent() const;
+  Face & ultimate_parent();
 
   // ---------------------------------- Setters ---------------------------- //
 
-  //  set face marker
+  //    set face marker
   void set_marker(const int marker) { m_marker = marker; }
 
  protected:
@@ -84,6 +91,7 @@ class Face
   std::vector<std::size_t> m_children;  // child faces
   // grid stuff
   std::vector<Cell> * pm_grid_cells;  // all grid cells
+  std::vector<Face> * pm_grid_faces;                            // grid faces
   std::vector<Point> * pm_grid_vertices;                        // grid vertex coordinates
   std::vector<std::vector<std::size_t>> *pm_grid_vertex_cells;  // vertex -> cell indices
   friend class Mesh;

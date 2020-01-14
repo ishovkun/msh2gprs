@@ -131,7 +131,7 @@ size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
   if (!face_exists)
   {
     m_faces.emplace_back(face_index, face_index, ivertices, vtk_id, marker,
-                         m_cells, m_vertices, m_vertex_cells, face_parent);
+                         m_cells, m_faces, m_vertices, m_vertex_cells, face_parent);
     if (face_parent != constants::invalid_index)
         m_faces[face_parent].m_children.push_back(face_index);
   }
@@ -610,17 +610,17 @@ void Mesh::coarsen_cells()
   m_n_split_cells = n_cells();
 }
 
-const Face & Mesh::ultimate_parent(const Face & face) const
-{
-  const Face * par = &m_faces[ face.parent() ];
-  while (par->parent() != par->index())
-    par = &m_faces[ par->parent() ];
-  return *par;
-}
+// const Face & Mesh::ultimate_parent(const Face & face) const
+// {
+//   const Face * par = &m_faces[ face.parent() ];
+//   while (par->parent() != par->index())
+//     par = &m_faces[ par->parent() ];
+//   return *par;
+// }
 
-Face & Mesh::ultimate_parent(const Face & face)
-{
-  return const_cast<Face&>(ultimate_parent(face));
-}
+// Face & Mesh::ultimate_parent(const Face & face)
+// {
+//   return const_cast<Face&>(ultimate_parent(face));
+// }
 
 }  // end namespace mesh
