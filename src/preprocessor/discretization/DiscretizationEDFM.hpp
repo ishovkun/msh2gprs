@@ -6,12 +6,10 @@
 namespace discretization
 {
 
-/* This class implements flow discretization for EDFM.
- * Currently it can only interpret discretization data
- * produced by DiscretizationDFM class that was applied
- * after cutting the cells containing EDFM fractures.
- * Thus, this class only computes transmissibilities from the data
- * obtained previously. */
+/* This class implements full flow TPFA discretization for grid with DFM and EDFM.
+ * It supports three treatment methods for DFM: simple, pEEDFM, and cEEDFM.
+ * Neither DFM nor EDFM fractures are combined into non-split elements.
+ * Split cells are combined if cedfm is not used. */
 class DiscretizationEDFM : public DiscretizationBase
 {
  public:
@@ -37,6 +35,7 @@ class DiscretizationEDFM : public DiscretizationBase
   size_t pedfm_find_other_cell_(const mesh::Face & frac, const mesh::Face & other) const;
   // pedfm for a single connection
   void build_pedfm_(ConnectionData & mm_con, ConnectionData & fm_con);
+  std::pair<size_t,size_t> find_fracture_cv_and_nonfracture_cv_(const ConnectionData & mm_con, const ConnectionData & fm_con) const;
   // ---------------------------- Variables --------------------- //
   const DoFNumbering & m_split_dofs;
   // internal structures to compute dfm discretization after edfm cell splitting

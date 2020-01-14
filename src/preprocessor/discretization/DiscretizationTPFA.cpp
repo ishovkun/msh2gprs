@@ -38,6 +38,7 @@ void DiscretizationTPFA::build()
         con.center = face->center();
         con.normal = face->normal();
         con.area = face->area();
+        con.type = ConnectionType::matrix_matrix;
         build_mo(con, m_cv_data[ con.elements[0] ], m_cv_data[ con.elements[1] ]);
       }
   }
@@ -110,7 +111,6 @@ void DiscretizationTPFA::build_kirill(const mesh::Face & face,
   data.coefficients.resize(2);
   data.coefficients[0] = -T;
   data.coefficients[1] =  T;
-  data.type = ConnectionType::matrix_matrix;
 }
 
 
@@ -130,7 +130,7 @@ void DiscretizationTPFA::build_mo(ConnectionData & con,
   // project permeability
   const Tensor & K1 = cell1.permeability;
   const Tensor & K2 = cell2.permeability;
-  // perm projection
+  // directional permeability
   const double Kp1 = (K1 * (c1 - cp).normalize()).norm();
   const double Kp2 = (K2 * (c2 - cp).normalize()).norm();
   // cell-face transmissibility
@@ -140,7 +140,6 @@ void DiscretizationTPFA::build_mo(ConnectionData & con,
   // face transmissibility
   const double T = T1*T2 / ( T1 + T2 );
   con.coefficients = {-T, T};
-  con.type = ConnectionType::matrix_matrix;
 }
 
 }

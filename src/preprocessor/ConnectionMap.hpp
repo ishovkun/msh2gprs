@@ -56,6 +56,8 @@ class ConnectionMap
   bool contains(const std::size_t ielement, const std::size_t jelement) const;
   // get neighbors of the connection map element
   const std::vector<std::size_t> & get_neighbors(std::size_t ielement) const;
+  // delete a connection between elements from the map
+  void remove(const std::size_t ielement, const std::size_t jelement);
 
  private:
 
@@ -65,8 +67,6 @@ class ConnectionMap
   std::pair<std::size_t,std::size_t> invert_hash(const std::size_t hash) const;
   void merge_elements(const std::size_t updated_element,
                       const std::size_t merged_element);
-  void clear_connection(const std::size_t ielement,
-                        const std::size_t jelement);
 
   const std::size_t max_elements;
   std::unordered_map<std::size_t, std::size_t> connections;
@@ -110,8 +110,7 @@ ConnectionMap<DataType>::invert_hash(const std::size_t hash) const
 
 
 template <typename DataType>
-void ConnectionMap<DataType>::clear_connection(const std::size_t ielement,
-                                               const std::size_t jelement)
+void ConnectionMap<DataType>::remove(const std::size_t ielement, const std::size_t jelement)
 {
   // update neighbors vector
   if (ielement >= v_neighbors.size())
@@ -160,7 +159,7 @@ void ConnectionMap<DataType>::delete_element(const std::size_t element)
 
   std::vector<std::size_t> neighbors = v_neighbors[element];
   for (const std::size_t neighbor : neighbors)
-    clear_connection(neighbor, element);
+    remove(neighbor, element);
 
   v_neighbors.erase(v_neighbors.begin() + element);
 
