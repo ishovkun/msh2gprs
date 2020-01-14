@@ -34,9 +34,11 @@ void Preprocessor::run()
   pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(config.discrete_fractures, data);
   pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures, config.edfm_method, data);
 
+  // copy geomechanics grid since base grid will be split
+  data.geomechanics_grid = data.grid;
+
   build_flow_discretization_();
 
-  // combine_flow_discretizations_();
   // // setup wells
   // if (config.wells.empty())
   // {

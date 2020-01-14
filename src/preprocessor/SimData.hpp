@@ -36,6 +36,7 @@ struct EmbeddedFractureMechanicalProperties
 struct SimData
 {
   mesh::Mesh grid;
+  mesh::Mesh geomechanics_grid;
   // cell properties
   // ----------------------- Reservoir cells ------------------------ //
   std::vector<std::string> property_names;

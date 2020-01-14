@@ -7,14 +7,16 @@ OutputDataVTK::OutputDataVTK(const SimData & data,
                              const VTKOutputConfig config)
     :
     m_data(data),
-    m_grid(data.grid),
+    m_flow_grid(data.grid),
+    m_mech_grid(data.geomechanics_grid),
     m_config(config)
 {}
 
 
 void OutputDataVTK::write_output(const std::string & output_path)
 {
-  save_reservoir_data(output_path + "/" + m_config.reservoir_grid_file);
+  save_reservoir_flow_data_(output_path + "/" + m_config.flow_reservoir_grid_file);
+  save_reservoir_mechanics_data_(output_path + "/" + m_config.mechanics_reservoir_grid_file);
   // if (data.dfm_faces.size() > 0)
   //   save_dfm_data(output_path + data.config.dfm_grid_vtk_file);
   if (!m_data.edfm_grid.empty())
@@ -22,12 +24,12 @@ void OutputDataVTK::write_output(const std::string & output_path)
 }
 
 
-void OutputDataVTK::save_reservoir_data(const std::string & fname)
+void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname)
 {
   std::cout << "writing " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_geometry(m_grid, out);
+  IO::VTKWriter::write_geometry(m_flow_grid, out);
   // IO::VTKWriter::enter_section_cell_data(m_grid.n_cells(), out);
 
   // save keywords
@@ -67,6 +69,52 @@ void OutputDataVTK::save_reservoir_data(const std::string & fname)
   // }
   out.close();
 }
+
+void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname)
+{
+  std::cout << "writing " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+  IO::VTKWriter::write_geometry(m_mech_grid, out);
+
+  // save keywords
+  // for (std::size_t ivar=0; ivar<m_data.rockPropNames.size(); ++ivar)
+  // {
+  //   vector<double> property(grid.n_cells());
+  //   const string keyword = data.rockPropNames[ivar];
+  //   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  //     property[cell->index()] = data.vsCellRockProps[cell->index()].v_props[ivar];
+
+  //   IO::VTKWriter::add_data(property, keyword, out);
+  // }
+
+  // // save multiscale flow data
+  // if (!data.ms_flow_data.partitioning.empty())
+  // {
+  //   IO::VTKWriter::add_data(data.ms_flow_data.partitioning, "partitioning-flow", out);
+  //   saveMultiScaleSupport(data.ms_mech_data, grid.n_cells(), "support-flow-", out);
+  // }
+  // if (!data.ms_mech_data.partitioning.empty())
+  // {
+  //   const auto & ms = data.ms_mech_data;
+  //   IO::VTKWriter::add_data(ms.partitioning, "partitioning-mech", out);
+  //   IO::VTKWriter::enter_section_point_data(grid.n_vertices(), out);
+  //   // saveMultiScaleSupport(msm, grid.n_vertices(), "support-mech-", out);
+
+  //   // I'm just gonna save vertices and boundaries
+  //   std::vector<int> output(grid.n_vertices(), 0);
+  //   for (std::size_t coarse = 0; coarse < ms.n_coarse; coarse++)
+  //   {
+  //     for (const size_t i : ms.support_boundary[coarse])
+  //       output[i] = 1;
+  //   }
+  //   for (const size_t i : ms.centroids)
+  //     output[i] = 2;
+  //   IO::VTKWriter::add_data(output, "support-mech", out);
+  // }
+  out.close();
+}
+
 
 
 void OutputDataVTK::save_dfm_data(const std::string & fname)

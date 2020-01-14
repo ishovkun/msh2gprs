@@ -113,10 +113,11 @@ struct CellPropertyConfig
 
 struct VTKOutputConfig
 {
-  std::string reservoir_grid_file = "reservoir_mesh.vtk";
-  std::string edfm_grid_file      = "edfm.vtk";
-  std::string dfm_grid_file       = "dfm.vtk";
-  std::string wells_file          = "wells.vtk";
+  std::string flow_reservoir_grid_file      = "flow_reservoir_mesh.vtk";
+  std::string mechanics_reservoir_grid_file = "mechanics_reservoir_mesh.vtk";
+  std::string edfm_grid_file                = "edfm.vtk";
+  std::string dfm_grid_file                 = "dfm.vtk";
+  std::string wells_file                    = "wells.vtk";
 };
 
 struct PreprocessorConfig
