@@ -1,6 +1,7 @@
 #include "DiscretizationEDFM.hpp"
 #include "DiscretizationDFM.hpp"
 #include "DiscretizationTPFA.hpp"
+#include "angem/Projections.hpp"
 
 namespace discretization
 {
@@ -222,19 +223,26 @@ void DiscretizationEDFM::build_pedfm_()
     if (m_edfm_markers.find(face->marker()) != m_edfm_markers.end())
     {
       const auto & frac_cell = face->neighbors()[0]->ultimate_parent();
-      std::cout << "fine cell = " << face->neighbors()[0]->index() << std::endl;
-      std::cout << "frac parent cell = " << frac_cell.index() << std::endl;
       assert(!pedfm_select_faces_(*face).empty());
       for (const mesh::Face* face2 : pedfm_select_faces_(*face))
       {
         const size_t iother_cell = pedfm_find_other_cell_(*face, *face2);
-        std::cout << "other parent cell = " << iother_cell << std::endl;
         // have connection between two parent cells
         assert( m_con_map.contains( m_dofs.cell_dof(frac_cell.index()), m_dofs.cell_dof(iother_cell) ) );
-        exit(0);
+        // projection of frac face onto M-M connecting face
+        const auto projection = angem::project(face->polygon(), face2->polygon());
+        auto & mat_mat_con = m_con_map.get_data(m_dofs.cell_dof(frac_cell.index()),
+                                                m_dofs.cell_dof(iother_cell));
+        const size_t ifrac_mat_con = m_con_map.insert(m_dofs.face_dof(face->index()),
+                                                      m_dofs.cell_dof(iother_cell));
+        auto & frac_mat_con = m_con_map.get_data(ifrac_mat_con);
+        frac_mat_con.elements = { m_dofs.face_dof(face->index()),
+                                  m_dofs.cell_dof(iother_cell) };
+        frac_mat_con.normal = projection.normal();
+        frac_mat_con.area = projection.area();
+        build_pedfm_(mat_mat_con, frac_mat_con);
       }
     }
-
   }
 }
 
@@ -248,39 +256,12 @@ std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mes
   else smallest_neighbor = neighbors[0];
 
   std::vector<const Face*> result;
-  std::cout << "smallest_neighbor->faces().size() = " << smallest_neighbor->faces().size() << std::endl;
-  int i = 0;
   for (auto face : smallest_neighbor->faces())
   {
-    std::cout << i << std::endl;
-    i++;
-    if (*face == frac_face)                                      // same face
-    {
-      std::cout << "skip this" << std::endl;
-      continue;
-    }
-
-    if (face->neighbors().size() < 2)
-    {
-      std::cout << "skip boundary" << std::endl;
-      continue; // domain boundary
-    }
-
-    if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-10)  // face ⟂ frac
-    {
-      std::cout << face->normal() << " | " << frac_face.normal() << std::endl;
-      std::cout << "skip perpendicular" << std::endl;
-      continue;
-    }
-
-
-    if (m_dofs.is_active_face(face->marker()))
-    {
-      std::cout << "skip fracs" << std::endl;
-      continue; // skip frac faces
-    }
-
-    std::cout << "pushing" << std::endl;
+    if (*face == frac_face) continue; // same face
+    if (face->neighbors().size() < 2) continue;  // skip boundary
+    if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-10) continue;  // face ⟂ frac
+    if (m_dofs.is_active_face(face->marker())) continue; // skip frac faces
     result.push_back(&*face);
   }
   return result;
@@ -296,6 +277,12 @@ size_t DiscretizationEDFM::pedfm_find_other_cell_(const Face & frac, const Face 
       return parent.index();
   }
   return frac_cell.index();
+}
+
+void DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
+                                      ConnectionData & fm_con)
+{
+  
 }
 
 }  // end namespace discretization

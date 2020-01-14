@@ -35,6 +35,8 @@ class DiscretizationEDFM : public DiscretizationBase
   void build_pedfm_();
   std::vector<const mesh::Face*> pedfm_select_faces_(const mesh::Face & frac_face) const;
   size_t pedfm_find_other_cell_(const mesh::Face & frac, const mesh::Face & other) const;
+  // pedfm for a single connection
+  void build_pedfm_(ConnectionData & mm_con, ConnectionData & fm_con);
   // ---------------------------- Variables --------------------- //
   const DoFNumbering & m_split_dofs;
   // internal structures to compute dfm discretization after edfm cell splitting
