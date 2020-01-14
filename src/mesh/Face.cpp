@@ -91,12 +91,12 @@ std::vector<const Cell*> Face::neighbors() const
   }
 
   // if this face is a child, we gotta loop up parent neighboring
-  if (ultimate_parent() != *this)
+  if (ultimate_parent() != *this && face_neighbors.size() == 1)
   {
     for (const auto & cell : ultimate_parent().neighbors())
     {
       const Cell& cell_parent = cell->ultimate_parent();
-      if ( std::find(face_neighbors.begin(), face_neighbors.end(), &cell_parent ) == face_neighbors.end())
+      if (cell_parent != face_neighbors[0]->ultimate_parent())
         face_neighbors.push_back( &cell_parent );
     }
   }
