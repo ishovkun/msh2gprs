@@ -63,25 +63,10 @@ void OutputDataGPRS::write_output(const std::string & output_path)
 
 void OutputDataGPRS::saveGeometry(const std::string & output_path)
 {
-  // vtk output
-  // const std::string vtk_file = output_path + "reservoir_mesh.vtk";
-  // std::cout << "Saving reservoir mesh file: " << vtk_file << std::endl;
-  // IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
-  //                          grid.shape_ids, vtk_file);
-
-  // if (data.dfm_faces.size() > 0)
-  // { // DFM frac geometry
-    // const std::string vtk_dfm_file = output_path + "dfm.vtk";
-    // IO::VTKWriter::write_geometry(data.dfm_master_grid.get_vertices(),
-    //                               data.dfm_master_grid.get_polygons(),
-    //                               vtk_dfm_file);
-
-  // }
-
   // gprs output
 
   // GEOMETRY
-  const std::string outstring = output_path + "gm_geometry.txt";// Jaewoo An data.config.mechanics_domain_file;
+  const std::string outstring = output_path + data.config.mechanics_domain_file;
   std::cout << "writing file " << outstring << std::endl;
 
   std::ofstream geomechfile;
@@ -478,35 +463,6 @@ void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
       geomechfile << -1 << std::endl;
   }
   geomechfile << "/" << std::endl << std::endl;
-
-  // geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
-  // for (const auto facet_it : data.dfm_faces)
-  // {
-  //   geomechfile << facet_it.second.nface + 1 << "\t";
-  //   geomechfile << facet_it.second.nfluid + 1 << endl;
-  // }
-  // for(itsetint = pSim->setIdenticalInternalMarker.begin();
-  //     itsetint != pSim->setIdenticalInternalMarker.end();
-  //     itsetint++, nFractures_++)
-  // {
-  //   for (int i = 0; i < pSim->nPhysicalFacets; i++)
-  //   {
-  //     if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-  //     {
-  //       geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-  //       geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
-  //       if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
-  //       {
-  //         cout << "Fracture interface # " << nFractures_ << endl;
-  //         cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
-  //         cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
-  //         cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
-  //         exit(0);
-  //       }
-  //     }
-  //   }
-  // }
-  // geomechfile << "/" << std::endl << std::endl;
 
   geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
   for (const auto facet_it : data.dfm_faces)

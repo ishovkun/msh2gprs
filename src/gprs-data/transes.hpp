@@ -71,7 +71,7 @@ public:
   // region from which the properties are taken
   std::vector<int> vZoneCode;
   // volume factor for each zone
-  std::vector<double> vZVolumeFactor;
+  std::vector<double> vzVolumeFactor;
   // modify conenction area
   std::vector<double> vTimurConnectionFactor;
   // porosity
@@ -137,7 +137,7 @@ protected:
   std::vector<double>		CVVolume;
 
   std::vector<int>		ZoneCode;
-  std::vector<double>	ZVolumeFactor;
+  std::vector<double>	zVolumeFactor;
   std::vector<double>	ZPorosity;
   std::vector<int>		ZPermCode;
   std::vector<std::vector<double>>	ZPermeability;
@@ -147,16 +147,15 @@ protected:
 
 ///// Definition of the connections /////
 
-  std::vector<int>		ConType;
-  std::vector<int>		ConN;
-  std::vector<std::vector<int>>		ConCV;
-  std::vector<std::vector<double>>		ConTr;
+  std::vector<int>		conType;
+  std::vector<std::vector<int>>		conCV;
+  std::vector<std::vector<double>>		conTr;
 
   std::vector<std::vector<double>>		ConGeom;
   std::vector<std::vector<double>>		ConMult;
 
-  std::vector<std::vector<double>>	ConArea;
-  std::vector<std::vector<double>>	ConPerm;
+  std::vector<std::vector<double>>	conArea;
+  std::vector<std::vector<double>>	conPerm;
   std::vector<double>		ConP1x, ConP1y, ConP1z;
   std::vector<double>		ConP2x, ConP2y, ConP2z;
   std::vector<double>		ConIx, ConIy, ConIz;

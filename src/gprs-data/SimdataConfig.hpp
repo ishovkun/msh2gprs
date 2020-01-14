@@ -69,16 +69,16 @@ struct EmbeddedFractureConfig
   double cohesion = 0;
   double friction_angle = 30;
   double dilation_angle = 0;
-  double aperture = 1e-3;
-  double conductivity = 10;
+  double aperture = 1e-3; // m
+  double conductivity = 10; // md*m
 };
 
 
 struct DiscreteFractureConfig
 {
   int label;
-  double conductivity = 10;
-  double aperture = 1e-3;
+  double conductivity = 10; //md*m
+  double aperture = 1e-3; // m
 };
 
 
@@ -101,7 +101,6 @@ struct SimdataConfig
   std::vector<WellConfig>              wells;
 
   EDFMMethod edfm_method = EDFMMethod::simple;
-  //EDFMMethod edfm_method = EDFMMethod::projection;       // method to simulate flow in embedded fracs; EDFMMethod::simple or EDFMMethod::projection
 
   // all variables used for function parsing
   std::vector<std::string> all_vars = {"x", "y", "z"};

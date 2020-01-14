@@ -21,16 +21,17 @@ struct CellData
 
 struct FaceData
 {
-  double transmissibility;
-  double thermal_conductivity;
+  double transmissibility; // geometric part of transmissibility of each connection
+  double thermal_conductivity; // thermal conductivity of each connection
 
-  std::size_t ConType;
-  std::size_t ConN;
-  std::vector<double> ConCV;
-  std::vector<double> ConTr;
-  std::vector<double> ConArea;
-  std::vector<double> ZVolumeFactor;
-  std::vector<double> ConPerm;
+  std::size_t conType; // connection type (1:M-M, 2:M-F, 3:F-F)
+  std::vector<double> conCV; // Index of control volumes (elements) involved in each face
+  // Geometric part of a transmissibility of each control volume
+  // = (abs perm) * (face area) / (distance between CV center and a face)
+  std::vector<double> conTr;
+  std::vector<double> conArea; // Face area [m2]
+  std::vector<double> zVolumeFactor; // aperture [m]
+  std::vector<double> conPerm; // Absolute permeability of each control volume [md]
 };
 
 
@@ -44,8 +45,6 @@ class FlowData
   FaceData & insert_connection(const std::size_t ielement,
                              const std::size_t jelement);
   // throws std::out_of_range if connection does not exist
-  // std::size_t connection_index(const std::size_t ielement,
-  //                              const std::size_t jelement) const;
   FaceData & get_connection(const std::size_t ielement,
                             const std::size_t jelement);
   bool connection_exists(const std::size_t ielement,
@@ -65,24 +64,11 @@ class FlowData
                          const std::size_t jelement) const;
 
  public:
-  // std::vector<double> volumes, poro, depth;
-  // regular transmissibilities
-  // std::vector<std::size_t> ielement, jelement;
-  // std::unordered_map<std::size_t, std::size_t> map_connection;
   std::unordered_map<std::size_t, FaceData> map_connection;
-  // std::unordered_map<std::size_t, std::vector<std::size_t>> element_connection;
   std::vector<std::vector<std::size_t>> v_neighbors;
 
   std::vector<CellData> cells;
   std::vector<FaceData> faces;
-  // std::vector<double>      trans_ij, conduct_ij;
-  // connections
-  // std::vector<int> connection_type;
-  // std::vector<int> connection_n;
-
-  // user-defined cell data
-  // std::vector<std::vector<double>> custom_data;
-  // std::vector<std::vector<double>> custom_data;
   std::vector<std::string>         custom_names;
 
  private:

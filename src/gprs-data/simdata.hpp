@@ -60,9 +60,9 @@ struct PhysicalFace
   angem::Point<3,double> condition;
   // faces that the face belongs to (1 or 2)
   std::vector<std::size_t> neighbor_cells;
-  // hydraulic aperture of dfm fracture
+  // hydraulic aperture of dfm fracture [m]
   double aperture;
-  // hydraulic conductivity of dfm fracture
+  // hydraulic conductivity of dfm fracture [md*m]
   double conductivity;
 };
 
