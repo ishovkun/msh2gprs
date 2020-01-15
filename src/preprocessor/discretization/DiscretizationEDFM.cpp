@@ -57,9 +57,6 @@ void DiscretizationEDFM::build_control_volume_data_()
   // first compute parent volumes since some props are weighted by them
   m_dof_mapping.resize(m_split_cv.size());
   for (size_t i = 0; i < m_split_cv.size(); i++)
-    std::cout << "cvold " << i << " " << m_split_cv[i].volume << std::endl;
-
-  for (size_t i = 0; i < m_split_cv.size(); i++)
   {
     const auto &cv = m_split_cv[i];
     size_t parent_dof;

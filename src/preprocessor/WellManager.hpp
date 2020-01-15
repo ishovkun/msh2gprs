@@ -2,6 +2,7 @@
 
 #include "PreprocessorConfig.hpp"
 #include "SimData.hpp"
+#include "discretization/DoFNumbering.hpp"
 
 namespace gprs_data {
 
@@ -9,7 +10,8 @@ class WellManager
 {
  public:
   WellManager(const std::vector<WellConfig> & config,
-              SimData & data);
+              SimData & data,
+              const discretization::DoFNumbering & dofs);
   void setup();
 
  protected:
@@ -21,6 +23,7 @@ class WellManager
  private:
   const std::vector<WellConfig> m_config;
   SimData & m_data;
+  const discretization::DoFNumbering & m_dofs;
   std::vector<std::vector<size_t>> m_well_connected_cells;
 };
 

@@ -13,7 +13,7 @@ OutputDataVTK::OutputDataVTK(const SimData & data,
 {}
 
 
-void OutputDataVTK::write_output(const std::string & output_path)
+void OutputDataVTK::write_output(const std::string & output_path) const
 {
   save_reservoir_flow_data_(output_path + "/" + m_config.flow_reservoir_grid_file);
   save_reservoir_mechanics_data_(output_path + "/" + m_config.mechanics_reservoir_grid_file);
@@ -21,10 +21,12 @@ void OutputDataVTK::write_output(const std::string & output_path)
     save_dfm_data(output_path + "/"+ m_config.dfm_grid_file);
   if (!m_data.edfm_grid.empty())
     save_edfm_data(output_path + "/" + m_config.edfm_grid_file);
+  if (!m_data.wells.empty())
+    save_wells_(output_path + "/"+ m_config.wells_file);
 }
 
 
-void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname)
+void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
 {
   std::cout << "writing " << fname << std::endl;
   std::ofstream out;
@@ -70,7 +72,7 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname)
   out.close();
 }
 
-void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname)
+void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) const
 {
   std::cout << "writing " << fname << std::endl;
   std::ofstream out;
@@ -117,7 +119,7 @@ void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname)
 
 
 
-void OutputDataVTK::save_dfm_data(const std::string & fname)
+void OutputDataVTK::save_dfm_data(const std::string & fname) const
 {
   std::cout << "Saving DFM mesh file: " << fname << std::endl;
   std::ofstream out;
@@ -128,7 +130,7 @@ void OutputDataVTK::save_dfm_data(const std::string & fname)
 }
 
 
-void OutputDataVTK::save_edfm_data(const std::string & fname)
+void OutputDataVTK::save_edfm_data(const std::string & fname) const
 {
   std::cout << "Saving EDFM mesh file: " << fname << std::endl;
   std::ofstream out;
@@ -206,5 +208,11 @@ void OutputDataVTK::save_edfm_data(const std::string & fname)
 //     IO::VTKWriter::add_data(support_value, prefix + std::to_string(coarse), out);
 //   }  // end coarse loop
 // }
+
+
+void OutputDataVTK::save_wells_(const std::string & fname) const
+{
+  IO::VTKWriter::write_well_trajectory(m_data.well_vertices.points, m_data.well_vertex_indices, fname);
+}
 
 }

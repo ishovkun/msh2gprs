@@ -41,14 +41,6 @@ void Preprocessor::run()
 
   build_flow_discretization_();
 
-  // // setup wells
-  // if (config.wells.empty())
-  // {
-  //   std::cout << "setup wells" << std::endl;
-  //   WellManager well_mgr(config.wells, data);
-  //   well_mgr.setup();
-  // }
-
   // build edfm grid for vtk output
   pm_edfm_mgr->build_edfm_grid(*pm_flow_dof_numbering);
   pm_dfm_mgr->build_dfm_grid(data.grid, *pm_flow_dof_numbering);
@@ -196,6 +188,14 @@ void Preprocessor::build_flow_discretization_()
     pm_flow_dof_numbering = p_unsplit_dofs;
 
   discr_edfm.build();
+
+  // setup wells
+  if (!config.wells.empty())
+  {
+    std::cout << "setup wells" << std::endl;
+    WellManager well_mgr(config.wells, data, *p_unsplit_dofs);
+    well_mgr.setup();
+  }
 }
 
 void Preprocessor::build_geomechanics_discretization_()

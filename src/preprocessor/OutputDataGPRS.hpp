@@ -20,8 +20,7 @@ public:
   void saveEmbeddedFractureProperties(const std::string file_name);
   void saveBoundaryConditions(const std::string file_name);
   void saveDiscreteFractureProperties(const std::string file_name);
-  void saveWells(const std::string file_name,
-                 const std::string vtk_file_name);
+  void saveWells(const std::string file_name) const;
   void saveFlowMultiScaleData(const std::string file_name);
   void saveMechMultiScaleData(const std::string file_name);
 

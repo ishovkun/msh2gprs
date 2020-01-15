@@ -19,12 +19,10 @@ void OutputDataPostprocessor::write_output(const std::string file_name)
   m_root["matrix_cell_to_flow_dof"] = map_matrix_cells_to_control_volumes_();
   m_root["edfm_cell_to_flow_dof"] = m_data.edfm_cell_mapping;
   m_root["dfm_cell_to_flow_dof"] = m_data.dfm_cell_mapping;
-  std::cout << m_root << std::endl;
 
   // save file
   std::ofstream out;
   out.open(m_config.postprocessor_file.c_str());
-  out << m_root;
   out.close();
 }
 

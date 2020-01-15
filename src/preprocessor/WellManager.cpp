@@ -6,8 +6,9 @@ namespace gprs_data {
 using Point = angem::Point<3,double>;
 
 WellManager::WellManager(const std::vector<WellConfig> & config,
-                         SimData & data)
-    : m_config(config), m_data(data)
+                         SimData & data,
+                         const discretization::DoFNumbering & dofs)
+    : m_config(config), m_data(data), m_dofs(dofs)
 {}
 
 void WellManager::setup()
@@ -19,40 +20,54 @@ void WellManager::setup()
     if (well.simple())
       setup_simple_well_(well);
     else
+    {
+      throw std::invalid_argument("Segmented wells not set up yet");
       setup_segmented_well_(well);
+    }
 
     std::cout << "computing WI" << std::endl;
     compute_well_index_(well);
+    if (well.connected_volumes.empty())
+      throw std::runtime_error("Well " + well.name + " has no conncted volumes");
     m_data.wells.push_back( std::move(well) );
   }
 }
 
 void WellManager::setup_simple_well_(Well & well)
 {
-  // std::cout << "simple well " << well.name << std::endl;
-  // const Point direction = {0, 0, -1};
-  // const auto & grid = m_data.grid;
-  // m_well_connected_cells.emplace_back();
-  // // well assigned with a single coordinate
-  // for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-  // {
-  //   const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell->polyhedron();
-  //   if (p_poly_cell->point_inside(well.coordinate))
-  //   {
-  //     // define sufficiantly-large artificial segment to compute intersection with cell
-  //     const double h = p_poly_cell->center().distance(p_poly_cell->get_points()[0]);
-  //     const Point p1 = well.coordinate - direction*h*10;
-  //     const Point p2 = well.coordinate + direction*h*10;
-  //     std::vector<Point> section_data;
-  //     if (angem::collision(p1, p2, *p_poly_cell, section_data, 1e-6))
-  //     {
-  //       well.connected_volumes.push_back(m_data.cell_cv_indices[cell->index()]);
-  //       m_well_connected_cells.back().push_back(cell->index());
-  //       well.segment_length.push_back(section_data[0].distance(section_data[1]));
-  //       well.directions.push_back(direction);
-  //     }
-  //   }
-  // }
+  std::cout << "simple well " << well.name << std::endl;
+  const Point direction = {0, 0, -1};
+  const auto & grid = m_data.grid;
+  m_well_connected_cells.emplace_back();
+  // well assigned with a single coordinate
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+  {
+    const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell->polyhedron();
+    // define sufficiantly-large artificial segment to compute intersection with cell
+    const Point cell_center = p_poly_cell->center();
+    const double h = cell_center.distance(p_poly_cell->get_points()[0]);
+    Point p1 = well.coordinate;
+    Point p2 = well.coordinate;
+    p1.z() = cell_center.z() + h * 10;
+    p2.z() = cell_center.z() - h * 10;
+
+    std::vector<Point> section_data;
+    if (angem::collision(p1, p2, *p_poly_cell, section_data, 1e-6))
+    {
+      if (cell->ultimate_parent() != *cell)
+        throw std::runtime_error("well crosses refined cell. not implemented yet");
+
+      well.connected_volumes.push_back(m_dofs.cell_dof(cell->index()));
+      m_well_connected_cells.back().push_back(cell->index());
+      well.segment_length.push_back(section_data[0].distance(section_data[1]));
+      well.directions.push_back(direction);
+
+      // for visulatization
+      m_data.well_vertex_indices.emplace_back();
+      m_data.well_vertex_indices.back().first = m_data.well_vertices.insert(section_data[0]);
+      m_data.well_vertex_indices.back().second = m_data.well_vertices.insert(section_data[1]);
+    }
+  }
 }
 
 void WellManager::setup_segmented_well_(Well & well)

@@ -7,6 +7,7 @@ namespace gprs_data
 {
 
 const int n_entries_per_line = 10;
+static constexpr double transmissibility_conversion_factor = 0.0085267146719160104986876640419948;
 
 
 OutputDataGPRS::OutputDataGPRS(const SimData & data, const GPRSOutputConfig config)
@@ -44,12 +45,11 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   //   saveDiscreteFractureProperties(output_path + data.config.discrete_frac_file);
   // }
 
-  // if (!data.wells.empty())
-  // {
-  //   std::cout << "save wells" << std::endl;
-  //   saveWells(output_path + data.config.wells_file,
-  //             output_path + data.config.wells_vtk_file);
-  // }
+  if (!m_data.wells.empty())
+  {
+    std::cout << "save wells" << std::endl;
+    saveWells(output_path + m_config.wells_file);
+  }
 
   // // flow discretization
   // std::cout << "save flow discretization" << std::endl;
@@ -116,8 +116,6 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     const auto & cons = m_data.flow_connection_data;
 
     /* OUTPUT Transmissibility */
-    static constexpr double transmissibility_conversion_factor = 0.0085267146719160104986876640419948;
-
     out << "TPFACONNS" << std::endl;
     std::size_t n_connections = cons.size();
     out << n_connections << std::endl;
@@ -595,46 +593,41 @@ void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
 }
 
 
-void OutputDataGPRS::saveWells(const std::string file_name,
-                           const std::string vtk_file_name)
+void OutputDataGPRS::saveWells(const std::string file_name) const
 {
-  // std::ofstream file;
-  // file.open(file_name.c_str());
+  std::ofstream out;
+  out.open(file_name.c_str());
 
-  // file << "WELSPECS" << std::endl;
-  // for (const auto & well : data.wells)
-  // {
-  //   file << well.name << "\tGROUP1\t";
-  //   // connected volume + j + k empty
-  //   file << well.connected_volumes[0] << " 1 1 ";
-  //   // reference depth
-  //   file << -well.reference_depth << " /" << std::endl;
-  // }
-  // file << "/" << std::endl << std::endl;
+  out << "WELSPECS" << std::endl;
+  for (const auto & well : m_data.wells)
+  {
+    out << well.name << "\tGROUP1\t";
+    // connected volume + j + k empty
+    assert( !well.connected_volumes.empty() );
+    out << well.connected_volumes[0] << " 1 1 ";
+    // reference depth
+    out << -well.reference_depth << " /" << std::endl;
+  }
+  out << "/" << std::endl << std::endl;
 
-  // file << "COMPDAT" << std::endl;
-  // for (const auto & well : data.wells)
-  // {
-  //   for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
-  //   {
-  //     file << well.name << "\t";
-  //     file << well.connected_volumes[i] + 1 << "\t";
-  //     // j, k1:k2 open sat_table_number
-  //     file << "1\t1\t1\tOPEN\t1*\t";
-  //     file << well.indices[i] * flow::CalcTranses::transmissibility_conversion_factor << "\t";
-  //     file << 2*well.radius << "\t";
-  //     file << "/" << std::endl;
-  //   }
-  // }
-  // file << "/" << std::endl << std::endl;
+  out << "COMPDAT" << std::endl;
+  for (const auto & well : m_data.wells)
+  {
+    for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
+    {
+      out << well.name << "\t";
+      assert( !well.connected_volumes.empty() );
+      out << well.connected_volumes[i] + 1 << "\t";
+      // j, k1:k2 open sat_table_number
+      out << "1\t1\t1\tOPEN\t1*\t";
+      out << well.indices[i] * transmissibility_conversion_factor << "\t";
+      out << 2*well.radius << "\t";
+      out << "/" << std::endl;
+    }
+  }
+  out << "/" << std::endl << std::endl;
 
-  // file.close();
-
-
-  // // vtk well geometry
-  // IO::VTKWriter::write_well_trajectory(data.well_vertices.points,
-  //                                      data.well_vertex_indices,
-  //                                      vtk_file_name);
+  out.close();
 }
 
 
