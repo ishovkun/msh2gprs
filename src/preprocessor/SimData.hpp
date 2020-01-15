@@ -48,10 +48,13 @@ struct SimData
   std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces
   mesh::SurfaceMesh<double> dfm_grid;
+  std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> dof
   // ---------------------- EDFM ------------------------ //
   std::vector<EmbeddedFractureMechanicalProperties> sda_data;
   // std::unordered_map<size_t,size_t> face_to_fracture;
   mesh::SurfaceMesh<double> edfm_grid;
+  std::vector<size_t> edfm_cell_mapping;  // for postprocessor output  vtk_cell -> dof
+  std::unordered_set<int> edfm_grid_labels;
   // ----------------------- Flow data ---------------------- //
   std::vector<discretization::ControlVolumeData> cv_data;
   std::vector<discretization::ConnectionData> flow_connection_data;

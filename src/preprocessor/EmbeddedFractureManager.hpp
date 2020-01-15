@@ -23,7 +23,7 @@ class EmbeddedFractureManager
   // return vector of split fracture face markers
   std::vector<int> get_face_markers() const;
   // build edfm surface grid for vtk output
-  void build_edfm_grid();
+  void build_edfm_grid(const discretization::DoFNumbering & dofs);
   // map SDA cells to edfm control volumes
   // do it only after coarsening the grid
   // and distribute mechanical properties

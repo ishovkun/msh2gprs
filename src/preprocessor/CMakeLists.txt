@@ -18,6 +18,7 @@ ADD_LIBRARY(preprocessor
   # element.cpp
   OutputDataGPRS.cpp
   OutputDataVTK.cpp
+  OutputDataPostprocessor.cpp
   VTKWriter.cpp
   # renum.cpp
   # simdata.cpp

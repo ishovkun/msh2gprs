@@ -250,6 +250,33 @@ void YamlParser::section_domain_props(const YAML::Node & node,
   }
 }
 
+
+
+// find an item in a vector
+template<typename T>
+std::size_t find(const T & item, const std::vector<T> & vec)
+{
+  for (std::size_t i=0; i<vec.size(); ++i)
+    if (vec[i] == item)
+      return i;
+  return vec.size();
+}
+
+
+// more generic implement of the previous func
+template<typename iterable>
+std::size_t find(const typename iterable::value_type & item,
+                 const iterable & container)
+{
+  std::size_t counter = 0;
+  for (const auto & iter_item : container)
+    if (iter_item == item)
+      return counter;
+    else
+      counter++;
+  return counter;
+}
+
 void YamlParser::domain(const YAML::Node & node,
                         const int          var_type,
                         DomainConfig     & conf)

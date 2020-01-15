@@ -9,6 +9,7 @@
 #include "WellManager.hpp"
 #include "OutputDataVTK.hpp"
 #include "OutputDataGPRS.hpp"
+#include "OutputDataPostprocessor.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -49,8 +50,8 @@ void Preprocessor::run()
   // }
 
   // build edfm grid for vtk output
-  pm_edfm_mgr->build_edfm_grid();
-  pm_dfm_mgr->build_dfm_grid(data.grid);
+  pm_edfm_mgr->build_edfm_grid(*pm_flow_dof_numbering);
+  pm_dfm_mgr->build_dfm_grid(data.grid, *pm_flow_dof_numbering);
 
   build_geomechanics_discretization_();
 
@@ -99,6 +100,15 @@ void Preprocessor::write_output_()
             gprs_data::OutputDataVTK output_data(data, config.vtk_config);
             output_data.write_output(m_output_dir);
             break;
+          }
+        case OutputFormat::postprocessor :
+          {
+            std::cout << "Output postprocessor format" << std::endl;
+            gprs_data::OutputDataPostprocessor output_data(data, config,
+                                                           *pm_flow_dof_numbering,
+                                                           m_output_dir);
+            output_data.write_output(config.postprocessor_file);
+
           }
     }
   }

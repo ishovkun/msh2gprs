@@ -2,6 +2,7 @@
 
 #include "PreprocessorConfig.hpp"
 #include "SimData.hpp"
+#include "discretization/DoFNumbering.hpp"
 #include <set>
 
 namespace gprs_data {
@@ -26,7 +27,7 @@ class DiscreteFractureManager
   // return vector of split fracture face markers
   std::vector<int> get_face_markers() const;
   // build edfm surface grid for flow/mechanics output
-  void build_dfm_grid(const mesh::Mesh & grid);
+  void build_dfm_grid(const mesh::Mesh & grid, const discretization::DoFNumbering & dofs);
 
  protected:
   void build_dfm_markers_set_();

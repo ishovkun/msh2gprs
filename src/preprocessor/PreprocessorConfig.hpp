@@ -17,7 +17,7 @@ enum MSPartitioning : int
 
 enum OutputFormat
 {
-  gprs, vtk
+  gprs, vtk, postprocessor
 };
 
 
@@ -134,6 +134,12 @@ struct GPRSOutputConfig
   std::string flow_connection_file  = "fl_face_data.txt";
 };
 
+/* For python postprocessor */
+// struct PostProcessorConfig
+// {
+//   std::string
+// };
+
 struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  embedded_fractures;  //  embedded  fractures
@@ -155,11 +161,13 @@ struct PreprocessorConfig
 
   // multiscale
   size_t n_multiscale_blocks;
-  int multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do shit
-  int multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do shit
+  int multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do anything
+  int multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do anything
 
   // output format
-  std::vector<OutputFormat> output_formats = {OutputFormat::gprs, OutputFormat::vtk};
+  std::vector<OutputFormat> output_formats = {OutputFormat::gprs,
+                                              OutputFormat::vtk,
+                                              OutputFormat::postprocessor};
 
   // the name of gmsh grid file
   std::string mesh_file;
@@ -169,30 +177,6 @@ struct PreprocessorConfig
   GPRSOutputConfig gprs_output;
   // VTK format
   VTKOutputConfig vtk_config;
+  // postprocessor output file;
+  std::string postprocessor_file = "postprocessor_config.yaml";
 };
-
-
-// find an item in a vector
-template<typename T>
-std::size_t find(const T & item, const std::vector<T> & vec)
-{
-  for (std::size_t i=0; i<vec.size(); ++i)
-    if (vec[i] == item)
-      return i;
-  return vec.size();
-}
-
-
-// more generic implement of the previous func
-template<typename iterable>
-std::size_t find(const typename iterable::value_type & item,
-                 const iterable & container)
-{
-  std::size_t counter = 0;
-  for (const auto & iter_item : container)
-    if (iter_item == item)
-      return counter;
-    else
-      counter++;
-  return counter;
-}
