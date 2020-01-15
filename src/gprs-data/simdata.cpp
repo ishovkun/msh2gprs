@@ -68,7 +68,6 @@ void SimData::defineEmbeddedFractureProperties()
 
         // check if some vertices are too close to the fracture
         // and if so move a fracture a little bit
-        // for (const auto & ivertex : cell.vVertices)
         for (const auto & vertex : poly_cell.get_points())
         {
           const auto vc = poly_cell.center() - vertex;
@@ -126,12 +125,6 @@ void SimData::handleEmbeddedFractures()
 {
   cout << "Compute cell clipping and EDFM transmissibilities" << endl;
   computeCellClipping();
-
-  // cout << "Merge small edfm cells" << endl;
-  // mergeSmallFracCells();
-
-  // std::cout << "mesh fractures" << std::endl;
-  // meshFractures();
 
   if (vEfrac.size() > 1)
   {
@@ -377,7 +370,7 @@ void SimData::computeReservoirTransmissibilities()
     {
       const int i = static_cast<int>(it.second.nfluid);
       calc.vZoneCode[i] = i;
-      calc.vZVolumeFactor[i] = it.second.aperture;
+      calc.vzVolumeFactor[i] = it.second.aperture;
       calc.vZPorosity[i] = 1.0;
       calc.vZPermCode[i] = 1;
 
@@ -425,7 +418,7 @@ void SimData::computeReservoirTransmissibilities()
     calc.vZConduction[n*3+1] = thc;
     calc.vZConduction[n*3+2] = thc;
 
-    calc.vZVolumeFactor[n] = get_volume_factor(i);
+    calc.vzVolumeFactor[n] = get_volume_factor(i);
     calc.vTimurConnectionFactor[n] = 1.0;
   }
 
@@ -453,6 +446,21 @@ void SimData::computeReservoirTransmissibilities()
     const auto element_pair = matrix_flow_data.invert_hash(conn.first);
     auto & face = flow_data.insert_connection(element_pair.first, element_pair.second);
     face.transmissibility = conn.second.transmissibility;
+    face.thermal_conductivity = conn.second.thermal_conductivity;
+    face.conType = conn.second.conType;
+    std::size_t face_second_conN = conn.second.conCV.size();
+    face.conCV.resize(face_second_conN);
+    face.conTr.resize(face_second_conN);
+    face.conArea.resize(face_second_conN);
+    face.conPerm.resize(face_second_conN);
+    face.zVolumeFactor.resize(face_second_conN);
+    for(std::size_t m=0; m < face_second_conN; m++){
+        face.conCV[m] = conn.second.conCV[m];
+        face.conTr[m] = conn.second.conTr[m];
+        face.conArea[m] = conn.second.conArea[m];
+        face.conPerm[m] = conn.second.conPerm[m];
+        face.zVolumeFactor[m] = conn.second.zVolumeFactor[m];
+    }
   }
 
   // save custom user-defined cell data for flow output
@@ -464,7 +472,6 @@ void SimData::computeReservoirTransmissibilities()
       flow_data.custom_names.push_back(rockPropNames[j]);
 
   // save values
-  // flow_data.custom_data.resize(n_flow_dfm_faces + grid.n_cells());
   for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
     if (is_fracture(face.marker()))
       if(dfm_faces.find(face.index())->second.coupled)
@@ -480,14 +487,11 @@ void SimData::computeReservoirTransmissibilities()
 
   for (std::size_t i=0; i<grid.n_cells(); ++i)
   {
-    // flow_data.custom_data.emplace_back();
     const std::size_t ielement = n_flow_dfm_faces + i;
     for (std::size_t j=0; j<n_vars; ++j)
       if (config.expression_type[j] == 0)
         flow_data.cells[ielement].custom.push_back( vsCellRockProps[i].v_props[j] );
   }
-
-  // new_flow_data = flow_data;
 }
 
 
@@ -542,7 +546,7 @@ void SimData::computeFracFracTran(const std::size_t                 frac,
   for ( std::size_t ipoly = 0; ipoly < n_poly; ++ipoly )
   {
     calc.vZoneCode[ipoly] = ipoly;
-    calc.vZVolumeFactor[ipoly] = efrac.aperture;
+    calc.vzVolumeFactor[ipoly] = efrac.aperture;
     calc.vZPorosity[ipoly] = 1.0;
     calc.vZPermCode[ipoly] = 1;
 
@@ -655,7 +659,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     // 1 (one) edfm frac
     int efrac_zone = 0;
     tran.vZoneCode[efrac_zone] = efrac_zone;
-    tran.vZVolumeFactor[efrac_zone] = efrac.aperture;
+    tran.vzVolumeFactor[efrac_zone] = efrac.aperture;
     tran.vZPorosity[efrac_zone] = 1.0;
     tran.vZPermCode[efrac_zone] = 1;
 
@@ -694,7 +698,7 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
         tran.vZConduction[n*3+2] = thc;
       }
 
-      tran.vZVolumeFactor[n] = 1;
+      tran.vzVolumeFactor[n] = 1;
       tran.vTimurConnectionFactor[n] = 1.0;
     }
 
@@ -705,25 +709,58 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
 
     // fill global flow data
     double f_m_tran = 0;
-    { // compute frac-matrix trans as a sum of two frac-block trances weighted by volume
-      // const double t1 = matrix_fracture_flow_data.trans_ij[0];
-      // const double t2 = matrix_fracture_flow_data.trans_ij[1];
-      // const double v1 = matrix_fracture_flow_data.volumes[1];
-      // const double v2 = matrix_fracture_flow_data.volumes[2];
-      // f_m_tran = (t1*v1 + t2*v2) / (v1 + v2);  // arithmetic
-
-      // const double t0 = matrix_fracture_flow_data.faces[0].transmissibility;
-      // const double t1 = matrix_fracture_flow_data.faces[1].transmissibility;
-      const double t0 = matrix_fracture_flow_data.get_connection(0, 1).transmissibility;
-      const double t1 = matrix_fracture_flow_data.get_connection(0, 2).transmissibility;
+    double f_m_thermal_cond = 0;
+    double davg = 0;
+    flow::FaceData conn1 = matrix_fracture_flow_data.get_connection(0, 1);
+    flow::FaceData conn2 = matrix_fracture_flow_data.get_connection(0, 2);
+    {
+      const double t0 = conn1.transmissibility;
+      const double t1 = conn2.transmissibility;
+      const double tc0 = conn1.thermal_conductivity;
+      const double tc1 = conn2.thermal_conductivity;
       const double v0 = matrix_fracture_flow_data.cells[1].volume;
       const double v1 = matrix_fracture_flow_data.cells[2].volume;
-      f_m_tran = (t0*v0 + t1*v1) / (v0 + v1);  // arithmetic
+      bool isVolAvg = false;
+      if(isVolAvg){
+          // compute frac-matrix trans as a sum of two frac-block trances weighted by volume
+          f_m_tran = (t0*v0 + t1*v1) / (v0 + v1);  // arithmetic
+      }
+      else{
+          // average distance
+          // f_m_tran = 2*A*km / avg_D, avg_D = volumetric average of distance.
+          const double d0 = conn1.conArea[0] * conn1.conPerm[0]/conn1.conTr[0];
+          const double d1 = conn2.conArea[0] * conn2.conPerm[0]/conn2.conTr[0];
+          davg = (d0*v0 + d1*v1) / (v0 + v1);
+          f_m_tran = 2*conn1.conArea[0]*conn1.conPerm[0]/davg;  // 2*A*km / avg_D
+      }
+      f_m_thermal_cond = (tc0*v0 + tc1*v1) / (v0 + v1);  // arithmetic
     }
 
     auto & conn = flow_data.insert_connection(efrac_flow_index(frac_ind, ecell),
                                               res_cell_flow_index(icell));
-    conn.transmissibility = f_m_tran;
+    { // Insert data to conn which is globally defined.
+        conn.transmissibility = f_m_tran;
+        conn.thermal_conductivity = f_m_thermal_cond;
+        conn.conType = 2; // M-F
+        std::size_t conN = 2;
+        // Actually all varaibles except for transmissibility is not used in AD-GPRS
+        // getGeomechanicsTransPoroCorrection; update transmissibility = trans * poro/poro_ref.
+        conn.conCV.resize(conN);
+        conn.conTr.resize(conN);
+        conn.conArea.resize(conN);
+        conn.conPerm.resize(conN);
+        conn.zVolumeFactor.resize(conN);
+
+        for(std::size_t m=0; m < conN; m++){
+            conn.conTr[m] = f_m_tran;
+            conn.conArea[m] = conn1.conArea[m];
+            conn.conPerm[m] = conn1.conPerm[m];
+        }
+        conn.zVolumeFactor[0] = davg;
+        conn.zVolumeFactor[1] = conn1.zVolumeFactor[1];
+        conn.conCV[0] = res_cell_flow_index(icell); // reservoir
+        conn.conCV[1] = efrac_flow_index(frac_ind, ecell); // fracture
+    }
 
     if (config.edfm_method == EDFMMethod::projection)
       apply_projection_edfm(frac_ind, ecell, icell, split);
@@ -751,18 +788,25 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
     const auto element_pair = frac_flow_data.invert_hash(conn.first);
     auto & new_connection = flow_data.insert_connection(efrac_flow_index(frac_ind, element_pair.first),
                                                         efrac_flow_index(frac_ind, element_pair.second));
-    new_connection.transmissibility = old_connection.transmissibility;
-    // std::cout << "old-conn:" << std::endl;
-    // std::cout << conn.second.transmissibility << std::endl;
-    // std::cout << "f-f-tran("
-    //           << efrac_flow_index(frac_ind, element_pair.first)
-    //           <<", "
-    //           << efrac_flow_index(frac_ind, element_pair.second)
-    //           << ") = "
-    //           << new_connection.transmissibility
-    //           <<" size - 1  = "
-    //           << flow_data.faces.size() - 1
-    //           << std::endl;
+    { // F-F
+        std::size_t conN = old_connection.conCV.size();
+        new_connection.transmissibility = old_connection.transmissibility;
+        new_connection.thermal_conductivity = old_connection.thermal_conductivity;
+        new_connection.conType = old_connection.conType;
+        new_connection.conCV.resize(conN);
+        new_connection.conTr.resize(conN);
+        new_connection.conArea.resize(conN);
+        new_connection.conPerm.resize(conN);
+        new_connection.zVolumeFactor.resize(conN);
+
+        for(std::size_t m=0; m < conN; m++){
+            new_connection.conTr[m] = old_connection.conTr[m];
+            new_connection.conArea[m] = old_connection.conArea[m];
+            new_connection.conPerm[m] = old_connection.conPerm[m];
+            new_connection.zVolumeFactor[m] = old_connection.zVolumeFactor[m];
+            new_connection.conCV[m] = old_connection.conCV[m];
+        }
+    }
   }
 
   // save custom cell data
@@ -776,7 +820,6 @@ void SimData::computeEDFMTransmissibilities(const std::vector<angem::PolyGroup<d
         cell.custom.push_back( vsCellRockProps[efrac.cells[i]].v_props[j] );
   }
 }
-
 
 std::size_t SimData::n_default_vars() const
 {
@@ -818,8 +861,6 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     const double k_neighbor_n = fabs(get_permeability(neighbor.index()) * face.normal());
     const double volume_cell = cell.volume();
     const double volume_neighbor = neighbor.volume();
-    // const double k_face = (volume_cell + volume_neighbor) /
-    //                       (volume_cell/k_cell_n + volume_neighbor/k_neighbor_n);
     const double k_face = k_cell_n * k_neighbor_n * (volume_cell + volume_neighbor) /
                           (k_cell_n*volume_neighbor + k_neighbor_n*volume_cell);
     // new face trans
@@ -849,14 +890,14 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     }
     else
     {
-      // std::cout << "replacing connection "
-      //           << res_cell_flow_index(icell)
-      //           << "-"
-      //           << res_cell_flow_index(neighbor.index())
-      //           << "\t portion = " << T_face_mm_new / T_face_mm_old * 100
-      //           << " %"
-      //           << std::endl;
+      std::size_t conN = con.conCV.size();
       con.transmissibility = T_face_mm_new;
+      // Modify the pre-existing m-m transmissibility
+      con.thermal_conductivity = con.thermal_conductivity * T_face_mm_new / T_face_mm_old; // approximation
+      for(std::size_t m=0; m < conN; m++){
+          con.conTr[m] = con.conTr[m]* T_face_mm_new / T_face_mm_old;
+          con.conArea[m] = con.conArea[m]* T_face_mm_new / T_face_mm_old;
+      }
 
       if (T_face_mm_new / T_face_mm_old > 1.0)
       {
@@ -869,20 +910,36 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     const double k_f = vEfrac[ifrac].conductivity / vEfrac[ifrac].aperture;
     const double volume_frac = frac_poly.area() * vEfrac[ifrac].aperture;
     const double k_mf = (volume_frac + volume_neighbor) /
-                        (volume_frac/k_mf + volume_neighbor/k_neighbor_n);
+                        (volume_frac/k_f + volume_neighbor/k_neighbor_n);
     const double T_fm_projection = k_mf * frac_poly.area() /
                                    frac_poly.center().distance(neighbor.center());
+    std::size_t iCellNeighbor = neighbor.index();
 
     auto & new_connection =
         flow_data.insert_connection(res_cell_flow_index(neighbor.index()),
                                     efrac_flow_index(ifrac, ielement));
-    new_connection.transmissibility = T_fm_projection;
-    // flow_data.trans_ij[new_con] = T_fm_projection;
-    // std::cout << "adding connection "
-    //           << res_cell_flow_index(neighbor.index())
-    //           << "-"
-    //           << efrac_flow_index(ifrac, ielement)
-    //           << std::endl;
+    {
+        // Add  a new m-f transmissibility
+        new_connection.transmissibility = T_fm_projection;
+        new_connection.thermal_conductivity = 0; // it shall be calculated later.
+        new_connection.conType = 2; // M-F
+        std::size_t new_connection_conN = 2; // M-F
+        new_connection.conCV.resize(new_connection_conN);
+        new_connection.conTr.resize(new_connection_conN);
+        new_connection.conArea.resize(new_connection_conN);
+        new_connection.conPerm.resize(new_connection_conN);
+        new_connection.zVolumeFactor.resize(new_connection_conN);
+        new_connection.conCV[0] = res_cell_flow_index(iCellNeighbor); // reservoir
+        new_connection.conCV[1] = efrac_flow_index(ifrac, ielement); // fracture
+        new_connection.zVolumeFactor[0] = frac_poly.center().distance(neighbor.center())-vEfrac[ifrac].aperture/2;
+        new_connection.zVolumeFactor[1] = vEfrac[ifrac].aperture;
+        new_connection.conPerm[0] = k_neighbor_n;
+        new_connection.conPerm[1] = k_f;
+        for(std::size_t m=0; m < new_connection_conN; m++){
+            new_connection.conArea[m] = frac_poly.area();
+            new_connection.conTr[m] = new_connection.conPerm[m]*new_connection.conArea[m]/new_connection.zVolumeFactor[m];
+        }
+    }
   }
 }
 
@@ -993,7 +1050,7 @@ compute_frac_frac_intersection_transes(const std::vector<angem::Point<3,double>>
   for ( int i = 0; i < polys.size(); i++ )
   {
     tran.vZoneCode[i] = i;
-    tran.vZVolumeFactor[i] = vAperture[i];
+    tran.vzVolumeFactor[i] = vAperture[i];
     tran.vZPorosity[i] = 1.0;
     tran.vZPermCode[i] = 1;
 
@@ -1179,24 +1236,6 @@ void SimData::handleConnections()
           gm_cell_to_flow_cell[icell].push_back(efrac_flow_index(ifrac, i));
     }
   }
-
-  // update dfm face indices in map
-  // std::unordered_set<std::size_t> face_touched;
-  // std::size_t counter = 0;
-  // for (auto face = grid.begin_faces(); face != grid.end_faces(); ++ face)
-  //   if (is_fracture(face.marker()))
-  //   {
-  //     counter++;
-  //     auto flow_face_it = dfm_faces.find(face.master_index());
-  //     auto & facet = flow_face_it->second;
-  //     if (face_touched.insert(face.master_index()).second)
-  //     {
-  //       facet.ifracture = find(face.marker(), fracture_face_markers);
-  //       facet.nface = face.index();
-  //     }
-  //   }
-
-  // std::cout << "n new dfm face = " << counter << std::endl;
 }
 
 
@@ -1260,149 +1299,17 @@ void SimData::definePhysicalFacets()
 
       facet.aperture = config.discrete_fractures[ifrac].aperture; //m
       facet.conductivity = config.discrete_fractures[ifrac].conductivity; //mD.m
-      // bool found_label = false;
-      // for (std::size_t ifrac=0; ifrac<config.discrete_fractures.size(); ++ifrac)
-      //   if( marker == config.discrete_fractures[ifrac].label)
-      //   {
-          // facet.aperture = config.discrete_fractures[ifrac].aperture; //m
-          // facet.conductivity = config.discrete_fractures[ifrac].conductivity; //mD.m
-          // found_label = true;
-        // }
-      // if (!found_label)
-      // {
-      //   std::cout << "No properties for DFM label "
-      //             << marker
-      //             << " found! Setting sealed fault."
-      //             << std::endl;
-      //   facet.aperture = 1; //m
-      //   facet.conductivity = 0; //mD.m
-      // }
-
       dfm_faces.insert({face.index(), facet});
 
       if (coupled)
         nfluid++;
     }  //  end DFM fracture face case
   }
-  n_flow_dfm_faces = static_cast<std::size_t>(nfluid);
+  n_flow_dfm_faces = static_cast<std::size_t>(nfluid); // DFM volume is only applied when flow problem is solved
 
   std::cout << "Number of Neumann faces = " << n_neumann_faces << std::endl;
   std::cout << "Number of Dirichlet faces = " << n_dirichlet_faces << std::endl;
 }
-
-
-// void SimData::createSimpleWells()
-// {
-//   vector<double> center(3,0);
-//   /// choise support cell for internal facets
-//   // FAULT/FRACTURE PART
-//   for ( int iwell = 0; iwell < nWells; iwell++ )
-//   {
-//     int icell = 0;
-//     for ( int iface = 0; iface < nFaces; iface++ )
-//     {
-//       center[0] = vsFaceCustom[iface].center[0];
-//       center[1] = vsFaceCustom[iface].center[1];
-//       center[2] = vsFaceCustom[iface].center[2];
-
-//       if ( vsFaceCustom[iface].nMarker > 0 )
-//       {
-//         if ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk &&
-//              abs ( center[1] - vsWell[iwell].vWellCoordinate[1] ) < vsWell[iwell].radius_poisk )
-//         {
-//           if(center[0] < -250 || center[0] > 250)
-// 	  {
-// 	    vsWell[iwell].vRadiusPoisk.push_back ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) );
-// 	    vsWell[iwell].vID.push_back ( icell );
-// 	    vsWell[iwell].vWi.push_back ( 100.0 );
-// 	  }
-//         }
-//         ++icell;
-//       }
-//     }
-//   }
-//   // MATRIX PART
-//   /*
-//   int n = 0;
-//   for(int iface = 0; iface < nFaces; iface++)
-//   {
-//     if(vsFaceCustom[iface].nMarker > 0) n++;
-//   }
-//   for ( int iwell = 0; iwell < nWells; iwell++ )
-//   {
-//     int icell = 0;
-//     for ( int ic = 0; ic < nCells; ic++ )
-//     {
-//       center[0] = vsCellCustom[ic].center[0];
-//       center[1] = vsCellCustom[ic].center[1];
-//       center[2] = vsCellCustom[ic].center[2];
-//       if ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) < vsWell[iwell].radius_poisk
-// 	 && (center[2] > vsWell[iwell].vWellCoordinate[2]) && (center[2] < vsWell[iwell].vWellCoordinate[3]) )
-//       {
-//         vsWell[iwell].vRadiusPoisk.push_back ( abs ( center[0] - vsWell[iwell].vWellCoordinate[0] ) )  ; //&& (center[2] > vsWell[iwell].vWellCoordinate[2]) && (center[2] < vsWell[iwell].vWellCoordinate[3])
-//         vsWell[iwell].vID.push_back ( ic + n);
-//         vsWell[iwell].vWi.push_back ( 10.0 ); //well index [default: 10.0]
-//       }
-//     }
-//     if(vsWell[iwell].vWi.size() < 1)
-//     {
-//       cout << "Well definition is wrong" << endl;
-//     }
-//   }*/
-
-//   for ( int iwell = 0; iwell < nWells; iwell++ )
-//   {
-//     vsWell[iwell].datum = 1e16;
-//     for(int i = 0; i < vsWell[iwell].vID.size(); ++i)
-//     {
-//       int icell = vsWell[iwell].vID.size();
-//       if( fabs(vsCellCustom[icell].center[2]) < vsWell[iwell].datum )
-// 	      vsWell[iwell].datum = abs(vsCellCustom[icell].center[2]);
-//     }
-//   }
-
-// #if 0
-//   // limit number of perforations
-//   for ( int iwell = 0; iwell < nWells; iwell++ )
-//   {
-//     vector<double> vrad_;
-//     vrad_.assign(vsWell[iwell].vRadiusPoisk.size(),0);
-//     vrad_ = vsWell[iwell].vRadiusPoisk;
-//     sort(vrad_.begin(), vrad_.end());
-
-//     int n_ = std::min(2, int(vrad_.size()));
-//     for(int j = 0; j < n_; ++j)
-//     {
-//       int m_ = 0;
-//       for(int k = j; k < vsWell[iwell].vRadiusPoisk.size(); ++k)
-//       {
-//        cout << vrad_[j] << "\t" << vsWell[iwell].vRadiusPoisk[k] << endl;
-//        if(abs(vrad_[j] - vsWell[iwell].vRadiusPoisk[k]) < 1e-8 )
-//        {
-// 	  m_ = k;
-//           break;
-//        }
-//       }
-//       double rad_ = vsWell[iwell].vRadiusPoisk[j];
-//       vsWell[iwell].vRadiusPoisk[j] = vsWell[iwell].vRadiusPoisk[m_];
-//       vsWell[iwell].vRadiusPoisk[m_] = rad_;
-//       int l_ = vsWell[iwell].vID[j];
-//       vsWell[iwell].vID[j] = vsWell[iwell].vID[m_];
-//       vsWell[iwell].vID[m_] = l_;
-//       vsWell[iwell].vWi[j] = vsWell[iwell].vWi[m_];
-//     }
-//     vsWell[iwell].vRadiusPoisk.resize(n_);
-//     vsWell[iwell].vID.resize(n_);
-//     vsWell[iwell].vWi.resize(n_);
-
-//     for(int k_ = 0; k_ < vsWell[iwell].vRadiusPoisk.size(); ++k_)
-//     {
-//       cout << "WELL(" << iwell << "), Perf(" << k_ << ") = "  <<  vsWell[iwell].vID[k_] << endl;
-//     }
-//   }
-// #endif
-// }
-
 
 double SimData::get_property(const std::size_t cell,
                              const std::string & key) const
@@ -1512,22 +1419,57 @@ void SimData::computeTransEfracIntersection()
                                                        frac_frac_flow_data);
                 std::cout << "frac-frac intersection tran data" << std::endl;
                 double trans = 0;
+                double TConduction = 0;
+                std::vector<double> ti(2, 0.0);
+                std::vector<double> areai(2, 0.0);
+                std::vector<double> permi(2, 0.0);
+                std::vector<double> zV(2, 0.0);
+                try{
+                auto conn = frac_frac_flow_data.map_connection;
+                }
+                catch( int e){
+                    double aa=1;
+                }
                 for (const auto & conn : frac_frac_flow_data.map_connection)
                 {
                   auto connection = conn.second;
                   const auto element_pair = frac_frac_flow_data.invert_hash(conn.first);
-                  if (splits.markers[element_pair.first] != splits.markers[element_pair.second])
+                  if (splits.markers[element_pair.first] != splits.markers[element_pair.second]){
                     trans += connection.transmissibility;
+                    TConduction += connection.thermal_conductivity;// to be validated later.
+                  } else{
+                    ti[splits.markers[element_pair.first]] = connection.conTr[0]+connection.conTr[1];
+                    zV[splits.markers[element_pair.first]] = connection.zVolumeFactor[0];
+                    areai[splits.markers[element_pair.first]] = connection.conArea[0];
+                    permi[splits.markers[element_pair.first]] = connection.conPerm[0];
+                  }
                 }
 
                 auto new_connection = flow_data.insert_connection(efrac_flow_index(i, ielement),
                                                                   efrac_flow_index(j, jelement));
-                new_connection.transmissibility = trans;
+                { // Add intersection connection lists.
+                    new_connection.transmissibility = trans;
+                    new_connection.thermal_conductivity = TConduction; // shall be validated later.
+                    new_connection.conType = 3;
+                    std::size_t new_connection_conN = 2;
+                    new_connection.conCV.resize(new_connection_conN);
+                    new_connection.conTr.resize(new_connection_conN);
+                    new_connection.conArea.resize(new_connection_conN);
+                    new_connection.conPerm.resize(new_connection_conN);
+                    new_connection.zVolumeFactor.resize(new_connection_conN);
+                    new_connection.conCV[0] = efrac_flow_index(i, ielement);
+                    new_connection.conCV[1] = efrac_flow_index(j, jelement);
+
+                    for (std::size_t m=0; m<new_connection_conN; m++){
+                        new_connection.conTr[m] = ti[m];
+                        new_connection.conArea[m] = areai[m];
+                        new_connection.conPerm[m] = permi[m];
+                        new_connection.zVolumeFactor[m] = zV[m];
+                    }
+                }
               }
 
             }
-
-
           }
       }
     }
@@ -1596,25 +1538,32 @@ void SimData::meshFractures()
               if (neighbor < n_flow_dfm_faces + grid.n_cells() and neighbor > n_flow_dfm_faces)
               {
                 flow::FaceData * new_connection;
-                // std::size_t new_conn;
                 if (new_flow_data.connection_exists(new_shift + i, neighbor))
                   *new_connection = new_flow_data.get_connection(new_shift + i, neighbor);
-                  // new_conn = new_flow_data.connection_index(new_shift + i, neighbor);
                 else
                   *new_connection = new_flow_data.insert_connection(new_shift + i, neighbor);
 
-                // const std::size_t old_conn = flow_data.connection_index(old_element, neighbor);
                 const auto & old_conn = flow_data.get_connection(old_element, neighbor);
                 const double factor = poly_section.area() / poly_j.area();
-                // const double T_ij = flow_data.trans_ij[old_conn];
                 const double T_ij = old_conn.transmissibility;
-                (*new_connection).transmissibility = T_ij * factor;
-                // if (new_conn >= new_flow_data.trans_ij.size())
-                //   (*new_connection).transmissibility = T_ij * factor;
-                //   // new_flow_data.trans_ij.push_back(T_ij * factor);
-                // else
-                  // (*new_connection).transmissibility = T_ij * factor;
-                  // new_flow_data.trans_ij[new_conn] += T_ij * factor;
+                {
+                    (*new_connection).transmissibility = T_ij * factor;
+                    (*new_connection).thermal_conductivity = old_conn.thermal_conductivity * factor; // shall be validated later.
+                    (*new_connection).conType = old_conn.conType;
+                    std::size_t old_conn_conN = old_conn.conCV.size();
+                    (*new_connection).conCV.resize(old_conn_conN);
+                    (*new_connection).conTr.resize(old_conn_conN);
+                    (*new_connection).conArea.resize(old_conn_conN);
+                    (*new_connection).conPerm.resize(old_conn_conN);
+                    (*new_connection).zVolumeFactor.resize(old_conn_conN);
+                    for (std::size_t m=0; m<old_conn_conN; m++){
+                        (*new_connection).conCV[m] = old_conn.conCV[m];
+                        (*new_connection).conTr[m] = old_conn.conTr[m];
+                        (*new_connection).conArea[m] = old_conn.conArea[m]*factor;
+                        (*new_connection).conPerm[m] = old_conn.conPerm[m];
+                        (*new_connection).zVolumeFactor[m] = old_conn.zVolumeFactor[m];
+                    }
+                }
               }
             }
           }
@@ -1629,9 +1578,6 @@ void SimData::meshFractures()
 
       for (std::size_t i=0; i<new_frac_mesh.n_polygons(); ++i)
       {
-        // new_flow_data.volumes.push_back(frac_flow_data.volumes[i]);
-        // new_flow_data.poro.push_back(frac_flow_data.poro[i]);
-        // new_flow_data.depth.push_back(frac_flow_data.depth[i]);
         auto & new_cell = new_flow_data.cells.emplace_back();
         new_cell.volume = frac_flow_data.cells[i].volume;
         new_cell.porosity = frac_flow_data.cells[i].porosity;
@@ -1640,14 +1586,29 @@ void SimData::meshFractures()
 
       for (const auto & conn : frac_flow_data.map_connection)
       {
-        // const std::size_t iconn = conn.second;
         const auto element_pair = frac_flow_data.invert_hash(conn.first);
         auto old_connection = conn.second;
         const std::size_t i = new_shift + element_pair.first;
         const std::size_t j = new_shift + element_pair.second;
         auto new_connection = new_flow_data.insert_connection(i, j);
-        // new_flow_data.trans_ij.push_back(frac_flow_data.trans_ij[iconn]);
-        new_connection.transmissibility = old_connection.transmissibility;
+        {
+            new_connection.transmissibility = old_connection.transmissibility;
+            new_connection.thermal_conductivity = old_connection.thermal_conductivity; // shall be validated later.
+            new_connection.conType = old_connection.conType;
+            std::size_t old_connection_conN = old_connection.conCV.size();
+            new_connection.conCV.resize(old_connection_conN);
+            new_connection.conTr.resize(old_connection_conN);
+            new_connection.conArea.resize(old_connection_conN);
+            new_connection.conPerm.resize(old_connection_conN);
+            new_connection.zVolumeFactor.resize(old_connection_conN);
+            for (std::size_t m=0; m<old_connection_conN; m++){
+                new_connection.conCV[m] = old_connection.conCV[m];
+                new_connection.conTr[m] = old_connection.conTr[m];
+                new_connection.conArea[m] = old_connection.conArea[m];
+                new_connection.conPerm[m] = old_connection.conPerm[m];
+                new_connection.zVolumeFactor[m] = old_connection.zVolumeFactor[m];
+            }
+        }
       }
 
       // save custom cell data
@@ -1681,7 +1642,6 @@ void SimData::meshFractures()
         for (double & value : new_custom_data)
           value /= static_cast<double>(rock_cell_neighbors.size());
 
-        // new_flow_data.custom_data.push_back(new_custom_data);
         new_flow_data.cells.back().custom= new_custom_data;
       }
 
@@ -1697,7 +1657,6 @@ void SimData::meshFractures()
         const auto elements = flow_data.invert_hash(conn.first);
         if (elements.second >= range.first and elements.second < range.second)
         {
-          // const double Tij = flow_data.trans_ij[conn.second];
           const double Tij = conn.second.transmissibility;
           std::size_t ielement = elements.first;
           std::size_t jelement = elements.second;
@@ -1705,9 +1664,25 @@ void SimData::meshFractures()
             ielement = ielement - old_shift + new_shift;
           if (jelement >= grid.n_cells())
             jelement = jelement - old_shift + new_shift;
-          auto & new_connetion = new_flow_data.insert_connection(ielement, jelement);
-          // new_flow_data.trans_ij.push_back(Tij);
-          new_connetion.transmissibility = Tij;
+          auto & new_connection = new_flow_data.insert_connection(ielement, jelement);
+          {
+              new_connection.transmissibility = Tij;
+              new_connection.thermal_conductivity = conn.second.thermal_conductivity; // shall be validated later.
+              new_connection.conType = conn.second.conType;
+              std::size_t conn_second_conN = conn.second.conCV.size();
+              new_connection.conCV.resize(conn_second_conN);
+              new_connection.conTr.resize(conn_second_conN);
+              new_connection.conArea.resize(conn_second_conN);
+              new_connection.conPerm.resize(conn_second_conN);
+              new_connection.zVolumeFactor.resize(conn_second_conN);
+              for (std::size_t m=0; m<conn_second_conN; m++){
+                  new_connection.conCV[m] = conn.second.conCV[m];
+                  new_connection.conTr[m] = conn.second.conTr[m];
+                  new_connection.conArea[m] = conn.second.conArea[m];
+                  new_connection.conPerm[m] = conn.second.conPerm[m];
+                  new_connection.zVolumeFactor[m] = conn.second.zVolumeFactor[m];
+              }
+          }
         }
       }
 
@@ -1718,10 +1693,6 @@ void SimData::meshFractures()
         new_cell.porosity = flow_data.cells[old_shift + i].porosity;
         new_cell.depth = flow_data.cells[old_shift + i].depth;
         new_cell.custom = flow_data.cells[old_shift + i].custom;
-        // new_flow_data.volumes.push_back(flow_data.volumes[old_shift + i]);
-        // new_flow_data.poro.push_back(flow_data.poro[old_shift + i]);
-        // new_flow_data.depth.push_back(flow_data.depth[old_shift + i]);
-        // new_flow_data.custom_data.push_back(flow_data.custom_data[old_shift + i]);
       }
     }
 
@@ -1731,11 +1702,6 @@ void SimData::meshFractures()
     else
       new_shift += new_frac_meshes[f].n_polygons();
   }  // end efrac loop
-
-//   // const std::string vtk_file2 = "./ababa.vtk";
-//   // IO::VTKWriter::write_vtk(new_frac_mesh.vertices.points,
-//   //                          new_frac_mesh.polygons,
-//   //                          vtk_file2);
 
   std::cout << "saving frac meshes" << std::endl;
 

@@ -26,7 +26,7 @@ void CalcTranses::init()
   vCodePolyhedron.resize(NbPolyhedra);
   //properties
   vZoneCode.resize(NbZones);
-  vZVolumeFactor.resize(NbZones);
+  vzVolumeFactor.resize(NbZones);
   vTimurConnectionFactor.resize(NbZones);
   vZPorosity.resize(NbZones);
   vZPermCode.resize(NbZones);
@@ -235,7 +235,7 @@ void CalcTranses::ComputeControlVolumeList()
       CVx[j] = FXG[i];
       CVy[j] = FYG[i];
       CVz[j] = FZG[i];
-      CVVolume[j] = FArea[i] * ZVolumeFactor[CVZone[j]];
+      CVVolume[j] = FArea[i] * zVolumeFactor[CVZone[j]];
     }
 
   for (int i=0;i<NbPolyhedra;i++)
@@ -248,7 +248,7 @@ void CalcTranses::ComputeControlVolumeList()
       CVx[j] = VXG[i];
       CVy[j] = VYG[i];
       CVz[j] = VZG[i];
-      CVVolume[j] = VVolume[i] * ZVolumeFactor[CVZone[j]];
+      CVVolume[j] = VVolume[i] * zVolumeFactor[CVZone[j]];
     }
   }
 }
@@ -374,23 +374,23 @@ void CalcTranses::PrepareConnectionList()
     // M-M and M-F
 
     NbConnections = 0;
-    for (std::size_t i=0; i<NbPolygons; i++)
-    {
-      // if (ListV1[i] < 0)
-      if (CodePolygon[i] < 0)
-      {
-        if (ListV2[i] != -1)
-          NbConnections++;
-      }
-      else
-      {
-        if (ListV2[i] == -1)
-          NbConnections++;
-        else
-          NbConnections += 2;
-      }
-
-    }
+    if (NbPolyhedra > 0) // syncronize this part as the same as in the ConstructConnectionList
+        for (std::size_t i=0; i<NbPolygons; i++)
+        {
+          // if (ListV1[i] < 0)
+          if (CodePolygon[i] < 0)
+          {
+            if (ListV2[i] != -1)
+              NbConnections++;
+          }
+          else
+          {
+            if (ListV2[i] == -1)
+              NbConnections++;
+            else
+              NbConnections += 2;
+          }
+        }
 
     // F-F
 
@@ -413,18 +413,15 @@ void CalcTranses::ConstructConnectionList()
 {
     int j,k;
 
-    // std::cout << "NbConnections = "<< NbConnections << std::endl;
-
-    ConType.resize(NbConnections);
-    ConN.resize(NbConnections);
-    ConCV.resize(NbConnections);
-    ConTr.resize(NbConnections);
-    ConArea.resize(NbConnections);
+    conType.resize(NbConnections);
+    conCV.resize(NbConnections);
+    conTr.resize(NbConnections);
+    conArea.resize(NbConnections);
 
     ConGeom.resize(NbConnections);
     ConMult.resize(NbConnections);
 
-    ConPerm.resize(NbConnections);
+    conPerm.resize(NbConnections);
     ConP1x.resize(NbConnections);
     ConP1y.resize(NbConnections);
     ConP1z.resize(NbConnections);
@@ -450,23 +447,17 @@ void CalcTranses::ConstructConnectionList()
     if (NbPolyhedra > 0)
     for (std::size_t i=0; i<NbPolygons; i++)
     {
-      // if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
-      // if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
-      // if (CodePolygon[i]>=0 && ListV2[i]>=0)	// M-F and F-M
-
-      // if (ListV1[i] < 0 && ListV2[i] >= 0)  // M-M
       if (CodePolygon[i] < 0 && ListV2[i] >= 0)  // M-M
       {
         // std::cout << "M-M " << i << std::endl;
-        ConType[k] = 1;
-        ConN[k] = 2;
+        conType[k] = 1;
 
-        ConCV[k].resize(2);
-        ConCV[k][0] = EQV[ListV1[i]];
-        ConCV[k][1] = EQV[ListV2[i]];
+        conCV[k].resize(2);
+        conCV[k][0] = EQV[ListV1[i]];
+        conCV[k][1] = EQV[ListV2[i]];
 
-        ConArea[k].resize(2);
-        ConArea[k][0] = ConArea[k][1] = FArea[i];
+        conArea[k].resize(2);
+        conArea[k][0] = conArea[k][1] = FArea[i];
 
         ConP1x[k] = Fnx[i];
         ConP1y[k] = Fny[i];
@@ -484,8 +475,8 @@ void CalcTranses::ConstructConnectionList()
         ConVy[k] = Fny[i];
         ConVz[k] = Fnz[i];
 
-        ConTr[k].resize(2);
-        ConPerm[k].resize(2);
+        conTr[k].resize(2);
+        conPerm[k].resize(2);
 
         ConGeom[k].resize(2);
         ConMult[k].resize(2);
@@ -498,10 +489,9 @@ void CalcTranses::ConstructConnectionList()
       if (CodePolygon[i] >= 0 && ListV2[i] < 0) // M-F
       {
         // std::cout << "M-F " << i << std::endl;
-        ConType[k] = 2;
-        ConN[k] = 2;
+        conType[k] = 2;
 
-        ConCV[k].resize(2);
+        conCV[k].resize(2);
 
         if (ListV1[i] < 0)
         {
@@ -511,11 +501,11 @@ void CalcTranses::ConstructConnectionList()
           exit(0);
         }
 
-        ConCV[k][0] = EQV[ListV1[i]];
-        ConCV[k][1] = EQF[i];
+        conCV[k][0] = EQV[ListV1[i]];
+        conCV[k][1] = EQF[i];
 
-        ConArea[k].resize(2);
-        ConArea[k][0] = ConArea[k][1] = FArea[i];
+        conArea[k].resize(2);
+        conArea[k][0] = conArea[k][1] = FArea[i];
 
         ConP1x[k] = Fnx[i];
         ConP1y[k] = Fny[i];
@@ -528,8 +518,8 @@ void CalcTranses::ConstructConnectionList()
         ConVy[k] = Fny[i];
         ConVz[k] = Fnz[i];
 
-        ConTr[k].resize(2);
-        ConPerm[k].resize(2);
+        conTr[k].resize(2);
+        conPerm[k].resize(2);
 
         ConGeom[k].resize(2);
         ConMult[k].resize(2);
@@ -543,15 +533,14 @@ void CalcTranses::ConstructConnectionList()
       {
         // std::cout << "M-F && F-M " << i << std::endl;
 
-        ConType[k] = 2;
-        ConN[k] = 2;
+        conType[k] = 2;
 
-        ConCV[k].resize(2);
-        ConCV[k][0] = EQV[ListV1[i]];
-        ConCV[k][1] = EQF[i];
+        conCV[k].resize(2);
+        conCV[k][0] = EQV[ListV1[i]];
+        conCV[k][1] = EQF[i];
 
-        ConArea[k].resize(2);
-        ConArea[k][0] = ConArea[k][1] = FArea[i];
+        conArea[k].resize(2);
+        conArea[k][0] = conArea[k][1] = FArea[i];
 
         ConP1x[k] = Fnx[i];
         ConP1y[k] = Fny[i];
@@ -564,22 +553,21 @@ void CalcTranses::ConstructConnectionList()
         ConVy[k] = Fny[i];
         ConVz[k] = Fnz[i];
 
-        ConTr[k] .resize(2);
-        ConPerm[k].resize(2);
+        conTr[k] .resize(2);
+        conPerm[k].resize(2);
 
         ConGeom[k].resize(2);
         ConMult[k].resize(2);
 
         k++;
 
-        ConType[k] = 2;
-        ConN[k] = 2;
-        ConCV[k].resize(2);
-        ConCV[k][0] = EQV[ListV2[i]];
-        ConCV[k][1] = EQF[i];
+        conType[k] = 2;
+        conCV[k].resize(2);
+        conCV[k][0] = EQV[ListV2[i]];
+        conCV[k][1] = EQF[i];
 
-        ConArea[k].resize(2);
-        ConArea[k][0] = ConArea[k][1] = FArea[i];
+        conArea[k].resize(2);
+        conArea[k][0] = conArea[k][1] = FArea[i];
 
         ConP1x[k] = Fnx[i];
         ConP1y[k] = Fny[i];
@@ -592,8 +580,8 @@ void CalcTranses::ConstructConnectionList()
         ConVy[k] = Fny[i];
         ConVz[k] = Fnz[i];
 
-        ConTr[k] .resize(2);
-        ConPerm[k].resize(2);
+        conTr[k] .resize(2);
+        conPerm[k].resize(2);
 
         ConGeom[k].resize(2);
         ConMult[k].resize(2);
@@ -614,12 +602,12 @@ void CalcTranses::ConstructConnectionList()
       }
       if ( ( j-i ) >= 2 )
       {
-        ConType[k] = 3;
-        ConN[k] = ( j-i );
+        conType[k] = 3;
+        std::size_t conN = ( j-i );
 
-        ConCV[k].resize(j-i);
+        conCV[k].resize(j-i);
         for ( std::size_t n=i; n<j; n++ )
-          ConCV[k][n-i] = EQF[ListF[n]];
+          conCV[k][n-i] = EQF[ListF[n]];
 
         ConIx[k] = X[ListE1[i]];
         ConIy[k] = Y[ListE1[i]];
@@ -628,23 +616,23 @@ void CalcTranses::ConstructConnectionList()
         ConVy[k] = Y[ListE1[i]] - Y[ListE2[i]];
         ConVz[k] = Z[ListE1[i]] - Z[ListE2[i]];
 
-        ConArea[k].resize(j-1);
+        conArea[k].resize(j-1);
 
         for ( std::size_t n = i; n < j; n++ ) // Double check the formula
         {
-          ConArea[k][n - i] = ZVolumeFactor[CVZone[ConCV[k][n - i]]] *
+          conArea[k][n - i] = zVolumeFactor[CVZone[conCV[k][n - i]]] *
               sqrt ( ConVx[k] * ConVx[k] + ConVy[k] * ConVy[k] + ConVz[k] * ConVz[k] );
           // TODO TIMUR (F-F connection)
-          ConArea[k][n - i] *= vTimurConnectionFactor[CVZone[ConCV[k][n - i]]];
+          conArea[k][n - i] *= vTimurConnectionFactor[CVZone[conCV[k][n - i]]];
         }
-        // ConTr[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
-        ConTr[k].resize(j-i);
-        ConPerm[k].resize(j-i);
+        // conTr[k] = ( double* ) malloc ( ( j-i ) * ( sizeof ( double ) ) );
+        conTr[k].resize(j-i);
+        conPerm[k].resize(j-i);
 
         ConGeom[k].resize(j-i);
         ConMult[k].resize(j-i);
 
-        NbTransmissibility += ( ConN[k]* ( ConN[k]-1 ) ) /2;
+        NbTransmissibility += ( conN* ( conN-1 ) ) /2;
         k++;
       }
       i = j;
@@ -691,29 +679,30 @@ void CalcTranses::ComputeContinuityNode()
 
       Conhx[i] = Conhy[i] = Conhz[i] = 0;
 
-      if (ConType[i] == 1)  // M-M ///
+      if (conType[i] == 1)  // M-M ///
       {
-        px = CVx[ConCV[i][1]] - CVx[ConCV[i][0]];
-        py = CVy[ConCV[i][1]] - CVy[ConCV[i][0]];
-        pz = CVz[ConCV[i][1]] - CVz[ConCV[i][0]];
+        px = CVx[conCV[i][1]] - CVx[conCV[i][0]];
+        py = CVy[conCV[i][1]] - CVy[conCV[i][0]];
+        pz = CVz[conCV[i][1]] - CVz[conCV[i][0]];
 
-        ProjectionA(  CVx[ConCV[i][0]], CVy[ConCV[i][0]], CVz[ConCV[i][0]],
+        ProjectionA(  CVx[conCV[i][0]], CVy[conCV[i][0]], CVz[conCV[i][0]],
                       px, py, pz,
                       ConIx[i], ConIy[i], ConIz[i],
                       ConVx[i], ConVy[i], ConVz[i],
                       &Conhx[i], &Conhy[i], &Conhz[i]);
       }
-      else if (ConType[i] == 2)  // M-F ///
+      else if (conType[i] == 2)  // M-F ///
       {
-        Conhx[i] = CVx[ConCV[i][1]];
-        Conhy[i] = CVy[ConCV[i][1]];
-        Conhz[i] = CVz[ConCV[i][1]];
+        Conhx[i] = CVx[conCV[i][1]];
+        Conhy[i] = CVy[conCV[i][1]];
+        Conhz[i] = CVz[conCV[i][1]];
       }
-      else if (ConType[i] == 3)  // F-F ///
+      else if (conType[i] == 3)  // F-F ///
       {
-        for (j=0;j<ConN[i];j++)
+        std::size_t conN = conCV[i].size();
+        for (j=0;j<conN;j++)
         {
-          ProjectionB( CVx[ConCV[i][j]], CVy[ConCV[i][j]], CVz[ConCV[i][j]],
+          ProjectionB( CVx[conCV[i][j]], CVy[conCV[i][j]], CVz[conCV[i][j]],
                        ConIx[i], ConIy[i], ConIz[i],
                        ConVx[i], ConVy[i], ConVz[i],
                        &hx, &hy, &hz);
@@ -722,9 +711,9 @@ void CalcTranses::ComputeContinuityNode()
           Conhz[i] += hz;
         }
 
-        Conhx[i] = Conhx[i] / ConN[i];
-        Conhy[i] = Conhy[i] / ConN[i];
-        Conhz[i] = Conhz[i] / ConN[i];
+        Conhx[i] = Conhx[i] / conN;
+        Conhy[i] = Conhy[i] / conN;
+        Conhz[i] = Conhz[i] / conN;
       }
     }
 }
@@ -736,9 +725,9 @@ void CalcTranses::ComputeDirectionalPermeability()
 
     for (std::size_t i=0; i<NbConnections; i++)
     {
-      if (ConType[i] == 1)  // M-M //
+      if (conType[i] == 1)  // M-M //
       {
-        k = ConCV[i][0];
+        k = conCV[i][0];
         assert(k >= 0);
 
         fx = CVx[k] - Conhx[i];
@@ -761,7 +750,7 @@ void CalcTranses::ComputeDirectionalPermeability()
              ZPermeability[CVZone[k]][5]*fy +
              ZPermeability[CVZone[k]][2]*fz;
 
-        ConPerm[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
+        conPerm[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
         // @HACK
         // We dont need a REAL value of conductivity
@@ -784,7 +773,7 @@ void CalcTranses::ComputeDirectionalPermeability()
 
         ConMult[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
-        k = ConCV[i][1];
+        k = conCV[i][1];
         assert(k >= 0);
 
         fx = CVx[k] - Conhx[i];
@@ -807,7 +796,7 @@ void CalcTranses::ComputeDirectionalPermeability()
              ZPermeability[CVZone[k]][5] * fy +
              ZPermeability[CVZone[k]][2] * fz;
 
-        ConPerm[i][1] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
+        conPerm[i][1] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
         // @HACK
         // We dont need a REAL value of conductivity
@@ -832,11 +821,11 @@ void CalcTranses::ComputeDirectionalPermeability()
         }
         ConMult[i][1]=sqrt(Kx*Kx+Ky*Ky+Kz*Kz);
       }
-      if (ConType[i] == 2)  // M-F ////
+      if (conType[i] == 2)  // M-F ////
       {
         // std::cout << "M-F" << std::endl;
 
-        k = ConCV[i][0];
+        k = conCV[i][0];
         assert(k >= 0);
 
         fx = CVx[k] - Conhx[i];
@@ -859,12 +848,12 @@ void CalcTranses::ComputeDirectionalPermeability()
              ZPermeability[CVZone[k]][5]*fy +
              ZPermeability[CVZone[k]][2]*fz;
 
-        ConPerm[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
+        conPerm[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
 
-        k = ConCV[i][1];
+        k = conCV[i][1];
         assert(k >= 0);
 
-        ConPerm[i][1] = ZPermeability[CVZone[k]][0];    // Kn (0)
+        conPerm[i][1] = ZPermeability[CVZone[k]][0];    // Kn (0)
 
         // @HACK
         // We dont need a REAL value of conductivity
@@ -888,15 +877,16 @@ void CalcTranses::ComputeDirectionalPermeability()
         ConMult[i][0] = sqrt(Kx*Kx + Ky*Ky + Kz*Kz);
         ConMult[i][1] = 1.0;
       }
-      if (ConType[i] == 3)  // F-F /////////////////////////////////////////////////
+      if (conType[i] == 3)  // F-F /////////////////////////////////////////////////
       {
         // std::cout << "F-F" << std::endl;
-        for (std::size_t j=0; j<ConN[i]; j++)
+        std::size_t conN = conCV[i].size();
+        for (std::size_t j=0; j<conN; j++)
         {
-          k = ConCV[i][j];
+          k = conCV[i][j];
           assert(k >= 0);
 
-          ConPerm[i][j] = ZPermeability[CVZone[k]][0];  // Kp (1)
+          conPerm[i][j] = ZPermeability[CVZone[k]][0];  // Kp (1)
 
           // @HACK
           // for fractures all directions are identiacal
@@ -914,9 +904,9 @@ void CalcTranses::ComputeTransmissibilityPart()
 
     for (std::size_t i=0; i<NbConnections; i++)
     {
-      if (ConType[i] == 1)  // M-M ///
+      if (conType[i] == 1)  // M-M ///
       {
-        std::size_t k  = ConCV[i][0];
+        std::size_t k  = conCV[i][0];
         nx = ConP1x[i];
         ny = ConP1y[i];
         nz = ConP1z[i];
@@ -929,11 +919,11 @@ void CalcTranses::ComputeTransmissibilityPart()
         fy = fy/fl;
         fz = fz/fl;
 
-        //    ConTr[i][0]=ConArea[i][0]*ConPerm[i][0]*fabs(nx*fx+ny*fy+nz*fz)/fl;
-        ConTr[i][0]   = ConArea[i][0]*ConPerm[i][0] * 1./fl;
-        ConGeom[i][0] = ConArea[i][0]*ConMult[i][0] * 1./fl;
+        //    conTr[i][0]=conArea[i][0]*conPerm[i][0]*fabs(nx*fx+ny*fy+nz*fz)/fl;
+        conTr[i][0]   = conArea[i][0]*conPerm[i][0] * 1./fl;
+        ConGeom[i][0] = conArea[i][0]*ConMult[i][0] * 1./fl;
 
-        k  = ConCV[i][1];
+        k  = conCV[i][1];
         nx = ConP2x[i];
         ny = ConP2y[i];
         nz = ConP2z[i];
@@ -946,13 +936,13 @@ void CalcTranses::ComputeTransmissibilityPart()
         fy = fy/fl;
         fz = fz/fl;
 
-        //    ConTr[i][1]=ConArea[i][1]*ConPerm[i][1]*fabs(nx*fx+ny*fy+nz*fz)/fl;
-        ConTr[i][1]   = ConArea[i][1] * ConPerm[i][1] * 1./fl;
-        ConGeom[i][1] = ConArea[i][1] * ConMult[i][1] * 1./fl;
+        //    conTr[i][1]=conArea[i][1]*conPerm[i][1]*fabs(nx*fx+ny*fy+nz*fz)/fl;
+        conTr[i][1]   = conArea[i][1] * conPerm[i][1] * 1./fl;
+        ConGeom[i][1] = conArea[i][1] * ConMult[i][1] * 1./fl;
       }
-      else if (ConType[i] == 2)  // M-F //
+      else if (conType[i] == 2)  // M-F //
       {
-        std::size_t k = ConCV[i][0];
+        std::size_t k = conCV[i][0];
         nx = ConP1x[i];
         ny = ConP1y[i];
         nz = ConP1z[i];
@@ -965,22 +955,23 @@ void CalcTranses::ComputeTransmissibilityPart()
         fy = fy/fl;
         fz = fz/fl;
 
-        ConTr[i][0]   = ConArea[i][0] * ConPerm[i][0] * 1./fl;
-        ConGeom[i][0] = ConArea[i][0] * ConMult[i][0] * 1./fl;
+        conTr[i][0]   = conArea[i][0] * conPerm[i][0] * 1./fl;
+        ConGeom[i][0] = conArea[i][0] * ConMult[i][0] * 1./fl;
 
-        k = ConCV[i][1];
+        k = conCV[i][1];
 
-        ConTr[i][1] = ConArea[i][1] * ConPerm[i][1] *
-            1./(.5*ZVolumeFactor[CVZone[k]]);
+        conTr[i][1] = conArea[i][1] * conPerm[i][1] *
+            1./(.5*zVolumeFactor[CVZone[k]]);
 
-        ConGeom[i][1] = ConArea[i][1] * ConMult[i][1] *
-            1./(.5*ZVolumeFactor[CVZone[k]]);
+        ConGeom[i][1] = conArea[i][1] * ConMult[i][1] *
+            1./(.5*zVolumeFactor[CVZone[k]]);
       }
-      else if (ConType[i] == 3)  // F-F //
+      else if (conType[i] == 3)  // F-F //
       {
-        for (std::size_t j=0; j<ConN[i]; j++)
+        std::size_t conN = conCV[i].size();
+        for (std::size_t j=0; j<conN; j++)
         {
-          std::size_t k  = ConCV[i][j];
+          std::size_t k  = conCV[i][j];
           fx = CVx[k] - Conhx[i];
           fy = CVy[k] - Conhy[i];
           fz = CVz[k] - Conhz[i];
@@ -989,8 +980,8 @@ void CalcTranses::ComputeTransmissibilityPart()
           fy = fy/fl;
           fz = fz/fl;
 
-          ConTr[i][j] = ConArea[i][j] * ConPerm[i][j] * 1./fl;
-          ConGeom[i][j] = ConArea[i][j] * ConMult[i][j] * 1./fl;
+          conTr[i][j] = conArea[i][j] * conPerm[i][j] * 1./fl;
+          ConGeom[i][j] = conArea[i][j] * ConMult[i][j] * 1./fl;
           }
       }
     }
@@ -1008,14 +999,14 @@ void CalcTranses::ComputeTransmissibilityList()
     std::size_t k=0;
     for ( std::size_t i=0; i<NbConnections; i++ )
     {
-      if ( ConType[i] == 1 ) // M-M //
+      if ( conType[i] == 1 ) // M-M //
       {
-        iTr[k] = ConCV[i][0];
-        jTr[k] = ConCV[i][1];
+        iTr[k] = conCV[i][0];
+        jTr[k] = conCV[i][1];
 
-        if ( ConTr[i][0] + ConTr[i][1] != 0.0 )
+        if ( conTr[i][0] + conTr[i][1] != 0.0 )
         {
-          Tij[k] = ( ConTr[i][0]*ConTr[i][1] ) / ( ConTr[i][0] + ConTr[i][1] );
+          Tij[k] = ( conTr[i][0]*conTr[i][1] ) / ( conTr[i][0] + conTr[i][1] );
         }
 
         if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
@@ -1029,14 +1020,14 @@ void CalcTranses::ComputeTransmissibilityList()
         }
         k++;
       }
-      if ( ConType[i] == 2 ) // M-F //
+      if ( conType[i] == 2 ) // M-F //
       {
-        iTr[k] = ConCV[i][0];
-        jTr[k] = ConCV[i][1];
+        iTr[k] = conCV[i][0];
+        jTr[k] = conCV[i][1];
 
-        if ( ConTr[i][0] + ConTr[i][1] != 0.0 )
+        if ( conTr[i][0] + conTr[i][1] != 0.0 )
         {
-          Tij[k] = ( ConTr[i][0]*ConTr[i][1] ) / ( ConTr[i][0] + ConTr[i][1] );
+          Tij[k] = ( conTr[i][0]*conTr[i][1] ) / ( conTr[i][0] + conTr[i][1] );
         }
 
         if ( ConGeom[i][0] + ConGeom[i][1] != 0.0 )
@@ -1052,22 +1043,23 @@ void CalcTranses::ComputeTransmissibilityList()
         }
         k++;
       }
-      else if ( ConType[i] == 3 ) // F-F ///
+      else if ( conType[i] == 3 ) // F-F ///
       {
         double SumTr = 0;
         double SumTr2 = 0;
-        for ( std::size_t j=0; j<ConN[i]; j++ )
-          SumTr+=ConTr[i][j];
+        std::size_t conN = conCV[i].size();
+        for ( std::size_t j=0; j<conN; j++ )
+          SumTr+=conTr[i][j];
 
-        for ( std::size_t j=0; j<ConN[i]; j++ )
+        for ( std::size_t j=0; j<conN; j++ )
           SumTr2+=ConGeom[i][j];
 
-        for ( std::size_t j=0; j<ConN[i]-1; j++ )
-          for ( std::size_t n=j+1; n<ConN[i]; n++ )
+        for ( std::size_t j=0; j<conN-1; j++ )
+          for ( std::size_t n=j+1; n<conN; n++ )
           {
-            iTr[k] = ConCV[i][j];
-            jTr[k] = ConCV[i][n];
-            Tij[k] = ( ConTr[i][j]*ConTr[i][n] ) / SumTr;
+            iTr[k] = conCV[i][j];
+            jTr[k] = conCV[i][n];
+            Tij[k] = ( conTr[i][j]*conTr[i][n] ) / SumTr;
 
             TConductionIJ[k] = ( ConGeom[i][j]*ConGeom[i][n] ) / SumTr2;
             if ( TConductionIJ[k] < 0.0 )
@@ -1080,7 +1072,7 @@ void CalcTranses::ComputeTransmissibilityList()
       }
       else
       {
-        // cout << "Wrong connection type " << k << ": "  << ConType[i]  << endl;
+        // cout << "Wrong connection type " << k << ": "  << conType[i]  << endl;
         // exit ( 0 );
       }
 
@@ -1148,7 +1140,7 @@ void CalcTranses::compute_flow_data()
     }
 
     ZoneCode.resize(NbZones);
-    ZVolumeFactor.resize(NbZones);
+    zVolumeFactor.resize(NbZones);
     ZPorosity.resize(NbZones);
     ZPermCode.resize(NbZones);
 
@@ -1157,10 +1149,9 @@ void CalcTranses::compute_flow_data()
 
     for (std::size_t i=0; i<NbZones; i++)
     {
-      // std::cout << "i = " << i << std::endl;
       ZoneCode[i] = vZoneCode[i];
       std::size_t j = ZoneCode[i];
-      ZVolumeFactor[j] = vZVolumeFactor[j];
+      zVolumeFactor[j] = vzVolumeFactor[j];
 
       ZPorosity[j] = vZPorosity[j];
       ZPermCode[j] = vZPermCode[j];
@@ -1188,9 +1179,6 @@ void CalcTranses::compute_flow_data()
     ConstructConnectionList();
 
     if (NbOptions == 1) VolumeCorrection();
-
-    // printf("NbCVs = %d\n",NbCVs);
-    // printf("NbTransmissibility = %d\n",NbTransmissibility);
 
     ComputeContinuityNode();
     ComputeDirectionalPermeability();
@@ -1255,7 +1243,6 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
   string outfile = outputPath_ + "fl_vol.txt";
   FILE * poutfile;
   poutfile=fopen ( outfile.c_str(),"w");
-  //fprintf(out,"%d\n",NbCVs);
   fprintf ( poutfile,"%s\n","VOLUME" );
   for ( i=0; i<NbCVs; i++ )
     fprintf ( poutfile,"%e\n", CVVolume[i] );
@@ -1280,7 +1267,6 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
     printf("Output Depth (z)...\n");
     outfile = outputPath_ + "fl_depth.txt";
     poutfile=fopen( outfile.c_str(),"w");
-    //fprintf(out,"%d\n",NbCVs);
     fprintf(poutfile,"%s\n","DEPTH");
     for (i=0;i<NbCVs;i++)
       fprintf(poutfile,"%e\n",-CVz[i]);
@@ -1325,53 +1311,54 @@ void CalcTranses::writeOutputFiles(const std::string & output_path) const
     int k=0;
     for(i=0;i<NbConnections;i++)
     {
-      if(ConType[i]==1 || ConType[i]==2)  // M-M, M-F /
+      if(conType[i]==1 || conType[i]==2)  // M-M, M-F /
       {
-        if(ConType[i]==1)   // M-M ////////////////////////////
+        if(conType[i]==1)   // M-M ////////////////////////////
         {
-          // Con# ConType i ai j aj -> Tij=ai*aj/(ai+aj)
+          // Con# conType i ai j aj -> Tij=ai*aj/(ai+aj)
           fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\n", k,
-                  ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1], ConTr[i][1]);
+                  conType[i], conCV[i][0], conTr[i][0], conCV[i][1], conTr[i][1]);
         }
-        if(ConType[i]==2)   // M-F ////////////////////////////
+        if(conType[i]==2)   // M-F ////////////////////////////
         {
-          //Con# ConType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
+          //Con# conType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
         fprintf(poutfile,"%d\t%d\t%d\t%e\t%d\t%e\t%e\t%e\n", k,
-                ConType[i], ConCV[i][0], ConTr[i][0], ConCV[i][1],
-                2.*ConArea[i][1], ZVolumeFactor[CVZone[ConCV[i][1]]], ConPerm[i][1]);
+                conType[i], conCV[i][0], conTr[i][0], conCV[i][1],
+                2.*conArea[i][1], zVolumeFactor[CVZone[conCV[i][1]]], conPerm[i][1]);
         }
       k++;
       }
-      if(ConType[i]==3) // F-F /////////////////////////////////////////////////
+      if(conType[i]==3) // F-F /////////////////////////////////////////////////
       {
-        //Con# ConType i ci ei ki j cj ej kj N n cn en kn
+        //Con# conType i ci ei ki j cj ej kj N n cn en kn
         //ai=ci*ki*ei aj=cj*kj*ej an=cn*kn*en
         //-> Tij=ai*aj/(SUM an)
         //
-        for(int j=0;j<ConN[i]-1;j++)
-          for(int n=j+1;n<ConN[i];n++)
+        std::size_t conN = conCV[i].size();
+        for(int j=0;j<conN-1;j++)
+          for(int n=j+1;n<conN;n++)
           {
             fprintf(poutfile,"%d\t%d\t%d\t%e\t%e\t%e\t%d\t%e\t%e\t%e\t",
                     k,
-                    ConType[i],
+                    conType[i],
 
-                    ConCV[i][j],
-                    ConTr[i][j]/(ConPerm[i][j]*ZVolumeFactor[CVZone[ConCV[i][j]]]),
-                    ZVolumeFactor[CVZone[ConCV[i][j]]],
-                    ConPerm[i][j],
+                    conCV[i][j],
+                    conTr[i][j]/(conPerm[i][j]*zVolumeFactor[CVZone[conCV[i][j]]]),
+                    zVolumeFactor[CVZone[conCV[i][j]]],
+                    conPerm[i][j],
 
-                    ConCV[i][n],
-                    ConTr[i][n]/(ConPerm[i][n]*ZVolumeFactor[CVZone[ConCV[i][n]]]),
-                    ZVolumeFactor[CVZone[ConCV[i][n]]],
-                    ConPerm[i][n]);
+                    conCV[i][n],
+                    conTr[i][n]/(conPerm[i][n]*zVolumeFactor[CVZone[conCV[i][n]]]),
+                    zVolumeFactor[CVZone[conCV[i][n]]],
+                    conPerm[i][n]);
 
-            fprintf(poutfile,"%d\t",ConN[i]);
-            for(int m=0;m<ConN[i];m++)
+            fprintf(poutfile,"%d\t",conN);
+            for(int m=0;m<conN;m++)
               fprintf(poutfile,"%d\t%e\t%e\t%e\t",
-                      ConCV[i][m],
-                      ConTr[i][m]/(ConPerm[i][m]*ZVolumeFactor[CVZone[ConCV[i][m]]]),
-                      ZVolumeFactor[CVZone[ConCV[i][m]]],
-                      ConPerm[i][m]);
+                      conCV[i][m],
+                      conTr[i][m]/(conPerm[i][m]*zVolumeFactor[CVZone[conCV[i][m]]]),
+                      zVolumeFactor[CVZone[conCV[i][m]]],
+                      conPerm[i][m]);
 
             fprintf(poutfile,"\n");
             k++;
@@ -1388,9 +1375,6 @@ void CalcTranses::extractData(FlowData & data) const
   // std::cout << "extracting volume data" << std::endl;
   // Extract Volumes, porosity, depth
   data.cells.resize(NbCVs);
-  // data.volumes.resize(NbCVs);
-  // data.poro.resize(NbCVs);
-  // data.depth.resize(NbCVs);
   for (std::size_t i=0; i<NbCVs; i++ )
   {
     data.cells[i].volume   = CVVolume[i];
@@ -1399,19 +1383,77 @@ void CalcTranses::extractData(FlowData & data) const
   }
 
   // Transmissibility
-  for (std::size_t i=0;i<NbTransmissibility; i++)
+  for (std::size_t i=0;i<NbConnections; i++)
   {
-    auto & face = data.insert_connection(iTr[i], jTr[i]);
-    face.transmissibility = Tij[i];
-    face.thermal_conductivity = TConductionIJ[i];
-  }
+    if(conType[i]==1 || conType[i]==2)  // M-M, M-F /
+    {
+        auto & face = data.insert_connection(iTr[i], jTr[i]);
+        std::size_t conN = conCV[i].size();
+        face.transmissibility = Tij[i];
+        face.thermal_conductivity = TConductionIJ[i];
+        face.conType = conType[i];
+        face.conCV.resize(conN);
+        face.conTr.resize(conN);
+        face.conArea.resize(conN);
+        face.conPerm.resize(conN);
+        face.zVolumeFactor.resize(conN);
+        for(std::size_t m=0; m < conN; m++){
+            face.conCV[m] = conCV[i][m];
+            face.conTr[m] = conTr[i][m];
+            face.conArea[m] = conArea[i][m];
+            face.conPerm[m] = conPerm[i][m];
+            face.zVolumeFactor[m] = zVolumeFactor[CVZone[conCV[i][m]]];
+        }
+    } else{
+        double SumTr = 0;
+        double SumTr2 = 0;
+        std::size_t conN = conCV[i].size();
+        for ( std::size_t j=0; j<conN; j++ )
+          SumTr+=conTr[i][j];
 
-  // Geomechanics
-  // data.connection_type.resize(NbConnections);
-  // for(std::size_t i=0;i<NbConnections;i++)
-  // {
-  //   // data.connection_type[i] = ConType[i];
-  // }
+        for ( std::size_t j=0; j<conN; j++ )
+          SumTr2+=ConGeom[i][j];
+
+        for ( std::size_t j=0; j<conN-1; j++ ){
+            for ( std::size_t n=j+1; n<conN; n++ )
+            {// eventhough the name is face; treat as connection.
+                // IN edfm intersection, acturally there in only one connection in frac. THINK ABOUT HOW TO APPROXIMATE THIS.
+                std::size_t iTr_ = conCV[i][j];
+                std::size_t jTr_ = conCV[i][n];
+                double Tij_ = ( conTr[i][j]*conTr[i][n] ) / SumTr;
+                double TConductionIJ_ = ( ConGeom[i][j]*ConGeom[i][n] ) / SumTr2;
+                auto & face = data.insert_connection(iTr_, jTr_);
+                face.transmissibility = Tij_;
+                face.thermal_conductivity = TConductionIJ_;
+                face.conType = conType[i];
+                face.conCV.resize(conN);
+                face.conTr.resize(conN);
+                face.conArea.resize(conN);
+                face.conPerm.resize(conN);
+                face.zVolumeFactor.resize(conN);
+
+                std::vector<std::size_t> vecIndex(conN);
+                vecIndex[0] = j;
+                vecIndex[1] = n;
+                std::size_t tempI = 2;
+                for(std::size_t m=0; m < conN; m++){
+                    if(m!=j && m!=n){
+                        vecIndex[tempI] = m;
+                        tempI++;
+                    }
+                }
+
+                for(std::size_t m=0; m < conN; m++){
+                    face.conCV[m] = conCV[i][vecIndex[m]];
+                    face.conTr[m] = conTr[i][vecIndex[m]];
+                    face.conArea[m] = conArea[i][vecIndex[m]];
+                    face.conPerm[m] = conPerm[i][vecIndex[m]];
+                    face.zVolumeFactor[m] = zVolumeFactor[CVZone[conCV[i][vecIndex[m]]]];
+                }
+            }
+        }
+    }
+  }
 }
 
 
@@ -1420,6 +1462,7 @@ void CalcTranses::save_output(const FlowData    & data,
 {
   const std::string fname_cell_data = "fl_cell_data.txt";
   const std::string fname_face_data = "fl_face_data.txt";
+  const std::string fname_gmupdate_data = "fname_trans_data.txt";
 
   {  // Write cell data
     ofstream out;
@@ -1489,6 +1532,77 @@ void CalcTranses::save_output(const FlowData    & data,
     out << "/" << std::endl;
 
     out.close();
+  }
+
+  { // Geometric part of transmissibilities
+      ofstream out;
+      out.open((output_dir + fname_gmupdate_data).c_str());
+
+
+      out << "GMUPDATETRANS" << std::endl;
+      int k=0;
+      for (const auto & conn : data.map_connection)
+        {
+        const auto face = conn.second;
+        if(face.conType==1 || face.conType==2)	// M-M, M-F ////////////////////////////
+          {
+          if(face.conType==1)		// M-M ////////////////////////////
+          {
+              // Con# conType i ai j aj -> Tij=ai*aj/(ai+aj)
+              out << k << "\t"
+                  << face.conType << "\t"
+                  << face.conCV[0] << "\t"
+                  << face.conTr[0] << "\t"
+                  << face.conCV[1] << "\t"
+                  << face.conTr[1] << std::endl;
+          }
+          if(face.conType==2)		// M-F ////////////////////////////
+          {
+              //Con# conType m am i ci ei ki ai=ci*ki/ei-> Tmi=am*ai/(am+ai)
+              out << k << "\t"
+                  << face.conType << "\t"
+                  << face.conCV[0] << "\t"
+                  << face.conTr[0] << "\t"
+                  << face.conCV[1] << "\t"
+                  << 2.*face.conArea[1]  << "\t"
+                  << face.zVolumeFactor[1] << "\t"
+                  << face.conPerm[1] << "\t"
+                  << std::endl;
+          }
+          k++;
+          }
+        if(face.conType==3)	// F-F /////////////////////////////////////////////////
+          {
+           //Con# conType i ci ei ki j cj ej kj N n cn en kn
+           //ai=ci*ki*ei aj=cj*kj*ej an=cn*kn*en
+           //-> Tij=ai*aj/(SUM an)
+           //
+            std::size_t j = 0;
+            std::size_t n = 1;
+            std::size_t conN = face.conCV.size();
+            out << k << "\t"
+              << face.conType << "\t"
+              << face.conCV[j] << "\t"
+              << face.conTr[j]/(face.conPerm[j]*face.zVolumeFactor[j]) << "\t"
+              << face.zVolumeFactor[j] << "\t"
+              << face.conPerm[j]  << "\t"
+              << face.conCV[n] << "\t"
+              << face.conTr[n]/(face.conPerm[n]*face.zVolumeFactor[n])<< "\t"
+              << face.zVolumeFactor[n] << "\t"
+              << face.conPerm[n] << "\t"
+              << face.conCV[n] << "\t";
+            for(std::size_t m=0; m< conN; m++)
+              out << face.conCV[m] << "\t"
+                  << face.conTr[m]/(face.conPerm[m]*face.zVolumeFactor[m]) << "\t"
+                  << face.zVolumeFactor[m] << "\t"
+                  << face.conPerm[m] << "\t";
+            out << std::endl;
+            k++;
+           }
+        }
+      out << "/" << std::endl;
+
+      out.close();
   }
 
 }
