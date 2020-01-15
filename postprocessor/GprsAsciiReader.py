@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pandas as pd
 import numpy as np
+import os
 
 class GprsAsciiReader:
     """
@@ -54,3 +55,8 @@ class GprsAsciiReader:
         returns the data read by readTimeStep.
         """
         return self.data
+
+    def getRelativePosition(self) -> float:
+        current_pos = self.input_file.tell()
+        size = os.stat(self.input_file.name)[6]
+        return float(current_pos) / float(size)

@@ -4,6 +4,7 @@ import yaml
 import vtk
 import os, shutil
 from vtk.util import numpy_support
+from printProgressBar import printProgressBar
 # import pyvtk
 
 class Postprocessor:
@@ -25,10 +26,14 @@ class Postprocessor:
     def run(self):
         gprs_reader = GprsAsciiReader(self.case_path + "OUTPUT.vars.txt")
         self.prepareOutputDirectory_()
+
+        printProgressBar(0, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
         while gprs_reader.readTimeStep():
            t = gprs_reader.getTime()
            data = gprs_reader.getData()
            self.saveReservoirData_(t, data)
+           printProgressBar(gprs_reader.getRelativePosition(), 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+        printProgressBar(1, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
 
     def readConfig_(self):
         with open(self.case_path + self.config_file_name, "r") as f:
