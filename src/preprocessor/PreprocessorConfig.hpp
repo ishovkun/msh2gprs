@@ -134,12 +134,6 @@ struct GPRSOutputConfig
   std::string flow_connection_file  = "fl_face_data.txt";
 };
 
-/* For python postprocessor */
-// struct PostProcessorConfig
-// {
-//   std::string
-// };
-
 struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  embedded_fractures;  //  embedded  fractures
@@ -177,6 +171,8 @@ struct PreprocessorConfig
   GPRSOutputConfig gprs_output;
   // VTK format
   VTKOutputConfig vtk_config;
-  // postprocessor output file;
+  // postprocessor output file
   std::string postprocessor_file = "postprocessor_config.yaml";
+  // postprocessor output directory
+  std::string postprocessor_output_dir = "postprocessing";
 };
