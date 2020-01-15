@@ -119,5 +119,13 @@ std::vector<int> DiscreteFractureManager::get_face_markers() const
   return std::vector<int>(m_dfm_markers.begin(), m_dfm_markers.end());
 }
 
+void DiscreteFractureManager::build_dfm_grid(const mesh::Mesh & grid)
+{
+  mesh::SurfaceMesh<double> dfm_grid(1e-6);
+  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+    if (is_fracture(face->marker()))
+      dfm_grid.insert(face->polygon());
+  m_data.dfm_grid = std::move(dfm_grid);
+}
 
 }  // end namespace gprs_data

@@ -111,9 +111,9 @@ void VTKWriter::write_geometry_classic_(const Mesh               & grid,
   for (const auto & p : grid.vertices()) out << p << std::endl;
 
   // cells
-  const std::size_t n_cells = grid.n_cells();
+  const std::size_t n_cells = grid.n_active_cells();
   std::size_t vind_size_total = 0;
-  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     vind_size_total += cell->n_vertices();
 
   out << "CELLS" << "\t"
@@ -121,7 +121,7 @@ void VTKWriter::write_geometry_classic_(const Mesh               & grid,
       << vind_size_total + n_cells
       << std::endl;
 
-  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
     out << cell->n_vertices() << "\t";
     for (std::size_t i : cell->vertices())
@@ -131,7 +131,7 @@ void VTKWriter::write_geometry_classic_(const Mesh               & grid,
 
   out << std::endl;
   out << "CELL_TYPES" << "\t" << n_cells << std::endl;
-  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     out << cell->vtk_id() << std::endl;
 }
 

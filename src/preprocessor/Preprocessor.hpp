@@ -37,9 +37,7 @@ class Preprocessor
   std::shared_ptr<CellPropertyManager> pm_property_mgr;
   std::shared_ptr<DiscreteFractureManager> pm_dfm_mgr;
   std::shared_ptr<EmbeddedFractureManager> pm_edfm_mgr;
-  std::shared_ptr<DoFNumbering> pm_intact_cell_dofs, pm_unsplit_dofs;
-  std::vector<discretization::ControlVolumeData> m_frac_cv_data;
-  std::vector<discretization::ConnectionData>    m_frac_connection_data;
+  std::shared_ptr<DoFNumbering> pm_flow_dof_numbering;
 };
 
 }  // end namespace gprs_data

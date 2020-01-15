@@ -35,8 +35,8 @@ struct EmbeddedFractureMechanicalProperties
 
 struct SimData
 {
-  mesh::Mesh grid;
-  mesh::Mesh geomechanics_grid;
+  mesh::Mesh grid;  // active grid that has all the manipulations on
+  mesh::Mesh geomechanics_grid;  // mechanics grid copied before cell edfm splitting
   // cell properties
   // ----------------------- Reservoir cells ------------------------ //
   std::vector<std::string> property_names;

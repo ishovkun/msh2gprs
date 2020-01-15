@@ -120,6 +120,20 @@ struct VTKOutputConfig
   std::string wells_file                    = "wells.vtk";
 };
 
+struct GPRSOutputConfig
+{
+  std::string domain_file           = "domain.txt";
+  std::string mechanics_domain_file = "gm_geometry.txt";
+  std::string efrac_file            = "gm_SDA.txt";
+  std::string discrete_frac_file    = "gm_DFM.txt";
+  std::string bcond_file            = "bcond.txt";
+  std::string wells_file            = "wells.txt";
+  std::string mech_ms_file          = "ms_mech.txt";
+  std::string flow_ms_file          = "ms_flow.txt";
+  std::string flow_cv_file          = "fl_cell_data.txt";
+  std::string flow_connection_file  = "fl_face_data.txt";
+};
+
 struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  embedded_fractures;  //  embedded  fractures
@@ -147,18 +161,12 @@ struct PreprocessorConfig
   // output format
   std::vector<OutputFormat> output_formats = {OutputFormat::gprs, OutputFormat::vtk};
 
+  // the name of gmsh grid file
+  std::string mesh_file;
   // output file names
   std::string output_dir            = "output";
   // GPRS format
-  std::string mesh_file;
-  std::string domain_file           = "domain.txt";
-  std::string mechanics_domain_file = "gm_geometry.txt";
-  std::string efrac_file            = "gm_SDA.txt";
-  std::string discrete_frac_file    = "gm_DFM.txt";
-  std::string bcond_file            = "bcond.txt";
-  std::string wells_file            = "wells.txt";
-  std::string mech_ms_file          = "ms_mech.txt";
-  std::string flow_ms_file          = "ms_flow.txt";
+  GPRSOutputConfig gprs_output;
   // VTK format
   VTKOutputConfig vtk_config;
 };

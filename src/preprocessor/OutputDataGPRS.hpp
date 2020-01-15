@@ -1,7 +1,8 @@
 #pragma once
 
-#include "simdata.hpp"
-#include "transes.hpp"
+#include "PreprocessorConfig.hpp"
+#include "SimData.hpp"
+// #include "transes.hpp"
 
 namespace gprs_data
 {
@@ -9,10 +10,11 @@ namespace gprs_data
 class OutputDataGPRS
 {
 public:
-  OutputDataGPRS(SimData & sim_data, mesh::Mesh & grid);
+  OutputDataGPRS(const SimData & data, const GPRSOutputConfig config);
+  void write_output(const std::string & output_path) const;
 
-  void write_output(const std::string & output_path);
  private:
+  void save_flow_data_(const std::string cv_file, const std::string con_file) const;
   void saveGeometry(const std::string & output_path);
   void saveGeomechDataNewKeywords(const std::string file_name);
   void saveEmbeddedFractureProperties(const std::string file_name);
@@ -24,8 +26,8 @@ public:
   void saveMechMultiScaleData(const std::string file_name);
 
 protected:
-  SimData & data;
-  mesh::Mesh & grid;
+  const SimData & m_data;
+  const GPRSOutputConfig m_config;
 };
 
 }

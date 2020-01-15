@@ -87,7 +87,12 @@ std::vector<const Cell*> Face::neighbors() const
   for (const auto it : cell_time)
   {
     if (it.second == m_vertices.size())
-      face_neighbors.push_back( &((*pm_grid_cells)[it.first]) );
+    {
+      const Cell & cell = (*pm_grid_cells)[it.first];
+      if (cell.is_active())
+        face_neighbors.push_back(&cell);
+    }
+
   }
 
   // if this face is a child, we gotta loop up parent neighboring
@@ -101,6 +106,14 @@ std::vector<const Cell*> Face::neighbors() const
     }
   }
 
+  if (face_neighbors.size() > 2)
+  {
+    std::cout << "neibs ";
+    for (const auto p_cell : face_neighbors)
+      std::cout << p_cell->index() << " ";
+    std::cout << std::endl << std::flush;
+  }
+  assert(face_neighbors.size() <= 2);
   return face_neighbors;
 }
 

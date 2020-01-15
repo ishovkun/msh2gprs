@@ -45,8 +45,9 @@ void DiscretizationDFM::build_cell_data_()
     const size_t face_index = pair_face_index_property.first;
     const auto & face_props = pair_face_index_property.second;
     const size_t idof = m_dofs.face_dof(face_index);
+    std::cout << "filling idfo " << idof << std::endl;
     assert(idof < m_cv_data.size());
-    auto &data = m_cv_data[idof];
+    auto & data = m_cv_data[idof];
     data.type = ControlVolumeType::face;
     data.master = face_index;
     const mesh::Face & face = m_grid.face(face_index);
@@ -195,7 +196,7 @@ void DiscretizationDFM::build_fracture_fracture_connections()
         transmissibility_part[i] = area * perm / dist_to_edge;
       }
 
-      const double t_sum = std::accumulate(transmissibility_part.begin(), transmissibility_part.end(), 0);
+      const double t_sum = std::accumulate(transmissibility_part.begin(), transmissibility_part.end(), 0.0);
       for (std::size_t i = 0; i < face_cvs.size(); ++i)
         for (std::size_t j = i+1; j < face_cvs.size(); ++j)
         {
@@ -207,6 +208,7 @@ void DiscretizationDFM::build_fracture_fracture_connections()
           con.edge_direction = de / edge_length;
           con.all_elements = face_cvs;
           const double T = transmissibility_part[i] * transmissibility_part[j] / t_sum;
+          assert ( T < 1e8 );
           con.coefficients = {-T, T};
         }
     }

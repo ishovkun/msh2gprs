@@ -217,4 +217,12 @@ void CellPropertyManager::downscale_properties()
       m_data.cell_properties[i][raw->index()] = m_data.cell_properties[i][raw->ultimate_parent().index()];
 }
 
+void CellPropertyManager::coarsen_cells()
+{
+  // m_n_unrefined_cells
+  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
+    m_data.cell_properties[i].erase(m_data.cell_properties[i].begin() + m_n_unrefined_cells,
+                                    m_data.cell_properties[i].end());
+}
+
 }  // end namespace gprs_data

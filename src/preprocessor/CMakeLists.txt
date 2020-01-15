@@ -16,7 +16,7 @@ ADD_LIBRARY(preprocessor
   discretization/DiscretizationEDFM.cpp
   DoFManager.cpp
   # element.cpp
-  # OutputDataGPRS.cpp
+  OutputDataGPRS.cpp
   OutputDataVTK.cpp
   VTKWriter.cpp
   # renum.cpp

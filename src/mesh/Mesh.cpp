@@ -607,7 +607,7 @@ void Mesh::coarsen_cells()
   // delete cells
   m_cells.erase( m_cells.begin() + min_cell_delete_index, m_cells.end() );
   // no more split cells
-  m_n_split_cells = n_cells();
+  m_n_split_cells = 0;
 }
 
 // const Face & Mesh::ultimate_parent(const Face & face) const

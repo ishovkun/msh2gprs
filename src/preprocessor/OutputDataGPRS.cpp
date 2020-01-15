@@ -9,57 +9,134 @@ namespace gprs_data
 const int n_entries_per_line = 10;
 
 
-OutputDataGPRS::OutputDataGPRS(SimData & sim_data,
-                       mesh::Mesh & grid)
+OutputDataGPRS::OutputDataGPRS(const SimData & data, const GPRSOutputConfig config)
     :
-    data(sim_data),
-    grid(grid)
+    m_data(data),
+    m_config(config)
 {}
 
 
-void OutputDataGPRS::write_output(const std::string & output_path)
+void OutputDataGPRS::write_output(const std::string & output_path) const
 {
-  std::cout << "save geometry" << std::endl;
-  saveGeometry(output_path);
+  // save flow data
+  save_flow_data_(output_path + "/" + m_config.flow_cv_file,
+                  output_path + "/" + m_config.flow_connection_file);
+  // std::cout << "save geometry" << std::endl;
+  // saveGeometry(output_path);
 
-  std::cout << "save custom keyswords" << std::endl;
-  saveGeomechDataNewKeywords(output_path + data.config.domain_file);
+  // std::cout << "save custom keyswords" << std::endl;
+  // saveGeomechDataNewKeywords(output_path + data.config.domain_file);
 
-  if (!data.vEfrac.empty())
-  {
-    std::cout << "save embedded fractures" << std::endl;
-    saveEmbeddedFractureProperties(output_path + data.config.efrac_file);
-  }
+  // if (!data.vEfrac.empty())
+  // {
+  //   std::cout << "save embedded fractures" << std::endl;
+  //   saveEmbeddedFractureProperties(output_path + data.config.efrac_file);
+  // }
 
-  std::cout << "save mech boundary conditions: "
-            << output_path + data.config.bcond_file
-            << std::endl;
-  saveBoundaryConditions(output_path + data.config.bcond_file);
+  // std::cout << "save mech boundary conditions: "
+  //           << output_path + data.config.bcond_file
+  //           << std::endl;
+  // saveBoundaryConditions(output_path + data.config.bcond_file);
 
-  if (data.dfm_faces.size() > 0)
-  {
-    std::cout << "save discrete fractures" << std::endl;
-    saveDiscreteFractureProperties(output_path + data.config.discrete_frac_file);
-  }
+  // if (data.dfm_faces.size() > 0)
+  // {
+  //   std::cout << "save discrete fractures" << std::endl;
+  //   saveDiscreteFractureProperties(output_path + data.config.discrete_frac_file);
+  // }
 
-  if (!data.wells.empty())
-  {
-    std::cout << "save wells" << std::endl;
-    saveWells(output_path + data.config.wells_file,
-              output_path + data.config.wells_vtk_file);
-  }
+  // if (!data.wells.empty())
+  // {
+  //   std::cout << "save wells" << std::endl;
+  //   saveWells(output_path + data.config.wells_file,
+  //             output_path + data.config.wells_vtk_file);
+  // }
 
-  // flow discretization
-  std::cout << "save flow discretization" << std::endl;
-  flow::CalcTranses::save_output(data.flow_data, output_path);
+  // // flow discretization
+  // std::cout << "save flow discretization" << std::endl;
+  // flow::CalcTranses::save_output(data.flow_data, output_path);
 
-  // multiscale
-  if (data.ms_flow_data.partitioning.size() > 0)
-    saveFlowMultiScaleData(output_path + data.config.flow_ms_file);
-  if (data.ms_mech_data.partitioning.size() > 0)
-    saveMechMultiScaleData(output_path + data.config.mech_ms_file);
+  // // multiscale
+  // if (data.ms_flow_data.partitioning.size() > 0)
+  //   saveFlowMultiScaleData(output_path + data.config.flow_ms_file);
+  // if (data.ms_mech_data.partitioning.size() > 0)
+  //   saveMechMultiScaleData(output_path + data.config.mech_ms_file);
 }
 
+void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::string con_file) const
+{
+  {  // Write cell data
+    std::ofstream out;
+    out.open(cv_file.c_str());
+    std::cout << "saving " << cv_file << std::endl;
+
+    const auto & cvs = m_data.cv_data;
+    ///// OUTPUT Dimensions /////
+    out << "DIMENS" << std::endl;
+    out << cvs.size() << "\t" << 1 << "\t" << 1 << "\t" << std::endl;
+    out << "/" << std::endl << std::endl;
+
+    ///// OUTPUT Volumes /////
+    out << "VOLUME" << std::endl;
+    for (const auto & cv : cvs)
+      out << cv.volume << std::endl;
+    out << "/" << std::endl << std::endl;
+
+    ///// OUTPUT Porosity /////
+    out << "PORO" << std::endl;
+    for (const auto & cv : cvs)
+      out << cv.porosity << std::endl;
+    out << "/" << std::endl << std::endl;
+
+    ///// OUTPUT Depth  /////
+    out << "DEPTH" << std::endl;
+    for (const auto & cv : cvs)
+      out << -cv.center(2) << std::endl;
+    out << "/" << std::endl << std::endl;
+
+    // additional data (if any)
+    // for (std::size_t i=0; i<data.custom_names.size(); ++i)
+    // {
+    //   out << data.custom_names[i] << std::endl;
+    //   for (const auto & cell : data.cells)
+    //   {
+    //     if (cell.custom.size() != data.custom_names.size())
+    //       assert(cell.custom.size() == data.custom_names.size());
+    //     out << cell.custom[i] << std::endl;
+    //   }
+    //   out << "/" << std::endl << std::endl;
+    // }
+
+    out.close();
+  }
+  {  // write face data
+    std::ofstream out;
+    out.open(con_file.c_str());
+    std::cout << "saving " << con_file << std::endl;
+
+    const auto & cons = m_data.flow_connection_data;
+
+    /* OUTPUT Transmissibility */
+    static constexpr double transmissibility_conversion_factor = 0.0085267146719160104986876640419948;
+
+    out << "TPFACONNS" << std::endl;
+    std::size_t n_connections = cons.size();
+    out << n_connections << std::endl;
+    for (const auto & con : cons)
+    {
+      assert( con.elements.size() == 2 );
+      // const std::size_t iconn = conn.second;
+      // const auto element_pair = data.invert_hash(conn.first);
+      out << con.elements[0] << "\t"
+          << con.elements[1] << "\t"
+          << std::scientific
+          << std::fabs(con.coefficients[0]) * transmissibility_conversion_factor
+          << std::defaultfloat << std::endl;
+    }
+    out << "/" << std::endl;
+
+    out.close();
+  }
+}
 
 void OutputDataGPRS::saveGeometry(const std::string & output_path)
 {
@@ -213,8 +290,7 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
   //       const auto it_frac_face = data.dfm_faces.find(face.master_index());
   //       if (it_frac_face == data.dfm_faces.end())
   //       {
-  //         std::cout << "bug in dfm connections" << std::endl;
-  //         exit(0);
+  //         throw std::runtime_error("bug in dfm connections");
   //       }
   //       const auto & neighbors = it_frac_face->second.neighbor_cells;
 
@@ -240,325 +316,325 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
 
 void OutputDataGPRS::saveGeomechDataNewKeywords(const std::string file_name)
 {
-  std::cout << "Writing all domain from user input properties" << std::endl;
-  {  // write domain properties
-    std::ofstream geomechfile;
-    geomechfile.open(file_name.c_str());
+  // std::cout << "Writing all domain from user input properties" << std::endl;
+  // {  // write domain properties
+  //   std::ofstream geomechfile;
+  //   geomechfile.open(file_name.c_str());
 
-    for (std::size_t ivar=0; ivar<data.rockPropNames.size(); ++ivar)
-    {
-      if ( data.config.expression_type[ivar] != 1 )  // only mechanics kwds
-        continue;
+  //   for (std::size_t ivar=0; ivar<data.rockPropNames.size(); ++ivar)
+  //   {
+  //     if ( data.config.expression_type[ivar] != 1 )  // only mechanics kwds
+  //       continue;
 
-      geomechfile << data.rockPropNames[ivar] << std::endl;
-      for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
-      {
-        const std::size_t icell = cell->index();
-        geomechfile << data.vsCellRockProps[icell].v_props[ivar] << "\t";
-        if ((icell + 1) % n_entries_per_line == 0)
-          geomechfile << std::endl;
-      }
-      geomechfile << std::endl << "/" << std::endl << std::endl;
-    }
+  //     geomechfile << data.rockPropNames[ivar] << std::endl;
+  //     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  //     {
+  //       const std::size_t icell = cell->index();
+  //       geomechfile << data.vsCellRockProps[icell].v_props[ivar] << "\t";
+  //       if ((icell + 1) % n_entries_per_line == 0)
+  //         geomechfile << std::endl;
+  //     }
+  //     geomechfile << std::endl << "/" << std::endl << std::endl;
+  //   }
 
-    geomechfile.close();
-  }
+  //   geomechfile.close();
+  // }
 }
 
 
 void OutputDataGPRS::saveEmbeddedFractureProperties(const std::string file_name)
 {
-  std::cout  << "Writing SDA props" << std::endl;
-  std::ofstream geomechfile;
-  geomechfile.open(file_name.c_str());
+  // std::cout  << "Writing SDA props" << std::endl;
+  // std::ofstream geomechfile;
+  // geomechfile.open(file_name.c_str());
 
-  geomechfile << "GM_EFRAC_CELLS" << std::endl;
-  for (const auto & efrac : data.vEfrac)
-  {
-    geomechfile << efrac.cells.size() << std::endl << "\t";
-    for (std::size_t i=0; i<efrac.cells.size(); ++i)
-    {
-      geomechfile << efrac.cells[i] + 1 << "\t";
-      if ((i+1) % n_entries_per_line == 0)
-        geomechfile << std::endl;
-      if (i == efrac.cells.size() - 1)
-        geomechfile << std::endl;
-    }
-  }
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GM_EFRAC_CELLS" << std::endl;
+  // for (const auto & efrac : data.vEfrac)
+  // {
+  //   geomechfile << efrac.cells.size() << std::endl << "\t";
+  //   for (std::size_t i=0; i<efrac.cells.size(); ++i)
+  //   {
+  //     geomechfile << efrac.cells[i] + 1 << "\t";
+  //     if ((i+1) % n_entries_per_line == 0)
+  //       geomechfile << std::endl;
+  //     if (i == efrac.cells.size() - 1)
+  //       geomechfile << std::endl;
+  //   }
+  // }
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GM_EFRAC_POINTS" << std::endl;
-  for (const auto & efrac : data.vEfrac)
-    for (std::size_t i=0; i<efrac.points.size(); ++i)
-      geomechfile << efrac.points[i] << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GM_EFRAC_POINTS" << std::endl;
+  // for (const auto & efrac : data.vEfrac)
+  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
+  //     geomechfile << efrac.points[i] << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GM_EFRAC_DIP" << std::endl;
-  for (const auto & efrac : data.vEfrac)
-    for (std::size_t i=0; i<efrac.points.size(); ++i)
-    {
-      geomechfile << efrac.dip[i] << "\t";
-      if ((i+1) % n_entries_per_line == 0)
-        geomechfile << std::endl;
-    }
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GM_EFRAC_DIP" << std::endl;
+  // for (const auto & efrac : data.vEfrac)
+  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
+  //   {
+  //     geomechfile << efrac.dip[i] << "\t";
+  //     if ((i+1) % n_entries_per_line == 0)
+  //       geomechfile << std::endl;
+  //   }
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GM_EFRAC_STRIKE" << std::endl;
-  for (const auto & efrac : data.vEfrac)
-    for (std::size_t i=0; i<efrac.points.size(); ++i)
-    {
-      geomechfile << efrac.strike[i] << "\t";
-      if ((i+1)%n_entries_per_line == 0) geomechfile << std::endl;
-    }
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GM_EFRAC_STRIKE" << std::endl;
+  // for (const auto & efrac : data.vEfrac)
+  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
+  //   {
+  //     geomechfile << efrac.strike[i] << "\t";
+  //     if ((i+1)%n_entries_per_line == 0) geomechfile << std::endl;
+  //   }
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GM_EFRAC_COHESION" << std::endl;
-  for (const auto & efrac : data.vEfrac)
-    geomechfile << efrac.cohesion << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GM_EFRAC_COHESION" << std::endl;
+  // for (const auto & efrac : data.vEfrac)
+  //   geomechfile << efrac.cohesion << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GM_EFRAC_FRICTION" << std::endl;
-  for (const auto & efrac : data.vEfrac)
-    geomechfile << efrac.friction_angle << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GM_EFRAC_FRICTION" << std::endl;
+  // for (const auto & efrac : data.vEfrac)
+  //   geomechfile << efrac.friction_angle << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GM_EFRAC_DILATION" << std::endl;
-  for (const auto & efrac : data.vEfrac)
-    geomechfile << efrac.dilation_angle << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GM_EFRAC_DILATION" << std::endl;
+  // for (const auto & efrac : data.vEfrac)
+  //   geomechfile << efrac.dilation_angle << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile.close();
+  // geomechfile.close();
 }
 
 
 void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
 {
-  std::ofstream geomechfile;
-  std::cout << "Computing Dirichlet nodes" << std::endl;
+  // std::ofstream geomechfile;
+  // std::cout << "Computing Dirichlet nodes" << std::endl;
 
-  /* this chunk of code find dirichlet nodes
-   * Algorithm:
-   * 1. First add all Dirichlet nodes specified by the user
-   * to the set
-   * 2. loop Dirichlet faces.
-   * loop nodes withing dirichlet faces
-   * add node as a part of dirichlet face
-   */
-  const int dim = 3;
-  std::vector<std::unordered_set<std::size_t>> setDisp(dim);
-  std::vector<std::vector<std::size_t>> vv_disp_node_ind(dim);
-  std::vector<std::vector<double>> vv_disp_node_values(dim);
+  // /* this chunk of code find dirichlet nodes
+  //  * Algorithm:
+  //  * 1. First add all Dirichlet nodes specified by the user
+  //  * to the set
+  //  * 2. loop Dirichlet faces.
+  //  * loop nodes withing dirichlet faces
+  //  * add node as a part of dirichlet face
+  //  */
+  // const int dim = 3;
+  // std::vector<std::unordered_set<std::size_t>> setDisp(dim);
+  // std::vector<std::vector<std::size_t>> vv_disp_node_ind(dim);
+  // std::vector<std::vector<double>> vv_disp_node_values(dim);
 
-  // search tolerance
-  const double tol = data.config.node_search_tolerance;
+  // // search tolerance
+  // const double tol = data.config.node_search_tolerance;
 
-  for (std::size_t ivert=0; ivert<grid.n_vertices(); ++ivert)
-  {
-    const auto & vertex = grid.vertex(ivert);
+  // for (std::size_t ivert=0; ivert<grid.n_vertices(); ++ivert)
+  // {
+  //   const auto & vertex = grid.vertex(ivert);
 
-    for (const auto & bc_node : data.config.bc_nodes)
-    {
-      if (bc_node.coord.distance(vertex) < tol)
-      {
-        for (int d=0; d<dim; ++d)
-          if (bc_node.value[d] != data.config.nan)
-          {
-            setDisp[d].insert(ivert);
-            vv_disp_node_values[d].push_back(bc_node.value[d]);
-            vv_disp_node_ind[d].push_back(ivert);
-          }
-      }
-    }
-  }
+  //   for (const auto & bc_node : data.config.bc_nodes)
+  //   {
+  //     if (bc_node.coord.distance(vertex) < tol)
+  //     {
+  //       for (int d=0; d<dim; ++d)
+  //         if (bc_node.value[d] != data.config.nan)
+  //         {
+  //           setDisp[d].insert(ivert);
+  //           vv_disp_node_values[d].push_back(bc_node.value[d]);
+  //           vv_disp_node_ind[d].push_back(ivert);
+  //         }
+  //     }
+  //   }
+  // }
 
-  if ( data.n_dirichlet_faces > 0 )
-  for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-      if (data.is_boundary(face->marker()))
-      {
-        const auto facet_it = data.boundary_faces.find(face->master_index());
-        if (facet_it != data.boundary_faces.end())
-        {
-          if (facet_it->second.ntype == 1) // dirichlet
-            for (std::size_t d=0; d<dim; ++d)
-              if (facet_it->second.condition[d] != data.config.nan)
-                for (const auto ivertex : face->vertices())
-                {
-                  const auto ret = setDisp[d].insert(ivertex);
-                  // check if already in set
-                  if(ret.second)
-                  {
-                    vv_disp_node_ind[d].push_back(ivertex);
-                    vv_disp_node_values[d].push_back(facet_it->second.condition[d]);
-                  } // end if vertex is new
-                }
-        }
-        else  // should not happen
-        {
-          std::cout << "face " << face->index()
-                    << " is not a boundary face!! Aborting!!!"
-                    << std::endl;
-          abort();
-        }
-      }
+  // if ( data.n_dirichlet_faces > 0 )
+  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
+  //     if (data.is_boundary(face->marker()))
+  //     {
+  //       const auto facet_it = data.boundary_faces.find(face->master_index());
+  //       if (facet_it != data.boundary_faces.end())
+  //       {
+  //         if (facet_it->second.ntype == 1) // dirichlet
+  //           for (std::size_t d=0; d<dim; ++d)
+  //             if (facet_it->second.condition[d] != data.config.nan)
+  //               for (const auto ivertex : face->vertices())
+  //               {
+  //                 const auto ret = setDisp[d].insert(ivertex);
+  //                 // check if already in set
+  //                 if(ret.second)
+  //                 {
+  //                   vv_disp_node_ind[d].push_back(ivertex);
+  //                   vv_disp_node_values[d].push_back(facet_it->second.condition[d]);
+  //                 } // end if vertex is new
+  //               }
+  //       }
+  //       else  // should not happen
+  //       {
+  //         std::cout << "face " << face->index()
+  //                   << " is not a boundary face!! Aborting!!!"
+  //                   << std::endl;
+  //         abort();
+  //       }
+  //     }
 
-  setDisp.clear();
+  // setDisp.clear();
 
-  geomechfile.open(file_name.c_str());
+  // geomechfile.open(file_name.c_str());
 
-  // save dirichlet faces
-  for (std::size_t j=0; j<dim; ++j)
-    if (vv_disp_node_ind[j].size() > 0)
-    {
-      std::cout << "write all Dirichlet nodes" << std::endl;
-      switch (j)
-      {
-        case 0:
-          geomechfile << "GMNODE_BCDISPX" << std::endl;
-          break;
-        case 1:
-          geomechfile << "GMNODE_BCDISPY" << std::endl;
-          break;
-        case 2:
-          geomechfile << "GMNODE_BCDISPZ" << std::endl;
-          break;
-      }
+  // // save dirichlet faces
+  // for (std::size_t j=0; j<dim; ++j)
+  //   if (vv_disp_node_ind[j].size() > 0)
+  //   {
+  //     std::cout << "write all Dirichlet nodes" << std::endl;
+  //     switch (j)
+  //     {
+  //       case 0:
+  //         geomechfile << "GMNODE_BCDISPX" << std::endl;
+  //         break;
+  //       case 1:
+  //         geomechfile << "GMNODE_BCDISPY" << std::endl;
+  //         break;
+  //       case 2:
+  //         geomechfile << "GMNODE_BCDISPZ" << std::endl;
+  //         break;
+  //     }
 
-      for(std::size_t i = 0; i < vv_disp_node_ind[j].size(); ++i)
-      {
-        geomechfile << vv_disp_node_ind[j][i] + 1 << "\t";
-        geomechfile << vv_disp_node_values[j][i] << std::endl;
-      }
-      geomechfile << "/" << std::endl << std::endl;
-    }
+  //     for(std::size_t i = 0; i < vv_disp_node_ind[j].size(); ++i)
+  //     {
+  //       geomechfile << vv_disp_node_ind[j][i] + 1 << "\t";
+  //       geomechfile << vv_disp_node_values[j][i] << std::endl;
+  //     }
+  //     geomechfile << "/" << std::endl << std::endl;
+  //   }
 
-  if ( data.n_neumann_faces > 0 )
-  {
-    std::cout << "write all Neumann faces" << std::endl;
+  // if ( data.n_neumann_faces > 0 )
+  // {
+  //   std::cout << "write all Neumann faces" << std::endl;
 
-    geomechfile << "GMFACE_TRACTION_TXYZ" << std::endl;
-    for (const auto & facet_it : data.boundary_faces)
-      if (facet_it.second.ntype == 2)  // neumann
-      {
-        geomechfile << facet_it.second.nface + 1 << "\t";
-        geomechfile << facet_it.second.condition << std::endl;
-      }
+  //   geomechfile << "GMFACE_TRACTION_TXYZ" << std::endl;
+  //   for (const auto & facet_it : data.boundary_faces)
+  //     if (facet_it.second.ntype == 2)  // neumann
+  //     {
+  //       geomechfile << facet_it.second.nface + 1 << "\t";
+  //       geomechfile << facet_it.second.condition << std::endl;
+  //     }
 
-    geomechfile << "/" << std::endl << std::endl;
-  }
+  //   geomechfile << "/" << std::endl << std::endl;
+  // }
 
-  geomechfile.close();
+  // geomechfile.close();
 }
 
 
 void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
 {
-  std::cout << "write discrete fracs" << std::endl;
+  // std::cout << "write discrete fracs" << std::endl;
 
-  std::ofstream geomechfile;
-  geomechfile.open(file_name.c_str());
-  set<int>::iterator itsetint;
+  // std::ofstream geomechfile;
+  // geomechfile.open(file_name.c_str());
+  // set<int>::iterator itsetint;
 
-  cout << "write all fractured faces\n";
-  geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
-  for (const auto & face_it : data.dfm_faces)
-  {
-    // geomechfile << face_it.second.ifracture + 1 << "\t";
-    geomechfile << face_it.second.nface + 1 << "\t";
-    if (face_it.second.coupled)
-      geomechfile << face_it.second.nfluid + 1 << std::endl;
-    else
-      geomechfile << -1 << std::endl;
-  }
-  geomechfile << "/" << std::endl << std::endl;
-
-  // geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
-  // for (const auto facet_it : data.dfm_faces)
+  // cout << "write all fractured faces\n";
+  // geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
+  // for (const auto & face_it : data.dfm_faces)
   // {
-  //   geomechfile << facet_it.second.nface + 1 << "\t";
-  //   geomechfile << facet_it.second.nfluid + 1 << endl;
-  // }
-  // for(itsetint = pSim->setIdenticalInternalMarker.begin();
-  //     itsetint != pSim->setIdenticalInternalMarker.end();
-  //     itsetint++, nFractures_++)
-  // {
-  //   for (int i = 0; i < pSim->nPhysicalFacets; i++)
-  //   {
-  //     if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-  //     {
-  //       geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-  //       geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
-  //       if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
-  //       {
-  //         cout << "Fracture interface # " << nFractures_ << endl;
-  //         cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
-  //         cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
-  //         cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
-  //         exit(0);
-  //       }
-  //     }
-  //   }
+  //   // geomechfile << face_it.second.ifracture + 1 << "\t";
+  //   geomechfile << face_it.second.nface + 1 << "\t";
+  //   if (face_it.second.coupled)
+  //     geomechfile << face_it.second.nfluid + 1 << std::endl;
+  //   else
+  //     geomechfile << -1 << std::endl;
   // }
   // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
-  for (const auto facet_it : data.dfm_faces)
-    geomechfile << facet_it.second.conductivity << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
+  // // geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
+  // // for (const auto facet_it : data.dfm_faces)
+  // // {
+  // //   geomechfile << facet_it.second.nface + 1 << "\t";
+  // //   geomechfile << facet_it.second.nfluid + 1 << endl;
+  // // }
+  // // for(itsetint = pSim->setIdenticalInternalMarker.begin();
+  // //     itsetint != pSim->setIdenticalInternalMarker.end();
+  // //     itsetint++, nFractures_++)
+  // // {
+  // //   for (int i = 0; i < pSim->nPhysicalFacets; i++)
+  // //   {
+  // //     if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
+  // //     {
+  // //       geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
+  // //       geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
+  // //       if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
+  // //       {
+  // //         cout << "Fracture interface # " << nFractures_ << endl;
+  // //         cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
+  // //         cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
+  // //         cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
+  // //         exit(0);
+  // //       }
+  // //     }
+  // //   }
+  // // }
+  // // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GMFACE_FRACTURE_REGION" << std::endl;
-  for (const auto facet_it : data.dfm_faces)
-    geomechfile << 1 << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
+  // for (const auto facet_it : data.dfm_faces)
+  //   geomechfile << facet_it.second.conductivity << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile << "GMFACE_FRACTURE_GROUP" << std::endl;
-  for (const auto facet_it : data.dfm_faces)
-    geomechfile << 1 << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
+  // geomechfile << "GMFACE_FRACTURE_REGION" << std::endl;
+  // for (const auto facet_it : data.dfm_faces)
+  //   geomechfile << 1 << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
 
-  geomechfile.close();
+  // geomechfile << "GMFACE_FRACTURE_GROUP" << std::endl;
+  // for (const auto facet_it : data.dfm_faces)
+  //   geomechfile << 1 << std::endl;
+  // geomechfile << "/" << std::endl << std::endl;
+
+  // geomechfile.close();
 }
 
 
 void OutputDataGPRS::saveWells(const std::string file_name,
                            const std::string vtk_file_name)
 {
-  std::ofstream file;
-  file.open(file_name.c_str());
+  // std::ofstream file;
+  // file.open(file_name.c_str());
 
-  file << "WELSPECS" << std::endl;
-  for (const auto & well : data.wells)
-  {
-    file << well.name << "\tGROUP1\t";
-    // connected volume + j + k empty
-    file << well.connected_volumes[0] << " 1 1 ";
-    // reference depth
-    file << -well.reference_depth << " /" << std::endl;
-  }
-  file << "/" << std::endl << std::endl;
+  // file << "WELSPECS" << std::endl;
+  // for (const auto & well : data.wells)
+  // {
+  //   file << well.name << "\tGROUP1\t";
+  //   // connected volume + j + k empty
+  //   file << well.connected_volumes[0] << " 1 1 ";
+  //   // reference depth
+  //   file << -well.reference_depth << " /" << std::endl;
+  // }
+  // file << "/" << std::endl << std::endl;
 
-  file << "COMPDAT" << std::endl;
-  for (const auto & well : data.wells)
-  {
-    for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
-    {
-      file << well.name << "\t";
-      file << well.connected_volumes[i] + 1 << "\t";
-      // j, k1:k2 open sat_table_number
-      file << "1\t1\t1\tOPEN\t1*\t";
-      file << well.indices[i] * flow::CalcTranses::transmissibility_conversion_factor << "\t";
-      file << 2*well.radius << "\t";
-      file << "/" << std::endl;
-    }
-  }
-  file << "/" << std::endl << std::endl;
+  // file << "COMPDAT" << std::endl;
+  // for (const auto & well : data.wells)
+  // {
+  //   for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
+  //   {
+  //     file << well.name << "\t";
+  //     file << well.connected_volumes[i] + 1 << "\t";
+  //     // j, k1:k2 open sat_table_number
+  //     file << "1\t1\t1\tOPEN\t1*\t";
+  //     file << well.indices[i] * flow::CalcTranses::transmissibility_conversion_factor << "\t";
+  //     file << 2*well.radius << "\t";
+  //     file << "/" << std::endl;
+  //   }
+  // }
+  // file << "/" << std::endl << std::endl;
 
-  file.close();
+  // file.close();
 
 
-  // vtk well geometry
-  IO::VTKWriter::write_well_trajectory(data.well_vertices.points,
-                                       data.well_vertex_indices,
-                                       vtk_file_name);
+  // // vtk well geometry
+  // IO::VTKWriter::write_well_trajectory(data.well_vertices.points,
+  //                                      data.well_vertex_indices,
+  //                                      vtk_file_name);
 }
 
 
@@ -570,49 +646,49 @@ void OutputDataGPRS::saveFlowMultiScaleData(const std::string file_name)
 
 void OutputDataGPRS::saveMechMultiScaleData(const std::string file_name)
 {
-  std::ofstream out;
-  out.open(file_name.c_str());
-  const auto & ms = data.ms_mech_data;
+  // std::ofstream out;
+  // out.open(file_name.c_str());
+  // const auto & ms = data.ms_mech_data;
 
-  // save partitioing
-  out << "GMMSPARTITIONING";
-  for (std::size_t i=0; i < ms.partitioning.size(); ++i)
-  {
-    if (i % n_entries_per_line == 0) out << endl;
-    out << ms.partitioning[i] << " ";
-  }
-  out << "/" << endl << endl;
+  // // save partitioing
+  // out << "GMMSPARTITIONING";
+  // for (std::size_t i=0; i < ms.partitioning.size(); ++i)
+  // {
+  //   if (i % n_entries_per_line == 0) out << endl;
+  //   out << ms.partitioning[i] << " ";
+  // }
+  // out << "/" << endl << endl;
 
-  // save support
-  out << "GMMSSUPPORT ";
-  for (std::size_t i=0; i < ms.n_coarse; ++i)
-  {
-    out << endl;
-    out << ms.support_internal[i].size() << " "  // number of cells (centroid)
-        << ms.support_boundary[i].size() << " "; // number of boundary nodes
+  // // save support
+  // out << "GMMSSUPPORT ";
+  // for (std::size_t i=0; i < ms.n_coarse; ++i)
+  // {
+  //   out << endl;
+  //   out << ms.support_internal[i].size() << " "  // number of cells (centroid)
+  //       << ms.support_boundary[i].size() << " "; // number of boundary nodes
 
-    // first write the centroid (vertex)
-    out << ms.centroids[i] << " ";
+  //   // first write the centroid (vertex)
+  //   out << ms.centroids[i] << " ";
 
-    // internal cells
-    size_t counter = 3;
-    for (const size_t cell : ms.support_internal[i])
-    {
-      if (counter++ % n_entries_per_line == 0) out << endl;
-      out << cell << " ";
-    }
+  //   // internal cells
+  //   size_t counter = 3;
+  //   for (const size_t cell : ms.support_internal[i])
+  //   {
+  //     if (counter++ % n_entries_per_line == 0) out << endl;
+  //     out << cell << " ";
+  //   }
 
-    // boundary nodes
-    for (const size_t vertex : ms.support_boundary[i])
-    {
-      if (counter++ % n_entries_per_line == 0) out << endl;
-      out << vertex << " ";
-    }
-  }
+  //   // boundary nodes
+  //   for (const size_t vertex : ms.support_boundary[i])
+  //   {
+  //     if (counter++ % n_entries_per_line == 0) out << endl;
+  //     out << vertex << " ";
+  //   }
+  // }
 
-  out << "/" << endl << endl;
+  // out << "/" << endl << endl;
 
-  out.close();
+  // out.close();
 }
 
 }

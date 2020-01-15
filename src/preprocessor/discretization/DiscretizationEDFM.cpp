@@ -57,6 +57,9 @@ void DiscretizationEDFM::build_control_volume_data_()
   // first compute parent volumes since some props are weighted by them
   m_dof_mapping.resize(m_split_cv.size());
   for (size_t i = 0; i < m_split_cv.size(); i++)
+    std::cout << "cvold " << i << " " << m_split_cv[i].volume << std::endl;
+
+  for (size_t i = 0; i < m_split_cv.size(); i++)
   {
     const auto &cv = m_split_cv[i];
     size_t parent_dof;
@@ -82,11 +85,12 @@ void DiscretizationEDFM::build_control_volume_data_()
       const size_t parent_dof = m_dof_mapping[i];
       auto &parent_cv = m_cv_data[parent_dof];
       parent_cv.type = cv.type;
-      // std::cout << "cv = " << i << " parent = " << parent_dof << " ";
-      // if (cv.type == ControlVolumeType::cell)
-      //   std::cout << "cell" << std::endl;
-      // else
-      //   std::cout << "face" << std::endl;
+
+      std::cout << "cv = " << i << " parent = " << parent_dof << " ";
+      if (cv.type == ControlVolumeType::cell)
+        std::cout << "cell" << std::endl;
+      else
+        std::cout << "face" << std::endl;
 
       const double volume_fraction = cv.volume / parent_cv.volume;
       parent_cv.aperture += cv.aperture * volume_fraction;
@@ -95,6 +99,9 @@ void DiscretizationEDFM::build_control_volume_data_()
       parent_cv.permeability = cv.permeability; // assume they are the same
       parent_cv.custom = cv.custom;             // assume they are the same
     }
+
+  for (auto & cv : m_cv_data)
+    assert( cv.volume > 0 );
 }
 
 void DiscretizationEDFM::build_connection_data_()

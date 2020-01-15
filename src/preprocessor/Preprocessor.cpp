@@ -8,6 +8,7 @@
 #include "DoFManager.hpp"
 #include "WellManager.hpp"
 #include "OutputDataVTK.hpp"
+#include "OutputDataGPRS.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -49,14 +50,21 @@ void Preprocessor::run()
 
   // build edfm grid for vtk output
   pm_edfm_mgr->build_edfm_grid();
+  pm_dfm_mgr->build_dfm_grid(data.grid);
 
   build_geomechanics_discretization_();
 
-  // data.grid.coarsen_cells();
-  // property_mgr.generate_properties();
+  // remove fine cells
+  if (config.edfm_method != EDFMMethod::compartmental)
+  {
+    data.grid.coarsen_cells();
+    // pm_property_mgr->coarsen_cells();
+  }
 
+  // build mechanics boundary conditions
   BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
   bc_mgr.create_properties();
+
   write_output_();
 }
 
@@ -80,9 +88,9 @@ void Preprocessor::write_output_()
     switch (format) {
       case OutputFormat::gprs :
         {
-          // std::cout << "Output gprs format" << std::endl;
-          // gprs_data::OutputDataGPRS output_data(preprocessor, msh);
-          // output_data.write_output(output_dir);
+          std::cout << "Output gprs format" << std::endl;
+          gprs_data::OutputDataGPRS output_data(data, config.gprs_output);
+          output_data.write_output(m_output_dir);
           break;
         }
         case OutputFormat::vtk :
@@ -167,11 +175,16 @@ void Preprocessor::build_flow_discretization_()
   const std::vector<int> edfm_markers = pm_edfm_mgr->get_face_markers();
   DoFManager dof_manager(data.grid, pm_dfm_mgr->get_face_markers(), edfm_markers);
   std::shared_ptr<DoFNumbering> p_split_dofs = dof_manager.distribute_dofs();
-  pm_unsplit_dofs = dof_manager.distribute_unsplit_dofs();
+  std::shared_ptr<DoFNumbering> p_unsplit_dofs = dof_manager.distribute_unsplit_dofs();
 
   // build edfm discretization from mixed dfm-edfm discretization
-  discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *pm_unsplit_dofs, data, m_frac_cv_data,
-                                                m_frac_connection_data, edfm_markers, config.edfm_method);
+  discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
+                                                data.flow_connection_data, edfm_markers, config.edfm_method);
+  if ( config.edfm_method == EDFMMethod::compartmental )
+    pm_flow_dof_numbering = p_split_dofs;
+  else
+    pm_flow_dof_numbering = p_unsplit_dofs;
+
   discr_edfm.build();
 }
 
@@ -181,9 +194,9 @@ void Preprocessor::build_geomechanics_discretization_()
   pm_edfm_mgr->distribute_mechanical_properties();
 
   // map mechanics cells to control volumes
-  pm_property_mgr->map_mechanics_to_control_volumes(*pm_unsplit_dofs);
+  pm_property_mgr->map_mechanics_to_control_volumes(*pm_flow_dof_numbering);
   // map sda cells to flow dofs
-  pm_edfm_mgr->map_mechanics_to_control_volumes(*pm_unsplit_dofs);
+  pm_edfm_mgr->map_mechanics_to_control_volumes(*pm_flow_dof_numbering);
 }
 
 }  // end namespace gprs_data

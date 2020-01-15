@@ -55,7 +55,7 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     std::cout << "\treading entry " << key << std::endl;
 
     if (key == "file")
-      config.efrac_file = it->second.as<std::string>();
+      config.gprs_output.efrac_file = it->second.as<std::string>();
     else if (key == "method")
     {
       const std::string str_method = it->second.as<std::string>();
@@ -99,7 +99,7 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
       discrete_fracture(it->second, conf);
     }
     else if (key == "file")
-      config.discrete_frac_file = it->second.as<std::string>();
+      config.gprs_output.discrete_frac_file = it->second.as<std::string>();
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
@@ -212,10 +212,10 @@ void YamlParser::section_domain_props(const YAML::Node & node,
 
     if (key == "file")  // where to ouput properties
     {
-      if (var_type == 0)
-        config.domain_file = it->second.as<std::string>();
-      else if (var_type == 1)
-        config.mechanics_domain_file = it->second.as<std::string>();
+      // if (var_type == 0)
+      //   config.domain_file = it->second.as<std::string>();
+      if (var_type == 1)
+        config.gprs_output.mechanics_domain_file = it->second.as<std::string>();
       continue;
     }
     else if (key == "domain")
@@ -304,7 +304,7 @@ void YamlParser::boundary_conditions(const YAML::Node & node)
     std::cout << "\treading entry " << key << std::endl;
 
     if (key == "file")
-      config.bcond_file = it->second.as<std::string>();
+      config.gprs_output.bcond_file = it->second.as<std::string>();
     else if (key == "Faces")
       boundary_conditions_faces(it->second);
     else if (key == "Dirichlet nodes")
@@ -454,7 +454,7 @@ void YamlParser::section_wells(const YAML::Node & node)
     std::cout << "\treading key " << key << std::endl;
 
     if (key == "file")
-      config.wells_file = it->second.as<std::string>();
+      config.gprs_output.wells_file = it->second.as<std::string>();
     else if (key == "well")
     {
       config.wells.emplace_back();
@@ -534,9 +534,9 @@ void YamlParser::section_multiscale(const YAML::Node & node)
     std::cout << "\treading key " << key << std::endl;
 
     if (key == "Flow file")
-      config.flow_ms_file = it->second.as<std::string>();
+      config.gprs_output.flow_ms_file = it->second.as<std::string>();
     if (key == "Mech file")
-      config.mech_ms_file = it->second.as<std::string>();
+      config.gprs_output.mech_ms_file = it->second.as<std::string>();
     else if (key == "blocks")
       config.n_multiscale_blocks = it->second.as<std::size_t>();
     else if (key == "flow")

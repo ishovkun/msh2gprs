@@ -25,6 +25,8 @@ class DiscreteFractureManager
                   const std::vector<DiscreteFractureConfig> & config2);
   // return vector of split fracture face markers
   std::vector<int> get_face_markers() const;
+  // build edfm surface grid for flow/mechanics output
+  void build_dfm_grid(const mesh::Mesh & grid);
 
  protected:
   void build_dfm_markers_set_();
