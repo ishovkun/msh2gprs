@@ -148,21 +148,23 @@ void CellPropertyManager::build_permeability_function_()
     else if (key == "PERMY")
     {
       found_perm_y = true;
-      m_data.permeability_keys[1*3 + 1] = i;
+      m_data.permeability_keys[1] = i;
     }
     else if (key == "PERMZ")
     {
       found_perm_z = true;
-      m_data.permeability_keys[2*3 + 2] = i;
+      m_data.permeability_keys[2] = i;
     }
     else if (key == "PERM")
     {
+      // voigh notation
       m_data.permeability_keys[0] = i;
-      m_data.permeability_keys[1*3 + 1] = i;
-      m_data.permeability_keys[2*3 + 2] = i;
+      m_data.permeability_keys[1] = i;
+      m_data.permeability_keys[2] = i;
       found_perm_x = true;
       found_perm_y = true;
       found_perm_z = true;
+      break;
     }
   }
   if (found_perm_x && found_perm_y && found_perm_z)

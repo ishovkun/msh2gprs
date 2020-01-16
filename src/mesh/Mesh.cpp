@@ -370,7 +370,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     return split_cell(*children[0], plane, splitting_face_marker);
   }
   std::cout << "split " << cell.index() << " (parent "
-            << cell.m_parent << ")"<< std::endl;
+            << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"<< std::endl;
   assert (cell.is_active());
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
@@ -391,8 +391,8 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   angem::split(*polyhedron, plane, split, constants::marker_below_splitting_plane,
                constants::marker_above_splitting_plane, constants::marker_splitting_plane);
 
-  // check we actually split something
-  assert( split.vertices.size() > global_vertex_indices.size() );
+  // we  didn't nessesarily split anything, therefore comment out line below
+  // assert( split.vertices.size() > global_vertex_indices.size() );
 
   // insert new vertices (those that occured due to splitting)
   for (size_t i = global_vertex_indices.size(); i < split.vertices.size(); ++i)
@@ -574,7 +574,9 @@ active_face_const_iterator Mesh::begin_active_faces() const
 
 void Mesh::coarsen_cells()
 {
-  std::cout << "deleted cells" << std::endl;
+  if ( n_cells() == n_active_cells() )  // no need to clear
+    return;
+
   // find all deleted cells
   size_t min_cell_delete_index = std::numeric_limits<size_t>::max();
   for (auto cell = begin_cells(); cell != end_cells(); ++cell)
@@ -584,7 +586,6 @@ void Mesh::coarsen_cells()
     else if (cell->parent() != *cell)  // to be deleted
       min_cell_delete_index = std::min(min_cell_delete_index, cell->index());
   }
-  std::cout << "ok" << std::endl;
 
   //  clear unused vertices
   for ( auto & vertex_cells : m_vertex_cells )
@@ -592,7 +593,6 @@ void Mesh::coarsen_cells()
       if (*it_cell >= min_cell_delete_index)
         vertex_cells.erase(it_cell);
       else ++it_cell;
-  std::cout << "cleared m_vert_cells" << std::endl;
 
   // find minimum vertex to erase: new vertices are always at the end
   size_t min_vertex_to_delete = std::numeric_limits<size_t>::max();
@@ -603,7 +603,6 @@ void Mesh::coarsen_cells()
       break;
     }
   m_vertex_cells.erase(m_vertex_cells.begin() + min_vertex_to_delete, m_vertex_cells.end() );
-  std::cout << "removes m_vert" << std::endl;
 
   // clear faces: if face has a deleted vertex then delete it
   // these faces are also consequtive and put into the end
@@ -612,9 +611,7 @@ void Mesh::coarsen_cells()
     for (const size_t iface : vertex_faces )
       min_face_to_delete = std::min( min_face_to_delete, iface );
   m_faces.erase( m_faces.begin() + min_face_to_delete, m_faces.end() );
-  std::cout << "cleared faces" << std::endl;
   m_vertex_faces.erase( m_vertex_faces.begin() + min_vertex_to_delete, m_vertex_faces.end() );
-  std::cout << "clear m_vert_cacesl" << std::endl;
   // delete cells
   m_cells.erase( m_cells.begin() + min_cell_delete_index, m_cells.end() );
   // no more split cells
