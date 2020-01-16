@@ -424,7 +424,6 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     }
     else
       new_vertex_index = m_vertices_from_cell_splitting_indices[split_v_index];
-
     global_vertex_indices.push_back(new_vertex_index);
   }
 
@@ -440,10 +439,6 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
       split_face_local_index = i;
 
   // make two groups of faces (polyhedra) that will form the new cells
-  // also keep track of face parents
-  // vector<vector<size_t>> cell_above_faces, cell_below_faces;
-  // std::vector<size_t> faces_above_parents, faces_below_parents;
-  // std::vector<int> faces_above_markers, faces_below_markers;
   std::vector<FaceTmpData> tmp_faces(split.polygons.size());
   std::vector<size_t> cell_above_faces, cell_below_faces;
   std::unordered_map<size_t,std::vector<size_t>> cells_to_insert_hanging_nodes;
@@ -458,9 +453,12 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     f.parent = face_parent_match.second;
 
     if (!face_parent_match.first)
+    {
+      std::cout << "face neighbor lookup for hanging nodes" << std::endl;
       for (const auto p_cell : face(f.parent).neighbors())
         if (*p_cell != cell)
           cells_to_insert_hanging_nodes[p_cell->index()].push_back(i);
+    }
 
     if ( split.markers[i] == constants::marker_splitting_plane )
       f.marker = splitting_face_marker;

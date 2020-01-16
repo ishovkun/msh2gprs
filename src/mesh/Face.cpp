@@ -55,6 +55,10 @@ std::vector<const Cell*> Face::neighbors() const
     std::cout << "neibs ";
     for (const auto p_cell : result)
       std::cout << p_cell->index() << " ";
+    std::cout << " (";
+    for (const auto p_cell : result)
+      std::cout << p_cell->ultimate_parent().index() << " ";
+    std::cout << " )";
     std::cout << std::endl << std::flush;
   }
   assert(result.size() <= 2);
@@ -99,21 +103,6 @@ std::vector<const Cell*> Face::raw_neighbors()const
       face_neighbors.push_back(&cell);
     }
   }
-
-  // if (face_neighbors.size() < 2)
-  // if (!skip_recursion)
-  // {
-  //   const auto parent_neighbors = ultimate_parent().raw_neighbors(/*skip_recursion = */ true);
-  //   for (const auto p_cell : parent_neighbors)
-  //     for (const auto p_child : p_cell->all_level_children())
-  //       for (const auto p_face : p_child->faces())
-  //         if (p_face->ultimate_parent() == ultimate_parent())
-  //         {
-  //           if (std::find(face_neighbors.begin(), face_neighbors.end(), p_child) == face_neighbors.end())
-  //             face_neighbors.push_back(p_child);
-  //           break;
-  //         }
-  // }
 
   return face_neighbors;
 }
