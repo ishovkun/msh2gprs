@@ -16,7 +16,8 @@ const int marker_above_splitting_plane = -2;
 const int marker_splitting_plane = -3;
 const int default_face_marker = -1;
 const int default_cell_marker = -1;
-const int vtk_index_general_polyhedron = -1;
+const int vtk_index_general_polyhedron = 42;
+const int vtk_id_general_polygon = 7;
 
 }
 

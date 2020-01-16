@@ -168,7 +168,7 @@ void EmbeddedFractureManager::find_edfm_cells_and_faces_()
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     if (is_fracture(face->marker()))
     {
-      const mesh::Cell *p_neighbor_cell = face->active_neighbors()[0];
+      const mesh::Cell *p_neighbor_cell = face->neighbors()[0];
       const mesh::Cell &cell_parent = p_neighbor_cell->ultimate_parent();
       const size_t ifrac = fracture_index_(face->marker());
       cells_frac_faces[ifrac][cell_parent.index()].push_back(face->index());

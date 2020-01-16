@@ -98,8 +98,8 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_unsplit_dofs()
     if (cell->parent() == *cell)  // skip refined cells here
     {
       p_dofs->m_cells[cell->index()] = dof;
-      for (const size_t icell : cell->ultimate_children())
-        p_dofs->m_cells[icell] = dof;
+      for (const auto p_cell : cell->ultimate_children())
+        p_dofs->m_cells[p_cell->index()] = dof;
       dof++;
     }
 

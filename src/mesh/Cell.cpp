@@ -117,7 +117,7 @@ Cell & Cell::operator=(const Cell & other)
   pm_grid_faces = other.pm_grid_faces;
   m_vtk_id = other.vtk_id();
   m_marker = other.marker();
-  m_children = other.children();
+  m_children = other.m_children;
   return *this;
 }
 
@@ -135,23 +135,51 @@ Cell & Cell::ultimate_parent()
 }
 
 
-std::vector<size_t> Cell::ultimate_children() const
+std::vector<const Cell*> Cell::immediate_children() const
+{
+  std::vector<const Cell*> result;
+  for (const size_t ichild : m_children)
+    result.push_back( &((*pm_grid_cells)[ichild]) );
+  return result;
+}
+
+
+std::vector<const Cell*> Cell::ultimate_children() const
 {
   std::vector<size_t>  uc;
   this->ultimate_children_(uc);
-  return uc;
+  std::vector<const Cell*> result;
+  for (const size_t ichild : uc)
+    result.push_back( &((*pm_grid_cells)[ichild]) );
+  return result;
 }
 
 void Cell::ultimate_children_(std::vector<size_t> & uc) const
 {
-  if ( children().empty() )
+  if ( m_children.empty() )
     uc.push_back(index());
   else
   {
-    for (const size_t ichild : children())
-      (*pm_grid_cells)[ichild].ultimate_children_(uc);
+    for (const Cell * p_child : immediate_children())
+      p_child->ultimate_children_(uc);
   }
 }
 
+std::vector<const Cell *> Cell::all_level_children() const
+{
+  std::vector<size_t> ichildren;
+  all_level_children_(ichildren);
+  std::vector<const Cell*> result;
+  for (const size_t ichild : ichildren)
+    result.push_back( &((*pm_grid_cells)[ichild]) );
+  return result;
+}
+
+void Cell::all_level_children_(std::vector<size_t> & ichildren) const
+{
+  ichildren.push_back(index());
+  for (const Cell * p_child : immediate_children())
+    p_child->all_level_children_(ichildren);
+}
 
 }  // end namespace

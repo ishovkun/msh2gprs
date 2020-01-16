@@ -235,6 +235,7 @@ void DiscretizationEDFM::build_pedfm_()
     if (m_edfm_markers.find(face->marker()) != m_edfm_markers.end())
     {
       const auto & frac_cell = face->neighbors()[0]->ultimate_parent();
+      std::cout << "searching nighbors for frac cell " << frac_cell.index() << std::endl;
       assert(!pedfm_select_faces_(*face).empty());
       for (const mesh::Face* face2 : pedfm_select_faces_(*face))
       {
@@ -245,7 +246,7 @@ void DiscretizationEDFM::build_pedfm_()
         // this happens when several edfm's in a cell
         if (iother_cell == frac_cell.index()) continue;
         // have connection between two parent cells
-        // std::cout << "frac " << frac_cell.index() << " neib " << iother_cell << std::endl;
+        std::cout << "\tfrac " << frac_cell.index() << " neib " << iother_cell << std::endl;
         assert( m_con_map.contains( m_dofs.cell_dof(frac_cell.index()), m_dofs.cell_dof(iother_cell) ) );
 
         // projection of frac face onto M-M connecting face
@@ -284,6 +285,7 @@ void DiscretizationEDFM::build_pedfm_()
 
 std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mesh::Face & frac_face) const
 {
+  std::cout << "frac_face.index() = " << frac_face.index() << std::endl;
   //  select largest cell neighbor
   const auto & neighbors = frac_face.neighbors();
   const mesh::Cell* smallest_neighbor;
@@ -294,10 +296,33 @@ std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mes
   std::vector<const Face*> result;
   for (auto face : smallest_neighbor->faces())
   {
-    if (*face == frac_face) continue; // same face
-    if (face->neighbors().size() < 2) continue;  // skip boundary
-    if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6) continue;  // face ⟂ frac
-    if (m_dofs.is_active_face(face->marker())) continue; // skip frac faces
+    // if (*face == frac_face) continue; // same face
+    // if (face->neighbors().size() < 2) continue;  // skip boundary
+    // if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6) continue;  // face ⟂ frac
+    // if (m_dofs.is_active_face(face->marker())) continue; // skip frac faces
+    // result.push_back(&*face);
+    if (*face == frac_face)
+    {
+      std::cout << "sam face" << std::endl; continue;
+    }
+    if (face->neighbors().size() < 2)
+    {
+      std::cout << face->index() << " boundary face" << std::endl;
+      continue; // skip boundary
+    }
+
+    if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6)
+    {
+      std::cout << face->index() << " perpendicular" << std::endl;
+      continue; // face ⟂ frac
+    }
+
+    if (m_dofs.is_active_face(face->marker()))
+    {
+      std::cout << face->index() << " dfm face" << std::endl;
+      continue; // skip frac faces
+    }
+
     result.push_back(&*face);
   }
   return result;

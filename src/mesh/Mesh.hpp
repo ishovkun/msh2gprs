@@ -119,7 +119,7 @@ class Mesh
   // get number of cells
   inline std::size_t n_cells() const {return m_cells.size();}
   // get number of active cells
-  inline std::size_t n_active_cells() const { return n_cells() - m_n_split_cells; }
+  inline std::size_t n_active_cells() const { return n_cells() - m_n_split_cells - m_n_cells_with_hanging_nodes; }
   // get number of vertices
   inline std::size_t n_vertices() const {return m_vertices.size();}
   // get number of faces
@@ -160,30 +160,63 @@ class Mesh
   group_cells_based_on_split_faces(const std::vector<std::size_t> & affected_cells,
                                    const std::vector<std::size_t> & splitted_face_indices) const;
 
+  struct FaceTmpData
+  {
+    std::vector<size_t> vertices;
+    size_t parent = constants::invalid_index;
+    int marker = constants::default_face_marker;
+    int vtk_id = constants::vtk_id_general_polygon;
+  };
 
   /* private insert cell class that does all the cell insertion work */
+  // std::size_t insert_cell_(const std::vector<std::size_t> & ivertices,
+  //                          const std::vector<std::vector<std::size_t>> & cell_faces,
+  //                          const int                        vtk_id,
+  //                          const int                        marker,
+  //                          std::vector<std::size_t> face_parents = std::vector<std::size_t>(),
+  //                          std::vector<int>          face_markers = std::vector<int>());
   std::size_t insert_cell_(const std::vector<std::size_t> & ivertices,
-                           const std::vector<std::vector<std::size_t>> & cell_faces,
+                           const std::vector<size_t> take_faces,
+                           const std::vector<FaceTmpData> &big_face_vector,
                            const int                        vtk_id,
-                           const int                        marker,
-                           std::vector<std::size_t> face_parents = std::vector<std::size_t>(),
-                           std::vector<int>          face_markers = std::vector<int>());
+                           const int                        marker);
+
   /* Insert an arbitrary polyhedron cell into grid .
    * A wrapper on the above function to minimize bookkeeping. */
-  std::size_t insert_cell_(const std::vector<std::vector<std::size_t>> & cell_faces,
-                           const std::vector<std::size_t> & face_parents,
-                           const int                        marker = constants::default_cell_marker,
-                           std::vector<int> face_markers = std::vector<int>());
+  std::size_t insert_cell_(const std::vector<size_t> take_faces,
+                           const std::vector<FaceTmpData> &big_face_vector,
+                           const int                        marker = constants::default_cell_marker);
+  std::size_t insert_face_(const FaceTmpData & f);
+
+  std::size_t insert_cell_with_hanging_nodes_(Cell & parent,
+                                              std::vector<FaceTmpData> big_face_vector,
+                                              std::vector<size_t> split_faces);
   /* get a vector of polygon global vertex indices given a vector with
    * local polygon vertex indices and a mapping vector. */
   std::vector<std::size_t>
   build_global_face_indices_(const std::vector<size_t> & polygon_local_indices,
                              const std::vector<size_t> & local_to_global) const;
   /* find out whether the face is a parent or child cell based on the
-   * split information. returns parent index. */
-  std::size_t determine_face_parent_(const std::vector<size_t> & face_vertices,
-                                     const Cell                & parent_cell,
-                                     const std::vector<size_t> & splitting_face_vertices) const;
+   * split information. returns pair
+   * 1) true if the face and parent match identically (or new face)
+   * 2) parent index. if new face then invalid_index */
+  std::pair<bool,std::size_t> determine_face_parent_(const std::vector<size_t> & face_vertices,
+                                                     const Cell                & parent_cell,
+                                                     const std::vector<size_t> & splitting_face_vertices) const;
+
+  int face_vtk_id_(const size_t n_vertices) const
+  {
+    switch (n_vertices)
+    {
+      case 3:
+        return 5;  //  triangle
+      case 4:
+        return 9;  //  vtk_quad
+      default:
+        return 7;  //  vtk_polygon
+    }
+  }
+
  private:
   // ATTRIBUTES
   std::vector<angem::Point<3,double>>   m_vertices;      // vector of vertex coordinates
@@ -193,7 +226,8 @@ class Mesh
   std::vector<std::vector<std::size_t>> m_vertex_faces;  // vertex neighboring faces
   // Used as a tmp container when splitting faces for dfm
   std::vector<std::size_t> m_faces_marked_for_split;
-  size_t m_n_split_cells;
+  // to count active cells
+  size_t m_n_split_cells, m_n_cells_with_hanging_nodes;
   // for keeping track of cell vertices during cell splitting
   angem::PointSet<3, double> m_vertices_from_cell_splitting;
   // for keeping track of cell vertices during cell splitting

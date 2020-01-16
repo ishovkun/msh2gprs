@@ -5,7 +5,6 @@ namespace mesh
 {
 
 Face::Face(const std::size_t                       face_index,
-           const std::size_t                       master_face_index,
            const std::vector<std::size_t> &        face_vertices,
            const int                               face_vtk_id,
            const int                               face_marker,
@@ -15,7 +14,6 @@ Face::Face(const std::size_t                       face_index,
            std::vector<std::vector<std::size_t>> & grid_vertex_cells,
            const std::size_t                       parent)
     : m_index(face_index),
-      m_master_face_index(master_face_index),
       m_vertices(face_vertices),
       m_vtk_id(face_vtk_id),
       m_marker(face_marker),
@@ -33,7 +31,6 @@ Face::Face(const std::size_t                       face_index,
 Face & Face::operator=(const Face & other)
 {
   m_index = other.index();
-  m_master_face_index = other.master_index();
   m_vertices = other.vertices();
   m_vtk_id = other.vtk_id();
   m_marker = other.marker();
@@ -45,27 +42,37 @@ Face & Face::operator=(const Face & other)
   return *this;
 }
 
+std::vector<const Cell*> Face::neighbors() const
+{
+  std::vector<const Cell*> result;
+  std::vector<const Cell*> const_neibs = raw_neighbors();
+  for (const Cell* p_cell : const_neibs)
+    if (p_cell->is_active())
+      result.push_back( p_cell );
+
+  if (result.size() > 2)
+  {
+    std::cout << "neibs ";
+    for (const auto p_cell : result)
+      std::cout << p_cell->index() << " ";
+    std::cout << std::endl << std::flush;
+  }
+  assert(result.size() <= 2);
+  return result;
+}
+
 std::vector<Cell*> Face::neighbors()
 {
   std::vector<Cell*> result;
-  const Face & this_face = *this;
-  std::vector<const Cell*> const_neibs = this_face.neighbors();
+  const auto & cthis = *this;
+  std::vector<const Cell*> const_neibs = cthis.neighbors();
   for (const Cell* p_cell : const_neibs)
     result.push_back( const_cast<Cell*>(p_cell) );
+
   return result;
 }
 
-std::vector<const Cell*> Face::active_neighbors() const
-{
-  std::vector<const Cell*> neibs = neighbors();
-  std::vector<const Cell*> result;
-  for (const Cell* p_cell : neibs)
-    if (p_cell->is_active())
-      result.push_back(p_cell);
-  return result;
-}
-
-std::vector<const Cell*> Face::neighbors() const
+std::vector<const Cell*> Face::raw_neighbors()const
 {
   // find how many times each vertex neighboring cell is encountered
   std::unordered_map<size_t, size_t> cell_time;
@@ -89,35 +96,27 @@ std::vector<const Cell*> Face::neighbors() const
     if (it.second == m_vertices.size())
     {
       const Cell & cell = (*pm_grid_cells)[it.first];
-      if (cell.is_active())
-        face_neighbors.push_back(&cell);
-    }
-
-  }
-
-  // if this face is a child, we gotta loop up parent neighboring
-  if (ultimate_parent() != *this && face_neighbors.size() == 1)
-  {
-    for (const auto & cell : ultimate_parent().neighbors())
-    {
-      const Cell& cell_parent = cell->ultimate_parent();
-      if (cell_parent != face_neighbors[0]->ultimate_parent())
-        face_neighbors.push_back( &cell_parent );
+      face_neighbors.push_back(&cell);
     }
   }
 
-  if (face_neighbors.size() > 2)
-  {
-    std::cout << "neibs ";
-    for (const auto p_cell : face_neighbors)
-      std::cout << p_cell->index() << " ";
-    std::cout << std::endl << std::flush;
-  }
-  assert(face_neighbors.size() <= 2);
+  // if (face_neighbors.size() < 2)
+  // if (!skip_recursion)
+  // {
+  //   const auto parent_neighbors = ultimate_parent().raw_neighbors(/*skip_recursion = */ true);
+  //   for (const auto p_cell : parent_neighbors)
+  //     for (const auto p_child : p_cell->all_level_children())
+  //       for (const auto p_face : p_child->faces())
+  //         if (p_face->ultimate_parent() == ultimate_parent())
+  //         {
+  //           if (std::find(face_neighbors.begin(), face_neighbors.end(), p_child) == face_neighbors.end())
+  //             face_neighbors.push_back(p_child);
+  //           break;
+  //         }
+  // }
+
   return face_neighbors;
 }
-
-
 
 std::vector<Point> Face::vertex_coordinates() const
 {
@@ -127,7 +126,6 @@ std::vector<Point> Face::vertex_coordinates() const
     coordinates.push_back( (*pm_grid_vertices)[vertex_index] );
   return coordinates;
 }
-
 
 Polygon Face::polygon() const
 {

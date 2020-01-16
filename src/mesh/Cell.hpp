@@ -72,13 +72,17 @@ class Cell
   // returns the parent of parent of parent of ....
   Cell & ultimate_parent();
   // return a vector of child cell indices
-  inline const std::vector<size_t> & children() const { return m_children; }
+  std::vector<const Cell*> immediate_children() const;
   // returns a vector of indices of children of children of...
-  std::vector<size_t> ultimate_children() const;
+  std::vector<const Cell*> ultimate_children() const;
+  // return child cells from all refinement levels
+  std::vector<const Cell*> all_level_children() const;
 
  protected:
   // recursive part of the public ultimate_children() method
   void ultimate_children_(std::vector<size_t> & uc) const;
+  // recursively search all level children of a cell
+  void all_level_children_(std::vector<size_t> & ch) const;
 
   // this cell stuff
   std::size_t m_index;

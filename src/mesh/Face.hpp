@@ -16,7 +16,6 @@ class Face
 {
  public:
   Face(const std::size_t                       face_index,
-       const std::size_t                       master_face_index,
        const std::vector<std::size_t>        & face_vertices,
        const int                               face_vtk_id,
        const int                               face_marker,
@@ -36,8 +35,6 @@ class Face
   inline int marker() const { return m_marker; }
   // get face index
   inline std::size_t index() const { return m_index; }
-  // get index of master face (before splitting)
-  inline std::size_t master_index() const { return m_master_face_index; }
   // get vtk index of a face polygon
   inline int vtk_id() const { return m_vtk_id; }
   // return indices of child faces
@@ -50,12 +47,12 @@ class Face
   std::vector<vertex_pair> edges() const;
   // get the coordinates of face vertices
   std::vector<Point> vertex_coordinates() const;
-  // get vector of neighboring cells. NOTE: this is a raw function
+  // get vector of active neighboring cells.
   std::vector<Cell*> neighbors();
-  // get vector of neighboring const cells. NOTE: this is a raw function
+  // get vector of active neighboring cells.
   std::vector<const Cell*> neighbors() const;
-  // get vector of neighboring const active cells.
-  std::vector<const Cell*> active_neighbors() const;
+  // get vector of neighboring const raw cells.
+  std::vector<const Cell*> raw_neighbors() const;
   // get face center of mass
   Point center() const;
   // get face normal
@@ -83,7 +80,6 @@ class Face
 
  protected:
   std::size_t m_index;              // face index
-  std::size_t m_master_face_index;  // index before split
   std::vector<std::size_t> m_vertices;  // face vertex indices
   int m_vtk_id;                         // face vtk id
   int m_marker;                         // face marker
