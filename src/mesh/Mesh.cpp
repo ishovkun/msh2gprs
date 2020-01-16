@@ -382,10 +382,12 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     const auto children = m_cells[cell.index()].immediate_children();
     // make sure this is a cell with hanging nodes
     assert ( children.size() == 1 );
-    split_cell(*children[0], plane, splitting_face_marker);
+    std::cout << "go down" << std::endl;
+    return split_cell(*children[0], plane, splitting_face_marker);
   }
   std::cout << "split " << cell.index() << " (parent "
             << cell.m_parent << ")"<< std::endl;
+  assert (cell.is_active());
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
   // in order to have a map of those to the global vertex indices,
@@ -454,7 +456,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
 
     if (!face_parent_match.first)
     {
-      std::cout << "face neighbor lookup for hanging nodes" << std::endl;
+      // std::cout << "face neighbor lookup for hanging nodes" << std::endl;
       for (const auto p_cell : face(f.parent).neighbors())
         if (*p_cell != cell)
           cells_to_insert_hanging_nodes[p_cell->index()].push_back(i);
@@ -486,9 +488,9 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
 
   for (const auto &it : cells_to_insert_hanging_nodes)
   {
-    std::cout << "insert hanging into " << it.first
-              << "(" << this->cell(it.first).ultimate_parent().index()
-              << ")"<< std::endl;
+    // std::cout << "insert hanging into " << it.first
+    //           << "(" << this->cell(it.first).ultimate_parent().index()
+    //           << ")"<< std::endl;
     assert( this->cell(it.first).is_active() );
     insert_cell_with_hanging_nodes_(this->cell(it.first), tmp_faces, it.second);
   }
@@ -657,6 +659,9 @@ bool Mesh::insert_cell_with_hanging_nodes_(Cell & parent,
   if (match_counter == 0)
   {
     const size_t child_cell_index = insert_cell_(split_faces, big_face_vector, parent.marker());
+    std::cout << "insert hanging " << child_cell_index << " (" <<
+        parent.index() << " ult " << parent.ultimate_parent().index()
+              << ")"<< std::endl;
     m_cells[child_cell_index].m_parent = parent.index();
     m_cells[parent.index()].m_children = {child_cell_index};
     m_n_cells_with_hanging_nodes++;
