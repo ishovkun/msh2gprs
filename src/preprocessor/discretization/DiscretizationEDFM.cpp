@@ -235,7 +235,8 @@ void DiscretizationEDFM::build_pedfm_()
     if (m_edfm_markers.find(face->marker()) != m_edfm_markers.end())
     {
       const auto & frac_cell = face->neighbors()[0]->ultimate_parent();
-      std::cout << "searching nighbors for frac cell " << frac_cell.index() << std::endl;
+      std::cout << "searching nighbors for frac cell " << frac_cell.index()
+                << std::endl;
       assert(!pedfm_select_faces_(*face).empty());
       for (const mesh::Face* face2 : pedfm_select_faces_(*face))
       {
@@ -317,7 +318,7 @@ std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mes
       continue; // face ⟂ frac
     }
 
-    if (m_dofs.is_active_face(face->marker()))
+    if (m_dofs.is_active_face(face->index()))
     {
       std::cout << face->index() << " dfm face" << std::endl;
       continue; // skip frac faces
