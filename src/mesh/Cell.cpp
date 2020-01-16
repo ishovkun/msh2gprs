@@ -131,7 +131,8 @@ const Cell & Cell::ultimate_parent() const
 
 Cell & Cell::ultimate_parent()
 {
-  return const_cast<Cell&>(ultimate_parent());
+  const auto & const_this = *this;
+  return const_cast<Cell&>(const_this.ultimate_parent());
 }
 
 

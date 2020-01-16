@@ -188,7 +188,7 @@ class Mesh
                            const int                        marker = constants::default_cell_marker);
   std::size_t insert_face_(const FaceTmpData & f);
 
-  std::size_t insert_cell_with_hanging_nodes_(Cell & parent,
+  bool insert_cell_with_hanging_nodes_(Cell & parent,
                                               std::vector<FaceTmpData> big_face_vector,
                                               std::vector<size_t> split_faces);
   /* get a vector of polygon global vertex indices given a vector with
@@ -215,6 +215,13 @@ class Mesh
       default:
         return 7;  //  vtk_polygon
     }
+  }
+
+  std::vector<size_t> sort_copy_(const std::vector<size_t>& vec) const
+  {
+    std::vector<size_t> copy(vec.size());
+    partial_sort_copy(vec.begin(), vec.end(), copy.begin(), copy.end());
+    return copy;
   }
 
  private:
