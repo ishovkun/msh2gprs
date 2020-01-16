@@ -150,6 +150,7 @@ void WellManager::compute_well_index_(Well &well)
   well.indices.resize(well.connected_volumes.size());
   for (std::size_t i = 0; i<well.connected_volumes.size(); ++i)
   {
+    assert ( m_well_connected_cells.back().size() > i );
     const std::size_t icell = m_well_connected_cells.back()[i];
     const angem::Tensor2<3,double> perm = m_data.get_permeability(icell);
     angem::Point<3,double> dx_dy_dz = get_dx_dy_dz_(icell);

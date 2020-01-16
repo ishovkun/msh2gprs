@@ -48,7 +48,7 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   if (!m_data.wells.empty())
   {
     std::cout << "save wells" << std::endl;
-    saveWells(output_path + m_config.wells_file);
+    saveWells(output_path + "/" + m_config.wells_file);
   }
 
   // // flow discretization

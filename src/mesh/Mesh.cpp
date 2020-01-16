@@ -13,7 +13,7 @@ namespace mesh
 using std::vector;
 
 Mesh::Mesh()
-    : m_n_split_cells(0)
+    : m_n_split_cells(0), m_n_cells_with_hanging_nodes(0)
 {}
 
 std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
@@ -103,29 +103,13 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
   if (m_vertex_faces.size() < n_vertices())
     m_vertex_faces.resize(n_vertices());
 
-  size_t face_index = m_faces.size();
-  std::vector<size_t> sorted_vertices = sort_copy_(f.vertices);
-
+  // size_t face_index = m_faces.size();
   bool face_exists = false;
-  for (const size_t vertex: f.vertices)
-  {
-    for (const size_t iface: m_vertex_faces[vertex])
-    {
-      assert( n_faces() > iface );
-      const Face & f = m_faces[iface];
-      std::vector<size_t> face_vertices = sort_copy_(f.vertices());
-      if ( std::equal( face_vertices.begin(), face_vertices.end(),
-                       sorted_vertices.begin(), sorted_vertices.end()) )
-      {
-        face_exists = true;
-        face_index = iface;
-        break;
-      }
-    }
-  }
+  size_t face_index = face_exists_(f.vertices);
 
-  if (!face_exists)
+  if (face_index == constants::invalid_index)
   {
+    face_index = m_faces.size();
     m_faces.emplace_back(face_index, f.vertices, f.vtk_id, f.marker,
                          m_cells, m_faces, m_vertices, m_vertex_cells, f.parent);
     if (f.parent != constants::invalid_index)
@@ -404,10 +388,8 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
 
   // the actual geometry happens here
   const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
-  angem::split(*polyhedron, plane, split,
-               constants::marker_below_splitting_plane,
-               constants::marker_above_splitting_plane,
-               constants::marker_splitting_plane);
+  angem::split(*polyhedron, plane, split, constants::marker_below_splitting_plane,
+               constants::marker_above_splitting_plane, constants::marker_splitting_plane);
 
   // check we actually split something
   assert( split.vertices.size() > global_vertex_indices.size() );
@@ -432,9 +414,10 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   // map local indices to global
   std::vector<std::vector<size_t>> face_vertex_global_numbering;
   for (size_t i = 0; i < split.polygons.size(); i++)
-      face_vertex_global_numbering.push_back(std::move(
-          build_global_face_indices_(split.polygons[i], global_vertex_indices)));
+    face_vertex_global_numbering.push_back(build_global_face_indices_
+                                           (split.polygons[i], global_vertex_indices));
 
+  // find the index of the splitting face
   size_t split_face_local_index;  // need this to figure out parent/child faces
   for (size_t i = 0; i < split.polygons.size(); i++)
     if ( split.markers[i] == constants::marker_splitting_plane )
@@ -449,14 +432,12 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     FaceTmpData & f = tmp_faces[i];
     f.vertices = face_vertex_global_numbering[i];
     f.vtk_id = face_vtk_id_(f.vertices.size());
-    std::pair<bool,size_t> face_parent_match =
-        determine_face_parent_(face_vertex_global_numbering[i], cell,
-                               face_vertex_global_numbering[split_face_local_index]);
+    std::pair<bool,size_t> face_parent_match = determine_face_parent_(f.vertices, cell,
+                                face_vertex_global_numbering[split_face_local_index]);
     f.parent = face_parent_match.second;
 
     if (!face_parent_match.first)
     {
-      // std::cout << "face neighbor lookup for hanging nodes" << std::endl;
       for (const auto p_cell : face(f.parent).neighbors())
         if (*p_cell != cell)
           cells_to_insert_hanging_nodes[p_cell->index()].push_back(i);
@@ -518,7 +499,11 @@ Mesh::build_global_face_indices_(const std::vector<size_t> & polygon_local_indic
 {
   std::vector<std::size_t> global_face_indices(polygon_local_indices.size());
   for (std::size_t i=0; i<polygon_local_indices.size(); ++i)
+  {
+    assert( polygon_local_indices[i] < local_to_global.size() );
     global_face_indices[i] = local_to_global[polygon_local_indices[i]];
+  }
+
   return global_face_indices;
 }
 
@@ -526,8 +511,15 @@ std::pair<bool,std::size_t> Mesh::determine_face_parent_(const std::vector<size_
                                                          const Cell                & parent_cell,
                                                          const std::vector<size_t> & splitting_face_vertices) const
 {
+  // first return argument is the exactnmess of the match
+
   if ( face_vertices == splitting_face_vertices )
     return {true, constants::invalid_index };  // new face
+
+  // check if face exist already
+  size_t face_index = face_exists_(face_vertices);
+  if (face_index != constants::invalid_index)
+    return {true, face_index};
 
   // if a face has common vertices with the splitting face then it is a chld face
   std::set<size_t> common_vertices;
@@ -557,6 +549,7 @@ std::pair<bool,std::size_t> Mesh::determine_face_parent_(const std::vector<size_
   }
   else
   {
+    assert(false && "should not be here");
     // no common vertices: face should match its parent
     std::vector<size_t> sorted = sort_copy_(face_vertices);
     for (const Face* face : parent_cell.faces())
@@ -581,6 +574,7 @@ active_face_const_iterator Mesh::begin_active_faces() const
 
 void Mesh::coarsen_cells()
 {
+  std::cout << "deleted cells" << std::endl;
   // find all deleted cells
   size_t min_cell_delete_index = std::numeric_limits<size_t>::max();
   for (auto cell = begin_cells(); cell != end_cells(); ++cell)
@@ -590,6 +584,7 @@ void Mesh::coarsen_cells()
     else if (cell->parent() != *cell)  // to be deleted
       min_cell_delete_index = std::min(min_cell_delete_index, cell->index());
   }
+  std::cout << "ok" << std::endl;
 
   //  clear unused vertices
   for ( auto & vertex_cells : m_vertex_cells )
@@ -597,6 +592,7 @@ void Mesh::coarsen_cells()
       if (*it_cell >= min_cell_delete_index)
         vertex_cells.erase(it_cell);
       else ++it_cell;
+  std::cout << "cleared m_vert_cells" << std::endl;
 
   // find minimum vertex to erase: new vertices are always at the end
   size_t min_vertex_to_delete = std::numeric_limits<size_t>::max();
@@ -607,6 +603,7 @@ void Mesh::coarsen_cells()
       break;
     }
   m_vertex_cells.erase(m_vertex_cells.begin() + min_vertex_to_delete, m_vertex_cells.end() );
+  std::cout << "removes m_vert" << std::endl;
 
   // clear faces: if face has a deleted vertex then delete it
   // these faces are also consequtive and put into the end
@@ -615,7 +612,9 @@ void Mesh::coarsen_cells()
     for (const size_t iface : vertex_faces )
       min_face_to_delete = std::min( min_face_to_delete, iface );
   m_faces.erase( m_faces.begin() + min_face_to_delete, m_faces.end() );
+  std::cout << "cleared faces" << std::endl;
   m_vertex_faces.erase( m_vertex_faces.begin() + min_vertex_to_delete, m_vertex_faces.end() );
+  std::cout << "clear m_vert_cacesl" << std::endl;
   // delete cells
   m_cells.erase( m_cells.begin() + min_cell_delete_index, m_cells.end() );
   // no more split cells
@@ -683,5 +682,29 @@ bool Mesh::insert_cell_with_hanging_nodes_(Cell & parent,
 // {
 //   return const_cast<Face&>(ultimate_parent(face));
 // }
+
+size_t Mesh::face_exists_(const std::vector<size_t> & face_vertices) const
+{
+  const std::vector<size_t> sorted_vertices = sort_copy_(face_vertices);
+  for (const size_t vertex: face_vertices)
+  {
+    // vertex hasn't been mapped to faces yet
+    if (vertex >= m_vertex_faces.size())
+      return constants::invalid_index;
+
+    for (const size_t iface: m_vertex_faces[vertex])
+    {
+      assert( n_faces() > iface );
+      const Face & f = m_faces[iface];
+      const std::vector<size_t> face_vertices = sort_copy_(f.vertices());
+      if ( std::equal( face_vertices.begin(), face_vertices.end(),
+                       sorted_vertices.begin(), sorted_vertices.end()) )
+      {
+        return f.index();
+      }
+    }
+  }
+  return constants::invalid_index;
+}
 
 }  // end namespace mesh

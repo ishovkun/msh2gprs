@@ -128,6 +128,7 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
   find_edfm_cells_and_faces_();
 
   auto & sda = m_data.sda_data;
+  assert( sda.size() == config.size() );
   for (std::size_t i=0; i<config.size(); ++i)
   {
     const size_t n_frac_cells = sda[i].cells.size();
@@ -143,20 +144,27 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
 void EmbeddedFractureManager::
 map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
 {
-  if (m_data.gmcell_to_flowcells.size() != m_grid.n_active_cells())
-    m_data.gmcell_to_flowcells.resize(m_grid.n_active_cells());
+  std::cout << "here" << std::endl;
+  std::cout << "old = " << m_data.gmcell_to_flowcells.size() << std::endl;
+  std::cout << "new = " << m_data.geomechanics_grid.n_active_cells() << std::endl;
+  if (m_data.gmcell_to_flowcells.size() != m_data.geomechanics_grid.n_active_cells())
+    m_data.gmcell_to_flowcells.resize(m_data.geomechanics_grid.n_active_cells());
+  std::cout << "here1" << std::endl;
 
   for (std::size_t ifrac=0; ifrac<m_data.sda_data.size(); ++ifrac)
   {
+    std::cout << "ifrac= " << ifrac << std::endl;
     const auto & frac = m_data.sda_data[ifrac];
-    // for (const size_t iface : frac.faces)
     for (std::size_t icell=0; icell<frac.cells.size(); ++icell)
 
     {
       // first map cell cv
-      const size_t cell_cv = dofs.cell_dof(frac.cells[icell]);
+      std::cout << "icell = " << icell << std::endl;
+      const size_t mech_cell = m_grid.cell(frac.cells[icell]).ultimate_parent().index();
+      std::cout << "mech_cell = " << mech_cell << std::endl;
+      assert( mech_cell < m_data.gmcell_to_flowcells.size() );
       for (const size_t iface : frac.faces[icell])
-        m_data.gmcell_to_flowcells[cell_cv].push_back( dofs.face_dof(iface) );
+        m_data.gmcell_to_flowcells[mech_cell].push_back( dofs.face_dof(iface) );
     }
 
   }

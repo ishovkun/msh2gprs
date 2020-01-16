@@ -36,8 +36,12 @@ class Postprocessor:
         printProgressBar(1, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
 
     def readConfig_(self):
+        if (not os.path.isdir(self.case_path)):
+            raise IsADirectoryError("%s does not exist" % self.case_path)
         with open(self.case_path + self.config_file_name, "r") as f:
             return yaml.load(f, Loader=yaml.CLoader)
+        if (self.config is None):
+           raise FileExistsError(self.case_path + self.config_file_name)
 
     def readGeometry_(self):
         # reservoir grid

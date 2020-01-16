@@ -23,6 +23,7 @@ void OutputDataPostprocessor::write_output(const std::string file_name)
   // save file
   std::ofstream out;
   out.open(m_config.postprocessor_file.c_str());
+  out << m_root;
   out.close();
 }
 

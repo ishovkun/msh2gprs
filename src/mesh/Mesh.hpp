@@ -224,6 +224,9 @@ class Mesh
     return copy;
   }
 
+  // returns face index or invalid index
+  size_t face_exists_(const std::vector<size_t> & face_vertices) const;
+
  private:
   // ATTRIBUTES
   std::vector<angem::Point<3,double>>   m_vertices;      // vector of vertex coordinates

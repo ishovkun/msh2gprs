@@ -100,7 +100,6 @@ void Preprocessor::write_output_()
                                                            *pm_flow_dof_numbering,
                                                            m_output_dir);
             output_data.write_output(config.postprocessor_file);
-
           }
     }
   }
@@ -202,7 +201,6 @@ void Preprocessor::build_geomechanics_discretization_()
 {
   // generate geomechanics sda properties
   pm_edfm_mgr->distribute_mechanical_properties();
-
   // map mechanics cells to control volumes
   pm_property_mgr->map_mechanics_to_control_volumes(*pm_flow_dof_numbering);
   // map sda cells to flow dofs
