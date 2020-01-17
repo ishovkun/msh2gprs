@@ -32,6 +32,12 @@ void DiscretizationEDFM::build()
   if (m_method != EDFMMethod::compartmental)
   {
     identify_edfm_faces_();
+    if (m_edfm_faces.empty())
+    {
+      m_cv_data = std::move(m_split_cv);
+      m_con_data = std::move(m_split_con);
+      return;
+    }
     build_control_volume_data_();
     build_connection_data_();
     if (m_method == EDFMMethod::projection)
