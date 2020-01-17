@@ -192,7 +192,7 @@ void Preprocessor::build_flow_discretization_()
   if (!config.wells.empty())
   {
     std::cout << "setup wells" << std::endl;
-    WellManager well_mgr(config.wells, data, *p_unsplit_dofs);
+    WellManager well_mgr(config.wells, data, *pm_flow_dof_numbering);
     well_mgr.setup();
   }
 }

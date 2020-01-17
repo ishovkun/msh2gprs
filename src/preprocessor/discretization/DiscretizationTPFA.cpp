@@ -18,7 +18,6 @@ DiscretizationTPFA(const DoFNumbering & dof_numbering,
     m_method(tpfa_method::mo)
 {}
 
-
 void DiscretizationTPFA::build()
 {
   DiscretizationBase::build_cell_data_();
@@ -43,7 +42,6 @@ void DiscretizationTPFA::build()
       }
   }
 }
-
 
 void DiscretizationTPFA::build_kirill(const mesh::Face & face,
                                       ConnectionData   & data)
@@ -118,7 +116,6 @@ void DiscretizationTPFA::build_mo(ConnectionData & con,
                                   const ControlVolumeData & cell1,
                                   const ControlVolumeData & cell2)
 {
-
   // define face projection point
   const Point & c1 = cell1.center;
   const Point & c2 = cell2.center;

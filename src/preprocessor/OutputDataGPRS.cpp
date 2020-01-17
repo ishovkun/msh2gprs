@@ -122,8 +122,8 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     for (const auto & con : cons)
     {
       assert( con.elements.size() == 2 );
-      // const std::size_t iconn = conn.second;
-      // const auto element_pair = data.invert_hash(conn.first);
+      assert( con.coefficients.size() == 2 );
+
       out << con.elements[0] << "\t"
           << con.elements[1] << "\t"
           << std::scientific

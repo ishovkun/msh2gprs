@@ -28,8 +28,9 @@ void DiscretizationDFM::build()
   // build connection lists (no data)
   build_fracture_matrix_connections();
 
+  // compute transmissibilities
   for (auto & con : m_con_data)
-    if (con.type == ConnectionType::fracture_fracture)
+    if (con.type == ConnectionType::matrix_fracture)
       build_matrix_fracture_(con);
 
   // build fracture-fracture transes
@@ -45,7 +46,6 @@ void DiscretizationDFM::build_cell_data_()
     const size_t face_index = pair_face_index_property.first;
     const auto & face_props = pair_face_index_property.second;
     const size_t idof = m_dofs.face_dof(face_index);
-    std::cout << "filling idfo " << idof << std::endl;
     assert(idof < m_cv_data.size());
     auto & data = m_cv_data[idof];
     data.type = ControlVolumeType::face;
@@ -120,7 +120,6 @@ void DiscretizationDFM::build_matrix_fracture_(ConnectionData & con)
   const auto & cv_cell = m_cv_data[con.elements[1]];
   build_matrix_fracture(con, cv_frac, cv_cell);
 }
-
 
 void DiscretizationDFM::build_fracture_matrix_connections()
 {
