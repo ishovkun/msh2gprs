@@ -25,6 +25,12 @@ void DiscretizationDFM::build()
 
   build_cell_data_();
 
+  for(size_t i = 0; i < m_cv_data.size(); i++)
+  {
+    const auto & cv = m_cv_data[i];
+    assert(cv.volume > 0);
+  }
+
   // build connection lists (no data)
   build_fracture_matrix_connections();
 
@@ -58,7 +64,6 @@ void DiscretizationDFM::build_cell_data_()
     data.porosity = 1.0;
     data.aperture = face_props.aperture;
     data.custom = face_props.custom_flow_data;
-    const auto cells = face.neighbors();
   }
 }
 

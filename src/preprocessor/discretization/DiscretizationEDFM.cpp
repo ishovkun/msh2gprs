@@ -38,6 +38,7 @@ void DiscretizationEDFM::build()
       m_con_data = std::move(m_split_con);
       return;
     }
+
     build_control_volume_data_();
     build_connection_data_();
     if (m_method == EDFMMethod::projection)
@@ -103,8 +104,13 @@ void DiscretizationEDFM::build_control_volume_data_()
       parent_cv.custom = cv.custom;             // assume they are the same
     }
 
-  for (auto & cv : m_cv_data)
-    assert( cv.volume > 0 );
+  for(size_t i = 0; i < m_cv_data.size(); i++)
+  {
+    const auto & cv = m_cv_data[i];
+    // std::cout << "cv.index= " << i << std::endl;
+    assert(cv.volume > 0);
+  }
+
 }
 
 void DiscretizationEDFM::build_connection_data_()

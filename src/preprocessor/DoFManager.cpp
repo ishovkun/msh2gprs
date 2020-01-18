@@ -19,11 +19,15 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs()
   size_t dof = 0;
   const auto & grid = m_grid;
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-    if (is_dfm_(face->marker()))
-      p_dofs->m_faces[face->index()] = dof++;
+    if (face->neighbors().size() == 2)  // some degenerate meshes remove face neighbors
+      if (is_dfm_(face->marker()))
+        p_dofs->m_faces[face->index()] = dof++;
+
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-    if (is_edfm_(face->marker()))
-      p_dofs->m_faces[face->index()] = dof++;
+    if (face->neighbors().size() == 2)
+      if (is_edfm_(face->marker()))
+        p_dofs->m_faces[face->index()] = dof++;
+
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     p_dofs->m_cells[cell->index()] = dof++;
 
@@ -44,10 +48,11 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_unsplit_dofs()
   {
     std::unordered_map<size_t, std::vector<size_t>> face_children;
     for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-      if (is_dfm_(face->marker())) {
-        const size_t parent_index = face->ultimate_parent().index();
-        face_children[parent_index].push_back(face->index());
-      }
+      if (face->neighbors().size() == 2)  // some degenerate meshes remove face neighbors
+        if (is_dfm_(face->marker())) {
+          const size_t parent_index = face->ultimate_parent().index();
+          face_children[parent_index].push_back(face->index());
+        }
     for (const auto &pair_parent_children : face_children) {
       for (const size_t child : pair_parent_children.second)
         p_dofs->m_faces[child] = dof;
@@ -57,10 +62,11 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_unsplit_dofs()
   else
   {  // do split dfm faces
     for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-      if (is_dfm_(face->marker()))
-      {
-        p_dofs->m_faces[face->index()] = dof++;
-      }
+      if (face->neighbors().size() == 2)  // some degenerate meshes remove face neighbors
+        if (is_dfm_(face->marker()))
+        {
+          p_dofs->m_faces[face->index()] = dof++;
+        }
   }
 
   // edfm faces
@@ -87,8 +93,9 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_unsplit_dofs()
   else  //do split edfms
   {
     for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-      if (is_edfm_(face->marker()))
-        p_dofs->m_faces[face->index()] = dof++;
+      if (face->neighbors().size() == 2)
+        if (is_edfm_(face->marker()))
+          p_dofs->m_faces[face->index()] = dof++;
   }
 
   // reservoir cells
