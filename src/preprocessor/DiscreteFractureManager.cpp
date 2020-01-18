@@ -26,9 +26,14 @@ void DiscreteFractureManager::distribute_properties()
   m_data.dfm_faces.clear();
   std:size_t cv_index = 0;
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
-    if (face->neighbors().size() == 2)
       if (is_fracture(face->marker()))
       {
+        if (face->neighbors().size() < 2)
+          throw std::runtime_error("degenerate grid. Fracture face " +
+                                   std::to_string(face->index()) +
+                                   " marker " + std::to_string(face->marker()) +
+                                   " less than 2 neighbors ");
+
         // find corresponding config
         size_t fracture_index = std::numeric_limits<size_t>::max();
         for (size_t i = 0; i < m_config.size(); i++)
@@ -124,11 +129,12 @@ void DiscreteFractureManager::build_dfm_grid(const mesh::Mesh & grid,
 {
   mesh::SurfaceMesh<double> dfm_grid(1e-6);
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
-    if (is_fracture(face->marker()))
-    {
-      dfm_grid.insert(face->polygon());
-      m_data.dfm_cell_mapping.push_back( dofs.face_dof(face->index()) );
-    }
+    if (face->neighbors().size() == 2)
+      if (is_fracture(face->marker()))
+      {
+        dfm_grid.insert(face->polygon());
+        m_data.dfm_cell_mapping.push_back( dofs.face_dof(face->index()) );
+      }
 
   m_data.dfm_grid = std::move(dfm_grid);
 }

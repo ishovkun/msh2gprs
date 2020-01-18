@@ -195,6 +195,7 @@ void Preprocessor::build_flow_discretization_()
     WellManager well_mgr(config.wells, data, *pm_flow_dof_numbering);
     well_mgr.setup();
   }
+  std::cout << "done flow discretization" << std::endl;
 }
 
 void Preprocessor::build_geomechanics_discretization_()
