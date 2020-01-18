@@ -13,7 +13,6 @@ namespace gprs_data {
 struct DiscreteFractureFace
 {
   int    marker;                        // fracture marker
-  // size_t cv_index;                      // index of the control volume
   bool   coupled;                       // coupling with geomechanics
   double aperture;                      // hydraulic aperture of the fracture [m]
   double conductivity;                  // hydraulic conductivity of dfm fracture [m·md]

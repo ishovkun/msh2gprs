@@ -20,7 +20,7 @@ void CellPropertyManager::generate_properties()
   // set up container
   m_data.cell_properties.resize(n_variables);
   for (auto & property : m_data.cell_properties)
-    property.resize(m_data.grid.n_cells());
+    property.assign(m_data.grid.n_cells(), 0);
 
   // save variables name for output
   m_data.property_names.resize(n_variables - m_shift);
@@ -32,6 +32,7 @@ void CellPropertyManager::generate_properties()
 
   // loop various domain configs:
   // they may have different number of variables and expressions
+  size_t n_matched_cells = 0;
   for (const auto & domain: domains)
   {
     const std::size_t n_expressions = domain.expressions.size();
@@ -39,7 +40,13 @@ void CellPropertyManager::generate_properties()
     std::vector<mu::Parser> parsers(n_expressions);
     assign_expressions_(domain, parsers, vars);
     // run muparser
-    evaluate_expressions_(domain, parsers, vars);
+    n_matched_cells += evaluate_expressions_(domain, parsers, vars);
+  }
+  if (n_matched_cells != m_data.grid.n_active_cells())
+  {
+    const std::string msg = "Could not assign properties to all cells. "
+                           "Probably missing domain label.";
+    throw std::runtime_error(msg);
   }
 
   build_permeability_function_();
@@ -47,19 +54,21 @@ void CellPropertyManager::generate_properties()
   build_flow_output_property_keys_();
 }
 
-void CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
-                                                std::vector<mu::Parser> & parsers,
-                                                std::vector<double> & vars)
+size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
+                                                  std::vector<mu::Parser> & parsers,
+                                                  std::vector<double> & vars)
 {
   const std::size_t n_expressions = domain.expressions.size();
   const std::size_t n_variables = config.all_vars.size();
   const auto & grid = m_data.grid;
+  size_t count = 0;  // count number of matched cells
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
     if (cell->marker() == domain.label) // cells
     {
+      count++;
       std::fill(vars.begin(), vars.end(), 0);
-      angem::Point center = cell->center();
+      const angem::Point center = cell->center();
       vars[0] = center[0]; // x
       vars[1] = center[1]; // y
       vars[2] = center[2]; // z
@@ -77,16 +86,17 @@ void CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
 
       // copy vars to cell properties
       // start from shift to skip x,y,z
-      for (std::size_t j = m_shift; j < n_variables; ++j) {
-        const size_t property_index = j - m_shift;
+      for (std::size_t i = m_shift; i < n_variables; ++i) {
+        const size_t property_index = i - m_shift;
         try {
-          m_data.cell_properties[property_index][cell->index()] = vars[j];
+          m_data.cell_properties[property_index][cell->index()] = vars[i];
         } catch (std::out_of_range &e) {  // if subdomain doesn't have property assigned
-          m_data.cell_properties[property_index][cell->index()] = 0;
+          throw std::runtime_error( "property not provided for domain");
         }
       }
     } // end match label
   }   // end cell loop
+  return count;
 }
 
 void CellPropertyManager::assign_expressions_(const DomainConfig& domain,
@@ -184,6 +194,7 @@ void CellPropertyManager::build_porosity_function_()
       return;
     }
   }
+  throw std::runtime_error("Porosity not provided (Keyword POP)");
 }
 
 void CellPropertyManager::build_flow_output_property_keys_()
