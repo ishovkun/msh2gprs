@@ -24,11 +24,16 @@ void DiscretizationDFM::build()
   matrix_discr.build();
 
   build_cell_data_();
-
+  std::cout << "m_data.dfm_faces.size() = " << m_data.dfm_faces.size() << std::endl;
   for(size_t i = 0; i < m_cv_data.size(); i++)
   {
     const auto & cv = m_cv_data[i];
-    assert(cv.volume > 0);
+    if ( cv.type == ControlVolumeType::cell && cv.volume == 0 )
+      throw std::runtime_error("discr dfm zero cell volume " +
+                               std::to_string(i) + " (cell " +
+                               std::to_string(cv.master) + ")");
+    else if ( cv.type == ControlVolumeType::face && cv.volume == 0 )
+      throw std::runtime_error("discr dfm zero face volume");
   }
 
   // build connection lists (no data)

@@ -22,14 +22,20 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs()
     if (face->neighbors().size() == 2)  // some degenerate meshes remove face neighbors
       if (is_dfm_(face->marker()))
         p_dofs->m_faces[face->index()] = dof++;
+  const size_t n_dfm = dof;
+  std::cout << "Split dofs: " << n_dfm  << " dfm faces"<< std::endl;
 
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 2)
       if (is_edfm_(face->marker()))
         p_dofs->m_faces[face->index()] = dof++;
+  const size_t n_edfm = dof - n_dfm;
+  std::cout << "Split dofs: " << n_edfm  << " edfm faces"<< std::endl;
 
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     p_dofs->m_cells[cell->index()] = dof++;
+  const size_t n_cell_cv = dof - n_dfm - n_edfm;
+  std::cout << "Split dofs: " << n_cell_cv  << " cell cvs"<< std::endl;
 
   // total number of degrees of freedom
   p_dofs->m_n_dofs = dof;

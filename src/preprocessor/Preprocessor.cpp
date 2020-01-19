@@ -29,10 +29,11 @@ void Preprocessor::run()
 {
   // property manager for grid with split cells (due to edfm splitting)
   pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, config.domains, data);
+  std::cout << "Generating properties" << std::endl;
   pm_property_mgr->generate_properties();
 
-  IO::VTKWriter::write_geometry(data.grid, "output/stuff.vtk");
   // create discrete fracture manager
+  std::cout << "Initializing Fracture managers" << std::endl;
   pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(config.discrete_fractures, data);
   pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures, config.edfm_method, data);
 
