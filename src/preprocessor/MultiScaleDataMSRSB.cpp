@@ -44,12 +44,11 @@ void MultiScaleDataMSRSB::build_partitioning()
     auto & layer = active_layer();
     PureConnectionMap cell_connections;
 
-    for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+    for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     {
       const auto neighbors = face->neighbors();
       if (neighbors.size() == 2)  // not a boundary face
-        cell_connections.insert_connection( neighbors[0]->index(),
-                                            neighbors[1]->index() );
+        cell_connections.insert( neighbors[0]->index(), neighbors[1]->index() );
     }
 
     layer.partitioning = multiscale::MetisInterface<hash_algorithms::empty>
@@ -90,7 +89,7 @@ void MultiScaleDataMSRSB::find_centroids()
   layer.block_centroids.resize(layer.n_blocks);
   vector<size_t> n_cells_per_block(layer.n_blocks);
 
-  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
     const size_t block = layer.partitioning[cell->index()];
     layer.block_centroids[block] += cell->center();
@@ -126,7 +125,7 @@ void MultiScaleDataMSRSB::build_block_connections()
 {
   auto & layer = active_layer();
 
-  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
   {
     const auto neighbors = face->neighbors();
     if (neighbors.size() == 2)  // not a boundary face
@@ -134,8 +133,8 @@ void MultiScaleDataMSRSB::build_block_connections()
       const std::size_t i1 = layer.partitioning[neighbors[0]->index()];
       const std::size_t i2 = layer.partitioning[neighbors[1]->index()];;
       if (i1 != i2)
-        if (!layer.block_internal_connections.connection_exists(i1, i2))
-          layer.block_internal_connections.insert_connection(i1, i2);
+        if (!layer.block_internal_connections.contains(i1, i2))
+          layer.block_internal_connections.insert(i1, i2);
     }
   }
 }
@@ -184,7 +183,7 @@ void MultiScaleDataMSRSB::
 find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary_face_ghost_block)
 {
   auto & layer = active_layer();
-  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
   {
     const auto neighbors = face->neighbors();
     size_t block1, block2;
@@ -199,10 +198,10 @@ find_block_face_centroids(const std::unordered_map<size_t,size_t> & map_boundary
     }
 
     size_t conn_ind;
-    if (layer.block_faces.connection_exists(block1, block2))
-      conn_ind = layer.block_faces.connection_index(block1, block2);
+    if (layer.block_faces.contains(block1, block2))
+      conn_ind = layer.block_faces.index(block1, block2);
     else
-      conn_ind = layer.block_faces.insert_connection(block1, block2);
+      conn_ind = layer.block_faces.insert(block1, block2);
 
     auto & data = layer.block_faces.get_data(conn_ind);
     data.center += face->center();
@@ -407,13 +406,13 @@ void MultiScaleDataMSRSB::find_block_edge_centroids(
       }
 
       BlockFace * p_face;
-      if (layer.block_faces.connection_exists(i1, i2))
+      if (layer.block_faces.contains(i1, i2))
         p_face = &(layer.block_faces.get_data(i1, i2));
       else  // connection only by edge
       {
         if (is_ghost_block(i1) or is_ghost_block(i2)) continue;
 
-        const std::size_t con = layer.block_faces.insert_connection(i1, i2);
+        const std::size_t con = layer.block_faces.insert(i1, i2);
         p_face = &(layer.block_faces.get_data(con));
         p_face->center = block_edge_center;
       }
@@ -438,15 +437,10 @@ bool have_better_fit(const std::size_t                                 block,
 {
   for (const size_t nn1 : block_faces.get_neighbors(n1))
   {
-    if (block_connections.connection_exists(nn1, n1) &&
-        block_connections.connection_exists(nn1, n2))
-    {
-      // std::cout << "better = " << nn1 <<" ";
+    if (block_connections.contains(nn1, n1) && block_connections.contains(nn1, n2))
       return true;
-    }
 
-    if (block_connections.connection_exists(nn1, n1) &&
-        block_faces.connection_exists(nn1, n2))
+    if (block_connections.contains(nn1, n1) && block_faces.contains(nn1, n2))
       return have_better_fit(block, nn1, n2, block_connections, block_faces);
   }
   return false;
@@ -479,7 +473,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
         // std::cout << "\t\tneighbor2 = " << debug_ghost_cell_names[ neighbor2 ] <<"...";
 
         // criterion 1: should be a neighbor of the block
-        if (!layer.block_faces.connection_exists(neighbor2, block))
+        if (!layer.block_faces.contains(neighbor2, block))
         {
           // std::cout << "no conn with " << block << std::endl;
           // std::cout << "-" << std::endl;
@@ -500,7 +494,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
         // in this case we select the neighbors that actually have a common face
         // this is done recursively with have_better_fit
         // NOTE: of course those are not ghost blocks
-        if (!layer.block_internal_connections.connection_exists(neighbor1, neighbor2)) // no conn by face
+        if (!layer.block_internal_connections.contains(neighbor1, neighbor2)) // no conn by face
           if (!is_ghost_block(neighbor1) and !is_ghost_block(neighbor2))
             if (have_better_fit(block, neighbor1, neighbor2,
                                 layer.block_internal_connections,
@@ -524,13 +518,13 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
           }
 
           // Criterion 1 (yes, again)
-          if (!layer.block_faces.connection_exists(neighbor3, block))
+          if (!layer.block_faces.contains(neighbor3, block))
           {
             // std::cout << "not connected to " << block << " face!"<< std::endl;
             continue;
           }
           // and again
-          if (!layer.block_faces.connection_exists(neighbor1, neighbor3))
+          if (!layer.block_faces.contains(neighbor1, neighbor3))
           {
             // std::cout << "not connected to "<< neighbor1 << std::endl;
             continue;
@@ -551,7 +545,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
           }
 
           // Criterion 3 (same)
-          if (!layer.block_internal_connections.connection_exists(neighbor1, neighbor3)) // no conn by face
+          if (!layer.block_internal_connections.contains(neighbor1, neighbor3)) // no conn by face
             if (!is_ghost_block(neighbor1) and !is_ghost_block(neighbor3))
               if (have_better_fit(block, neighbor1, neighbor3,
                         layer.block_internal_connections, layer.block_faces))
@@ -560,7 +554,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
                 continue;
               }
           // and again
-          if (!layer.block_internal_connections.connection_exists(neighbor2, neighbor3)) // no conn by face
+          if (!layer.block_internal_connections.contains(neighbor2, neighbor3)) // no conn by face
             if (!is_ghost_block(neighbor2) and !is_ghost_block(neighbor3))
               if (have_better_fit(block, neighbor2, neighbor3,
                         layer.block_internal_connections, layer.block_faces))
@@ -778,7 +772,7 @@ debug_make_ghost_cell_names(const algorithms::UnionFindWrapper<size_t> & face_di
       Point face_direction;
       size_t n_faces = 0;
       // find ghost face center
-      for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+      for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
         if (face->neighbors().size() == 1)
           if (layer.partitioning[face->neighbors()[0]->index()] == block)
             if ( face_disjoint.group(face->index()) == group.first)

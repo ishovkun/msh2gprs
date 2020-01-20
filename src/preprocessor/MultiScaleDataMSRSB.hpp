@@ -110,11 +110,4 @@ class MultiScaleDataMSRSB
                                    std::unordered_map<size_t, size_t>   & map_block_group) const;
 };
 
-
-// void MultiScaleDataMSRSB::()
-// {
-
-// }
-
-
 }

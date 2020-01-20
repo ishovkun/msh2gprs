@@ -5,6 +5,7 @@
 #include "discretization/DiscretizationTPFA.hpp"
 #include "discretization/DiscretizationDFM.hpp"
 #include "discretization/DiscretizationEDFM.hpp"
+#include "MultiScaleDataMech.hpp"
 #include "DoFManager.hpp"
 #include "WellManager.hpp"
 #include "OutputDataVTK.hpp"
@@ -208,6 +209,14 @@ void Preprocessor::build_geomechanics_discretization_()
   pm_property_mgr->map_mechanics_to_control_volumes(*pm_flow_dof_numbering);
   // map sda cells to flow dofs
   pm_edfm_mgr->map_mechanics_to_control_volumes(*pm_flow_dof_numbering);
+
+  if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
+  {
+    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid,
+                                              config.n_multiscale_blocks);
+    ms_handler.build_data();
+    ms_handler.fill_output_model(data.ms_mech_data);
+  }
 }
 
 }  // end namespace gprs_data

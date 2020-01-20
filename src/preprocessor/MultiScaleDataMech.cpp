@@ -39,7 +39,7 @@ build_cell_block_neighbors(const std::unordered_map<size_t, size_t> & map_bounda
   const auto & layer = active_layer();
   vector<unordered_set<size_t>> cell_block_neighbors(grid.n_cells());
 
-  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
   {
     const auto & neighbors = face->neighbors();
     const size_t cell1 = neighbors[0]->index();
@@ -154,7 +154,7 @@ find_block_corners(const std::unordered_map<size_t, size_t> & map_boundary_face_
   // To do this we loop over the faces of the cell, figure out which faces touch
   // other blocks, and then find a common vertex among those vertices
   // unordered_set<size_t> global_corners;
-   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
      if (cell_block_neighbors[cell->index()].size() > 2)  // might contain block corner
      {
        // don't want a hash_map here
@@ -277,7 +277,7 @@ void MultiScaleDataMech::build_boundary_nodes(const std::unordered_map<size_t, s
 
   // save fine vertices on coarse between blocks
   hash_algorithms::ConnectionMap<unordered_set<size_t>> block_face_vertices;
-  for (auto face = grid.begin_faces(); face != grid.end_faces(); ++face)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
   {
     const auto & neighbors = face->neighbors();
     const size_t cell1 = neighbors[0]->index();
@@ -294,10 +294,10 @@ void MultiScaleDataMech::build_boundary_nodes(const std::unordered_map<size_t, s
     if (block1 != block2)
     {
       size_t conn_index;
-      if ( block_face_vertices.connection_exists(block1, block2) )
-        conn_index = block_face_vertices.connection_index(block1, block2);
+      if ( block_face_vertices.contains(block1, block2) )
+        conn_index = block_face_vertices.index(block1, block2);
       else
-        conn_index = block_face_vertices.insert_connection(block1, block2);
+        conn_index = block_face_vertices.insert(block1, block2);
 
       auto & vertices = block_face_vertices.get_data(conn_index);
       for (const size_t vertex : face->vertices())

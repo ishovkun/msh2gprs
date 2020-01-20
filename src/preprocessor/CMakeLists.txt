@@ -25,9 +25,9 @@ ADD_LIBRARY(preprocessor
   # FlowData.cpp
   # transes.cpp
   # Well.cpp
-  # MultiScaleDataMSRSB.cpp
-  # MultiScaleDataMech.cpp
-  # UnionFind.cpp
+  MultiScaleDataMSRSB.cpp
+  MultiScaleDataMech.cpp
+  UnionFind.cpp
 )
 
 SET_TARGET_PROPERTIES (

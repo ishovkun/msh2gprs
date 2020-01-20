@@ -4,6 +4,7 @@
 #include "discretization/ConnectionData.hpp"
 #include "mesh/Mesh.hpp"
 #include "Well.hpp"
+#include "MultiScaleOutputData.hpp"
 #include "angem/Tensor2.hpp"
 #include <unordered_map>
 
@@ -65,6 +66,8 @@ struct SimData
   // ----------------------- Boundary conditions ------------ //
   std::vector<size_t> neumann_face_indices;
   std::vector<angem::Point<3,double>> neumann_face_traction;
+  // ----------------------- Multiscale ------------ //
+  multiscale::MultiScaleOutputData ms_mech_data;
   // ----------------------- Other ---------------------- //
   std::vector<std::vector<size_t>> gmcell_to_flowcells;
   // --------------------- Methods --------------------------------- //
