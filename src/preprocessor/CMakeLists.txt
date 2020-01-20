@@ -15,16 +15,10 @@ ADD_LIBRARY(preprocessor
   discretization/DiscretizationDFM.cpp
   discretization/DiscretizationEDFM.cpp
   DoFManager.cpp
-  # element.cpp
   OutputDataGPRS.cpp
   OutputDataVTK.cpp
   OutputDataPostprocessor.cpp
   VTKWriter.cpp
-  # renum.cpp
-  # simdata.cpp
-  # FlowData.cpp
-  # transes.cpp
-  # Well.cpp
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
   UnionFind.cpp
