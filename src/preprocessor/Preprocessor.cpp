@@ -187,6 +187,7 @@ void Preprocessor::build_flow_discretization_()
   else
     pm_flow_dof_numbering = p_unsplit_dofs;
 
+  std::cout << "build discr" << std::endl;
   discr_edfm.build();
 
   // setup wells

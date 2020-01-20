@@ -48,61 +48,16 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_unsplit_dofs()
   const auto & grid = m_grid;
   size_t dof = 0;
 
-  const bool split_dfm_faces = true;
-  // dfm faces
-  if (!split_dfm_faces)
-  {
-    std::unordered_map<size_t, std::vector<size_t>> face_children;
-    for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-      if (face->neighbors().size() == 2)  // some degenerate meshes remove face neighbors
-        if (is_dfm_(face->marker())) {
-          const size_t parent_index = face->ultimate_parent().index();
-          face_children[parent_index].push_back(face->index());
-        }
-    for (const auto &pair_parent_children : face_children) {
-      for (const size_t child : pair_parent_children.second)
-        p_dofs->m_faces[child] = dof;
-      dof++;
-    }
-  }
-  else
-  {  // do split dfm faces
-    for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-      if (face->neighbors().size() == 2)  // some degenerate meshes remove face neighbors
-        if (is_dfm_(face->marker()))
-        {
-          p_dofs->m_faces[face->index()] = dof++;
-        }
-  }
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+    if (face->neighbors().size() == 2)  // some degenerate meshes remove face neighbors
+      if (is_dfm_(face->marker()))
+        p_dofs->m_faces[face->index()] = dof++;
 
   // edfm faces
-  const bool split_edfm_faces = true;
-  if (!split_edfm_faces)
-    for (const int marker : m_set_edfm_markers)
-    {
-      std::unordered_map<size_t, std::vector<size_t>> cell_frac_faces;
-      for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-        if (face->marker() == marker)
-        {
-          const auto &neighbor_cell = *face->neighbors()[0];
-          const auto &parent_cell = neighbor_cell.ultimate_parent();
-          cell_frac_faces[parent_cell.index()].push_back(face->index());
-        }
-
-      for (const auto &frac_faces : cell_frac_faces)
-      {
-        for (const auto &iface : frac_faces.second)
-          p_dofs->m_faces[iface] = dof;
-        dof++;
-      }
-    }
-  else  //do split edfms
-  {
-    for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-      if (face->neighbors().size() == 2)
-        if (is_edfm_(face->marker()))
-          p_dofs->m_faces[face->index()] = dof++;
-  }
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+    if (face->neighbors().size() == 2)
+      if (is_edfm_(face->marker()))
+        p_dofs->m_faces[face->index()] = dof++;
 
   // reservoir cells
   p_dofs->m_cells.resize(grid.n_cells());

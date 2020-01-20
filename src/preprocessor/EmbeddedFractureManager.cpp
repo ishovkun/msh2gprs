@@ -111,6 +111,7 @@ std::vector<DiscreteFractureConfig> EmbeddedFractureManager::generate_dfm_config
 
 int EmbeddedFractureManager::find_maximum_face_marker_() const
 {
+  assert ( m_grid.n_faces() > 0 );
   int max_face_index = m_grid.begin_active_faces()->marker();
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     max_face_index = std::max(max_face_index, face->marker());

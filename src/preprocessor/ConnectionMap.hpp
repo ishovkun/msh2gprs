@@ -43,8 +43,6 @@ class ConnectionMap
   inline const DataType & get_data(const std::size_t connection_index) const {return m_data[connection_index];}
   DataType & get_data(const std::size_t ielement, const std::size_t jelement);
   const DataType & get_data(const std::size_t ielement, const std::size_t jelement) const;
-  inline std::vector<DataType> & get_data() { return m_data; }
-  inline const std::vector<DataType> & get_data() const { return m_data; }
 
   // creates a new connection and returns the connection index
   std::size_t insert(const std::size_t ielement, const std::size_t jelement);
@@ -57,9 +55,12 @@ class ConnectionMap
   // get neighbors of the connection map element
   const std::vector<std::size_t> & get_neighbors(std::size_t ielement) const;
   // delete a connection between elements from the map
+  // does not clear the storage
   void remove(const std::size_t ielement, const std::size_t jelement);
 
  private:
+  // delete a connection between elements from the map
+  void clear_(const std::size_t ielement, const std::size_t jelement);
 
   std::size_t hash_value(const std::size_t ind1,
                          const std::size_t ind2) const;
@@ -108,9 +109,17 @@ ConnectionMap<DataType>::invert_hash(const std::size_t hash) const
   return pair;
 }
 
-
 template <typename DataType>
 void ConnectionMap<DataType>::remove(const std::size_t ielement, const std::size_t jelement)
+{
+  const std::size_t hash = hash_value(ielement, jelement);
+  auto it = connections.find(hash);
+  if (it != connections.end())
+    connections.erase(it);
+}
+
+template <typename DataType>
+void ConnectionMap<DataType>::clear_(const std::size_t ielement, const std::size_t jelement)
 {
   // update neighbors vector
   if (ielement >= v_neighbors.size())
@@ -159,7 +168,7 @@ void ConnectionMap<DataType>::delete_element(const std::size_t element)
 
   std::vector<std::size_t> neighbors = v_neighbors[element];
   for (const std::size_t neighbor : neighbors)
-    remove(neighbor, element);
+    clear_(neighbor, element);
 
   v_neighbors.erase(v_neighbors.begin() + element);
 
@@ -271,7 +280,9 @@ template <typename DataType>
 DataType &
 ConnectionMap<DataType>::get_data(const std::size_t ielement, const std::size_t jelement)
 {
-  return m_data[index(ielement, jelement)];
+  const size_t con_id = index(ielement, jelement);
+  assert( con_id <  m_data.size());
+  return m_data[con_id];
 }
 
 
@@ -279,7 +290,9 @@ template <typename DataType>
 const DataType &
 ConnectionMap<DataType>::get_data(const std::size_t ielement, const std::size_t jelement) const
 {
-  return m_data[index(ielement, jelement)];
+  const size_t con_id = index(ielement, jelement);
+  assert( con_id <  m_data.size());
+  return m_data[con_id];
 }
 
 }  // end namespace

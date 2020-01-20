@@ -22,7 +22,7 @@ class DiscretizationDFM : public DiscretizationBase
 
  protected:
   // build data like volumes, depth, poro, etc.
-  virtual void build_cell_data_() override;
+  void build_control_volume_data_();
   // build M-F connection list
   void build_fracture_matrix_connections();
   // build F-F connection list

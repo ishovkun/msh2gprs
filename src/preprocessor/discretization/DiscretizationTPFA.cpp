@@ -20,7 +20,8 @@ DiscretizationTPFA(const DoFNumbering & dof_numbering,
 
 void DiscretizationTPFA::build()
 {
-  DiscretizationBase::build_cell_data_();
+  for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
+    DiscretizationBase::build_cell_data_(*cell);
 
   m_con_data.reserve(m_con_data.size() + m_grid.n_faces());
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)

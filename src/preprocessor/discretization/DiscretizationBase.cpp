@@ -19,23 +19,20 @@ DiscretizationBase(const DoFNumbering & dof_numbering,
     m_cv_data.resize( m_dofs.n_dofs() );
 }
 
-void DiscretizationBase::build_cell_data_()
+void DiscretizationBase::build_cell_data_(const mesh::Cell& cell)
 {
-  for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
-  {
-    const std::size_t i = cell->index();
-    auto & data = m_cv_data[ m_dofs.cell_dof(i) ];
-    data.type = ControlVolumeType::cell;
-    data.master = i;
-    data.porosity = m_data.get_porosity(i);
-    data.permeability = m_data.get_permeability(i);
-    data.center = cell->center();
-    data.volume = cell->volume() * data.porosity;
+    const std::size_t cell_index = cell.index();
+    auto & cv = m_cv_data[ m_dofs.cell_dof(cell_index) ];
+    cv.type = ControlVolumeType::cell;
+    cv.master = cell_index;
+    cv.porosity = m_data.get_porosity(cell_index);
+    cv.permeability = m_data.get_permeability(cell_index);
+    cv.center = cell.center();
+    cv.volume = cell.volume() * cv.porosity;
 
-    data.custom.resize(m_data.output_flow_properties.size());
+    cv.custom.resize(m_data.output_flow_properties.size());
     for (size_t j = 0; j < m_data.output_flow_properties.size(); ++j)
-      data.custom[j] = m_data.cell_properties[m_data.output_flow_properties[j]][i];
-  }
+      cv.custom[j] = m_data.cell_properties[m_data.output_flow_properties[j]][cell_index];
 }
 
 }

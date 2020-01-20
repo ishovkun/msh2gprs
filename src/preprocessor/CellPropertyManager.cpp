@@ -49,6 +49,7 @@ void CellPropertyManager::generate_properties()
     throw std::runtime_error(msg);
   }
 
+  std::cout << "Searching for Porosity and Permeability keys" << std::endl;
   build_permeability_function_();
   build_porosity_function_();
   build_flow_output_property_keys_();

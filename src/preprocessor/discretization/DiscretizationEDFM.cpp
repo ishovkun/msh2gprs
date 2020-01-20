@@ -26,7 +26,6 @@ DiscretizationEDFM(const DoFNumbering & split_dof_numbering,
 
 void DiscretizationEDFM::build()
 {
-  std::cout << "build discr" << std::endl;
   DiscretizationDFM discr_dfm(m_split_dofs, m_data, m_split_cv, m_split_con);
   discr_dfm.build();
   if (m_method != EDFMMethod::compartmental)
@@ -41,9 +40,14 @@ void DiscretizationEDFM::build()
 
     build_control_volume_data_();
     build_connection_data_();
+
     if (m_method == EDFMMethod::projection)
       build_pedfm_();
-    m_con_data = std::move(m_con_map.get_data());
+
+    // copy to condata
+    m_con_data.reserve(m_con_map.size());
+    for (auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
+      m_con_data.push_back(*it);
   }
   else
   {
@@ -83,18 +87,11 @@ void DiscretizationEDFM::build_control_volume_data_()
   }
 
   for (size_t i = 0; i < m_split_cv.size(); i++)
-    if (m_split_cv[i].volume > 0) // skip inactive cells
     {
       const auto &cv = m_split_cv[i];
       const size_t parent_dof = m_dof_mapping[i];
       auto &parent_cv = m_cv_data[parent_dof];
       parent_cv.type = cv.type;
-
-      std::cout << "cv = " << i << " parent = " << parent_dof << " ";
-      if (cv.type == ControlVolumeType::cell)
-        std::cout << "cell" << std::endl;
-      else
-        std::cout << "face" << std::endl;
 
       const double volume_fraction = cv.volume / parent_cv.volume;
       parent_cv.aperture += cv.aperture * volume_fraction;
@@ -108,7 +105,12 @@ void DiscretizationEDFM::build_control_volume_data_()
   {
     const auto & cv = m_cv_data[i];
     // std::cout << "cv.index= " << i << std::endl;
-    assert(cv.volume > 0);
+    if ( cv.type == ControlVolumeType::cell && cv.volume == 0 )
+      throw std::runtime_error("discr edfm zero cell volume " +
+                               std::to_string(i) + " (cell " +
+                               std::to_string(cv.master) + ")");
+    else if ( cv.type == ControlVolumeType::face && cv.volume == 0 )
+      throw std::runtime_error("discr edfm zero face volume");
   }
 
 }
@@ -121,14 +123,17 @@ void DiscretizationEDFM::build_connection_data_()
   for (const size_t icon : m_m_rebuild)
   {
     auto &con = m_con_map.get_data(icon);
-    std::cout << "rebuild = :" ;
-    for (auto i : con.elements) std::cout << m_cv_data[i].master << " ";
-    std::cout << std::endl;
+    // std::cout << "rebuild = :" ;
+    // for (auto i : con.elements) std::cout << m_cv_data[i].master << " ";
+    // for (auto i : con.elements) std::cout << i << " ";
+    // std::cout << std::endl;
+
     con.center /= con.area;
+    assert( con.elements[0] < m_cv_data.size() );
+    assert( con.elements[1] < m_cv_data.size() );
     DiscretizationTPFA::build_mo(con, m_cv_data[con.elements[0]], m_cv_data[con.elements[1]]);
   }
 
-  std::cout << "new" << std::endl;
   for (auto con = m_con_map.begin(); con != m_con_map.end(); ++con)
     if (con->type == ConnectionType::matrix_fracture)
     {
@@ -183,15 +188,26 @@ std::vector<size_t> DiscretizationEDFM::create_connections_()
   std::unordered_set<size_t> rebuild_connections;
   for (const auto &con : m_split_con)
   {
+    assert( con.elements[0] < m_dof_mapping.size() );
+    assert( con.elements[1] < m_dof_mapping.size() );
     const size_t dof1 = m_dof_mapping[con.elements[0]];
     const size_t dof2 = m_dof_mapping[con.elements[1]];
+
     if (dof1 != dof2)
     {
       if (!m_con_map.contains(dof1, dof2))
       {
-        std::cout << "insert " << m_cv_data[dof1].master << " " <<m_cv_data[dof2].master
-            << " (" << dof1 << " " << dof2 << ") "<< std::endl;
+        // std::cout << "insert " << m_cv_data[dof1].master << " " <<m_cv_data[dof2].master
+        //     << " (" << dof1 << " " << dof2 << ") "<< std::endl;
         m_con_map.insert(dof1, dof2);
+      }
+      if (con.type == ConnectionType::matrix_matrix)
+      {
+        if ((dof1 == 458 or dof1 == 731) and (dof2 == 458 or dof2 == 731))
+        {
+          std::cout << "here" << std::endl;
+          std::cout << dof1 << " " << dof2 << std::endl;
+        }
       }
 
       auto &new_con = m_con_map.get_data(dof1, dof2);
@@ -247,33 +263,44 @@ void DiscretizationEDFM::build_pedfm_()
     if (m_edfm_markers.find(face->marker()) != m_edfm_markers.end())
     {
       const auto & frac_cell = face->neighbors()[0]->ultimate_parent();
-      std::cout << "searching nighbors for frac cell " << frac_cell.index()
-                << std::endl;
+      // std::cout << "searching nighbors for frac cell " << frac_cell.index() << std::endl;
+
       assert(!pedfm_select_faces_(*face).empty());
       for (const mesh::Face* face2 : pedfm_select_faces_(*face))
       {
         const size_t iother_cell = pedfm_find_other_cell_(*face, *face2);
-        const size_t dof1 = m_dofs.cell_dof(frac_cell.index());
-        const size_t dof2 = m_dofs.cell_dof(iother_cell);
-        if (cleared_connections.contains(dof1, dof2)) continue;
+
+        // determing all participating dofs
+        const size_t cell_dof1 = m_dofs.cell_dof(frac_cell.index());
+        const size_t cell_dof2 = m_dofs.cell_dof(iother_cell);
+        const size_t face_dof = m_dofs.face_dof(face->index());
+
+        // if already cleared, then skip
+        if (cleared_connections.contains(cell_dof1, cell_dof2)) continue;
         // this happens when several edfm's in a cell
         if (iother_cell == frac_cell.index()) continue;
         // have connection between two parent cells
-        std::cout << "\tfrac " << frac_cell.index() << " neib " << iother_cell << std::endl;
-        assert( m_con_map.contains( m_dofs.cell_dof(frac_cell.index()), m_dofs.cell_dof(iother_cell) ) );
+        // std::cout << "\tfrac " << frac_cell.index() << " neib " << iother_cell << std::endl;
+
+        // {
+        //   std::cout << "cell dof1 = " << cell_dof1 << std::endl;
+        //   std::cout << "cell dof2 = " << cell_dof2 << std::endl;
+        //   std::cout << "face_dof = " << face_dof << std::endl;
+        // }
+
+        assert( m_con_map.contains( cell_dof1, cell_dof2 ) );
 
         // projection of frac face onto M-M connecting face
         const auto projection_points = angem::project(face->polygon(), face2->polygon());
-        if (projection_points.size() < 3) continue;
+        if (projection_points.size() < 3) continue;  // no real projection
+
+        const size_t ifrac_mat_con = m_con_map.insert(face_dof, cell_dof2);
+        auto & frac_mat_con = m_con_map.get_data(ifrac_mat_con);
+        frac_mat_con.elements = { face_dof, cell_dof2 };
+        // note that we invoke it after the insertion insertion killls references
+        auto & mat_mat_con = m_con_map.get_data(cell_dof1, cell_dof2);
 
         const angem::Polygon<double> projection(projection_points);
-        auto &mat_mat_con = m_con_map.get_data(
-            m_dofs.cell_dof(frac_cell.index()), m_dofs.cell_dof(iother_cell));
-        const size_t ifrac_mat_con = m_con_map.insert(m_dofs.face_dof(face->index()),
-                                                      m_dofs.cell_dof(iother_cell));
-        auto & frac_mat_con = m_con_map.get_data(ifrac_mat_con);
-        frac_mat_con.elements = { m_dofs.face_dof(face->index()),
-                                  m_dofs.cell_dof(iother_cell) };
         frac_mat_con.normal = projection.normal();
         frac_mat_con.area = projection.area();
         build_pedfm_(mat_mat_con, frac_mat_con);
@@ -281,24 +308,23 @@ void DiscretizationEDFM::build_pedfm_()
         if (std::fabs(mat_mat_con.coefficients[0]) < 1e-6 * std::fabs(frac_mat_con.coefficients[0]))
         {
           std::cout << "clear connection "<< frac_cell.index() << " " << iother_cell << std::endl;
-          cleared_connections.insert(dof1, dof2);
+          cleared_connections.insert(cell_dof1, cell_dof2);
         }
 
       }
     }
   }
+
   // clear connections
   for (auto it = cleared_connections.begin(); it!=cleared_connections.end(); ++it)
   {
     const auto pair_elements = it.elements();
     m_con_map.remove(pair_elements.first, pair_elements.second);
   }
-
 }
 
 std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mesh::Face & frac_face) const
 {
-  std::cout << "frac_face.index() = " << frac_face.index() << std::endl;
   //  select largest cell neighbor
   const auto & neighbors = frac_face.neighbors();
   const mesh::Cell* smallest_neighbor;
@@ -309,32 +335,30 @@ std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mes
   std::vector<const Face*> result;
   for (auto face : smallest_neighbor->faces())
   {
-    // if (*face == frac_face) continue; // same face
-    // if (face->neighbors().size() < 2) continue;  // skip boundary
-    // if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6) continue;  // face ⟂ frac
-    // if (m_dofs.is_active_face(face->marker())) continue; // skip frac faces
-    // result.push_back(&*face);
-    if (*face == frac_face)
-    {
-      std::cout << "sam face" << std::endl; continue;
-    }
-    if (face->neighbors().size() < 2)
-    {
-      std::cout << face->index() << " boundary face" << std::endl;
-      continue; // skip boundary
-    }
+    if (*face == frac_face) continue; // same face
+    if (face->neighbors().size() < 2) continue;  // skip boundary
+    if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6) continue;  // face ⟂ frac
+    if (m_dofs.is_active_face(face->index())) continue; // skip frac faces
 
-    if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6)
-    {
-      std::cout << face->index() << " perpendicular" << std::endl;
-      continue; // face ⟂ frac
-    }
-
-    if (m_dofs.is_active_face(face->index()))
-    {
-      std::cout << face->index() << " dfm face" << std::endl;
-      continue; // skip frac faces
-    }
+    // if (*face == frac_face)
+    // {
+    //   std::cout << "sam face" << std::endl; continue;
+    // }
+    // if (face->neighbors().size() < 2)
+    // {
+    //   std::cout << face->index() << " boundary face" << std::endl;
+    //   continue; // skip boundary
+    // }
+    // if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6)
+    // {
+    //   std::cout << face->index() << " perpendicular" << std::endl;
+    //   continue; // face ⟂ frac
+    // }
+    // if (m_dofs.is_active_face(face->index()))
+    // {
+    //   std::cout << face->index() << " dfm face" << std::endl;
+    //   continue; // skip frac faces
+    // }
 
     result.push_back(&*face);
   }
@@ -356,10 +380,17 @@ size_t DiscretizationEDFM::pedfm_find_other_cell_(const Face & frac, const Face 
 void DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
                                       ConnectionData & fm_con)
 {
+  assert(mm_con.elements.size() == 2);
+  assert(fm_con.elements.size() == 2);
   auto pair_cells = find_fracture_cv_and_nonfracture_cv_(mm_con,fm_con);
+  assert( pair_cells.first < m_cv_data.size() );
+  assert( pair_cells.second < m_cv_data.size() );
+  assert( fm_con.elements[0] < m_cv_data.size() );
+
   const auto & cell1 = m_cv_data[pair_cells.first];
   const auto & cell2 = m_cv_data[pair_cells.second];
   const auto & frac = m_cv_data[fm_con.elements[0]];
+
   // first modify old M_M connection
   {
     const Point &c1 = cell1.center;

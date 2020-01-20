@@ -25,7 +25,7 @@ class DiscretizationBase
 
  protected:
   // build control volumes data
-  virtual void build_cell_data_();
+  virtual void build_cell_data_(const mesh::Cell & cell);
 
  protected:
   //  input

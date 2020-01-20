@@ -23,8 +23,7 @@ void DiscretizationDFM::build()
   DiscretizationTPFA matrix_discr(m_dofs, m_data, m_cv_data, m_con_data);
   matrix_discr.build();
 
-  build_cell_data_();
-  std::cout << "m_data.dfm_faces.size() = " << m_data.dfm_faces.size() << std::endl;
+  build_control_volume_data_();
   for(size_t i = 0; i < m_cv_data.size(); i++)
   {
     const auto & cv = m_cv_data[i];
@@ -49,7 +48,7 @@ void DiscretizationDFM::build()
 }
 
 
-void DiscretizationDFM::build_cell_data_()
+void DiscretizationDFM::build_control_volume_data_()
 {
   for (const auto & pair_face_index_property : m_data.dfm_faces)
   {
