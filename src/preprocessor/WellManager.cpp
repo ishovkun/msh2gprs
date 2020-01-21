@@ -38,6 +38,7 @@ void WellManager::setup_simple_well_(Well & well)
   std::cout << "simple well " << well.name << std::endl;
   const Point direction = {0, 0, -1};
   const auto & grid = m_data.grid;
+  well.reference_depth = -well.coordinate.z();
   m_well_connected_cells.emplace_back();
   // well assigned with a single coordinate
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
@@ -56,12 +57,12 @@ void WellManager::setup_simple_well_(Well & well)
     {
       if (cell->ultimate_parent() != *cell)
         throw std::runtime_error("well crosses refined cell. not implemented yet");
+      assert( section_data.size() == 2 );
 
       well.connected_volumes.push_back(m_dofs.cell_dof(cell->index()));
       m_well_connected_cells.back().push_back(cell->index());
       well.segment_length.push_back(section_data[0].distance(section_data[1]));
       well.directions.push_back(direction);
-
       // for visulatization
       m_data.well_vertex_indices.emplace_back();
       m_data.well_vertex_indices.back().first = m_data.well_vertices.insert(section_data[0]);
