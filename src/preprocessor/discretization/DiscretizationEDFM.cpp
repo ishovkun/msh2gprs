@@ -123,11 +123,6 @@ void DiscretizationEDFM::build_connection_data_()
   for (const size_t icon : m_m_rebuild)
   {
     auto &con = m_con_map.get_data(icon);
-    // std::cout << "rebuild = :" ;
-    // for (auto i : con.elements) std::cout << m_cv_data[i].master << " ";
-    // for (auto i : con.elements) std::cout << i << " ";
-    // std::cout << std::endl;
-
     con.center /= con.area;
     assert( con.elements[0] < m_cv_data.size() );
     assert( con.elements[1] < m_cv_data.size() );
@@ -200,22 +195,17 @@ std::vector<size_t> DiscretizationEDFM::create_connections_()
         // std::cout << "insert " << m_cv_data[dof1].master << " " <<m_cv_data[dof2].master
         //     << " (" << dof1 << " " << dof2 << ") "<< std::endl;
         m_con_map.insert(dof1, dof2);
-      }
-      if (con.type == ConnectionType::matrix_matrix)
-      {
-        if ((dof1 == 458 or dof1 == 731) and (dof2 == 458 or dof2 == 731))
-        {
-          std::cout << "here" << std::endl;
-          std::cout << dof1 << " " << dof2 << std::endl;
-        }
+        // set needed to zero
+        auto &new_con = m_con_map.get_data(dof1, dof2);
+        new_con.type = con.type;
+        new_con.elements = {dof1, dof2};
       }
 
       auto &new_con = m_con_map.get_data(dof1, dof2);
-      new_con.elements = {dof1, dof2};
-      new_con.type = con.type;
 
       if ((con.type == ConnectionType::fracture_fracture))
       {
+        // since we don't merge split fracture elements
         new_con = con;
       }
       else if (con.type == ConnectionType::matrix_fracture)
@@ -223,13 +213,23 @@ std::vector<size_t> DiscretizationEDFM::create_connections_()
         const auto &cell = m_split_cv[con.elements[1]];
         const auto &parent_cell = m_cv_data[dof2];
         const auto &face = m_split_cv[con.elements[0]];
-        new_con.area += 2 * con.area;
+
+        if (!find_edfm_elements_(con).empty())  // EDFM-matrix
+        {
+          new_con.area = 2 * con.area;
+          const double dist = (cell.center - face.center).dot(con.normal);
+          const double cell_volume_ratio = cell.volume / parent_cell.volume;
+          new_con.distances = {0.0, std::fabs(dist) * cell_volume_ratio};
+        }
+        else // DFM-matrix
+        {
+          new_con.area = con.area;
+        }
+
+        // common for EDFM-M and DFM-M
         new_con.normal = con.normal;
-        const double dist = (cell.center - face.center).dot(con.normal);
-        const double cell_volume_ratio = cell.volume / parent_cell.volume;
-        new_con.distances.resize(2);
-        new_con.distances[0] += 0.0; // from fracture to connection
-        new_con.distances[1] += std::fabs(dist) * cell_volume_ratio; // from cell to connection
+        new_con.center = face.center;
+
       }
       else // if (con.type == matrix_matrix)
       {
