@@ -27,7 +27,6 @@ GmshReader::MapIntInt GmshReader::map_gmsh_vtk = {
   {16, 23}, // quad8
 };
 
-
 GmshReader::MapIntInt GmshReader::map_vtk_element_size = {
   // polyhedras
   {10, 4},  // tetra4
@@ -42,6 +41,51 @@ GmshReader::MapIntInt GmshReader::map_vtk_element_size = {
   {22, 6}, // trgle6
   {23, 8}, // quad8
 };
+
+enum GmshElementType
+{
+  node,
+  edge,
+  face,
+  cell,
+  invalid_element
+};
+
+std::vector<GmshElementType> gmsh_element_types = {
+ GmshElementType::invalid_element, // [0]  does not exist
+ GmshElementType::edge,            // [1]  2-node edge
+ GmshElementType::face,            // [2]  3-node triangle
+ GmshElementType::face,            // [3]  4-node quadrangle
+ GmshElementType::cell,            // [4]  4-node tetrahedron
+ GmshElementType::cell,            // [5]  8-node hexahedron
+ GmshElementType::cell,            // [6]  6-node prism
+ GmshElementType::cell,            // [7]  5-node pyramid
+ GmshElementType::invalid_element, // [8]  3-node second order line
+ GmshElementType::invalid_element, // [9]  6-node second order triangle
+ GmshElementType::invalid_element, // [10] 9-node second orderer quadrangle
+ GmshElementType::invalid_element, // [11] 10-node second order tetrahedron
+ GmshElementType::invalid_element, // [12] 27-node second order hexahedron
+ GmshElementType::invalid_element, // [13] 18-node second order prism
+ GmshElementType::invalid_element, // [14] 14-node second order pyramid
+ GmshElementType::node,            // [15] 1-node point
+ GmshElementType::invalid_element, // [16] 8-node second order quadrangle
+ GmshElementType::invalid_element, // [17] 20-node second order hexahedron
+ GmshElementType::invalid_element, // [18] 15-node second order prism
+ GmshElementType::invalid_element, // [19] 13-node second order pyramid
+ GmshElementType::invalid_element, // [20] 9-node third order incomplete triangle
+ GmshElementType::invalid_element, // [21] 10-node third order triangle
+ GmshElementType::invalid_element, // [22] 12-node fourth order incomplete triangle
+ GmshElementType::invalid_element, // [23] 15-node fourth order triangle
+ GmshElementType::invalid_element, // [24] 15-node fifth order incomplete triangle
+ GmshElementType::invalid_element, // [25] 21-node fifth order complete triangle
+ GmshElementType::invalid_element, // [26] 4-node third order edge
+ GmshElementType::invalid_element, // [27] 5-node fourth order edge
+ GmshElementType::invalid_element, // [28] 6-node fifth order edge
+ GmshElementType::invalid_element, // [29] 20-node third order tetrahedron
+ GmshElementType::invalid_element, // [30] 35-node fourth order tetrahedron
+ GmshElementType::invalid_element  // [31] 56-node fifth order tetrahedron
+};
+
 
 
 void GmshReader::read_input(const std::string & filename,
@@ -92,6 +136,7 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
   std::cout << "\tn_vertices = " << n_vertices << std::endl;
   auto & vertices= mesh.vertices();
   mesh.vertices().reserve(n_vertices);
+  angem::PointSet<3,double> pset;
 
   const int dim = 3;
   for (std::size_t ivertex=0; ivertex<n_vertices; ++ivertex)
@@ -101,6 +146,12 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     angem::Point<3,double> vertex;
     for (int d=0; d<dim; ++d)
       mesh_file >> vertex[d];
+    size_t ins = pset.insert(vertex);
+    if (ins != pset.size() - 1)
+    {
+      std::cout << "Error. duplicated vertex" << std::endl;
+      exit(0);
+    }
 
     vertices.push_back(vertex);
   }
@@ -120,8 +171,8 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
   std::string line;
   std::vector<std::string> strings;
 
-  const std::vector<int> polyhedras = {4, 5, 6, 11, 17, 18};
-  const std::vector<int> polygons = {2, 3, 8, 16};
+  // const std::vector<int> polyhedras = {4, 5, 6, 11, 17, 18};
+  // const std::vector<int> polygons = {2, 3, 8, 16};
   for (std::size_t i=0; i<n_elements; ++i)
   {
     getline(mesh_file, line);
@@ -150,18 +201,27 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
       ivertices[j] = std::atoi(tokens[j+vert_shift].c_str()) - 1;
 
     // 3D element
-    if (std::find(begin(polyhedras), end(polyhedras), element_type) != polyhedras.end())
+    if (element_type >= gmsh_element_types.size() or element_type < 0)
     {
-      mesh.insert_cell(ivertices, vtk_id, marker);
+      const std::string msg = "Unknown element type: "  + std::to_string(element_type);
+      throw std::out_of_range(msg);
     }
-    // 2D element
-    else if (std::find(begin(polygons), end(polygons), element_type) !=
-             polygons.end())
+    switch (gmsh_element_types[element_type])
     {
-      mesh.insert_face(ivertices, vtk_id, marker);
+      case GmshElementType::node:
+        continue;
+      case GmshElementType::edge:
+        continue;
+      case GmshElementType::face:
+        mesh.insert_face(ivertices, vtk_id, marker);
+        break;
+      case GmshElementType::cell:
+        mesh.insert_cell(ivertices, vtk_id, marker);
+        break;
+      default:
+        const std::string msg = "Unknown element type: "  + std::to_string(element_type);
+        throw std::out_of_range(msg);
     }
-    else
-      throw std::out_of_range("unknown element type");
   }
 }
 

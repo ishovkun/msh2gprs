@@ -223,11 +223,11 @@ void YamlParser::section_domain_props(const YAML::Node & node,
       int label;
       try {
         label = it->second["label"].as<int>();
-        if (label == 0)
-        {
-          std::cout << "domain label cannot be 0" << std::endl;
-          exit(-1);
-        }
+        // if (label == 0)
+        // {
+        //   std::cout << "domain label cannot be 0" << std::endl;
+        //   exit(-1);
+        // }
       }
       catch (YAML::TypedBadConversion<int> & error)
       {
