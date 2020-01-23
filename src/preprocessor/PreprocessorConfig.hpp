@@ -116,7 +116,8 @@ struct VTKOutputConfig
   std::string flow_reservoir_grid_file      = "flow_reservoir_mesh.vtk";
   std::string mechanics_reservoir_grid_file = "mechanics_reservoir_mesh.vtk";
   std::string edfm_grid_file                = "edfm.vtk";
-  std::string dfm_grid_file                 = "dfm.vtk";
+  std::string dfm_flow_grid_file            = "dfm-flow.vtk";
+  std::string dfm_mech_grid_file            = "dfm-mech.vtk";
   std::string wells_file                    = "wells.vtk";
 };
 

@@ -53,7 +53,7 @@ class Postprocessor:
         # dfm grid
         if len(self.config["dfm_cell_to_flow_dof"]) > 0:
             reader = self.dfm_flow_grid_reader
-            vtk_file_path = self.case_path + self.config["dfm_grid_file"]
+            vtk_file_path = self.case_path + self.config["dfm_flow_grid_file"]
             reader.SetFileName(vtk_file_path)
             reader.Update()
             assert reader.GetOutput().GetNumberOfCells() == len(self.config["dfm_cell_to_flow_dof"])

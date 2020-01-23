@@ -18,7 +18,7 @@ void OutputDataVTK::write_output(const std::string & output_path) const
   save_reservoir_flow_data_(output_path + "/" + m_config.flow_reservoir_grid_file);
   save_reservoir_mechanics_data_(output_path + "/" + m_config.mechanics_reservoir_grid_file);
   if (!m_data.dfm_grid.empty())
-    save_dfm_data(output_path + "/"+ m_config.dfm_grid_file);
+    save_dfm_data(output_path + "/"+ m_config.dfm_flow_grid_file);
   if (!m_data.edfm_grid.empty())
     save_edfm_data(output_path + "/" + m_config.edfm_grid_file);
   if (!m_data.wells.empty())

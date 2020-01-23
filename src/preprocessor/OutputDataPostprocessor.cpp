@@ -14,7 +14,7 @@ void OutputDataPostprocessor::write_output(const std::string file_name)
   m_root["output_directory"] = m_config.postprocessor_output_dir;
   m_root["flow_reservoir_grid_file"] = m_output_dir + "/" + m_config.vtk_config.flow_reservoir_grid_file;
   m_root["edfm_grid_file"] = m_output_dir + "/" + m_config.vtk_config.edfm_grid_file;
-  m_root["dfm_grid_file"]  = m_output_dir + "/" + m_config.vtk_config.dfm_grid_file;
+  m_root["dfm_flow_grid_file"]  = m_output_dir + "/" + m_config.vtk_config.dfm_flow_grid_file;
   //  map flow vtk cells to flow CVs
   m_root["matrix_cell_to_flow_dof"] = map_matrix_cells_to_control_volumes_();
   m_root["edfm_cell_to_flow_dof"] = m_data.edfm_cell_mapping;
