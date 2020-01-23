@@ -17,7 +17,7 @@ void OutputDataVTK::write_output(const std::string & output_path) const
 {
   save_reservoir_flow_data_(output_path + "/" + m_config.flow_reservoir_grid_file);
   save_reservoir_mechanics_data_(output_path + "/" + m_config.mechanics_reservoir_grid_file);
-  if (!m_data.dfm_grid.empty())
+  if (!m_data.dfm_flow_grid.empty())
     save_dfm_data(output_path + "/"+ m_config.dfm_flow_grid_file);
   if (!m_data.edfm_grid.empty())
     save_edfm_data(output_path + "/" + m_config.edfm_grid_file);
@@ -148,8 +148,8 @@ void OutputDataVTK::save_dfm_data(const std::string & fname) const
   std::cout << "Saving DFM mesh file: " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_surface_geometry(m_data.dfm_grid.get_vertices(),
-                                        m_data.dfm_grid.get_polygons(), out);
+  IO::VTKWriter::write_surface_geometry(m_data.dfm_flow_grid.get_vertices(),
+                                        m_data.dfm_flow_grid.get_polygons(), out);
   out.close();
 }
 

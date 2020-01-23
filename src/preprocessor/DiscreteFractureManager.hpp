@@ -19,15 +19,18 @@ class DiscreteFractureManager
   /* returns true if the marker corresponds to a fracture marker */
   bool is_fracture(const int face_marker) const;
   /* split grid dfm faces for geomechanics */
-  void split_faces();
+  void split_faces(mesh::Mesh & grid);
   // combine two vectors
   static std::vector<DiscreteFractureConfig>
   combine_configs(const std::vector<DiscreteFractureConfig> & config1,
                   const std::vector<DiscreteFractureConfig> & config2);
   // return vector of split fracture face markers
   std::vector<int> get_face_markers() const;
-  // build edfm surface grid for flow/mechanics output
-  void build_dfm_grid(const mesh::Mesh & grid, const discretization::DoFNumbering & dofs);
+  // build dfm surface grid for vtk output
+  mesh::SurfaceMesh<double> build_dfm_grid(const mesh::Mesh & grid) const;
+  // map dfm surface grid to flow dofs
+  std::vector<size_t> map_dfm_grid_to_flow_dofs(const mesh::Mesh & grid,
+                                                const discretization::DoFNumbering & dofs) const;
 
  protected:
   void build_dfm_markers_set_();

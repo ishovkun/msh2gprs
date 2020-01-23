@@ -68,26 +68,27 @@ void DiscreteFractureManager::distribute_properties()
       }
 }
 
-void DiscreteFractureManager::split_faces()
+void DiscreteFractureManager::split_faces(mesh::Mesh & grid)
 {
-  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     if (is_fracture(face->marker()))
-      m_grid.mark_for_split(face->index());
+      grid.mark_for_split(face->index());
 
-  const size_t n_faces_old = m_grid.n_faces();
-  const size_t n_vertices_old = m_grid.n_vertices();
-  m_data.dfm_grid = m_grid.split_faces();
+  const size_t n_faces_old = grid.n_faces();
+  const size_t n_vertices_old = grid.n_vertices();
 
-  if (m_grid.n_vertices() != n_faces_old)
-    std::cout << "Split " << m_grid.n_vertices() - n_vertices_old
+  grid.split_faces();
+
+  if (grid.n_vertices() != n_faces_old)
+    std::cout << "Split " << grid.n_vertices() - n_vertices_old
               << " vertices for dfm fractures"
               << std::endl;
-  if (m_grid.n_faces() != n_faces_old)
+  if (grid.n_faces() != n_faces_old)
   {
-    std::cout << "Split " << m_grid.n_faces() - n_faces_old
+    std::cout << "Split " << grid.n_faces() - n_faces_old
               << " for DFM fractures." << std::endl;
     std::cout << "There was " << n_faces_old << " faces before and "
-              << "now there is " << m_grid.n_faces() << " faces."
+              << "now there is " << grid.n_faces() << " faces."
               << std::endl;
   }
   else
@@ -122,19 +123,27 @@ std::vector<int> DiscreteFractureManager::get_face_markers() const
   return std::vector<int>(m_dfm_markers.begin(), m_dfm_markers.end());
 }
 
-void DiscreteFractureManager::build_dfm_grid(const mesh::Mesh & grid,
-                                             const discretization::DoFNumbering & dofs)
+mesh::SurfaceMesh<double> DiscreteFractureManager::build_dfm_grid(const mesh::Mesh & grid) const
 {
   mesh::SurfaceMesh<double> dfm_grid(1e-6);
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 2)
       if (is_fracture(face->marker()))
-      {
         dfm_grid.insert(face->polygon());
-        m_data.dfm_cell_mapping.push_back( dofs.face_dof(face->index()) );
-      }
 
-  m_data.dfm_grid = std::move(dfm_grid);
+  return dfm_grid;
 }
+
+std::vector<size_t> DiscreteFractureManager::map_dfm_grid_to_flow_dofs(const mesh::Mesh & grid,
+                                                                       const discretization::DoFNumbering & dofs) const
+{
+  std::vector<size_t> result;
+  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+    if (face->neighbors().size() == 2)
+      if (is_fracture(face->marker()))
+        m_data.dfm_cell_mapping.push_back( dofs.face_dof(face->index()) );
+  return result;
+}
+
 
 }  // end namespace gprs_data

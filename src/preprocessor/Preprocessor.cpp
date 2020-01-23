@@ -45,7 +45,13 @@ void Preprocessor::run()
 
   // build edfm grid for vtk output
   pm_edfm_mgr->build_edfm_grid(*pm_flow_dof_numbering);
-  pm_dfm_mgr->build_dfm_grid(data.grid, *pm_flow_dof_numbering);
+
+  // build dfm flow and mechanics grids (for vtk output)
+  data.dfm_flow_grid = pm_dfm_mgr->build_dfm_grid(data.grid);
+  data.dfm_mech_grid = pm_dfm_mgr->build_dfm_grid(data.geomechanics_grid);
+
+  // map dfm flow grid to flow dofs
+  data.dfm_cell_mapping = pm_dfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *pm_flow_dof_numbering);
 
   build_geomechanics_discretization_();
 
