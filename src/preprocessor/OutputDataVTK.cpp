@@ -32,18 +32,42 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
   std::ofstream out;
   out.open(fname.c_str());
   IO::VTKWriter::write_geometry(m_flow_grid, out);
-  // IO::VTKWriter::enter_section_cell_data(m_grid.n_cells(), out);
+  IO::VTKWriter::enter_section_cell_data(m_flow_grid.n_active_cells(), out);
 
-  // save keywords
-  // for (std::size_t ivar=0; ivar<m_data.rockPropNames.size(); ++ivar)
-  // {
-  //   vector<double> property(grid.n_cells());
-  //   const string keyword = data.rockPropNames[ivar];
-  //   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
-  //     property[cell->index()] = data.vsCellRockProps[cell->index()].v_props[ivar];
+  const auto & grid = m_flow_grid;
+  // save grid markers
+  {
+    std::vector<double> property(grid.n_active_cells());
+    const std::string keyword = "Marker";
+    size_t cell_index = 0;
+    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+      property[cell_index++] = cell->marker();
+    IO::VTKWriter::add_data(property, keyword, out);
+  }
+  // save porosity
+  {
+    const size_t prop_key = m_data.porosity_key_index;
+    std::vector<double> property(grid.n_active_cells());
+    const std::string keyword = "PORO";
+    size_t cell_index = 0;
+    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+      property[cell_index++] = m_data.cell_properties[prop_key][cell->index()];
 
-  //   IO::VTKWriter::add_data(property, keyword, out);
-  // }
+    IO::VTKWriter::add_data(property, keyword, out);
+  }
+
+  // save custom keywords
+  for (std::size_t ivar=0; ivar<m_data.output_flow_properties.size(); ++ivar)
+  {
+    const size_t prop_key = m_data.output_flow_properties[ivar];
+    std::vector<double> property(grid.n_active_cells());
+    const std::string keyword = m_data.property_names[prop_key];
+    size_t cell_index = 0;
+    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+      property[cell_index++] = m_data.cell_properties[prop_key][cell->index()];
+
+    IO::VTKWriter::add_data(property, keyword, out);
+  }
 
   // // save multiscale flow data
   // if (!data.ms_flow_data.partitioning.empty())
