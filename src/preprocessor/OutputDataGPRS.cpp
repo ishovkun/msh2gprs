@@ -611,6 +611,7 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
   out << "/" << std::endl << std::endl;
 
   out << "COMPDAT" << std::endl;
+  out << "-- name\tcell\tidk\tidk\tidk\topen\tidk\tWI\trad" << std::endl;
   for (const auto & well : m_data.wells)
   {
     for (std::size_t i=0; i<well.connected_volumes.size(); ++i)

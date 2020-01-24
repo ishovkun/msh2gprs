@@ -1,5 +1,6 @@
 #include "WellManager.hpp"
 #include "angem/Collisions.hpp"
+#include <numeric>  // std::accumulate
 
 namespace gprs_data {
 
@@ -57,11 +58,14 @@ void WellManager::setup_simple_well_(Well & well)
     {
       if (cell->ultimate_parent() != *cell)
         throw std::runtime_error("well crosses refined cell. not implemented yet");
+
       assert( section_data.size() == 2 );
 
       well.connected_volumes.push_back(m_dofs.cell_dof(cell->index()));
       m_well_connected_cells.back().push_back(cell->index());
-      well.segment_length.push_back(section_data[0].distance(section_data[1]));
+      const double segment_length = section_data[0].distance(section_data[1]);
+
+      well.segment_length.push_back(segment_length);
       well.directions.push_back(direction);
       // for visulatization
       m_data.well_vertex_indices.emplace_back();
@@ -127,14 +131,21 @@ double compute_productivity(const double k1, const double k2,
                             const double length, const double radius,
                             const double skin = 0)
 {
+  if (k1 == 0 or k2 == 0)
+  {
+    if (k1 != k2)
+      throw std::runtime_error("Zero perm only in one direction is not supported");
+    return 0.0;
+  }
   // pieceman radius
   const double r = 0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 +
                                   std::sqrt(k1/k2)*dx2*dx2) /
                    (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
-  const double j_ind = 2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
-  assert(j_ind >= 0);
+  double j_ind = 2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
+  // treatment for almost zero jind
+  if (j_ind > - k1 * 1e-8 && j_ind < 0) j_ind = 0;
+  // else error is thrown in the parent method
   return j_ind;
-
 }
 
 inline
@@ -156,20 +167,35 @@ void WellManager::compute_well_index_(Well &well)
     const angem::Tensor2<3,double> perm = m_data.get_permeability(icell);
     angem::Point<3,double> dx_dy_dz = get_dx_dy_dz_(icell);
     angem::Point<3,double> productivity;
-    productivity[0] =
-        compute_productivity(perm(1,1), perm(2,2), dx_dy_dz[1], dx_dy_dz[2],
-                             well.segment_length[i]*fabs(well.directions[i][0]),
-                             well.radius);
-    productivity[1] =
-        compute_productivity(perm(0,0), perm(2,2), dx_dy_dz[0], dx_dy_dz[2],
-                             well.segment_length[i]*fabs(well.directions[i][1]),
-                             well.radius);
-    productivity[2] =
-        compute_productivity(perm(0,0), perm(1,1), dx_dy_dz[0], dx_dy_dz[1],
-                             well.segment_length[i]*fabs(well.directions[i][2]),
-                             well.radius);
-    well.indices[i] = productivity.norm();
+    // project on plane yz
+    productivity[0] = compute_productivity(perm(1,1), perm(2,2), dx_dy_dz[1], dx_dy_dz[2],
+                                           well.segment_length[i]*fabs(well.directions[i][0]),
+                                           well.radius);
+    // project on plane xz
+    productivity[1] = compute_productivity(perm(0,0), perm(2,2), dx_dy_dz[0], dx_dy_dz[2],
+                                           well.segment_length[i]*fabs(well.directions[i][1]),
+                                           well.radius);
+    // project on plane xy
+    productivity[2] = compute_productivity(perm(0,0), perm(1,1), dx_dy_dz[0], dx_dy_dz[1],
+                                           well.segment_length[i]*fabs(well.directions[i][2]),
+                                           well.radius);
+    const double wi = productivity.norm();
+    if (productivity[0] < 0 or productivity[1] < 0 or productivity[2] < 0 or std::isnan(wi))
+    {
+      const std::string msg = "Wrong directional WI for well " + well.name + ": "
+                              + std::to_string( productivity[0] ) + " "
+                              + std::to_string(productivity[1]) + " "
+                              + std::to_string(productivity[2]);
+      throw std::runtime_error(msg);
+    }
+
+    well.indices[i] = wi;
   }
+
+
+  const double wi_sum = std::accumulate(well.indices.begin(), well.indices.end(), 0.0);
+  if (wi_sum == 0)
+    throw std::runtime_error( "All well indices are zero for well: " + well.name );
 }
 
 angem::Point<3,double> WellManager::get_dx_dy_dz_(const std::size_t icell) const
