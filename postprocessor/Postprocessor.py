@@ -68,7 +68,12 @@ class Postprocessor:
     def saveReservoirData_(self, t, data):
         assert data.shape[0] == (len(self.config["matrix_cell_to_flow_dof"]) +
                                  len(self.config["dfm_cell_to_flow_dof"]) +
-                                 len(self.config["edfm_cell_to_flow_dof"]))
+                                 len(self.config["edfm_cell_to_flow_dof"])), "Data size " + \
+                                 str(data.shape[0]) + " != " +\
+                        str(len( self.config["matrix_cell_to_flow_dof"] ) )+ " " + \
+                        str(len( self.config["dfm_cell_to_flow_dof"] )) + " " +\
+                        str(len(self.config["edfm_cell_to_flow_dof"]))
+
 
         self.addDataToReader_(self.matrix_flow_grid_reader, data, self.config["matrix_cell_to_flow_dof"])
         self.writeFile_(self.matrix_flow_grid_reader, "matrix-%d"%self.output_file_number)
