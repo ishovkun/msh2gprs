@@ -141,7 +141,7 @@ std::vector<size_t> DiscreteFractureManager::map_dfm_grid_to_flow_dofs(const mes
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 2)
       if (is_fracture(face->marker()))
-        m_data.dfm_cell_mapping.push_back( dofs.face_dof(face->index()) );
+        result.push_back( dofs.face_dof(face->index()) );
   return result;
 }
 
