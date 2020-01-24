@@ -117,18 +117,23 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
 
     /* OUTPUT Transmissibility */
     out << "TPFACONNS" << std::endl;
-    std::size_t n_connections = cons.size();
+    // n nonzero connection
+    std::size_t n_connections = 0;
+    for (const auto & con : cons)
+    {
+      const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
+      if (transissibility > 1e-10) n_connections++;
+    }
     out << n_connections << std::endl;
     for (const auto & con : cons)
     {
       assert( con.elements.size() == 2 );
       assert( con.coefficients.size() == 2 );
 
-      out << con.elements[0] << "\t"
-          << con.elements[1] << "\t"
-          << std::scientific
-          << std::fabs(con.coefficients[0]) * transmissibility_conversion_factor
-          << std::defaultfloat << std::endl;
+      const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
+      if (transissibility > 1e-10)
+        out << con.elements[0] << "\t" << con.elements[1] << "\t"
+            << std::scientific << transissibility << std::defaultfloat << std::endl;
     }
     out << "/" << std::endl;
 
