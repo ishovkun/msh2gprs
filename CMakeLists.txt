@@ -25,8 +25,8 @@ if(Boost_FOUND)
   add_definitions(-DUSE_BOOST)
 else()
   # 256 bit integer lib (for mesh)
-  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/uint256)
-  ADD_SUBDIRECTORY(src/uint256)
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/uint256)
+  ADD_SUBDIRECTORY(external/uint256)
 ENDIF()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
@@ -39,39 +39,35 @@ else()
   message("-- METIS not found")
 endif()
 
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external)
 
 # angem
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/angem)
-ADD_SUBDIRECTORY(src/angem)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/angem)
+ADD_SUBDIRECTORY(external/angem)
 INCLUDE_DIRECTORIES(${angem_include_dirs})
 
 # angem
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
 ADD_SUBDIRECTORY(src/mesh)
-
 # muparser
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/muparser)
-ADD_SUBDIRECTORY(src/muparser)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/muparser)
+ADD_SUBDIRECTORY(external/muparser)
+# yaml parser
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/yaml)
+ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/external/yaml)
 
 # preprocessor
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/preprocessor)
 ADD_SUBDIRECTORY(src/preprocessor)
 
-# parser
-# INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/parsers)
-# ADD_SUBDIRECTORY(src/parsers)
-
-# yaml parser
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/yaml)
-ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/src/yaml)
-
 # targets
-set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 ADD_EXECUTABLE(msh2gprs ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 TARGET_INCLUDE_DIRECTORIES(msh2gprs PRIVATE
+  ${CMAKE_SOURCE_DIR}/external
   ${CMAKE_SOURCE_DIR}/src
 )
 

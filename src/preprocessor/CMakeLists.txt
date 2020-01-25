@@ -22,15 +22,12 @@ ADD_LIBRARY(preprocessor
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
   UnionFind.cpp
+  DiscretizationFEM.cpp
 )
 
 SET_TARGET_PROPERTIES (
     preprocessor
     PROPERTIES LINKER_LANGUAGE CXX
-)
-
-TARGET_INCLUDE_DIRECTORIES(preprocessor PUBLIC
-  ${CMAKE_SOURCE_DIR}/src
 )
 
 set(preprocessor_libs ${preprocessor_libs} angem muparser mesh yaml-cpp)
