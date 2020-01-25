@@ -42,7 +42,7 @@ struct SimData
   std::vector<std::string> property_names;
   std::vector<std::vector<double>> cell_properties;
   std::array<int,6> permeability_keys = {-1, -1, -1, -1, -1, -1};  // permeability key indices in cell_properties
-  size_t porosity_key_index;               // porosity key index in cell_properties
+  size_t porosity_key_index = std::numeric_limits<size_t>::max();  // porosity key index in cell_properties
   std::vector<size_t> output_flow_properties;
   // ----------------------- DFM ------------------------ //
   std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
@@ -83,7 +83,7 @@ struct SimData
 
   double get_porosity(const std::size_t cell) const
   {
-    assert(porosity_key_index >= 0 && porosity_key_index < property_names.size());
+    assert(porosity_key_index < property_names.size());
     assert ( cell < cell_properties[porosity_key_index].size() );
     return cell_properties[porosity_key_index][cell];
   }
