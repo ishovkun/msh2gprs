@@ -29,6 +29,7 @@ class Preprocessor
   void read_mesh_file_(const Path mesh_file_path);
   void create_output_dir_();
   void write_output_();
+  void build_dfem_discretization_();
 
   // ------------------ Variables ----------------------- //
   PreprocessorConfig config;
