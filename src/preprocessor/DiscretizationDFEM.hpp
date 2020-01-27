@@ -14,15 +14,17 @@ namespace gprs_data
  * the shape functions with MSRSB method
  * (so that the simulator can use them as regular Finite Element
  * shape funcitons). */
-class DiscretizationFEM
+class DiscretizationDFEM
 {
  public:
-  DiscretizationFEM(const mesh::Mesh & grid);
+  DiscretizationDFEM(const mesh::Mesh & grid);
   void build();
 
  protected:
   void build_(const angem::Polyhedron<double> & cell);
-  double compute_element_size_(const angem::Polyhedron<double> & cell);
+  void build_grid_(const angem::Polyhedron<double> & cell) const;
+  void build_shape_functions_();
+  double compute_element_size_(const angem::Polyhedron<double> & cell) const;
 
   const mesh::Mesh & _grid;
 };

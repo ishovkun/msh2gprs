@@ -2,7 +2,7 @@
 #include "parsers/YamlParser.hpp"
 #include "parsers/GmshReader.hpp"
 #include "BoundaryConditionManager.hpp"
-#include "DiscretizationFEM.hpp"
+#include "DiscretizationDFEM.hpp"
 #include "discretization/DiscretizationTPFA.hpp"
 #include "discretization/DiscretizationDFM.hpp"
 #include "discretization/DiscretizationEDFM.hpp"
@@ -229,7 +229,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
 void Preprocessor::build_dfem_discretization_()
 {
-  DiscretizationFEM dfem_discr(data.grid);
+  DiscretizationDFEM dfem_discr(data.grid);
   dfem_discr.build();
 }
 

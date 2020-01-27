@@ -22,7 +22,7 @@ ADD_LIBRARY(preprocessor
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
   UnionFind.cpp
-  DiscretizationFEM.cpp
+  DiscretizationDFEM.cpp
 )
 
 SET_TARGET_PROPERTIES (
