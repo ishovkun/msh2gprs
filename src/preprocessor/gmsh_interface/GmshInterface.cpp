@@ -1,10 +1,12 @@
 #include "GmshInterface.hpp"
 #include <cstdlib> // atoi
+#include <numeric>  // provides std;:iota
 
 namespace gprs_data
 {
 
 using angem::VTK_ID;
+using Point = angem::Point<3,double>;
 
 // map gmsh element id to vtk id
 std::vector<int> msh_id_to_vtk_id = {
@@ -507,9 +509,109 @@ void GmshInterface::read_msh_v4_(std::fstream & mesh_file, mesh::Mesh & mesh)
 
 #ifdef WITH_GMSH
 
-void GmshInterface::build_grid(const mesh::Cell & cell)
+void GmshInterface::build_triangulation(const mesh::Cell & cell)
 {
+  const auto poly = cell.polyhedron();
+  build_triangulation_(*poly);
+}
 
+void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
+{
+  gmsh::option::setNumber("General.Terminal", 1);
+
+  const double discr_element_size = 0.1 * compute_element_size_(cell);
+  std::cout << "discr_element_size = " << discr_element_size << std::endl;
+  // build points
+  const std::vector<Point> & vertices = cell.get_points();
+  std::cout << "n_vertices = " << vertices.size() << std::endl;
+  for (std::size_t i=0; i < vertices.size(); ++i)
+  {
+    const Point & vertex = vertices[i];
+    gmsh::model::geo::addPoint(vertex.x(), vertex.y(), vertex.z(),
+                               discr_element_size, /*tag = */ i);
+  }
+
+  // build lines (edges)
+  const auto edges = cell.get_edges();
+  for (std::size_t i=0; i<edges.size(); ++i)
+  {
+    const std::pair<size_t,size_t> & edge = edges[i];
+    gmsh::model::geo::addLine(edge.first, edge.second, i);
+    // gmsh::model::addPhysicalGroup(1, {i}, i);
+  }
+
+  // build faces
+  const std::vector<std::vector<std::size_t>> & faces = cell.get_faces();
+  std::vector<angem::Polygon<double>> face_polys = cell.get_face_polygons();
+  for (std::size_t i=0; i<face_polys.size(); ++i)
+  {
+    const auto & face = faces[i];
+    const auto & poly = face_polys[i];
+    std::vector<int> edge_markers;
+    for (const angem::Edge & face_edge : poly.get_edges())
+    {
+      const std::pair<size_t,size_t> cell_edge_ordered = {face[face_edge.first],
+                                                         face[face_edge.second]};
+      const std::pair<size_t,size_t> cell_edge_unordered = std::minmax(face[face_edge.first],
+                                                                       face[face_edge.second]);
+      // get edge marker
+      const auto it_edge = std::find_if( edges.begin(), edges.end(),
+                    [&cell_edge_unordered](const auto & it)->bool
+                    {
+                      return it.first == cell_edge_unordered.first &&
+                          it.second == cell_edge_unordered.second;
+                    });
+      assert(it_edge != edges.end());;
+      const int edge_marker = static_cast<int>(std::distance(edges.begin(), it_edge));
+      // figure out the sign of the tage
+      if (cell_edge_ordered.first == cell_edge_unordered.first)
+        edge_markers.push_back(edge_marker);
+      else  // inverse orientation
+        edge_markers.push_back(-edge_marker);
+    }
+    // create line loop and surface
+    // NOTE: curve and surface loop must start from 1, otherwise gmsh
+    // throws an error, ergo i+1
+    gmsh::model::geo::addCurveLoop(edge_markers, static_cast<int>(i+1));
+    gmsh::model::geo::addPlaneSurface({static_cast<int>(i+1)}, static_cast<int>(i+1));
+  }
+
+  // gmsh::model::geo::synchronize();
+  // gmsh::model::mesh::generate(2);
+  // gmsh::write("cell.msh");
+  // gmsh::finalize();
+
+  // create volume from surfaces
+  std::vector<int> surfaces(faces.size());
+  std::iota(surfaces.begin(), surfaces.end(), 1);
+  gmsh::model::geo::addSurfaceLoop(surfaces, 1);
+  gmsh::model::geo::addVolume({1}, 1);
+
+  gmsh::model::geo::synchronize();
+  gmsh::model::mesh::generate(3);
+  gmsh::write("cell.msh");
+}
+
+double GmshInterface::compute_element_size_(const angem::Polyhedron<double> & cell)
+{
+  double min_edge_length = std::numeric_limits<double>::max();
+  const std::vector<Point> & vertices = cell.get_points();
+  for (const auto & edge : cell.get_edges())
+  {
+    const double h = vertices[edge.first].distance(vertices[edge.second]);
+    min_edge_length = std::min( min_edge_length, h);
+  }
+  return min_edge_length;
+}
+
+void GmshInterface::initialize_gmsh()
+{
+  gmsh::initialize();
+}
+
+void GmshInterface::finalize_gmsh()
+{
+  gmsh::finalize();
 }
 
 #else
@@ -518,6 +620,12 @@ void GmshInterface::build_grid(const mesh::Cell & cell)
 {
   throw std::invalid_argument("Gmsh is not linked. Gridding options not available");
 }
+
+void GmshInterface::initialize_gmsh()
+{}
+
+void GmshInterface::finalize_gmsh()
+{}
 
 #endif
 }  // end namespace gprs_data

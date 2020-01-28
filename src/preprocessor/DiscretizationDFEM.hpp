@@ -1,10 +1,7 @@
 #pragma once
 
 #include "mesh/Mesh.hpp"
-
-#ifdef WITH_GMSH
-#include <gmsh.h>
-#endif
+#include "gmsh_interface/GmshInterface.hpp"
 
 namespace gprs_data
 {
@@ -21,7 +18,7 @@ class DiscretizationDFEM
   void build();
 
  protected:
-  void build_(const angem::Polyhedron<double> & cell);
+  void build_(const mesh::Cell & cell);
   void build_grid_(const angem::Polyhedron<double> & cell) const;
   void build_shape_functions_();
   double compute_element_size_(const angem::Polyhedron<double> & cell) const;
