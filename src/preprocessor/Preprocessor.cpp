@@ -1,6 +1,6 @@
 #include "Preprocessor.hpp"
 #include "parsers/YamlParser.hpp"
-#include "parsers/GmshReader.hpp"
+#include "gmsh_interface/GmshInterface.hpp"
 #include "BoundaryConditionManager.hpp"
 #include "DiscretizationDFEM.hpp"
 #include "discretization/DiscretizationTPFA.hpp"
@@ -162,7 +162,7 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
   if (fname.substr(str_len - 3, str_len) != "msh")
     throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
 
-  Parsers::GmshReader::read_input(filesystem::absolute(mesh_file_path), data.grid);
+  GmshInterface::read_msh(filesystem::absolute(mesh_file_path), data.grid);
 }
 
 void Preprocessor::build_flow_discretization_()

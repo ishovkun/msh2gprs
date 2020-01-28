@@ -50,7 +50,8 @@ insert_cell_(const std::vector<size_t> take_faces,
       unique_vertices.insert(v);
 
   std::vector<size_t> ivertices(unique_vertices.begin(), unique_vertices.end());
-  return insert_cell_(ivertices, take_faces, big_face_vector, constants::vtk_index_general_polyhedron, marker);
+  return insert_cell_(ivertices, take_faces, big_face_vector,
+                      angem::VTK_ID::GeneralPolyhedronID, marker);
 }
 
 std::size_t Mesh::

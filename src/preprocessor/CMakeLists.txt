@@ -3,7 +3,7 @@
 ADD_LIBRARY(preprocessor
   Preprocessor.cpp
   parsers/YamlParser.cpp
-  parsers/GmshReader.cpp
+  gmsh_interface/GmshInterface.cpp
   CellPropertyManager.cpp
   EmbeddedFractureManager.cpp
   DiscreteFractureManager.cpp

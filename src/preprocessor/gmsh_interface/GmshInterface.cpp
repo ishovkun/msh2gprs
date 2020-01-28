@@ -1,45 +1,45 @@
-#include "GmshReader.hpp"
-#include <angem/PolyhedronFactory.hpp>
-#include <fstream>
-#include <sstream>      // std::stringstream
-#include <ios>
-#include <iterator>
+#include "GmshInterface.hpp"
 #include <cstdlib> // atoi
 
-
-namespace Parsers
+namespace gprs_data
 {
 
-// typedef std::unordered_map<int,int> MapIntInt;
-// static int get_vtk_index(const int gmsh_index) {return map_gmsh_vtk[gmsh_index];}
-GmshReader::MapIntInt GmshReader::map_gmsh_vtk = {
-  // polyhedras
-  {4, 10},  // tetra4
-  {5, 12},  // prism8
-  {6, 13},  // prism6
-  {11, 24}, // tetra10
-  {17, 25}, // prism20
-  {18, 26}, // prism15
-  // polygons
-  {2, 5}, // trgle3
-  {3, 9}, // quad4
-  {9, 22}, // trgle6
-  {16, 23}, // quad8
-};
+using angem::VTK_ID;
 
-GmshReader::MapIntInt GmshReader::map_vtk_element_size = {
-  // polyhedras
-  {10, 4},  // tetra4
-  {12, 8},  // prism8
-  {13, 6},  // prism6
-  {24, 10}, // tetra10
-  {25, 20}, // prism20
-  {26, 15}, // prism15
-  // polygons
-  {5, 3}, // trgle3
-  {9, 4}, // quad4
-  {22, 6}, // trgle6
-  {23, 8}, // quad8
+// map gmsh element id to vtk id
+std::vector<int> msh_id_to_vtk_id = {
+    VTK_ID::InvalidElementID,     // [0]  does not exist
+    VTK_ID::LineID,               // [1]  2-node edge
+    VTK_ID::TriangleID,           // [2]  3-node triangle
+    VTK_ID::QuadrangleID,         // [3]  4-node quadrangle
+    VTK_ID::TetrahedronID,        // [4]  4-node tetrahedron
+    VTK_ID::HexahedronID,         // [5]  8-node hexahedron
+    VTK_ID::WedgeID,              // [6]  6-node prism
+    VTK_ID::PyramidID,            // [7]  5-node pyramid
+    VTK_ID::QuadraticEdgeID,      // [8]  3-node second order line
+    VTK_ID::QuadraticTriangleID,  // [9]  6-node second order triangle
+    VTK_ID::QuadraticQuadID,      // [10] 9-node second orderer quadrangle
+    VTK_ID::QuadraticTetraID,     // [11] 10-node second order tetrahedron
+    VTK_ID::InvalidElementID,     // [12] 27-node second order hexahedron
+    VTK_ID::InvalidElementID,     // [13] 18-node second order prism
+    VTK_ID::InvalidElementID,     // [14] 14-node second order pyramid
+    VTK_ID::VertexID,             // [15] 1-node point
+    VTK_ID::InvalidElementID,     // [16] 8-node second order quadrangle
+    VTK_ID::QudraticHexahedronID, // [17] 20-node second order hexahedron
+    VTK_ID::QuadraticWedgeID,     // [18] 15-node second order prism
+    VTK_ID::QuadraticPyramidID,   // [19] 13-node second order pyramid
+    VTK_ID::InvalidElementID,     // [20] 9-node third order incomplete triangle
+    VTK_ID::InvalidElementID,     // [21] 10-node third order triangle
+    VTK_ID::InvalidElementID,     // [22] 12-node fourth order incomplete triangle
+    VTK_ID::InvalidElementID,     // [23] 15-node fourth order triangle
+    VTK_ID::InvalidElementID,     // [24] 15-node fifth order incomplete triangle
+    VTK_ID::InvalidElementID,     // [25] 21-node fifth order complete triangle
+    VTK_ID::InvalidElementID,     // [26] 4-node third order edge
+    VTK_ID::InvalidElementID,     // [27] 5-node fourth order edge
+    VTK_ID::InvalidElementID,     // [28] 6-node fifth order edge
+    VTK_ID::InvalidElementID,     // [29] 20-node third order tetrahedron
+    VTK_ID::InvalidElementID,     // [30] 35-node fourth order tetrahedron
+    VTK_ID::InvalidElementID      // [31] 56-node fifth order tetrahedron
 };
 
 enum GmshElementType
@@ -86,10 +86,43 @@ std::vector<GmshElementType> gmsh_element_types = {
  GmshElementType::invalid_element  // [31] 56-node fifth order tetrahedron
 };
 
+std::vector<size_t> gmsh_element_nvertices = {
+ 0,  // [0]  does not exist
+ 2,  // [1]  2-node edge
+ 3,  // [2]  3-node triangle
+ 4,  // [3]  4-node quadrangle
+ 4,  // [4]  4-node tetrahedron
+ 8,  // [5]  8-node hexahedron
+ 6,  // [6]  6-node prism
+ 5,  // [7]  5-node pyramid
+ 3,  // [8]  3-node second order line
+ 6,  // [9]  6-node second order triangle
+ 9,  // [10] 9-node second orderer quadrangle
+ 10, // [11] 10-node second order tetrahedron
+ 27, // [12] 27-node second order hexahedron
+ 18, // [13] 18-node second order prism
+ 14, // [14] 14-node second order pyramid
+ 1,  // [15] 1-node point
+ 8,  // [16] 8-node second order quadrangle
+ 20, // [17] 20-node second order hexahedron
+ 15, // [18] 15-node second order prism
+ 13, // [19] 13-node second order pyramid
+ 20, // [20] 9-node third order incomplete triangle
+ 10, // [21] 10-node third order triangle
+ 22, // [22] 12-node fourth order incomplete triangle
+ 15, // [23] 15-node fourth order triangle
+ 15, // [24] 15-node fifth order incomplete triangle
+ 21, // [25] 21-node fifth order complete triangle
+ 4,  // [26] 4-node third order edge
+ 5,  // [27] 5-node fourth order edge
+ 6,  // [28] 6-node fifth order edge
+ 20, // [29] 20-node third order tetrahedron
+ 35, // [30] 35-node fourth order tetrahedron
+ 56  // [31] 56-node fifth order tetrahedron
+};
 
 
-void GmshReader::read_input(const std::string & filename,
-                            mesh::Mesh        & mesh)
+void GmshInterface::read_msh(const std::string & filename, mesh::Mesh & mesh)
 {
   std::fstream mesh_file;
   mesh_file.open(filename.c_str(), std::fstream::in);
@@ -104,11 +137,11 @@ void GmshReader::read_input(const std::string & filename,
   std::cout << "Gmsh file version: " << version << std::endl;
 
   if (version >= 2 and version < 3)
-    read_gmsh2_input(mesh_file, mesh);
+    read_msh_v2_(mesh_file, mesh);
   else if (version > 4.0)  // works for 4.1
   {
     std::cout << "warning, gmsh 4 files not tested" << std::endl;
-    read_gmsh4_input(mesh_file, mesh);
+    read_msh_v4_(mesh_file, mesh);
   }
   else
   {
@@ -120,9 +153,7 @@ void GmshReader::read_input(const std::string & filename,
   mesh_file.close();
 }
 
-
-void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
-                                  mesh::Mesh   & mesh)
+void GmshInterface::read_msh_v2_(std::fstream & mesh_file, mesh::Mesh & mesh)
 {
   std::string entry;
 
@@ -193,8 +224,12 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
     // fifth - ?
     // later - vertex indices
     static const int vert_shift = 5;  // index of first vertex in line
+
     const int element_type = std::atoi(tokens[1].c_str());
-    const int vtk_id = get_vtk_index(element_type);
+    if ((element_type < 0) || (element_type > msh_id_to_vtk_id.size()))
+      throw std::invalid_argument("Wrong vtk id type");
+    const int vtk_id = msh_id_to_vtk_id[element_type];
+
     const int marker = std::atoi(tokens[3].c_str());
     std::vector<std::size_t> ivertices(tokens.size() - vert_shift);
     for (int j=0; j<tokens.size() - vert_shift; ++j)
@@ -225,9 +260,7 @@ void GmshReader::read_gmsh2_input(std::fstream & mesh_file,
   }
 }
 
-
-void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
-                                  mesh::Mesh   & mesh)
+void GmshInterface::read_msh_v4_(std::fstream & mesh_file, mesh::Mesh & mesh)
 {
   std::string entry;
 
@@ -427,8 +460,12 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
     const int entity_dim = std::atoi(tokens[0].c_str());
     const int entity_tag = std::atoi(tokens[1].c_str());
     const int element_type = std::atoi(tokens[2].c_str());
-    const int vtk_id = get_vtk_index(element_type);
-    const int n_element_vertices = map_vtk_element_size[vtk_id];
+
+    if ((element_type < 0) || (element_type > msh_id_to_vtk_id.size()))
+      throw std::invalid_argument("Wrong vtk id type");
+    const int vtk_id = msh_id_to_vtk_id[element_type];
+
+    const int n_element_vertices = gmsh_element_nvertices[element_type];
     int physical_tag;
     if (entity_dim == 2)
       physical_tag = surface_tags[entity_tag];
@@ -468,4 +505,19 @@ void GmshReader::read_gmsh4_input(std::fstream & mesh_file,
   std::cout << "n_cells = " << mesh.n_cells() << std::endl;
 }
 
+#ifdef WITH_GMSH
+
+void GmshInterface::build_grid(const mesh::Cell & cell)
+{
+
 }
+
+#else
+
+void GmshInterface::build_grid(const mesh::Cell & cell)
+{
+  throw std::invalid_argument("Gmsh is not linked. Gridding options not available");
+}
+
+#endif
+}  // end namespace gprs_data

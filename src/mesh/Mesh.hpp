@@ -165,7 +165,7 @@ class Mesh
     std::vector<size_t> vertices;
     size_t parent = constants::invalid_index;
     int marker = constants::default_face_marker;
-    int vtk_id = constants::vtk_id_general_polygon;
+    int vtk_id = angem::VTK_ID::GeneralPolyhedronID;
   };
 
   /* private insert cell class that does all the cell insertion work */
