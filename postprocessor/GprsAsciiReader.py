@@ -34,7 +34,7 @@ class GprsAsciiReader:
             line = self.input_file.readline() # Time  = ...
             if not line: return False
 
-        self.current_time = int(line.split()[-1])
+        self.current_time = float(line.split()[-1])
         line = self.input_file.readline() # table headers
         keys = line.split()
         # allocate data
