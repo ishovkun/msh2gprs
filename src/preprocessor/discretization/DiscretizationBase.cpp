@@ -28,7 +28,7 @@ void DiscretizationBase::build_cell_data_(const mesh::Cell& cell)
     cv.porosity = m_data.get_porosity(cell_index);
     cv.permeability = m_data.get_permeability(cell_index);
     cv.center = cell.center();
-    cv.volume = cell.volume() * cv.porosity;
+    cv.volume = cell.volume();
 
     cv.custom.resize(m_data.output_flow_properties.size());
     for (size_t j = 0; j < m_data.output_flow_properties.size(); ++j)
