@@ -519,7 +519,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
 {
   gmsh::option::setNumber("General.Terminal", 1);
 
-  const double discr_element_size = 0.1 * compute_element_size_(cell);
+  const double discr_element_size = 0.2 * compute_element_size_(cell);
   std::cout << "discr_element_size = " << discr_element_size << std::endl;
   // build points
   const std::vector<Point> & vertices = cell.get_points();
@@ -614,6 +614,16 @@ void GmshInterface::finalize_gmsh()
   gmsh::finalize();
 }
 
+void GmshInterface::get_elements(std::vector<int> & element_types,
+                                 std::vector<std::vector<std::size_t> > & element_tags,
+                                 std::vector<std::vector<std::size_t> > & node_tags,
+                                 const int dim,
+                                 const int tag)
+{
+  gmsh::model::mesh::getElements(element_types, element_tags, node_tags, dim, tag);
+}
+
+
 #else
 
 void GmshInterface::build_grid(const mesh::Cell & cell)
@@ -625,6 +635,13 @@ void GmshInterface::initialize_gmsh()
 {}
 
 void GmshInterface::finalize_gmsh()
+{}
+
+void GmshInterface::get_elements(std::vector<int> & elemen_types,
+                                 std::vector<std::vector<std::size_t> > & element_tags,
+                                 std::vector<std::vector<std::size_t> > & node_tags,
+                                 const int dim,
+                                 const int tag)
 {}
 
 #endif

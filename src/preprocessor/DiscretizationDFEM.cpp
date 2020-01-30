@@ -32,19 +32,36 @@ void DiscretizationDFEM::build_(const mesh::Cell & cell)
 
 void DiscretizationDFEM::build_shape_functions_()
 {
+  build_jacobian_();
+  // run_msrsb_process();
+  // extract_shape_functions_();
+
+}
+
+void DiscretizationDFEM::build_jacobian_()
+{
+  // 1. ask gmsh to provide gaussian points, shape functions, and jacobians
+  // for our tetras
+  // 2. build element jacobian for the homogeneous laplace equation
   std::vector<int> element_types;
   std::vector<std::vector<std::size_t> > element_tags;
   std::vector<std::vector<std::size_t> > node_tags;
-  gmsh::model::mesh::getElements(element_types, element_tags, node_tags);
-  // std::vector<int> volume_types = get_msh_volume_types_(element_types);
-  std::cout << "tags" << std::endl;
-  for (auto type : element_types)
-    std::cout << type << std::endl;
+  GmshInterface::get_elements(element_types, element_tags, node_tags, /* dim = */ 3);
+  std::cout << "element_tags.size() = " << element_tags.size() << std::endl;
+  std::cout << "node-tags.size() = " << node_tags.size() << std::endl;
+  for (std::size_t itype = 0; itype < element_types.size(); ++itype)
+  {
+    const size_t type = element_types[itype];
+    for (const size_t tag : element_tags[itype])
+    {
+      build_local_matrix_(tag);
+    }
+  }
+}
 
-  // 1. make sure that we only have tetras (look at element_types)
-  // 2. ask gmsh to provide gaussian points, shape functions, and jacobians
-  // for our tetras
-  // 3. build element jacobian for the homogeneous laplace equation
+void DiscretizationDFEM::build_local_matrix_(const size_t element_tag)
+{
+  
 }
 
 #else

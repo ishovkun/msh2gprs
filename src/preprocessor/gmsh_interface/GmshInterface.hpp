@@ -21,7 +21,24 @@ class GmshInterface
   static void finalize_gmsh();
   // build gmsh grid bounded by the faces of the cell
   static void build_triangulation(const mesh::Cell & cell);
-
+  // Get the elements classified on the entity of dimension `dim' and tag
+  // `tag'. If `tag' < 0, get the elements for all entities of dimension `dim'.
+  // If `dim' and `tag' are negative, get all the elements in the mesh.
+  // `elementTypes' contains the MSH types of the elements (e.g. `2' for 3-node
+  // triangles: see `getElementProperties' to obtain the properties for a given
+  // element type). `elementTags' is a vector of the same length as
+  // `elementTypes'; each entry is a vector containing the tags (unique,
+  // strictly positive identifiers) of the elements of the corresponding type.
+  // `nodeTags' is also a vector of the same length as `elementTypes'; each
+  // entry is a vector of length equal to the number of elements of the given
+  // type times the number N of nodes for this type of element, that contains
+  // the node tags of all the elements of the given type, concatenated: [e1n1,
+  // e1n2, ..., e1nN, e2n1, ...].
+  static void get_elements(std::vector<int> & elementTypes,
+                           std::vector<std::vector<std::size_t> > & elementTags,
+                           std::vector<std::vector<std::size_t> > & nodeTags,
+                           const int dim = -1,
+                           const int tag = -1);
  private:
   /* Prohibited */
   GmshInterface();

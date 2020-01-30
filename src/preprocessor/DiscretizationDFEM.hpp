@@ -21,6 +21,8 @@ class DiscretizationDFEM
   void build_(const mesh::Cell & cell);
   void build_grid_(const angem::Polyhedron<double> & cell) const;
   void build_shape_functions_();
+  void build_jacobian_();
+  void build_local_matrix_(const size_t element_tag);
   double compute_element_size_(const angem::Polyhedron<double> & cell) const;
 
   const mesh::Mesh & _grid;
