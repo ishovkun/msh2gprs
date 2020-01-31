@@ -39,6 +39,11 @@ class GmshInterface
                            std::vector<std::vector<std::size_t> > & nodeTags,
                            const int dim = -1,
                            const int tag = -1);
+  // get the number of vertices in a gmsh element type
+  static size_t get_n_vertices(const int element_type);
+  // get vtk id of a gmsh element type
+  static int get_vtk_id(const int element_type);
+
  private:
   /* Prohibited */
   GmshInterface();

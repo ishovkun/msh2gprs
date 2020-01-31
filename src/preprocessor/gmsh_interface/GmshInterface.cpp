@@ -226,12 +226,7 @@ void GmshInterface::read_msh_v2_(std::fstream & mesh_file, mesh::Mesh & mesh)
     // fifth - ?
     // later - vertex indices
     static const int vert_shift = 5;  // index of first vertex in line
-
     const int element_type = std::atoi(tokens[1].c_str());
-    if ((element_type < 0) || (element_type > msh_id_to_vtk_id.size()))
-      throw std::invalid_argument("Wrong vtk id type");
-    const int vtk_id = msh_id_to_vtk_id[element_type];
-
     const int marker = std::atoi(tokens[3].c_str());
     std::vector<std::size_t> ivertices(tokens.size() - vert_shift);
     for (int j=0; j<tokens.size() - vert_shift; ++j)
@@ -250,10 +245,10 @@ void GmshInterface::read_msh_v2_(std::fstream & mesh_file, mesh::Mesh & mesh)
       case GmshElementType::edge:
         continue;
       case GmshElementType::face:
-        mesh.insert_face(ivertices, vtk_id, marker);
+        mesh.insert_face(ivertices, get_vtk_id(element_type), marker);
         break;
       case GmshElementType::cell:
-        mesh.insert_cell(ivertices, vtk_id, marker);
+        mesh.insert_cell(ivertices, get_vtk_id(element_type), marker);
         break;
       default:
         const std::string msg = "Unknown element type: "  + std::to_string(element_type);
@@ -462,12 +457,8 @@ void GmshInterface::read_msh_v4_(std::fstream & mesh_file, mesh::Mesh & mesh)
     const int entity_dim = std::atoi(tokens[0].c_str());
     const int entity_tag = std::atoi(tokens[1].c_str());
     const int element_type = std::atoi(tokens[2].c_str());
+    const int n_element_vertices = get_n_vertices(element_type);
 
-    if ((element_type < 0) || (element_type > msh_id_to_vtk_id.size()))
-      throw std::invalid_argument("Wrong vtk id type");
-    const int vtk_id = msh_id_to_vtk_id[element_type];
-
-    const int n_element_vertices = gmsh_element_nvertices[element_type];
     int physical_tag;
     if (entity_dim == 2)
       physical_tag = surface_tags[entity_tag];
@@ -496,15 +487,29 @@ void GmshInterface::read_msh_v4_(std::fstream & mesh_file, mesh::Mesh & mesh)
         vertices[j-vert_shift] = std::atoi(tokens[j].c_str()) - 1;
 
       if (entity_dim == 2)  // faces
-        mesh.insert_face(vertices, vtk_id, physical_tag);
+        mesh.insert_face(vertices, get_vtk_id(element_type), physical_tag);
       if (entity_dim == 3)  // cells
-        mesh.insert_cell(vertices, vtk_id, physical_tag);
+        mesh.insert_cell(vertices, get_vtk_id(element_type), physical_tag);
 
       element++;
     }
   }
 
   std::cout << "n_cells = " << mesh.n_cells() << std::endl;
+}
+
+size_t GmshInterface::get_n_vertices(const int element_type)
+{
+  if ((element_type < 0) || (element_type > gmsh_element_nvertices.size()))
+    throw std::invalid_argument("Wrong vtk id type");
+  return gmsh_element_nvertices[element_type];
+}
+
+int GmshInterface::get_vtk_id(const int element_type)
+{
+  if ((element_type < 0) || (element_type > msh_id_to_vtk_id.size()))
+    throw std::invalid_argument("Wrong vtk id type");
+  return msh_id_to_vtk_id[element_type];
 }
 
 #ifdef WITH_GMSH
