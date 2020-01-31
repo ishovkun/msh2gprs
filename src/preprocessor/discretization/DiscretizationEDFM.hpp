@@ -34,7 +34,8 @@ class DiscretizationEDFM : public DiscretizationBase
   std::vector<const mesh::Face*> pedfm_select_faces_(const mesh::Face & frac_face) const;
   size_t pedfm_find_other_cell_(const mesh::Face & frac, const mesh::Face & other) const;
   // pedfm for a single connection
-  void build_pedfm_(ConnectionData & mm_con, ConnectionData & fm_con);
+  // returns true if need to kill the connection
+  bool build_pedfm_(ConnectionData & mm_con, ConnectionData & fm_con);
   std::pair<size_t,size_t> find_fracture_cv_and_nonfracture_cv_(const ConnectionData & mm_con, const ConnectionData & fm_con) const;
   // ---------------------------- Variables --------------------- //
   const DoFNumbering & m_split_dofs;

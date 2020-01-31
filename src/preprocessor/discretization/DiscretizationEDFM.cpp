@@ -1,7 +1,7 @@
 #include "DiscretizationEDFM.hpp"
 #include "DiscretizationDFM.hpp"
 #include "DiscretizationTPFA.hpp"
-#include "angem/Projections.hpp"
+#include "angem/Projections.hpp"  // provides angem::project
 
 namespace discretization
 {
@@ -155,8 +155,16 @@ void DiscretizationEDFM::build_matrix_edfm_(ConnectionData &con)
   const auto & frac = m_cv_data[con.elements[0]];
   assert ( cell.type == ControlVolumeType::cell );
   assert ( frac.type == ControlVolumeType::face );
+  const double d = con.distances[1]; // average distance from cell to fracture
   const double k_d = con.normal * (cell.permeability * con.normal);  // directional permeability
-  const double T = k_d * con.area / con.distances[1]; // average distance from cell to fracture
+  const double k_f = frac.permeability(0, 0);                        // frac permeability
+  const double T_m = k_d * con.area / d; // matrix half
+  const double T_f = k_f * con.area / d; // matrix half
+  //
+  //  connection transmissibility
+  double T = 0;
+  if ( !std::isnan(1. / (T_m + T_f) ) )
+    T = T_m*T_f / (T_m + T_f);
   con.coefficients = {-T, T};
 }
 
@@ -269,7 +277,7 @@ void DiscretizationEDFM::build_pedfm_()
       for (const mesh::Face* face2 : pedfm_select_faces_(*face))
       {
         const size_t iother_cell = pedfm_find_other_cell_(*face, *face2);
-
+        // std::cout << "try " << frac_cell.index() << " " << iother_cell << std::endl;
         // determing all participating dofs
         const size_t cell_dof1 = m_dofs.cell_dof(frac_cell.index());
         const size_t cell_dof2 = m_dofs.cell_dof(iother_cell);
@@ -279,36 +287,42 @@ void DiscretizationEDFM::build_pedfm_()
         if (cleared_connections.contains(cell_dof1, cell_dof2)) continue;
         // this happens when several edfm's in a cell
         if (iother_cell == frac_cell.index()) continue;
+
         // have connection between two parent cells
-        // std::cout << "\tfrac " << frac_cell.index() << " neib " << iother_cell << std::endl;
-
-        // {
-        //   std::cout << "cell dof1 = " << cell_dof1 << std::endl;
-        //   std::cout << "cell dof2 = " << cell_dof2 << std::endl;
-        //   std::cout << "face_dof = " << face_dof << std::endl;
-        // }
-
         assert( m_con_map.contains( cell_dof1, cell_dof2 ) );
 
-        // projection of frac face onto M-M connecting face
-        const auto projection_points = angem::project(face->polygon(), face2->polygon());
-        if (projection_points.size() < 3) continue;  // no real projection
-
-        const size_t ifrac_mat_con = m_con_map.insert(face_dof, cell_dof2);
-        auto & frac_mat_con = m_con_map.get_data(ifrac_mat_con);
-        frac_mat_con.elements = { face_dof, cell_dof2 };
-        // note that we invoke it after the insertion insertion killls references
-        auto & mat_mat_con = m_con_map.get_data(cell_dof1, cell_dof2);
-
-        const angem::Polygon<double> projection(projection_points);
-        frac_mat_con.normal = projection.normal();
-        frac_mat_con.area = projection.area();
-        build_pedfm_(mat_mat_con, frac_mat_con);
-        // if small trans then kill connection
-        if (std::fabs(mat_mat_con.coefficients[0]) < 1e-6 * std::fabs(frac_mat_con.coefficients[0]))
+        try
         {
-          std::cout << "clear connection "<< frac_cell.index() << " " << iother_cell << std::endl;
-          cleared_connections.insert(cell_dof1, cell_dof2);
+          // projection of frac face onto M-M connecting face
+          const auto projection_points = angem::project(face->polygon(), face2->polygon(), 1e-6);
+          if (projection_points.size() < 3)
+            continue; // no real projection
+
+          const size_t ifrac_mat_con = m_con_map.insert(face_dof, cell_dof2);
+          auto &frac_mat_con = m_con_map.get_data(ifrac_mat_con);
+          frac_mat_con.elements = {face_dof, cell_dof2};
+          // note that we invoke it after the insertion insertion killls
+          // references
+          auto &mat_mat_con = m_con_map.get_data(cell_dof1, cell_dof2);
+
+          const angem::Polygon<double> projection(projection_points);
+          frac_mat_con.normal = projection.normal();
+          frac_mat_con.area = projection.area();
+          const bool kill_connection = build_pedfm_(mat_mat_con, frac_mat_con);
+          // if small trans then kill connection
+          if (kill_connection) {
+            std::cout << "clear connection " << frac_cell.index() << " "
+                      << iother_cell << std::endl;
+            cleared_connections.insert(cell_dof1, cell_dof2);
+            // exit(0);
+          }
+        }
+        catch(const std::runtime_error & err)
+        {
+          // somtimees the projection on the face plane
+          // is outside of the M-M face. This usually
+          // happens when multiple embedded fractures cross a cell
+          continue;
         }
 
       }
@@ -377,7 +391,7 @@ size_t DiscretizationEDFM::pedfm_find_other_cell_(const Face & frac, const Face 
   return frac_cell.index();
 }
 
-void DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
+bool DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
                                       ConnectionData & fm_con)
 {
   assert(mm_con.elements.size() == 2);
@@ -390,6 +404,8 @@ void DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
   const auto & cell1 = m_cv_data[pair_cells.first];
   const auto & cell2 = m_cv_data[pair_cells.second];
   const auto & frac = m_cv_data[fm_con.elements[0]];
+
+  bool kill_connection = false;
 
   // first modify old M_M connection
   {
@@ -406,10 +422,24 @@ void DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
     const double subtracted_area = fm_con.area;
     const double dT1 = subtracted_area * Kp1 / (c1 - cp).norm();
     const double dT2 = subtracted_area * Kp2 / (c2 - cp).norm();
-    const double dT = dT1 * dT2 / (dT1 + dT2);
-    const double new_mm_trans =
-        std::min(std::fabs(mm_con.coefficients[0]) - dT, 0.0);
-    mm_con.coefficients = {-new_mm_trans, new_mm_trans};
+    const double dT = (dT1 + dT2 > 0) ? dT1 * dT2 / (dT1 + dT2) : 0.0;
+    const double T_new = std::max(std::fabs(mm_con.coefficients[0]) - dT, 0.0);
+    mm_con.coefficients = {-T_new, T_new};
+
+    // compute initial trans to decide whether to kill the connection
+    const double T1_init = mm_con.area * Kp1 / c1.distance(cp);
+    const double T2_init = mm_con.area * Kp2 / c2.distance(cp);
+    const double T_init = (T1_init + T2_init > 0) ? T1_init * T2_init / (T1_init + T2_init) : 0.0;
+    // std::cout << "areas: "<< subtracted_area << " " << mm_con.area << std::endl;
+    // std::cout << "trans: " << T_new << " " << T_init << std::endl;
+    if (T_new < 1e-6 * T_init)
+    {
+      // std::cout << "subtracted = " << subtracted_area << std::endl;
+      // std::cout << "mm_con.area = " << mm_con.area << std::endl;
+      // std::cout << "ratio = " << new_mm_trans / T_init << std::endl;
+      kill_connection = true;
+    }
+
   }
 
   // now compute non-neighboring F-M trans
@@ -430,10 +460,12 @@ void DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
     const double T1 = face_area * Kp1 / (c1 - cp).norm();
     const double T2 = face_area * Kp2 / (c2 - cp).norm();
     // face transmissibility
-    const double T = T1*T2 / ( T1 + T2 );
+    double T = 0.0;
+    if ( std::isnormal(T1 + T2) )
+      T = T1*T2 / ( T1 + T2 );
     fm_con.coefficients = {-T, T};
   }
-
+  return kill_connection;
 }
 
 std::pair<size_t,size_t> DiscretizationEDFM::find_fracture_cv_and_nonfracture_cv_(const ConnectionData & mm_con, const ConnectionData & fm_con) const
