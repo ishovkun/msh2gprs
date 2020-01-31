@@ -54,14 +54,25 @@ void DiscretizationDFEM::build_jacobian_()
     const size_t type = element_types[itype];
     for (const size_t tag : element_tags[itype])
     {
-      build_local_matrix_(tag);
+      build_local_matrix_(type, tag);
     }
   }
 }
 
-void DiscretizationDFEM::build_local_matrix_(const size_t element_tag)
+#include "gmsh.h"
+
+void DiscretizationDFEM::build_local_matrix_(const int element_type,
+                                             const size_t element_tag)
 {
-  
+  std::cout << "element_tag = " << element_tag << std::endl;
+  std::vector<double> integration_points;
+  std::vector<double> integration_weights;
+  gmsh::model::mesh::getIntegrationPoints(element_type, "Gauss1",
+                                          integration_points,
+                                          integration_weights);
+  // c) getBasisFunctions (or getBasisFunctionsForElements)
+  // d) getJacobians probably contains both sf gradients and JxW values
+  exit(0);
 }
 
 #else
