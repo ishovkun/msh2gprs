@@ -65,13 +65,47 @@ void DiscretizationDFEM::build_local_matrix_(const int element_type,
                                              const size_t element_tag)
 {
   std::cout << "element_tag = " << element_tag << std::endl;
+  std::cout << "element_type = " << element_type << std::endl;
   std::vector<double> integration_points;
   std::vector<double> integration_weights;
-  gmsh::model::mesh::getIntegrationPoints(element_type, "Gauss1",
-                                          integration_points,
-                                          integration_weights);
+  gmsh::model::mesh::getIntegrationPoints(element_type, "Gauss1", integration_points, integration_weights);
+
+  // std::cout << "integration_points.size() = " << integration_points.size() << std::endl;
+  // for (std::size_t i=0; i<integration_points.size()/3; ++i)
+  // {
+  //   std::cout << integration_points[3*i] << " "
+  //             << integration_points[3*i+1] << " "
+  //             << integration_points[3*i+2] << " "
+  //             << integration_weights[i]
+  //             << std::endl;
+  // }
+
+  // const double n_vertices = GmshInterface::get_n_vertices(element_type);
+  std::vector<double> grad_phi;  // basis function gradients
+
+  // this will be GmshInterface::getFunctionGradients()
+  int n_comp = 1;
+  gmsh::model::mesh::getBasisFunctions(element_type, integration_points, "GradLagrange",
+                                       n_comp, grad_phi) ;
+
+  std::cout <<  " grad u" << std::endl;
+  for (auto v : grad_phi)
+    std::cout << v << std::endl;
+
   // c) getBasisFunctions (or getBasisFunctionsForElements)
   // d) getJacobians probably contains both sf gradients and JxW values
+  std::vector<double> jacobians, determinants, points;
+  gmsh::model::mesh::getJacobians(element_type,
+                                 integration_points,
+                                 jacobians,
+                                 determinants,
+                                 points,
+                                 /* tag = */ -1,
+                                 /* task = */ 0,
+                                 /* n_tasks = */ 1);
+  //
+        // vShapeDerivatives[irow * points_in_element + inodes] +=
+        //   vInversedJac[irow * stdelement[element_form].dimension_size + icol] * (*vPointDeriv_)[icol];
   exit(0);
 }
 
