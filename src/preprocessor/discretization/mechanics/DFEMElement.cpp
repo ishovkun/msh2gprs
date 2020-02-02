@@ -17,13 +17,8 @@ DFEMElement::DFEMElement(const mesh::Cell & cell)
 void DFEMElement::build_()
 {
   api::build_triangulation(_cell);
-  build_shape_functions_();
-}
-
-void DFEMElement::build_shape_functions_()
-{
   build_jacobian_();
- 
+  initial_guess_();
 }
 
 void DFEMElement::build_jacobian_()
@@ -36,8 +31,8 @@ void DFEMElement::build_jacobian_()
   std::vector<std::vector<std::size_t> > node_tags;
   api::get_elements(element_types, element_tags, node_tags, /* dim = */ 3);
   numberNodesEndElements_(element_types, element_tags, node_tags);
-  Eigen::SparseMatrix<double,Eigen::RowMajor> system_matrix(_node_numbering.size(),
-                                                            _node_numbering.size());
+  _system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(_node_numbering.size(),
+                                                              _node_numbering.size());
 
   for (std::size_t itype = 0; itype < element_types.size(); ++itype)
   {
@@ -68,10 +63,8 @@ void DFEMElement::build_jacobian_()
           const size_t jnode = node_tags[itype][fe_values.n_vertices()*itag + j];
           const size_t idof = _node_numbering[inode];
           const size_t jdof = _node_numbering[jnode];
-          system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
+          _system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
         }
-
-    //   build_local_matrix_(type, tag);
     }
   }
 }
@@ -99,6 +92,11 @@ numberNodesEndElements_(std::vector<int> &element_types,
       }
     }
   }
+}
+
+void DFEMElement::initial_guess_()
+{
+
 }
 
 
