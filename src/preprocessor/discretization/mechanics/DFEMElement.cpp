@@ -67,6 +67,7 @@ void DFEMElement::build_jacobian_()
         }
     }
   }
+  _system_matrix.makeCompressed();
 }
 
 void DFEMElement::
@@ -96,7 +97,7 @@ numberNodesEndElements_(std::vector<int> &element_types,
 
 void DFEMElement::initial_guess_()
 {
-
+ 
 }
 
 
