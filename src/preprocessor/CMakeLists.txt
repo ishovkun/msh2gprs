@@ -25,6 +25,7 @@ ADD_LIBRARY(preprocessor
   MultiScaleDataMech.cpp
   UnionFind.cpp
   discretization/mechanics/DiscretizationDFEM.cpp
+  discretization/mechanics/DFEMElement.cpp
 )
 
 SET_TARGET_PROPERTIES (

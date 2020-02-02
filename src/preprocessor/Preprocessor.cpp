@@ -229,7 +229,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
 void Preprocessor::build_dfem_discretization_()
 {
-  DiscretizationDFEM dfem_discr(data.grid);
+  discretization::DiscretizationDFEM dfem_discr(data.grid);
   dfem_discr.build();
 }
 
