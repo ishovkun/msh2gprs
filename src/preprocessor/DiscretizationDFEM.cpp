@@ -53,7 +53,7 @@ void DiscretizationDFEM::build_jacobian_()
   std::cout << "element_tags.size() = " << element_tags.size() << std::endl;
   std::cout << "node-tags.size() = " << node_tags.size() << std::endl;
 
-  Eigen::SparseMatrix<double,Eigen::RowMajor> mat(node_tags.size(), node_tags.size());
+  Eigen::SparseMatrix<double,Eigen::RowMajor> system_matrix(node_tags.size(), node_tags.size());
   for (std::size_t itype = 0; itype < element_types.size(); ++itype)
   {
     const size_t type = element_types[itype];
@@ -76,6 +76,7 @@ void DiscretizationDFEM::build_jacobian_()
       }
       // distribute_local_to_global_();
       std::cout << "cell_matrix = " << cell_matrix << std::endl;
+      // system_matrix.coeffRef(i,j) += v_ij;
       exit(0);
     //   build_local_matrix_(type, tag);
     }

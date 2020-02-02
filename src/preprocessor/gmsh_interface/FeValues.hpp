@@ -38,6 +38,8 @@ class FeValues
   // jacobians
   // [e1g1Jxu, e1g1Jyu, e1g1Jzu, e1g1Jxv, ..., e1g1Jzw, e1g2Jxu, ..., e1gGJzw, e2g1Jxu, ...]
   std::vector<double> _jacobians;
+  // determinant of the Jacobian matrix at each integration
+  // point: [e1g1, e1g2, ... e1gG, e2g1, ...]
   std::vector<double> _determinants;
   std::vector<double> _true_points;  // integration points on real element
   // for only a single element at a time

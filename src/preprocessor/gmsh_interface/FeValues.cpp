@@ -25,7 +25,7 @@ void FeValues::initialize_()
                                        "GradLagrange", _n_comp, _ref_gradients);
   gmsh::model::mesh::getJacobians(_element_type, _ref_points,
                                   _jacobians, _determinants, _true_points,
-                                  /* tag = */ -1, /* task = */ -1, /* n_tasks = */ 1);
+                                  /* tag = */ -1, /* task = */ 0, /* n_tasks = */ 1);
 }
 
 #else
@@ -42,21 +42,26 @@ void FeValues::update(const size_t element_tag)
  
   for (std::size_t q=0; q<n_q_points(); ++q)
   {
-    const size_t j_start = element_tag * n_q_points() * dim * dim;
+    // build local dx_du matrix
+    const size_t j_beg = element_tag * n_q_points() * dim * dim;
     const size_t j_end = element_tag * n_q_points() * dim * dim + dim*dim;
-    std::vector<double> dx_du (_jacobians.begin() + j_start,
-                               _jacobians.begin() + j_end);
+    std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
+
+    // invert du_dx = inv(dx_du)
     std::vector du_dx(dim*dim, 0.0);
     invert_matrix_3x3(dx_du, du_dx);
-    _inv_determinants[q] = determinant_3x3(du_dx);
+    for (auto val : dx_du)
+      std::cout << val << std::endl;
 
+    _inv_determinants[q] = determinant_3x3(du_dx);
+    std::cout << "_inv_determinants[q] = " << _inv_determinants[q] << std::endl;
+
+    // compute shape function gradients
     for (size_t vertex = 0; vertex < nv; ++vertex)
       for (std::size_t i=0; i<3; ++i)
         for (std::size_t j=0; j<3; ++j)
-        {
           _grad[q*dim*nv + dim*vertex + i] +=
               du_dx[i*dim + j] * _ref_gradients[q*dim*vertex + dim*vertex + j];
-        }
   }
 }
 
