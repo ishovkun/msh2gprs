@@ -33,7 +33,7 @@ void FeValues::update(const int element_type, const size_t element_tag)
 {}
 #endif
 
-void FeValues::update(const size_t element_tag)
+void FeValues::update(const size_t cell_number)
 {
   const size_t dim = 3;
   const double nv = n_vertices();
@@ -43,8 +43,8 @@ void FeValues::update(const size_t element_tag)
   for (std::size_t q=0; q<n_q_points(); ++q)
   {
     // build local dx_du matrix
-    const size_t j_beg = element_tag * n_q_points() * dim * dim;
-    const size_t j_end = element_tag * n_q_points() * dim * dim + dim*dim;
+    const size_t j_beg = cell_number * n_q_points() * dim * dim;
+    const size_t j_end = cell_number * n_q_points() * dim * dim + dim*dim;
     std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
 
     // invert du_dx = inv(dx_du)

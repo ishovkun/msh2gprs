@@ -18,13 +18,22 @@ class DiscretizationDFEM
   void build();
 
  protected:
+  // build discretization for a single cell of the original grid
+  // that consists of meshing the element and computing shape functons
   void build_(const mesh::Cell & cell);
-  void build_grid_(const angem::Polyhedron<double> & cell) const;
+  // build dfem shape functions
   void build_shape_functions_();
+  // build the jacobian of a laplace equation of a single element of the original
+  // mesh that is discretized with gmsh
   void build_jacobian_();
   void build_local_matrix_(const int element_type, const size_t element_tag);
-  double compute_element_size_(const angem::Polyhedron<double> & cell) const;
+  // fill out element_numbering and node_numbering
+  void numberNodesEndElements_(std::vector<int> &element_types,
+                        std::vector<std::vector<std::size_t> > & element_tags,
+                        const std::vector<std::vector<std::size_t> > &node_tags);
 
+  std::unordered_map<size_t, size_t> _cell_numbering;
+  std::unordered_map<size_t, size_t> _node_numbering;
   const mesh::Mesh & _grid;
 };
 
