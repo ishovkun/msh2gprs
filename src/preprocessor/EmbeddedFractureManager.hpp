@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PreprocessorConfig.hpp"
-#include "discretization/DoFNumbering.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
 #include "SimData.hpp"
 
 namespace gprs_data {

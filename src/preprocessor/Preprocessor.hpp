@@ -5,7 +5,7 @@
 #include "CellPropertyManager.hpp"
 #include "DiscreteFractureManager.hpp"
 #include "EmbeddedFractureManager.hpp"
-#include "discretization/DoFNumbering.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
 
 #include <experimental/filesystem>  // filesystem
 

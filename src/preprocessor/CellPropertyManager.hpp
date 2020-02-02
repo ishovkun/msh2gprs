@@ -2,7 +2,7 @@
 
 #include "PreprocessorConfig.hpp"
 #include "SimData.hpp"
-#include "discretization/DoFNumbering.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
 #include "muparser/muParser.h" // parser for user-defined expressions for reservoir data
 
 namespace gprs_data {

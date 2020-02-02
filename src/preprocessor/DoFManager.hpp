@@ -2,9 +2,9 @@
 
 #include "PreprocessorConfig.hpp"  // EDFMMethod
 #include "Mesh.hpp"
-#include "discretization/DoFNumbering.hpp"
-#include "discretization/ControlVolumeData.hpp"
-#include "discretization/ConnectionData.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
+#include "discretization/flow/ControlVolumeData.hpp"
+#include "discretization/flow/ConnectionData.hpp"
 #include <unordered_set>  //provides unordered_set
 
 namespace gprs_data {

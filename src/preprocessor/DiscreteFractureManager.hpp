@@ -2,7 +2,7 @@
 
 #include "PreprocessorConfig.hpp"
 #include "SimData.hpp"
-#include "discretization/DoFNumbering.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
 #include <set>
 
 namespace gprs_data {

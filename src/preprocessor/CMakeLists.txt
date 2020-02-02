@@ -12,10 +12,10 @@ ADD_LIBRARY(preprocessor
   BoundaryConditionManager.cpp
   WellManager.cpp
   Well.cpp
-  discretization/DiscretizationBase.cpp
-  discretization/DiscretizationTPFA.cpp
-  discretization/DiscretizationDFM.cpp
-  discretization/DiscretizationEDFM.cpp
+  discretization/flow/DiscretizationBase.cpp
+  discretization/flow/DiscretizationTPFA.cpp
+  discretization/flow/DiscretizationDFM.cpp
+  discretization/flow/DiscretizationEDFM.cpp
   DoFManager.cpp
   OutputDataGPRS.cpp
   OutputDataVTK.cpp
@@ -24,7 +24,7 @@ ADD_LIBRARY(preprocessor
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
   UnionFind.cpp
-  DiscretizationDFEM.cpp
+  discretization/mechanics/DiscretizationDFEM.cpp
 )
 
 SET_TARGET_PROPERTIES (

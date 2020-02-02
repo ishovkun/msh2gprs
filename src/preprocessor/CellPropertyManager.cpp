@@ -1,5 +1,5 @@
 #include "CellPropertyManager.hpp"
-#include "discretization/DoFNumbering.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
 
 namespace gprs_data {
 

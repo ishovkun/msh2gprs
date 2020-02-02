@@ -36,9 +36,9 @@ void DiscretizationDFEM::build_(const mesh::Cell & cell)
 void DiscretizationDFEM::build_shape_functions_()
 {
   build_jacobian_();
+  // shape_functions_initial_guess();
   // run_msrsb_process();
   // extract_shape_functions_();
-
 }
 
 void DiscretizationDFEM::build_jacobian_()

@@ -1,7 +1,7 @@
 #pragma once
 #include "SimData.hpp"
 #include "PreprocessorConfig.hpp"
-#include "discretization/DoFNumbering.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
 #include "yaml-cpp/yaml.h"  // IWYU pragma: keep
 
 
