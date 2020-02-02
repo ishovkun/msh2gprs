@@ -1,4 +1,5 @@
 #include "DiscretizationDFEM.hpp"
+#include "gmsh_interface/FeValues.hpp"
 
 namespace gprs_data
 {
@@ -49,12 +50,16 @@ void DiscretizationDFEM::build_jacobian_()
   GmshInterface::get_elements(element_types, element_tags, node_tags, /* dim = */ 3);
   std::cout << "element_tags.size() = " << element_tags.size() << std::endl;
   std::cout << "node-tags.size() = " << node_tags.size() << std::endl;
+
   for (std::size_t itype = 0; itype < element_types.size(); ++itype)
   {
     const size_t type = element_types[itype];
+    FeValues fe_values(type, element_tags[itype].size());
     for (const size_t tag : element_tags[itype])
     {
-      build_local_matrix_(type, tag);
+      fe_values.update(tag);
+      exit(0);
+    //   build_local_matrix_(type, tag);
     }
   }
 }
@@ -66,46 +71,44 @@ void DiscretizationDFEM::build_local_matrix_(const int element_type,
 {
   std::cout << "element_tag = " << element_tag << std::endl;
   std::cout << "element_type = " << element_type << std::endl;
-  std::vector<double> integration_points;
-  std::vector<double> integration_weights;
-  gmsh::model::mesh::getIntegrationPoints(element_type, "Gauss1", integration_points, integration_weights);
+  // std::vector<double> integration_points;
+  // std::vector<double> integration_weights;
+  // gmsh::model::mesh::getIntegrationPoints(element_type, "Gauss1", integration_points, integration_weights);
 
-  // std::cout << "integration_points.size() = " << integration_points.size() << std::endl;
-  // for (std::size_t i=0; i<integration_points.size()/3; ++i)
-  // {
-  //   std::cout << integration_points[3*i] << " "
-  //             << integration_points[3*i+1] << " "
-  //             << integration_points[3*i+2] << " "
-  //             << integration_weights[i]
-  //             << std::endl;
-  // }
+  // // std::cout << "integration_points.size() = " << integration_points.size() << std::endl;
+  // // for (std::size_t i=0; i<integration_points.size()/3; ++i)
+  // // {
+  // //   std::cout << integration_points[3*i] << " "
+  // //             << integration_points[3*i+1] << " "
+  // //             << integration_points[3*i+2] << " "
+  // //             << integration_weights[i]
+  // //             << std::endl;
+  // // }
 
-  // const double n_vertices = GmshInterface::get_n_vertices(element_type);
-  std::vector<double> grad_phi;  // basis function gradients
+  // // const double n_vertices = GmshInterface::get_n_vertices(element_type);
+  // std::vector<double> grad_phi;  // basis function gradients
 
-  // this will be GmshInterface::getFunctionGradients()
-  int n_comp = 1;
-  gmsh::model::mesh::getBasisFunctions(element_type, integration_points, "GradLagrange",
-                                       n_comp, grad_phi) ;
+  // // this will be GmshInterface::getFunctionGradients()
+  // int n_comp = 1;
+  // gmsh::model::mesh::getBasisFunctions(element_type, integration_points, "GradLagrange",
+  //                                      n_comp, grad_phi) ;
 
-  std::cout <<  " grad u" << std::endl;
-  for (auto v : grad_phi)
-    std::cout << v << std::endl;
+  // std::cout <<  " grad u" << std::endl;
+  // for (auto v : grad_phi)
+  //   std::cout << v << std::endl;
 
-  // c) getBasisFunctions (or getBasisFunctionsForElements)
-  // d) getJacobians probably contains both sf gradients and JxW values
-  std::vector<double> jacobians, determinants, points;
-  gmsh::model::mesh::getJacobians(element_type,
-                                 integration_points,
-                                 jacobians,
-                                 determinants,
-                                 points,
-                                 /* tag = */ -1,
-                                 /* task = */ 0,
-                                 /* n_tasks = */ 1);
-  //
-        // vShapeDerivatives[irow * points_in_element + inodes] +=
-        //   vInversedJac[irow * stdelement[element_form].dimension_size + icol] * (*vPointDeriv_)[icol];
+  // // c) getBasisFunctions (or getBasisFunctionsForElements)
+  // // d) getJacobians probably contains both sf gradients and JxW values
+  // std::vector<double> jacobians, determinants, points;
+  // gmsh::model::mesh::getJacobians(element_type,
+  //                                integration_points,
+  //                                jacobians,
+  //                                determinants,
+  //                                points,
+  //                                /* tag = */ -1,
+  //                                /* task = */ 0,
+  //                                /* n_tasks = */ 1);
+  // //
   exit(0);
 }
 
