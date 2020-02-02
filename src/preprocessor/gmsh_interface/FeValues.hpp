@@ -9,6 +9,7 @@ using Point = angem::Point<3,double>;
 class FeValues
 {
  public:
+  // Constructor
   FeValues(const int element_type, const size_t n_elements);
   /* update function gradients and jacobians */
   void update(const size_t element_tag);

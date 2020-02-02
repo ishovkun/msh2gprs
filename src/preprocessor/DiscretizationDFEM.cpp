@@ -1,5 +1,7 @@
 #include "DiscretizationDFEM.hpp"
 #include "gmsh_interface/FeValues.hpp"
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 namespace gprs_data
 {
@@ -51,6 +53,7 @@ void DiscretizationDFEM::build_jacobian_()
   std::cout << "element_tags.size() = " << element_tags.size() << std::endl;
   std::cout << "node-tags.size() = " << node_tags.size() << std::endl;
 
+  Eigen::SparseMatrix<double,Eigen::RowMajor> mat(node_tags.size(), node_tags.size());
   for (std::size_t itype = 0; itype < element_types.size(); ++itype)
   {
     const size_t type = element_types[itype];
@@ -59,16 +62,20 @@ void DiscretizationDFEM::build_jacobian_()
     for (const size_t tag : element_tags[itype])
     {
       fe_values.update(tag);
+      Eigen::MatrixXd cell_matrix = Eigen::MatrixXd::Zero(fe_values.n_vertices(),
+                                                          fe_values.n_vertices());
+      std::cout << "cell_matrix = " << cell_matrix << std::endl;
 
       for (size_t q = 0; q < fe_values.n_q_points(); ++q)
       {
-          // for (size_t i = 0; i < fe_values.n_vertices(); ++i)
-          //   for (size_t j = 0; j < fe_values.n_vertices(); ++j)
-              // cell_matrix(i, j) +=
-              //   (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-              //    fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-              //    fe_values.JxW(q_index));           // dx
+        for (size_t i = 0; i < fe_values.n_vertices(); ++i)
+          for (size_t j = 0; j < fe_values.n_vertices(); ++j)
+            cell_matrix(i, j) += (fe_values.grad(i, q) * // grad phi_i(x_q)
+                                  fe_values.grad(j, q) * // grad phi_j(x_q)
+                                  fe_values.JxW(q));           // dx
       }
+      // distribute_local_to_global_();
+      std::cout << "cell_matrix = " << cell_matrix << std::endl;
       exit(0);
     //   build_local_matrix_(type, tag);
     }
@@ -82,44 +89,6 @@ void DiscretizationDFEM::build_local_matrix_(const int element_type,
 {
   std::cout << "element_tag = " << element_tag << std::endl;
   std::cout << "element_type = " << element_type << std::endl;
-  // std::vector<double> integration_points;
-  // std::vector<double> integration_weights;
-  // gmsh::model::mesh::getIntegrationPoints(element_type, "Gauss1", integration_points, integration_weights);
-
-  // // std::cout << "integration_points.size() = " << integration_points.size() << std::endl;
-  // // for (std::size_t i=0; i<integration_points.size()/3; ++i)
-  // // {
-  // //   std::cout << integration_points[3*i] << " "
-  // //             << integration_points[3*i+1] << " "
-  // //             << integration_points[3*i+2] << " "
-  // //             << integration_weights[i]
-  // //             << std::endl;
-  // // }
-
-  // // const double n_vertices = GmshInterface::get_n_vertices(element_type);
-  // std::vector<double> grad_phi;  // basis function gradients
-
-  // // this will be GmshInterface::getFunctionGradients()
-  // int n_comp = 1;
-  // gmsh::model::mesh::getBasisFunctions(element_type, integration_points, "GradLagrange",
-  //                                      n_comp, grad_phi) ;
-
-  // std::cout <<  " grad u" << std::endl;
-  // for (auto v : grad_phi)
-  //   std::cout << v << std::endl;
-
-  // // c) getBasisFunctions (or getBasisFunctionsForElements)
-  // // d) getJacobians probably contains both sf gradients and JxW values
-  // std::vector<double> jacobians, determinants, points;
-  // gmsh::model::mesh::getJacobians(element_type,
-  //                                integration_points,
-  //                                jacobians,
-  //                                determinants,
-  //                                points,
-  //                                /* tag = */ -1,
-  //                                /* task = */ 0,
-  //                                /* n_tasks = */ 1);
-  // //
   exit(0);
 }
 
