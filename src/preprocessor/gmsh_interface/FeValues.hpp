@@ -18,6 +18,10 @@ class FeValues
   Point grad(const size_t i, const size_t q) const;
   // get determinant
   double JxW(const size_t q) const;
+  // number of integration points
+  size_t n_q_points() const;
+  // number of vertices in the reference element
+  size_t n_vertices() const;
 
  protected:
   void initialize_();

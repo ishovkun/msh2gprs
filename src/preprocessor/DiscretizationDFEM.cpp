@@ -55,9 +55,20 @@ void DiscretizationDFEM::build_jacobian_()
   {
     const size_t type = element_types[itype];
     FeValues fe_values(type, element_tags[itype].size());
+
     for (const size_t tag : element_tags[itype])
     {
       fe_values.update(tag);
+
+      for (size_t q = 0; q < fe_values.n_q_points(); ++q)
+      {
+          // for (size_t i = 0; i < fe_values.n_vertices(); ++i)
+          //   for (size_t j = 0; j < fe_values.n_vertices(); ++j)
+              // cell_matrix(i, j) +=
+              //   (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
+              //    fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
+              //    fe_values.JxW(q_index));           // dx
+      }
       exit(0);
     //   build_local_matrix_(type, tag);
     }

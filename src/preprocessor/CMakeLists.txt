@@ -34,9 +34,14 @@ SET_TARGET_PROPERTIES (
 
 set(preprocessor_libs ${preprocessor_libs} angem muparser mesh yaml-cpp)
 
-if(Gmsh_FOUND)
+if(USE_GMSH)
   TARGET_INCLUDE_DIRECTORIES(preprocessor PRIVATE ${GMSH_INCLUDE_DIRS})
   set(preprocessor_libs ${preprocessor_libs} ${Gmsh_LIBRARIES})
+endif()
+
+if(USE_EIGEN)
+  TARGET_INCLUDE_DIRECTORIES(preprocessor PRIVATE ${EIGEN_INCLUDE_DIR})
+  set(preprocessor_libs ${preprocessor_libs} Eigen3::Eigen)
 endif()
 
 if(METIS_FOUND)

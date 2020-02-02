@@ -36,26 +36,25 @@ void FeValues::update(const int element_type, const size_t element_tag)
 void FeValues::update(const size_t element_tag)
 {
   const size_t dim = 3;
-  const size_t n_q_points = _weights.size();
-  const double n_vertices = _ref_gradients.size() / dim / n_q_points;
-  _grad.assign( _ref_gradients.size() * n_q_points, 0.0 );
+  const double nv = n_vertices();
+  _grad.assign( _ref_gradients.size() * n_q_points(), 0.0 );
   _inv_determinants.resize(_weights.size());
  
-  for (std::size_t q=0; q<n_q_points; ++q)
+  for (std::size_t q=0; q<n_q_points(); ++q)
   {
-    const size_t j_start = element_tag * n_q_points * dim * dim;
-    const size_t j_end = element_tag * n_q_points * dim * dim + dim*dim;
+    const size_t j_start = element_tag * n_q_points() * dim * dim;
+    const size_t j_end = element_tag * n_q_points() * dim * dim + dim*dim;
     std::vector<double> dx_du (_jacobians.begin() + j_start,
                                _jacobians.begin() + j_end);
     std::vector du_dx(dim*dim, 0.0);
     invert_matrix_3x3(dx_du, du_dx);
     _inv_determinants[q] = determinant_3x3(du_dx);
 
-    for (size_t vertex = 0; vertex < n_vertices; ++vertex)
+    for (size_t vertex = 0; vertex < nv; ++vertex)
       for (std::size_t i=0; i<3; ++i)
         for (std::size_t j=0; j<3; ++j)
         {
-          _grad[q*dim*n_vertices + dim*vertex + i] +=
+          _grad[q*dim*nv + dim*vertex + i] +=
               du_dx[i*dim + j] * _ref_gradients[q*dim*vertex + dim*vertex + j];
         }
   }
@@ -65,24 +64,34 @@ double FeValues::value(size_t i, size_t q) const
 {
   throw std::runtime_error("not implemeneted");
   const double dim = 3;
-  const size_t n_q_points = _weights.size();
-  const double n_vertices = _ref_gradients.size() / dim / n_q_points;
-  assert( q < n_q_points );
+  const double n_vertices = _ref_gradients.size() / dim / n_q_points();
+  assert( q < n_q_points() );
 
   return 0.0;
 }
 
+size_t FeValues::n_q_points() const
+{
+  return _weights.size();
+}
+
+size_t FeValues::n_vertices() const
+{
+  const double dim = 3;
+  return _ref_gradients.size() / dim / n_q_points();
+}
+
+
 Point FeValues::grad(size_t vertex, size_t q) const
 {
   const double dim = 3;
-  const size_t n_q_points = _weights.size();
-  const double n_vertices = _ref_gradients.size() / dim / n_q_points;
-  assert( q < n_q_points );
-  assert( vertex < n_vertices );
+  const double nv = n_vertices();
+  assert( q < n_q_points() );
+  assert( vertex < nv );
   Point p;
-  p[0] = _grad[q*dim*n_vertices + dim*vertex];
-  p[1] = _grad[q*dim*n_vertices + dim*vertex + 1];
-  p[2] = _grad[q*dim*n_vertices + dim*vertex + 2];
+  p[0] = _grad[q*dim*nv + dim*vertex];
+  p[1] = _grad[q*dim*nv + dim*vertex + 1];
+  p[2] = _grad[q*dim*nv + dim*vertex + 2];
   return p;
 }
 
