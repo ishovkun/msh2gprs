@@ -1,7 +1,6 @@
 #include "DFEMElement.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
 #include "gmsh_interface/FeValues.hpp"
-#include <Eigen/Dense>
 
 namespace discretization {
 
@@ -26,22 +25,19 @@ void DFEMElement::build_jacobian_()
   // 1. ask gmsh to provide gaussian points, shape functions, and jacobians
   // for our tetras
   // 2. build element jacobian for the homogeneous laplace equation
-  std::vector<int> element_types;
-  std::vector<std::vector<std::size_t> > element_tags;
-  std::vector<std::vector<std::size_t> > node_tags;
-  api::get_elements(element_types, element_tags, node_tags, /* dim = */ 3);
-  numberNodesEndElements_(element_types, element_tags, node_tags);
+  api::get_elements(_element_types, _element_tags, _node_tags, /* dim = */ 3);
+  numberNodesEndElements_(_element_types, _element_tags, _node_tags);
   _system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(_node_numbering.size(),
                                                               _node_numbering.size());
 
-  for (std::size_t itype = 0; itype < element_types.size(); ++itype)
+  for (std::size_t itype = 0; itype < _element_types.size(); ++itype)
   {
-    const size_t type = element_types[itype];
-    FeValues fe_values(type, element_tags[itype].size());
+    const size_t type = _element_types[itype];
+    FeValues fe_values(type, _element_tags[itype].size());
 
-    for (std::size_t itag=0; itag<element_tags[itype].size(); ++itag)
+    for (std::size_t itag=0; itag<_element_tags[itype].size(); ++itag)
     {
-      const size_t tag = element_tags[itype][itag];
+      const size_t tag = _element_tags[itype][itag];
       const size_t cell_number = _cell_numbering[tag];
       fe_values.update(cell_number);
       Eigen::MatrixXd cell_matrix = Eigen::MatrixXd::Zero(fe_values.n_vertices(),
@@ -59,8 +55,8 @@ void DFEMElement::build_jacobian_()
       for (size_t i = 0; i < fe_values.n_vertices(); ++i)
         for (size_t j = 0; j < fe_values.n_vertices(); ++j)
         {
-          const size_t inode = node_tags[itype][fe_values.n_vertices()*itag + i];
-          const size_t jnode = node_tags[itype][fe_values.n_vertices()*itag + j];
+          const size_t inode = _node_tags[itype][fe_values.n_vertices()*itag + i];
+          const size_t jnode = _node_tags[itype][fe_values.n_vertices()*itag + j];
           const size_t idof = _node_numbering[inode];
           const size_t jdof = _node_numbering[jnode];
           _system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
@@ -97,7 +93,26 @@ numberNodesEndElements_(std::vector<int> &element_types,
 
 void DFEMElement::initial_guess_()
 {
- 
+  const size_t parent_n_vert = _cell.vertices().size();
+  for (std::size_t i=0; i<parent_n_vert; ++i)
+    _basis_functions.emplace_back(_node_numbering.size());
+
+  // std::cout << "vertices" << std::endl;
+
+  // get nodes that form the vertices of the original elements
+  std::vector<size_t> node_tags;
+  std::vector<double> coord, parametric_coord;
+gmsh::model::mesh::getNodes(node_tags, coord, parametric_coord,
+                          0, 0, /* incl boundary */ true,
+                          /* return parametric = */ false);
+  for (auto & it : node_tags)
+      std::cout << it << std::endl;
+  std::cout << "coord" << std::endl;
+  for (auto v : coord)
+    std::cout << v << std::endl;
+  std::cout << "cell v" << std::endl;
+  std::cout << _cell.polyhedron()->get_points()[0] << std::endl;
+
 }
 
 

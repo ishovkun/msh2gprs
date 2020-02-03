@@ -2,7 +2,8 @@
 
 #include "mesh/Cell.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
-#include <Eigen/Sparse>
+#include <Eigen/Sparse>  // provides SparseMatrix
+#include <Eigen/Dense>  // provides MatrixXd, VectorXd
 
 namespace discretization {
 
@@ -23,9 +24,14 @@ class DFEMElement
 
  private:
   const mesh::Cell & _cell;
+  std::vector<int> _element_types;
+  std::vector<std::vector<std::size_t> > _element_tags;
+  std::vector<std::vector<std::size_t> > _node_tags;
   std::unordered_map<size_t, size_t> _cell_numbering;
   std::unordered_map<size_t, size_t> _node_numbering;
   Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;
+  // msrsb basis function
+   std::vector<Eigen::VectorXd> _basis_functions;
 };
 
 }  // end namespace discretization

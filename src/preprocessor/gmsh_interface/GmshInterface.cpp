@@ -534,6 +534,9 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
     const Point & vertex = vertices[i];
     gmsh::model::geo::addPoint(vertex.x(), vertex.y(), vertex.z(),
                                discr_element_size, /*tag = */ i);
+    // gmsh::model::setPhysicalName(0, i, std::to_string(i));
+    std::vector<int> elementary_tags = {i};
+    gmsh::model::addPhysicalGroup(0, elementary_tags, i+1);
   }
 
   // build lines (edges)

@@ -50,11 +50,9 @@ void FeValues::update(const size_t cell_number)
     // invert du_dx = inv(dx_du)
     std::vector du_dx(dim*dim, 0.0);
     invert_matrix_3x3(dx_du, du_dx);
-    for (auto val : dx_du)
-      std::cout << val << std::endl;
 
     _inv_determinants[q] = determinant_3x3(du_dx);
-    std::cout << "_inv_determinants[q] = " << _inv_determinants[q] << std::endl;
+    // std::cout << "_inv_determinants[q] = " << _inv_determinants[q] << std::endl;
 
     // compute shape function gradients
     for (size_t vertex = 0; vertex < nv; ++vertex)
