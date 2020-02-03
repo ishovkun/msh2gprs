@@ -243,4 +243,43 @@ void VTKWriter::enter_section_point_data(const std::size_t n_vertices,
   out << "POINT_DATA" << "\t" << n_vertices << std::endl;
 }
 
+void VTKWriter::write_geometry(const std::vector<angem::Point<3,double>>  &vertices,
+                               const std::vector<std::vector<size_t>> &cells,
+                               const std::vector<int> & cell_types,
+                               std::ofstream & out)
+{
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Element \n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  const std::size_t n_points = vertices.size();
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+  for (const auto & p : vertices) out << p << std::endl;
+
+  // cells
+  const std::size_t n_cells = cells.size();
+  std::size_t vind_size_total = 0;
+  for (const auto & cell : cells)
+    vind_size_total += cell.size();
+
+  out << "CELLS" << "\t"
+      << n_cells << "\t"
+      << vind_size_total + n_cells
+      << std::endl;
+
+  for (const auto & cell : cells)
+  {
+    out << cell.size() << "\t";
+    for (const size_t v : cell) out << v << "\t";
+    out << std::endl;
+  }
+
+  out << endl;
+  out << "CELL_TYPES" << "\t" << n_cells << std::endl;
+  for (const int type : cell_types)
+    out << type << std::endl;
+}
+
+
 }  // end namespace

@@ -21,12 +21,15 @@ class DFEMElement
                         const std::vector<std::vector<std::size_t> > &node_tags);
   // build vectors for shape functions and fill them with initial guess values
   void initial_guess_();
+  // just for debugging
+  void debug_save_shape_functions_();
 
  private:
   const mesh::Cell & _cell;
   std::vector<int> _element_types;
   std::vector<std::vector<std::size_t> > _element_tags;
   std::vector<std::vector<std::size_t> > _node_tags;
+  std::vector<angem::Point<3,double>> _node_coord;
   std::unordered_map<size_t, size_t> _cell_numbering;
   std::unordered_map<size_t, size_t> _node_numbering;
   Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;

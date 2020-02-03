@@ -22,6 +22,11 @@ class VTKWriter
   static void write_surface_geometry(const std::vector<Point>                    & vertices,
                                      const std::vector<std::vector<std::size_t>> & cells,
                                      std::ofstream                               & out);
+  // for gmsh
+  static void write_geometry(const std::vector<angem::Point<3,double>>  &vertices,
+                             const std::vector<std::vector<size_t>> &cells,
+                             const std::vector<int> & cell_types,
+                             std::ofstream & out);
 
   static void write_geometry(const Mesh & grid, const std::string & fname);
   static void write_geometry(const Mesh & grid, std::ofstream & out);
