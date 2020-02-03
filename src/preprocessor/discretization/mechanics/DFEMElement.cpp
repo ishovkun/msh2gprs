@@ -97,7 +97,7 @@ void DFEMElement::initial_guess_()
 {
   const size_t parent_n_vert = _cell.vertices().size();
   for (std::size_t i=0; i<parent_n_vert; ++i)
-    _basis_functions.emplace_back(_node_numbering.size());
+    _basis_functions.push_back(Eigen::VectorXd::Zero(_node_numbering.size()));
 
   // std::cout << "vertices" << std::endl;
 
