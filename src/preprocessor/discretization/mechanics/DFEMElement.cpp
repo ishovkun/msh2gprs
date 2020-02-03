@@ -19,7 +19,13 @@ void DFEMElement::build_()
   api::build_triangulation(_cell);
   build_jacobian_();
   initial_guess_();
-  debug_save_shape_functions_();
+  run_msrsb_();
+  // debug_save_shape_functions_();
+}
+
+void DFEMElement::run_msrsb_()
+{
+
 }
 
 void DFEMElement::build_jacobian_()
@@ -99,21 +105,19 @@ void DFEMElement::initial_guess_()
   for (std::size_t i=0; i<parent_n_vert; ++i)
     _basis_functions.push_back(Eigen::VectorXd::Zero(_node_numbering.size()));
 
-  // std::cout << "vertices" << std::endl;
-
   // get nodes that form the vertices of the original elements
-  std::vector<size_t> node_tags;
-  std::vector<double> coord, parametric_coord;
-gmsh::model::mesh::getNodes(node_tags, coord, parametric_coord,
-                          0, 0, /* incl boundary */ true,
-                          /* return parametric = */ false);
-  for (auto & it : node_tags)
-      std::cout << it << std::endl;
-  std::cout << "coord" << std::endl;
-  for (auto v : coord)
-    std::cout << v << std::endl;
-  std::cout << "cell v" << std::endl;
-  std::cout << _cell.polyhedron()->get_points()[0] << std::endl;
+  // std::vector<size_t> node_tags;
+  // std::vector<double> coord, parametric_coord;
+  // gmsh::model::mesh::getNodes(node_tags, coord, parametric_coord,
+  //                             0, 0, /* incl boundary */ true,
+  //                             /* return parametric = */ false);
+  // for (auto & it : node_tags)
+  //     std::cout << it << std::endl;
+  // std::cout << "coord" << std::endl;
+  // for (auto v : coord)
+  //   std::cout << v << std::endl;
+  // std::cout << "cell v" << std::endl;
+  // std::cout << _cell.polyhedron()->get_points()[0] << std::endl;
 
   // all nodes
   // std::cout << std::endl;
@@ -121,9 +125,7 @@ gmsh::model::mesh::getNodes(node_tags, coord, parametric_coord,
   std::vector<std::size_t> tgs;
   std::vector<double> crds, prcrds;
   gmsh::model::mesh::getNodes(tgs, crds, prcrds, /*dim*/ 3,
-                             /* tag */ -1,
-                             /*includeBoundary =*/ true,
-                             false);
+                             /* tag */ -1, /*includeBoundary =*/ true, false);
   _node_coord.resize(crds.size() / 3);
   for (std::size_t i=0; i<crds.size()/3; ++i)
   {
@@ -164,17 +166,24 @@ void DFEMElement::debug_save_shape_functions_()
       cells.push_back( std::move(cell) );
     }
   }
+
   std::vector<int> cell_types(cells.size(), angem::VTK_ID::TetrahedronID);
+
   std::string fname = "shape_functions.vtk";
   std::ofstream out;
   out.open(fname.c_str());
 
   IO::VTKWriter::write_geometry(_node_coord, cells, cell_types, out);
   IO::VTKWriter::enter_section_point_data(_node_coord.size(), out);
-  std::vector<double> output(_node_coord.size());
-  for (std::size_t i=0; i<_node_coord.size(); ++i)
-    output[i] = _basis_functions[0][i];
-  IO::VTKWriter::add_data(output, "basis0", out);
+
+  const size_t n_parent_vertices = _cell.vertices().size();
+  for (std::size_t j=0; j<n_parent_vertices; ++j)
+  {
+    std::vector<double> output(_node_coord.size());
+    for (std::size_t i=0; i<_node_coord.size(); ++i)
+      output[i] = _basis_functions[j][i];
+    IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
+  }
   out.close();
 }
 

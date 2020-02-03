@@ -23,6 +23,8 @@ class DFEMElement
   void initial_guess_();
   // just for debugging
   void debug_save_shape_functions_();
+  // run iterative msrsb process to compute shape functions
+  void run_msrsb_();
 
  private:
   const mesh::Cell & _cell;
