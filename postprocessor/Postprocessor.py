@@ -74,9 +74,14 @@ class Postprocessor:
                         str(len( self.config["dfm_cell_to_flow_dof"] )) + " " +\
                         str(len(self.config["edfm_cell_to_flow_dof"]))
 
-
+        # Extract flor, edfm, and dfm data
         self.addDataToReader_(self.matrix_flow_grid_reader, data, self.config["matrix_cell_to_flow_dof"])
+        self.addDataToReader_(self.edfm_flow_grid_reader, data, self.config["edfm_cell_to_flow_dof"])
+        self.addDataToReader_(self.dfm_flow_grid_reader, data, self.config["dfm_cell_to_flow_dof"])
+        # save output
         self.writeFile_(self.matrix_flow_grid_reader, "matrix-%d"%self.output_file_number)
+        self.writeFile_(self.edfm_flow_grid_reader, "edfm-%d"%self.output_file_number)
+        self.writeFile_(self.dfm_flow_grid_reader, "dfm-%d"%self.output_file_number)
         self.output_file_number += 1
 
     def addDataToReader_(self, reader, data, mapping):

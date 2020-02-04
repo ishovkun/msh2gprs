@@ -116,6 +116,8 @@ void ConnectionMap<DataType>::remove(const std::size_t ielement, const std::size
   auto it = connections.find(hash);
   if (it != connections.end())
     connections.erase(it);
+  else throw std::invalid_argument("connection " + std::to_string(ielement) + " " +
+                                   std::to_string(jelement) + " does not exist");
 }
 
 template <typename DataType>
