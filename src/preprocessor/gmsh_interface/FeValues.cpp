@@ -43,23 +43,22 @@ void FeValues::update(const size_t cell_number)
   for (std::size_t q=0; q<n_q_points(); ++q)
   {
     // build local dx_du matrix
-    const size_t j_beg = cell_number * n_q_points() * dim * dim;
-    const size_t j_end = cell_number * n_q_points() * dim * dim + dim*dim;
+    // dim*dim derivative entries for n_gauss_points for each cell
+    const size_t j_beg = cell_number       * n_q_points() * (dim * dim);
+    const size_t j_end = (cell_number + 1) * n_q_points() * (dim * dim);
     std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
 
     // invert du_dx = inv(dx_du)
     std::vector du_dx(dim*dim, 0.0);
     invert_matrix_3x3(dx_du, du_dx);
-
     _inv_determinants[q] = determinant_3x3(du_dx);
-    // std::cout << "_inv_determinants[q] = " << _inv_determinants[q] << std::endl;
 
     // compute shape function gradients
     for (size_t vertex = 0; vertex < nv; ++vertex)
-      for (std::size_t i=0; i<3; ++i)
-        for (std::size_t j=0; j<3; ++j)
+      for (std::size_t i=0; i<dim; ++i)
+        for (std::size_t j=0; j<dim; ++j)
           _grad[q*dim*nv + dim*vertex + i] +=
-              du_dx[i*dim + j] * _ref_gradients[q*dim*vertex + dim*vertex + j];
+              du_dx[i*dim + j] * _ref_gradients[q*dim*nv + dim*vertex + j];
   }
 }
 

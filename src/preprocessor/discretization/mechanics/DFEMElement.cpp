@@ -139,31 +139,31 @@ void DFEMElement::build_jacobian_()
   {
     const size_t type = _element_types[itype];
     FeValues fe_values(type, _element_tags[itype].size());
+    Eigen::MatrixXd cell_matrix(fe_values.n_vertices(), fe_values.n_vertices());
 
     for (std::size_t itag=0; itag<_element_tags[itype].size(); ++itag)
     {
       const size_t tag = _element_tags[itype][itag];
       const size_t cell_number = _cell_numbering[tag];
       fe_values.update(cell_number);
-      Eigen::MatrixXd cell_matrix = Eigen::MatrixXd::Zero(fe_values.n_vertices(),
-                                                          fe_values.n_vertices());
+      cell_matrix.setZero();
 
       for (size_t q = 0; q < fe_values.n_q_points(); ++q)
       {
         for (size_t i = 0; i < fe_values.n_vertices(); ++i)
           for (size_t j = 0; j < fe_values.n_vertices(); ++j)
-            cell_matrix(i, j) += (fe_values.grad(i, q) * // grad phi_i(x_q)
-                                  fe_values.grad(j, q) * // grad phi_j(x_q)
-                                  fe_values.JxW(q));           // dx
+            cell_matrix(i, j) += -(fe_values.grad(i, q) * // grad phi_i(x_q)
+                                   fe_values.grad(j, q) * // grad phi_j(x_q)
+                                   fe_values.JxW(q));     // dV
       }
 
       for (size_t i = 0; i < fe_values.n_vertices(); ++i)
         for (size_t j = 0; j < fe_values.n_vertices(); ++j)
         {
-          const size_t inode = _element_nodes[itype][fe_values.n_vertices()*itag + i];
-          const size_t jnode = _element_nodes[itype][fe_values.n_vertices()*itag + j];
-          const size_t idof = _node_numbering[inode];
-          const size_t jdof = _node_numbering[jnode];
+          const size_t itag = _element_nodes[itype][fe_values.n_vertices()*itag + i];
+          const size_t jtag = _element_nodes[itype][fe_values.n_vertices()*itag + j];
+          const size_t idof = _node_numbering[itag];
+          const size_t jdof = _node_numbering[jtag];
           _system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
         }
     }

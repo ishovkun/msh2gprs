@@ -34,7 +34,8 @@ class FeValues
   int _n_comp;
   std::vector<double> _ref_points;   // integration on reference element
   std::vector<double> _weights;      // integration weights
-  std::vector<double> _ref_gradients;     // basis function gradients [dxi_duj] on ref element
+  // basis function gradients [dxi_duj] on ref element
+  std::vector<double> _ref_gradients;
   // jacobians
   // [e1g1Jxu, e1g1Jyu, e1g1Jzu, e1g1Jxv, ..., e1g1Jzw, e1g2Jxu, ..., e1gGJzw, e2g1Jxu, ...]
   std::vector<double> _jacobians;
