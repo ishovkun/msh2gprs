@@ -188,9 +188,9 @@ class Mesh
                            const int                        marker = constants::default_cell_marker);
   std::size_t insert_face_(const FaceTmpData & f);
 
-  bool insert_cell_with_hanging_nodes_(Cell & parent,
-                                              std::vector<FaceTmpData> big_face_vector,
-                                              std::vector<size_t> split_faces);
+  bool insert_cell_with_hanging_nodes_(Cell parent,
+                                       std::vector<FaceTmpData> big_face_vector,
+                                       std::vector<size_t> split_faces);
   /* get a vector of polygon global vertex indices given a vector with
    * local polygon vertex indices and a mapping vector. */
   std::vector<std::size_t>

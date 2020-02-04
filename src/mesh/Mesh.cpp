@@ -43,9 +43,7 @@ insert_cell_(const std::vector<size_t> take_faces,
 {
   // cells don't have many vertices: don't need a hashmap here
   std::set<size_t> unique_vertices;
-  // for (const auto & face : cell_faces)
   for (const size_t iface : take_faces)
-    // for (const size_t v : big_face_vector)
     for (const size_t v : big_face_vector[iface].vertices)
       unique_vertices.insert(v);
 
@@ -65,7 +63,6 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
   std::vector<std::size_t> face_indices;
   face_indices.reserve(take_faces.size());
 
-  // for (std::size_t i=0; i<take_faces.size(); ++i)
   for (const size_t iface : take_faces)
   {
     const auto & face = big_face_vector[iface];
@@ -78,7 +75,9 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
                        m_vertices, m_cells, m_faces, vtk_id, marker);
 
   for (const size_t vertex: ivertices)
+  {
     m_vertex_cells[vertex].push_back(new_cell_index);
+  }
 
   return new_cell_index;
 }
@@ -366,11 +365,10 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     const auto children = m_cells[cell.index()].immediate_children();
     // make sure this is a cell with hanging nodes
     assert ( children.size() == 1 );
-    std::cout << "go down" << std::endl;
     return split_cell(*children[0], plane, splitting_face_marker);
   }
-  std::cout << "split " << cell.index() << " (parent "
-            << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"<< std::endl;
+  // std::cout << "split " << cell.index() << " (parent "
+  //           << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"<< std::endl;
   assert (cell.is_active());
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
@@ -385,13 +383,13 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     split.vertices.insert(m_vertices[vertex]);
     global_vertex_indices.push_back(vertex);
   }
-
   // the actual geometry happens here
   const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
   angem::split(*polyhedron, plane, split, constants::marker_below_splitting_plane,
                constants::marker_above_splitting_plane, constants::marker_splitting_plane);
 
   // we  didn't nessesarily split anything, therefore comment out line below
+  // (because of the hanging nodes present in cell split before)
   // assert( split.vertices.size() > global_vertex_indices.size() );
 
   // insert new vertices (those that occured due to splitting)
@@ -423,7 +421,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     if ( split.markers[i] == constants::marker_splitting_plane )
       split_face_local_index = i;
 
-  // make two groups of faces (polyhedra) that will form the new cells
+  // make two groups of faces (polygons that constitute polyhedra) that will form the new cells
   std::vector<FaceTmpData> tmp_faces(split.polygons.size());
   std::vector<size_t> cell_above_faces, cell_below_faces;
   std::unordered_map<size_t,std::vector<size_t>> cells_to_insert_hanging_nodes;
@@ -617,9 +615,9 @@ void Mesh::coarsen_cells()
   m_n_cells_with_hanging_nodes = 0;
 }
 
-bool Mesh::insert_cell_with_hanging_nodes_(Cell & parent,
-                                             std::vector<FaceTmpData> big_face_vector,
-                                             std::vector<size_t> split_faces)
+bool Mesh::insert_cell_with_hanging_nodes_(Cell parent,
+                                           std::vector<FaceTmpData> big_face_vector,
+                                           std::vector<size_t> split_faces)
 {
   assert(split_faces.size() == 2);
   const auto & child_face1 = big_face_vector[split_faces[0]];
@@ -629,8 +627,7 @@ bool Mesh::insert_cell_with_hanging_nodes_(Cell & parent,
   const auto c2verts = sort_copy_(child_face2.vertices);
   // copy untouched faces
   size_t match_counter = 0;
-  for (const auto p_face : parent.faces())
-  {
+  for (const auto p_face : parent.faces()) {
     if (p_face->index() != child_face1.parent)
     {
       const auto sorted_fverts = sort_copy_(p_face->vertices());
@@ -653,9 +650,6 @@ bool Mesh::insert_cell_with_hanging_nodes_(Cell & parent,
   if (match_counter == 0)
   {
     const size_t child_cell_index = insert_cell_(split_faces, big_face_vector, parent.marker());
-    std::cout << "insert hanging " << child_cell_index << " (" <<
-        parent.index() << " ult " << parent.ultimate_parent().index()
-              << ")"<< std::endl;
     m_cells[child_cell_index].m_parent = parent.index();
     m_cells[parent.index()].m_children = {child_cell_index};
     m_n_cells_with_hanging_nodes++;

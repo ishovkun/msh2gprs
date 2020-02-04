@@ -41,6 +41,7 @@ void Preprocessor::run()
   // copy geomechanics grid since base grid will be split
   data.geomechanics_grid = data.grid;
 
+  std::cout << "building flow discretization" << std::endl;
   build_flow_discretization_();
 
   // build edfm grid for vtk output
@@ -166,7 +167,9 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
 void Preprocessor::build_flow_discretization_()
 {
   /* Split cells due to edfm intersection */
+  std::cout << "Splitting cells..." << std::flush;
   pm_edfm_mgr->split_cells();
+  std::cout << "OK" << std::endl << std::flush;
 
   // add properties for refined cells
   pm_property_mgr->downscale_properties();

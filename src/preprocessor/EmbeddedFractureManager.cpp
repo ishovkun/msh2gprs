@@ -31,7 +31,6 @@ void EmbeddedFractureManager::split_cells()
       if (++iter > 100)
         throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
     }
-
     split_cells_(*frac.body, cells_to_split, face_marker);
     m_marker_config.insert({ face_marker, i });
     face_marker++;
