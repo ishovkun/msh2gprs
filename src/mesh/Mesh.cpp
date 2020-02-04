@@ -467,9 +467,9 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
 
   for (const auto &it : cells_to_insert_hanging_nodes)
   {
-    // std::cout << "insert hanging into " << it.first
-    //           << "(" << this->cell(it.first).ultimate_parent().index()
-    //           << ")"<< std::endl;
+    std::cout << "insert hanging into " << it.first
+              << "(" << this->cell(it.first).ultimate_parent().index()
+              << ")"<< std::endl;
     assert( this->cell(it.first).is_active() );
     insert_cell_with_hanging_nodes_(this->cell(it.first), tmp_faces, it.second);
   }
@@ -694,6 +694,35 @@ size_t Mesh::face_exists_(const std::vector<size_t> & face_vertices) const
     }
   }
   return constants::invalid_index;
+}
+
+Mesh & Mesh::operator=(const Mesh & other)
+{
+  m_vertices = other.m_vertices;
+  m_cells = other.m_cells;
+  m_faces = other.m_faces;
+  m_vertex_cells = other.m_vertex_cells;
+  m_vertex_faces = other.m_vertex_faces;
+  m_faces_marked_for_split = other.m_faces_marked_for_split;
+  m_n_split_cells = other.m_n_split_cells;
+  m_n_cells_with_hanging_nodes = other.m_n_cells_with_hanging_nodes;
+  m_vertices_from_cell_splitting = other.m_vertices_from_cell_splitting;
+  m_vertices_from_cell_splitting_indices = other.m_vertices_from_cell_splitting_indices;
+  for (auto & cell : m_cells)
+  {
+    cell.pm_grid_vertices = &m_vertices;
+    cell.pm_grid_cells = &m_cells;
+    cell.pm_grid_faces = &m_faces;
+  }
+
+  for (auto &face : m_faces)
+  {
+    face.pm_grid_cells = &m_cells;
+    face.pm_grid_faces = &m_faces;
+    face.pm_grid_vertices = &m_vertices;
+    face.pm_grid_vertex_cells = & m_vertex_cells;
+  }
+  return *this;
 }
 
 }  // end namespace mesh

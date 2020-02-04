@@ -33,7 +33,10 @@ using FaceiVertices = std::vector<std::size_t>;
 class Mesh
 {
  public:
+  // Default Constructor
   Mesh();
+  /* Copy assignment operator */
+  Mesh & operator=(const Mesh & other);
   /* Insert a standard vtk polyhedron cell into grid */
   std::size_t insert_cell(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
