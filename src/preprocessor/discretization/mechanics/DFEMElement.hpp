@@ -35,7 +35,8 @@ class DFEMElement
   void enforce_zero_on_boundary_(const size_t fine_vertex,
                                  std::vector<Eigen::VectorXd> & solutions);
   void build_support_boundaries_();
-  bool in_support_boundary(const size_t fine_vertex, const size_t parent_face) const;
+  bool in_support_boundary_(const size_t fine_vertex, const size_t parent_face) const;
+  bool in_global_support_boundary_(const size_t fine_vertex) const;
 
  private:
   const mesh::Cell & _cell;

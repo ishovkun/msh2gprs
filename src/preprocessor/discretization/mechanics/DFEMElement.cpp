@@ -48,19 +48,22 @@ void DFEMElement::build_triangulation_()
 
 void DFEMElement::build_support_boundaries_()
 {
-  const size_t n_parent_faces = _cell.faces().size();
+  const std::vector<const mesh::Face*> faces = _cell.faces();
+  const size_t n_parent_faces = faces.size();
+  const std::vector<size_t> parent_vertices = _cell.vertices();
   // get nodes for surface
   std::vector<double> crds, prcrds;
   std::vector<size_t> bnd_nodes;
+  _support_boundaries.resize(parent_vertices.size());
   for (std::size_t parent_face=0; parent_face<n_parent_faces; ++parent_face)
   {
     gmsh::model::mesh::getNodes(bnd_nodes, crds, prcrds, /*dim*/ 2,
                                 /* tag */ parent_face+1,
                                 /*includeBoundary =*/ true, false);
-    _support_boundaries.emplace_back();
-    _support_boundaries.back().reserve(bnd_nodes.size());
-    for (const size_t vertex : bnd_nodes)
-      _support_boundaries.back().insert( _node_numbering[vertex] );
+    for (std::size_t ivertex=0; ivertex<parent_vertices.size(); ++ivertex)
+      if ( faces[parent_face]->has_vertex(parent_vertices[ivertex]) )
+        for (const size_t vertex : bnd_nodes)
+          _support_boundaries[ivertex].insert( _node_numbering[vertex] );
   }
 }
 
@@ -89,20 +92,25 @@ void DFEMElement::run_msrsb_()
 }
 
 void DFEMElement::enforce_partition_of_unity_(const size_t fine_vertex,
-                                   std::vector<Eigen::VectorXd> & solutions)
+                                              std::vector<Eigen::VectorXd> & solutions)
 {
+  // compute the sum of new values
+  double sum_new_values = 0;
   const size_t parent_n_vert = _cell.vertices().size();
   for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
-  {
+    sum_new_values += solutions[parent_vertex][fine_vertex];
 
-  }
- 
 }
 
 void DFEMElement::enforce_zero_on_boundary_(const size_t fine_vertex,
                                    std::vector<Eigen::VectorXd> & solutions)
 {
-
+  const size_t parent_n_vert = _cell.vertices().size();
+  for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
+  {
+    if (in_support_boundary_(fine_vertex, parent_vertex))
+      solutions[parent_vertex][fine_vertex] = 0;
+  }
 }
 
 // double DFEMElement::jacobi_iteration_(const size_t fine_vertex)
@@ -254,9 +262,19 @@ void DFEMElement::debug_save_shape_functions_(const std::string fname)
   out.close();
 }
 
-bool DFEMElement::in_support_boundary(const size_t fine_vertex, const size_t parent_face) const
-{
+// bool DFEMElement::in_support_boundary_(const size_t fine_vertex, const size_t parent_vertex) const
+// {
+//   if ( _support_boundaries[parent_face].find(fine_vertex) == _support_boundaries[parent_face].end() )
+//     return false;
+//   else return true;
+// }
 
-}
+// bool DFEMElement::in_global_support_boundary_(const size_t fine_vertex) const
+// {
+//   for (size_t parent_vertex = 0; parent_vertex < _cell.vertices().size(); parent_vertex++)
+//     if (in_support_boundary_(fine_vertex, parent_vertex))
+//       return true;
+//   return false;
+// }
 
 }  // end namespace discretization
