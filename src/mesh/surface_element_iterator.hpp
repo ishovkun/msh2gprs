@@ -14,7 +14,8 @@ class surface_element_iterator
   surface_element_iterator(const std::size_t                       ielement,
                            angem::PointSet<3,Scalar>             & vertices,
                            std::vector<std::vector<std::size_t>> & polygons,
-                           EdgeMap                               & map_edges);
+                           EdgeMap                               & map_edges,
+                           std::vector<int>                & grid_markers);
 
   // assignment operator
   surface_element_iterator<Scalar> & operator=(const surface_element_iterator<Scalar> & other);
@@ -26,6 +27,7 @@ class surface_element_iterator
   surface_element_iterator<Scalar> & operator--();
   // Getters
   inline std::size_t index() const {return ielement;}
+  inline int marker() const { return _grid_markers[ielement]; }
   std::vector<surface_element_iterator<Scalar>> neighbors() const;
   std::vector<edge_iterator<Scalar>> edges() const;
   const std::vector<std::size_t> & vertices() const { return polygons[ielement]; }
@@ -37,6 +39,7 @@ class surface_element_iterator
   angem::PointSet<3,Scalar>             & mesh_vertices;
   std::vector<std::vector<std::size_t>> & polygons;
   EdgeMap                               & map_edges;
+  std::vector<int>                & _grid_markers;
 };
 
 
@@ -45,12 +48,13 @@ surface_element_iterator<Scalar>::
 surface_element_iterator(const std::size_t                       ielement,
                          angem::PointSet<3,Scalar>             & vertices,
                          std::vector<std::vector<std::size_t>> & polygons,
-                         EdgeMap                               & map_edges)
-    :
-    ielement(ielement),
-    mesh_vertices(vertices),
-    polygons(polygons),
-    map_edges(map_edges)
+                         EdgeMap                               & map_edges,
+                         std::vector<int>                      & grid_markers)
+    : ielement(ielement),
+      mesh_vertices(vertices),
+      polygons(polygons),
+      map_edges(map_edges),
+      _grid_markers(grid_markers)
 {}
 
 

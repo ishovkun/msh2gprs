@@ -265,6 +265,7 @@ std::vector<size_t> DiscretizationEDFM::create_connections_()
 
 void DiscretizationEDFM::build_pedfm_()
 {
+  std::cout << "\n\nstuff:" << std::endl;
   PureConnectionMap cleared_connections;
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
   {
@@ -277,14 +278,26 @@ void DiscretizationEDFM::build_pedfm_()
       for (const mesh::Face* face2 : pedfm_select_faces_(*face))
       {
         const size_t iother_cell = pedfm_find_other_cell_(*face, *face2);
-        // std::cout << "try " << frac_cell.index() << " " << iother_cell << std::endl;
         // determing all participating dofs
         const size_t cell_dof1 = m_dofs.cell_dof(frac_cell.index());
         const size_t cell_dof2 = m_dofs.cell_dof(iother_cell);
         const size_t face_dof = m_dofs.face_dof(face->index());
+        if (frac_cell.index() == 99 || iother_cell == 99)
+        {
+          std::cout << std::endl;
+          std::cout << "try " << frac_cell.index() << " " << iother_cell << " ("
+                    << cell_dof1 << " " << cell_dof2 << ")" << std::endl;
+          // std::cout << "face->center()= " << face->center() << std::endl;
+          // std::cout << "face->area()= " << face->area() << std::endl;
+        }
 
         // if already cleared, then skip
-        if (cleared_connections.contains(cell_dof1, cell_dof2)) continue;
+        if (cleared_connections.contains(cell_dof1, cell_dof2))
+        {
+        if (frac_cell.index() == 99 || iother_cell == 99)
+          std::cout << "already cleared" << std::endl;
+          continue;
+        }
         // this happens when several edfm's in a cell
         if (iother_cell == frac_cell.index()) continue;
 
@@ -311,14 +324,19 @@ void DiscretizationEDFM::build_pedfm_()
           const bool kill_connection = build_pedfm_(mat_mat_con, frac_mat_con);
           // if small trans then kill connection
           if (kill_connection) {
-            std::cout << "clear connection " << frac_cell.index() << " "
-                      << iother_cell << std::endl;
+        if (frac_cell.index() == 1482 || iother_cell == 1482)
+            {
+              std::cout << "clear connection " << frac_cell.index() << " "
+                        << iother_cell << "(" << cell_dof1 << ", "<< cell_dof2 << ")" <<std::endl;
+            }
+
             cleared_connections.insert(cell_dof1, cell_dof2);
             // exit(0);
           }
         }
         catch(const std::runtime_error & err)
         {
+          std::cout << "zero projection" << std::endl;
           // somtimees the projection on the face plane
           // is outside of the M-M face. This usually
           // happens when multiple embedded fractures cross a cell
@@ -330,21 +348,27 @@ void DiscretizationEDFM::build_pedfm_()
   }
 
   // clear connections
+  // std::cout << "clean con" << std::endl;
   for (auto it = cleared_connections.begin(); it!=cleared_connections.end(); ++it)
   {
     const auto pair_elements = it.elements();
+    // std::cout << "clear " <<  pair_elements.first << " " <<  pair_elements.second << std::endl;
     m_con_map.remove(pair_elements.first, pair_elements.second);
   }
+  std::cout << "\n\n\n" << std::endl;
 }
 
 std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mesh::Face & frac_face) const
 {
-  //  select largest cell neighbor
   const auto & neighbors = frac_face.neighbors();
+
+  //  method 1 by volume
+  //    select largest cell neighbor
   const mesh::Cell* smallest_neighbor;
   if (neighbors[0]->volume() > neighbors[1]->volume())
     smallest_neighbor = neighbors[1];
   else smallest_neighbor = neighbors[0];
+  const auto & par = smallest_neighbor->ultimate_parent();
 
   std::vector<const Face*> result;
   for (auto face : smallest_neighbor->faces())
@@ -354,29 +378,44 @@ std::vector<const mesh::Face*> DiscretizationEDFM::pedfm_select_faces_(const mes
     if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6) continue;  // face ⟂ frac
     if (m_dofs.is_active_face(face->index())) continue; // skip frac faces
 
-    // if (*face == frac_face)
-    // {
-    //   std::cout << "sam face" << std::endl; continue;
-    // }
-    // if (face->neighbors().size() < 2)
-    // {
-    //   std::cout << face->index() << " boundary face" << std::endl;
-    //   continue; // skip boundary
-    // }
-    // if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6)
-    // {
-    //   std::cout << face->index() << " perpendicular" << std::endl;
-    //   continue; // face ⟂ frac
-    // }
-    // if (m_dofs.is_active_face(face->index()))
-    // {
-    //   std::cout << face->index() << " dfm face" << std::endl;
-    //   continue; // skip frac faces
-    // }
-
     result.push_back(&*face);
   }
   return result;
+
+  // method 2
+  // const auto & par = neighbors[0]->ultimate_parent();
+
+
+  // // select closest and pick closest neighbor
+  // std::vector<const Face*> result1;
+  // double dist1 = std::numeric_limits<double>::max();
+  // for (auto face : neighbors[0]->faces())
+  // {
+  //   if (*face == frac_face) continue; // same face
+  //   if (face->neighbors().size() < 2) continue;  // skip boundary
+  //   if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6) continue;  // face ⟂ frac
+  //   if (m_dofs.is_active_face(face->index())) continue; // skip frac faces
+  //   dist1 = std::min( dist1, frac_face.center().distance(face->center()) );
+
+  //   result1.push_back(&*face);
+  // }
+
+  // std::vector<const Face*> result2;
+  // double dist2 = std::numeric_limits<double>::max();
+  // for (auto face : neighbors[1]->faces())
+  // {
+  //   if (*face == frac_face) continue; // same face
+  //   if (face->neighbors().size() < 2) continue;  // skip boundary
+  //   if (std::fabs(face->normal().dot(frac_face.normal())) < 1e-6) continue;  // face ⟂ frac
+  //   if (m_dofs.is_active_face(face->index())) continue; // skip frac faces
+  //   dist2 = std::min( dist2, frac_face.center().distance(face->center()) );
+
+  //   result2.push_back(&*face);
+  // }
+
+  // if (dist1 < dist2)
+  //   return result1;
+  // else return result2;
 }
 
 size_t DiscretizationEDFM::pedfm_find_other_cell_(const Face & frac, const Face & other) const
@@ -430,8 +469,12 @@ bool DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
     const double T1_init = mm_con.area * Kp1 / c1.distance(cp);
     const double T2_init = mm_con.area * Kp2 / c2.distance(cp);
     const double T_init = (T1_init + T2_init > 0) ? T1_init * T2_init / (T1_init + T2_init) : 0.0;
-    // std::cout << "areas: "<< subtracted_area << " " << mm_con.area << std::endl;
-    // std::cout << "trans: " << T_new << " " << T_init << std::endl;
+    if (cell1.master == 1482 || cell2.master == 1482)
+    {
+      std::cout << "areas: "<< subtracted_area << " " << mm_con.area << std::endl;
+      std::cout << "trans: " << T_new << " " << T_init << std::endl;
+
+    }
     if (T_new < 1e-6 * T_init)
     {
       // std::cout << "subtracted = " << subtracted_area << std::endl;

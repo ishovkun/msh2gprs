@@ -129,7 +129,7 @@ mesh::SurfaceMesh<double> DiscreteFractureManager::build_dfm_grid(const mesh::Me
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 2)
       if (is_fracture(face->marker()))
-        dfm_grid.insert(face->polygon());
+        dfm_grid.insert(face->polygon(), face->marker());
 
   return dfm_grid;
 }
@@ -138,7 +138,7 @@ std::vector<size_t> DiscreteFractureManager::map_dfm_grid_to_flow_dofs(const mes
                                                                        const discretization::DoFNumbering & dofs) const
 {
   std::vector<size_t> result;
-  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 2)
       if (is_fracture(face->marker()))
         result.push_back( dofs.face_dof(face->index()) );
