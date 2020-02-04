@@ -70,8 +70,6 @@ void DFEMElement::build_support_boundaries_()
 
 void DFEMElement::run_msrsb_()
 {
-  // Eigen::DiagonalPreconditioner<double> jacobi_preconditioner(_system_matrix);
-  // jacobi_preconditioner.setMaxIterations(1);
   JacobiPreconditioner preconditioner(_system_matrix);
   std::vector<Eigen::VectorXd> solutions;
   const size_t parent_n_vert = _cell.vertices().size();
@@ -90,7 +88,7 @@ void DFEMElement::run_msrsb_()
    }
 
   for (size_t parent_node = 0; parent_node < parent_n_vert; parent_node++)
-    _basis_functions[parent_node] = solutions[parent_node];
+    _basis_functions[parent_node] += solutions[parent_node];
 
   debug_save_shape_functions_("shape_functions1.vtk");
  
@@ -99,7 +97,7 @@ void DFEMElement::run_msrsb_()
 void DFEMElement::enforce_partition_of_unity_(const size_t fine_vertex,
                                               std::vector<Eigen::VectorXd> & solutions)
 {
-  if ( in_global_support_boundary_(fine_vertex) )
+  if ( !in_global_support_boundary_(fine_vertex) )
     return;
   // compute the sum of new values
   double sum_new_values = 0;
@@ -108,6 +106,7 @@ void DFEMElement::enforce_partition_of_unity_(const size_t fine_vertex,
     sum_new_values += solutions[parent_vertex][fine_vertex];
 
   for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
+    if (!in_support_boundary_(fine_vertex, parent_vertex))
     solutions[parent_vertex][fine_vertex] =
         ( solutions[parent_vertex][fine_vertex] -
           _basis_functions[parent_vertex][fine_vertex] * sum_new_values ) /
