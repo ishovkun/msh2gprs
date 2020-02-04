@@ -27,6 +27,21 @@ void invert_matrix_3x3(const std::vector<double> &A, std::vector<double> &A_inv)
   A_inv[8] = (-A[3] * A[1] + A[0] * A[4]) / buffer;
 }
 
+std::vector<double> transpose3x3(const std::vector<double> &mat)
+{
+  std::vector<double> result(9, 0.0);
+  result[0] = mat[0];
+  result[1] = mat[3];
+  result[2] = mat[6];
+  result[3] = mat[1];
+  result[4] = mat[4];
+  result[5] = mat[7];
+  result[6] = mat[2];
+  result[7] = mat[5];
+  result[8] = mat[8];
+  return result;
+}
+
 double determinant_3x3(const std::vector<double> &m)
 {
  assert( m.size() == 9 );

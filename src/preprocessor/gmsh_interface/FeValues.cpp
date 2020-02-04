@@ -47,6 +47,8 @@ void FeValues::update(const size_t cell_number)
     const size_t j_beg = cell_number       * n_q_points() * (dim * dim);
     const size_t j_end = (cell_number + 1) * n_q_points() * (dim * dim);
     std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
+    // gmsh stores jacobians in transposed format
+    dx_du = transpose3x3(dx_du);
 
     // invert du_dx = inv(dx_du)
     std::vector du_dx(dim*dim, 0.0);
@@ -99,7 +101,8 @@ Point FeValues::grad(size_t vertex, size_t q) const
 
 double FeValues::JxW(const size_t q) const
 {
-  return _weights[q] * _inv_determinants[q];
+  // return _weights[q] * _inv_determinants[q];
+  return _weights[q] * _determinants[q];
 }
 
 }  // end namespace gprs_data
