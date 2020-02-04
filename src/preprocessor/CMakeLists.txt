@@ -26,6 +26,7 @@ ADD_LIBRARY(preprocessor
   UnionFind.cpp
   discretization/mechanics/DiscretizationDFEM.cpp
   discretization/mechanics/DFEMElement.cpp
+  discretization/mechanics/JacobiPreconditioner.cpp
 )
 
 SET_TARGET_PROPERTIES (

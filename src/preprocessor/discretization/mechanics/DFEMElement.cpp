@@ -2,6 +2,7 @@
 #include "gmsh_interface/GmshInterface.hpp"
 #include "gmsh_interface/FeValues.hpp"
 #include "VTKWriter.hpp"
+#include "JacobiPreconditioner.hpp"
 #include <Eigen/IterativeLinearSolvers>
 
 namespace discretization {
@@ -69,8 +70,9 @@ void DFEMElement::build_support_boundaries_()
 
 void DFEMElement::run_msrsb_()
 {
-  Eigen::DiagonalPreconditioner<double> jacobi_preconditioner(_system_matrix);
+  // Eigen::DiagonalPreconditioner<double> jacobi_preconditioner(_system_matrix);
   // jacobi_preconditioner.setMaxIterations(1);
+  JacobiPreconditioner preconditioner(_system_matrix);
   std::vector<Eigen::VectorXd> solutions;
   const size_t parent_n_vert = _cell.vertices().size();
   for (std::size_t i=0; i<parent_n_vert; ++i)
@@ -78,14 +80,17 @@ void DFEMElement::run_msrsb_()
 
   for (size_t parent_node = 0; parent_node < parent_n_vert; parent_node++)
   {
-    jacobi_preconditioner._solve_impl(_basis_functions[parent_node], solutions[parent_node]);
-    // _basis_functions[parent_node] = solutions[i];
+    preconditioner.solve(_system_matrix, _basis_functions[parent_node],
+                         solutions[parent_node]);
   }
    for (size_t vertex=0; vertex < _node_numbering.size(); vertex++)
    {
      enforce_zero_on_boundary_(vertex, solutions);
      enforce_partition_of_unity_(vertex, solutions);
    }
+
+  for (size_t parent_node = 0; parent_node < parent_n_vert; parent_node++)
+    _basis_functions[parent_node] = solutions[parent_node];
 
   debug_save_shape_functions_("shape_functions1.vtk");
  
@@ -94,12 +99,19 @@ void DFEMElement::run_msrsb_()
 void DFEMElement::enforce_partition_of_unity_(const size_t fine_vertex,
                                               std::vector<Eigen::VectorXd> & solutions)
 {
+  if ( in_global_support_boundary_(fine_vertex) )
+    return;
   // compute the sum of new values
   double sum_new_values = 0;
   const size_t parent_n_vert = _cell.vertices().size();
   for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
     sum_new_values += solutions[parent_vertex][fine_vertex];
 
+  for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
+    solutions[parent_vertex][fine_vertex] =
+        ( solutions[parent_vertex][fine_vertex] -
+          _basis_functions[parent_vertex][fine_vertex] * sum_new_values ) /
+        (1 + sum_new_values);
 }
 
 void DFEMElement::enforce_zero_on_boundary_(const size_t fine_vertex,
@@ -262,19 +274,19 @@ void DFEMElement::debug_save_shape_functions_(const std::string fname)
   out.close();
 }
 
-// bool DFEMElement::in_support_boundary_(const size_t fine_vertex, const size_t parent_vertex) const
-// {
-//   if ( _support_boundaries[parent_face].find(fine_vertex) == _support_boundaries[parent_face].end() )
-//     return false;
-//   else return true;
-// }
+bool DFEMElement::in_support_boundary_(const size_t fine_vertex, const size_t parent_vertex) const
+{
+  if ( _support_boundaries[parent_vertex].find(fine_vertex) == _support_boundaries[parent_vertex].end() )
+    return false;
+  else return true;
+}
 
-// bool DFEMElement::in_global_support_boundary_(const size_t fine_vertex) const
-// {
-//   for (size_t parent_vertex = 0; parent_vertex < _cell.vertices().size(); parent_vertex++)
-//     if (in_support_boundary_(fine_vertex, parent_vertex))
-//       return true;
-//   return false;
-// }
+bool DFEMElement::in_global_support_boundary_(const size_t fine_vertex) const
+{
+  for (size_t parent_vertex = 0; parent_vertex < _cell.vertices().size(); parent_vertex++)
+    if (in_support_boundary_(fine_vertex, parent_vertex))
+      return true;
+  return false;
+}
 
 }  // end namespace discretization
