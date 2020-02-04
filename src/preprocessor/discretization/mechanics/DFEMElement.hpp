@@ -22,9 +22,12 @@ class DFEMElement
   // build vectors for shape functions and fill them with initial guess values
   void initial_guess_();
   // just for debugging
-  void debug_save_shape_functions_();
+  void debug_save_shape_functions_(const std::string fname = "shape_functions.vtk");
   // run iterative msrsb process to compute shape functions
   void run_msrsb_();
+  // jacobi iteration over a single fine vertex
+  double jacobi_iteration_(const size_t fine_vertex);
+  void enforce_partition_of_unity_(const size_t fine_vertex);
 
  private:
   const mesh::Cell & _cell;
@@ -36,7 +39,7 @@ class DFEMElement
   std::unordered_map<size_t, size_t> _node_numbering;
   Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;
   // msrsb basis function
-   std::vector<Eigen::VectorXd> _basis_functions;
+  std::vector<Eigen::VectorXd> _basis_functions;
 };
 
 }  // end namespace discretization

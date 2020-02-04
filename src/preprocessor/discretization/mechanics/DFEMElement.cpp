@@ -19,14 +19,41 @@ void DFEMElement::build_()
   api::build_triangulation(_cell);
   build_jacobian_();
   initial_guess_();
+  debug_save_shape_functions_();
   run_msrsb_();
-  // debug_save_shape_functions_();
 }
+
+#include <Eigen/IterativeLinearSolvers>
 
 void DFEMElement::run_msrsb_()
 {
+  Eigen::DiagonalPreconditioner<double> jacobi_preconditioner(_system_matrix);
+  // jacobi_preconditioner.setMaxIterations(1);
+  Eigen::VectorXd solution = Eigen::VectorXd::Zero(_node_numbering.size());
 
+  for (size_t parent_node = 0; parent_node < _cell.vertices().size(); parent_node++)
+  {
+    jacobi_preconditioner._solve_impl(_basis_functions[parent_node], solution);
+    _basis_functions[parent_node] = solution;
+  }
+   for (size_t vertex=0; vertex < _node_numbering.size(); vertex++)
+   {
+     enforce_partition_of_unity_(vertex);
+   }
+
+  debug_save_shape_functions_("shape_functions1.vtk");
+ 
 }
+
+void DFEMElement::enforce_partition_of_unity_(const size_t vertex)
+{
+ 
+}
+
+// double DFEMElement::jacobi_iteration_(const size_t fine_vertex)
+// {
+ 
+// }
 
 void DFEMElement::build_jacobian_()
 {
@@ -153,7 +180,7 @@ void DFEMElement::initial_guess_()
   }
 }
 
-void DFEMElement::debug_save_shape_functions_()
+void DFEMElement::debug_save_shape_functions_(const std::string fname)
 {
   std::vector<std::vector<size_t>> cells;
   for (std::size_t itype = 0; itype < _element_types.size(); ++itype)
@@ -169,7 +196,6 @@ void DFEMElement::debug_save_shape_functions_()
 
   std::vector<int> cell_types(cells.size(), angem::VTK_ID::TetrahedronID);
 
-  std::string fname = "shape_functions.vtk";
   std::ofstream out;
   out.open(fname.c_str());
 
