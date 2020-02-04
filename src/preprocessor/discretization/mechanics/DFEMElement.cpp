@@ -2,6 +2,7 @@
 #include "gmsh_interface/GmshInterface.hpp"
 #include "gmsh_interface/FeValues.hpp"
 #include "VTKWriter.hpp"
+#include <Eigen/IterativeLinearSolvers>
 
 namespace discretization {
 
@@ -16,38 +17,92 @@ DFEMElement::DFEMElement(const mesh::Cell & cell)
 
 void DFEMElement::build_()
 {
-  api::build_triangulation(_cell);
+  build_triangulation_();
   build_jacobian_();
   initial_guess_();
   debug_save_shape_functions_();
   run_msrsb_();
 }
 
-#include <Eigen/IterativeLinearSolvers>
+void DFEMElement::build_triangulation_()
+{
+  api::build_triangulation(_cell);
+  // ask gmsh to provide gaussian points, shape functions, and jacobians
+  api::get_elements(_element_types, _element_tags, _element_nodes, /* dim = */ 3);
+  numberNodesEndElements_(_element_types, _element_tags, _element_nodes);
+
+  std::vector<double> crds, prcrds;
+  gmsh::model::mesh::getNodes(_node_tags, crds, prcrds, /*dim*/ 3,
+                             /* tag */ -1, /*includeBoundary =*/ true, false);
+  // convert node coordinates into angem points
+  _node_coord.resize(crds.size() / 3);
+  for (std::size_t i=0; i<crds.size()/3; ++i)
+  {
+    angem::Point<3,double> node = { crds[3*i], crds[3*i+1], crds[3*i+2] };
+    _node_coord[_node_numbering[_node_tags[i]]] = std::move(node);
+  }
+
+  // build support region boundaries for msrsb
+  build_support_boundaries_();
+}
+
+void DFEMElement::build_support_boundaries_()
+{
+  const size_t n_parent_faces = _cell.faces().size();
+  // get nodes for surface
+  std::vector<double> crds, prcrds;
+  std::vector<size_t> bnd_nodes;
+  for (std::size_t parent_face=0; parent_face<n_parent_faces; ++parent_face)
+  {
+    gmsh::model::mesh::getNodes(bnd_nodes, crds, prcrds, /*dim*/ 2,
+                                /* tag */ parent_face+1,
+                                /*includeBoundary =*/ true, false);
+    _support_boundaries.emplace_back();
+    _support_boundaries.back().reserve(bnd_nodes.size());
+    for (const size_t vertex : bnd_nodes)
+      _support_boundaries.back().insert( _node_numbering[vertex] );
+  }
+}
 
 void DFEMElement::run_msrsb_()
 {
   Eigen::DiagonalPreconditioner<double> jacobi_preconditioner(_system_matrix);
   // jacobi_preconditioner.setMaxIterations(1);
-  Eigen::VectorXd solution = Eigen::VectorXd::Zero(_node_numbering.size());
+  std::vector<Eigen::VectorXd> solutions;
+  const size_t parent_n_vert = _cell.vertices().size();
+  for (std::size_t i=0; i<parent_n_vert; ++i)
+    solutions.push_back(Eigen::VectorXd::Zero(_node_numbering.size()));
 
-  for (size_t parent_node = 0; parent_node < _cell.vertices().size(); parent_node++)
+  for (size_t parent_node = 0; parent_node < parent_n_vert; parent_node++)
   {
-    jacobi_preconditioner._solve_impl(_basis_functions[parent_node], solution);
-    _basis_functions[parent_node] = solution;
+    jacobi_preconditioner._solve_impl(_basis_functions[parent_node], solutions[parent_node]);
+    // _basis_functions[parent_node] = solutions[i];
   }
    for (size_t vertex=0; vertex < _node_numbering.size(); vertex++)
    {
-     enforce_partition_of_unity_(vertex);
+     enforce_zero_on_boundary_(vertex, solutions);
+     enforce_partition_of_unity_(vertex, solutions);
    }
 
   debug_save_shape_functions_("shape_functions1.vtk");
  
 }
 
-void DFEMElement::enforce_partition_of_unity_(const size_t vertex)
+void DFEMElement::enforce_partition_of_unity_(const size_t fine_vertex,
+                                   std::vector<Eigen::VectorXd> & solutions)
 {
+  const size_t parent_n_vert = _cell.vertices().size();
+  for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
+  {
+
+  }
  
+}
+
+void DFEMElement::enforce_zero_on_boundary_(const size_t fine_vertex,
+                                   std::vector<Eigen::VectorXd> & solutions)
+{
+
 }
 
 // double DFEMElement::jacobi_iteration_(const size_t fine_vertex)
@@ -57,11 +112,7 @@ void DFEMElement::enforce_partition_of_unity_(const size_t vertex)
 
 void DFEMElement::build_jacobian_()
 {
-  // 1. ask gmsh to provide gaussian points, shape functions, and jacobians
-  // for our tetras
-  // 2. build element jacobian for the homogeneous laplace equation
-  api::get_elements(_element_types, _element_tags, _node_tags, /* dim = */ 3);
-  numberNodesEndElements_(_element_types, _element_tags, _node_tags);
+  // build element jacobian for the homogeneous laplace equation
   _system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(_node_numbering.size(),
                                                               _node_numbering.size());
 
@@ -90,8 +141,8 @@ void DFEMElement::build_jacobian_()
       for (size_t i = 0; i < fe_values.n_vertices(); ++i)
         for (size_t j = 0; j < fe_values.n_vertices(); ++j)
         {
-          const size_t inode = _node_tags[itype][fe_values.n_vertices()*itag + i];
-          const size_t jnode = _node_tags[itype][fe_values.n_vertices()*itag + j];
+          const size_t inode = _element_nodes[itype][fe_values.n_vertices()*itag + i];
+          const size_t jnode = _element_nodes[itype][fe_values.n_vertices()*itag + j];
           const size_t idof = _node_numbering[inode];
           const size_t jdof = _node_numbering[jnode];
           _system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
@@ -149,23 +200,13 @@ void DFEMElement::initial_guess_()
   // all nodes
   // std::cout << std::endl;
   // std::cout << "all nodes" << std::endl;
-  std::vector<std::size_t> tgs;
-  std::vector<double> crds, prcrds;
-  gmsh::model::mesh::getNodes(tgs, crds, prcrds, /*dim*/ 3,
-                             /* tag */ -1, /*includeBoundary =*/ true, false);
-  _node_coord.resize(crds.size() / 3);
-  for (std::size_t i=0; i<crds.size()/3; ++i)
-  {
-    angem::Point<3,double> node = { crds[3*i], crds[3*i+1], crds[3*i+2] };
-    _node_coord[_node_numbering[tgs[i]]] = std::move(node);
-  }
 
   const auto parent_nodes = _cell.polyhedron()->get_points();
-  for (std::size_t i=0; i<tgs.size(); ++i)
+  for (std::size_t i=0; i<_node_tags.size(); ++i)
   {
     double max_dist = std::numeric_limits<double>::max();
     size_t closest = 0;
-    angem::Point<3,double> node = { crds[3*i], crds[3*i+1], crds[3*i+2] };
+    const angem::Point<3,double> & node = _node_coord[i];
     for (std::size_t j=0; j<parent_nodes.size(); ++j)
     {
       const auto & pn = parent_nodes[j];
@@ -176,7 +217,7 @@ void DFEMElement::initial_guess_()
         closest = j;
       }
     }
-    _basis_functions[closest][_node_numbering[tgs[i]]] = 1.0;
+    _basis_functions[closest][_node_numbering[_node_tags[i]]] = 1.0;
   }
 }
 
@@ -189,7 +230,7 @@ void DFEMElement::debug_save_shape_functions_(const std::string fname)
     for (std::size_t itag = 0; itag < _element_tags[itype].size(); ++itag) {
       std::vector<size_t> cell(nv);
       for (std::size_t v=0; v<nv; ++v)
-        cell[v] = _node_numbering[_node_tags[itype][nv * itag + v]];
+        cell[v] = _node_numbering[_element_nodes[itype][nv * itag + v]];
       cells.push_back( std::move(cell) );
     }
   }
@@ -211,6 +252,11 @@ void DFEMElement::debug_save_shape_functions_(const std::string fname)
     IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
   }
   out.close();
+}
+
+bool DFEMElement::in_support_boundary(const size_t fine_vertex, const size_t parent_face) const
+{
+
 }
 
 }  // end namespace discretization
