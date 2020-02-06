@@ -148,14 +148,11 @@ class Mesh
    * retults in adding new vertices (pushed to the back of vertices set) */
   void split_vertex(const std::size_t               vertex_index,
                     const std::vector<std::size_t> &splitted_face_indices);
-
   // coarsen cells split built by split_cell method and restore active cells
   void coarsen_cells();
-
  private:
-  void insert_vertex(const std::size_t vertex,
-                     const std::size_t face,
-                     const std::size_t cell);
+  // find edge neighboring cells
+  std::vector<size_t> neighbors_indices_(const vertex_pair & edge) const;
 
   // two elements are in the same group if they are neighbors and
   // the neighboring face is not in vertex_faces array
@@ -188,11 +185,24 @@ class Mesh
   bool insert_cell_with_hanging_nodes_(Cell parent,
                                        std::vector<FaceTmpData> big_face_vector,
                                        std::vector<size_t> split_faces);
+  void insert_hanging_node_(const Cell parent,
+                            const vertex_pair edge,
+                            const size_t inserted_vertex);
   /* get a vector of polygon global vertex indices given a vector with
    * local polygon vertex indices and a mapping vector. */
   std::vector<std::size_t>
   build_global_face_indices_(const std::vector<size_t> & polygon_local_indices,
                              const std::vector<size_t> & local_to_global) const;
+  /* find out whether the face is a parent or child cell based on the
+   * split information. returns pair
+   * 1) true if the face and parent match identically (or new face)
+   * 2) parent index. if new face then invalid_index */
+  std::pair<bool,std::size_t> determine_face_parent_(const std::vector<size_t> & face_vertices,
+                                                     const Cell                & parent_cell,
+                                                     const std::vector<size_t> & splitting_face_vertices) const;
+
+  std::map<vertex_pair,size_t> find_affected_edges_(const std::vector<size_t> &new_vertices,
+                                                    const Cell & cell) const;
 
   int face_vtk_id_(const size_t n_vertices) const
   {
