@@ -33,7 +33,10 @@ using FaceiVertices = std::vector<std::size_t>;
 class Mesh
 {
  public:
+  // Default Constructor
   Mesh();
+  /* Copy assignment operator */
+  Mesh & operator=(const Mesh & other);
   /* Insert a standard vtk polyhedron cell into grid */
   std::size_t insert_cell(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
@@ -145,14 +148,11 @@ class Mesh
    * retults in adding new vertices (pushed to the back of vertices set) */
   void split_vertex(const std::size_t               vertex_index,
                     const std::vector<std::size_t> &splitted_face_indices);
-
   // coarsen cells split built by split_cell method and restore active cells
   void coarsen_cells();
-
  private:
-  void insert_vertex(const std::size_t vertex,
-                     const std::size_t face,
-                     const std::size_t cell);
+  // find edge neighboring cells
+  std::vector<size_t> neighbors_indices_(const vertex_pair & edge) const;
 
   // two elements are in the same group if they are neighbors and
   // the neighboring face is not in vertex_faces array
@@ -169,12 +169,6 @@ class Mesh
   };
 
   /* private insert cell class that does all the cell insertion work */
-  // std::size_t insert_cell_(const std::vector<std::size_t> & ivertices,
-  //                          const std::vector<std::vector<std::size_t>> & cell_faces,
-  //                          const int                        vtk_id,
-  //                          const int                        marker,
-  //                          std::vector<std::size_t> face_parents = std::vector<std::size_t>(),
-  //                          std::vector<int>          face_markers = std::vector<int>());
   std::size_t insert_cell_(const std::vector<std::size_t> & ivertices,
                            const std::vector<size_t> take_faces,
                            const std::vector<FaceTmpData> &big_face_vector,
@@ -188,9 +182,12 @@ class Mesh
                            const int                        marker = constants::default_cell_marker);
   std::size_t insert_face_(const FaceTmpData & f);
 
-  bool insert_cell_with_hanging_nodes_(Cell & parent,
-                                              std::vector<FaceTmpData> big_face_vector,
-                                              std::vector<size_t> split_faces);
+  bool insert_cell_with_hanging_nodes_(Cell parent,
+                                       std::vector<FaceTmpData> big_face_vector,
+                                       std::vector<size_t> split_faces);
+  void insert_hanging_node_(const Cell parent,
+                            const vertex_pair edge,
+                            const size_t inserted_vertex);
   /* get a vector of polygon global vertex indices given a vector with
    * local polygon vertex indices and a mapping vector. */
   std::vector<std::size_t>
@@ -203,6 +200,9 @@ class Mesh
   std::pair<bool,std::size_t> determine_face_parent_(const std::vector<size_t> & face_vertices,
                                                      const Cell                & parent_cell,
                                                      const std::vector<size_t> & splitting_face_vertices) const;
+
+  std::map<vertex_pair,size_t> find_affected_edges_(const std::vector<size_t> &new_vertices,
+                                                    const Cell & cell) const;
 
   int face_vtk_id_(const size_t n_vertices) const
   {
@@ -232,8 +232,10 @@ class Mesh
   std::vector<angem::Point<3,double>>   m_vertices;      // vector of vertex coordinates
   std::vector<Cell>                     m_cells;
   std::vector<Face>                     m_faces;
+  public:
   std::vector<std::vector<std::size_t>> m_vertex_cells;  // vertex neighboring cells
   std::vector<std::vector<std::size_t>> m_vertex_faces;  // vertex neighboring faces
+  private:
   // Used as a tmp container when splitting faces for dfm
   std::vector<std::size_t> m_faces_marked_for_split;
   // to count active cells

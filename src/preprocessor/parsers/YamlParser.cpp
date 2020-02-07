@@ -113,7 +113,7 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
   std::string shape = "Rectangle";
   double height = 1;  // for rectangles and ellipses
   double length = 1;  // for rectangles and ellipses
-  double dip = 0;
+  double dip = 90;
   double strike = 0;
   double cohesion = 0;
   angem::Point<3,double> center = {0, 0, 0};
@@ -132,7 +132,8 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
     if (key == "type")
     {
       shape = it->second.as<std::string>();
-      assert (shape == "Rectangle");
+      if (shape != "Rectangle")
+        throw std::invalid_argument("non-rectangular fractures not supported");
     }
     else if (key == "length")
       length = it->second.as<double>();

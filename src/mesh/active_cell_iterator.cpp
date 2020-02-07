@@ -31,14 +31,7 @@ bool active_cell_iterator::operator!=(const active_cell_iterator & other) const
 active_cell_iterator &
 active_cell_iterator::operator++()
 {
-  if (p_cell->index() == p_cell->pm_grid_cells->size() - 1)
-  {
-    p_cell = nullptr;
-    return *this;
-  }
-
-  increment_raw_iterator_();
-  while ( !p_cell->is_active() )
+  do
   {
     if (p_cell->index() == p_cell->pm_grid_cells->size() - 1)
     {
@@ -47,6 +40,7 @@ active_cell_iterator::operator++()
     }
     increment_raw_iterator_();
   }
+  while ( !p_cell->is_active() );
   return *this;
 }
 

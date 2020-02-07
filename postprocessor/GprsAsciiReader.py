@@ -23,7 +23,7 @@ class GprsAsciiReader:
         if self.input_file is not None:
             self.input_file.close()
 
-    def readTimeStep(self) -> bool:
+    def advanceTimeStep(self) -> bool:
         """
         returns true if was able to read a timestep
         returns false if eof.
@@ -34,7 +34,7 @@ class GprsAsciiReader:
             line = self.input_file.readline() # Time  = ...
             if not line: return False
 
-        self.current_time = int(line.split()[-1])
+        self.current_time = float(line.split()[-1])
         line = self.input_file.readline() # table headers
         keys = line.split()
         # allocate data

@@ -148,8 +148,19 @@ void OutputDataVTK::save_dfm_data(const std::string & fname) const
   std::cout << "Saving DFM mesh file: " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_surface_geometry(m_data.dfm_flow_grid.get_vertices(),
-                                        m_data.dfm_flow_grid.get_polygons(), out);
+  const auto & grid = m_data.dfm_flow_grid;
+  IO::VTKWriter::write_surface_geometry(grid.get_vertices(), grid.get_polygons(), out);
+
+  // save face markers
+  IO::VTKWriter::enter_section_cell_data(grid.n_polygons(), out);
+  {
+    std::vector<double> property(grid.n_polygons());
+    const std::string keyword = "Marker";
+    for (auto face = grid.begin_polygons(); face != grid.end_polygons(); ++face)
+      property[face.index()] = face.marker();
+    IO::VTKWriter::add_data(property, keyword, out);
+  }
+
   out.close();
 }
 

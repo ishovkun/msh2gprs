@@ -94,17 +94,15 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     out << "/" << std::endl << std::endl;
 
     // additional data (if any)
-    // for (std::size_t i=0; i<data.custom_names.size(); ++i)
-    // {
-    //   out << data.custom_names[i] << std::endl;
-    //   for (const auto & cell : data.cells)
-    //   {
-    //     if (cell.custom.size() != data.custom_names.size())
-    //       assert(cell.custom.size() == data.custom_names.size());
-    //     out << cell.custom[i] << std::endl;
-    //   }
-    //   out << "/" << std::endl << std::endl;
-    // }
+    for (std::size_t ivar=0; ivar<m_data.output_flow_properties.size(); ++ivar)
+    {
+      const size_t prop_key = m_data.output_flow_properties[ivar];
+      const std::string keyword = m_data.property_names[prop_key];
+      out << keyword << std::endl;
+      for (const auto & cv : cvs)
+        out << cv.custom[ivar] << std::endl;
+      out << "/" << std::endl << std::endl;
+    }
 
     out.close();
   }
