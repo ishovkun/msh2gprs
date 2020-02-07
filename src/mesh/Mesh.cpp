@@ -68,10 +68,6 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
     const auto & face = big_face_vector[iface];
     const std::size_t face_index = insert_face_(face);
     face_indices.push_back(face_index);
-    if ( new_cell_index ==  2507)
-    {
-      std::cout << "2507 face " << face_index << std::endl;
-    }
   }
 
   m_cells.emplace_back(new_cell_index, ivertices, std::move(face_indices),
@@ -813,7 +809,7 @@ void Mesh::split_face_in_cell_(const Cell parent, const vertex_pair new_edge)
     std::vector<size_t> indices_in_tmp(tmp_faces.size());
     std::iota(indices_in_tmp.begin(), indices_in_tmp.end(), 0);
     const size_t child_cell_index = insert_cell_(indices_in_tmp, tmp_faces, parent.marker());
-    std::cout << "new cell = " << child_cell_index << std::endl;
+    // std::cout << "new cell = " << child_cell_index << std::endl;
     m_cells[child_cell_index].m_parent = parent.index();
     m_cells[parent.index()].m_children = {child_cell_index};
     m_n_cells_with_hanging_nodes++;
