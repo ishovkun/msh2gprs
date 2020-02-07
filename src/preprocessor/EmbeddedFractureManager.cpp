@@ -2,6 +2,9 @@
 #include "angem/CollisionGJK.hpp"  // collisionGJK
 #include "angem/Collisions.hpp"    // angem::split
 #include <utility>                 // provides std::pair
+#include <fstream>                 // debug
+#include "VTKWriter.hpp"
+
 
 namespace gprs_data {
 
@@ -35,6 +38,26 @@ void EmbeddedFractureManager::split_cells()
     m_marker_config.insert({ face_marker, i });
     face_marker++;
   }
+  // std::ofstream out;
+  // out.open("stuff.vtk");
+  // IO::VTKWriter::write_geometry(m_grid, out);
+  // out.close();
+  // for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+  //   if (face->neighbors().size() > 1)
+  // {
+  //   std::cout << std::endl;
+  //   std::cout << "face->index() = " << face->index() << std::endl;
+  //   std::cout << "face->marker() = " << face->marker() << std::endl;
+  //   std::cout << "neighbors ";
+  //   for (auto pc : face->neighbors())
+  //     std::cout << pc->index() << " ";
+  //   std::cout << " (";
+  //   for (auto pc : face->neighbors())
+  //     std::cout << pc->ultimate_parent().index() << " ";
+  //   std::cout << ")"<< std::endl;
+  //   std::cout << std::endl;
+  // }
+  // exit(0);
 }
 
 void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,

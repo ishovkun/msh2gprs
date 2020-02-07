@@ -66,9 +66,12 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
   for (const size_t iface : take_faces)
   {
     const auto & face = big_face_vector[iface];
-    size_t face_vtk_id = face.vtk_id;
     const std::size_t face_index = insert_face_(face);
     face_indices.push_back(face_index);
+    if ( new_cell_index ==  2507)
+    {
+      std::cout << "2507 face " << face_index << std::endl;
+    }
   }
 
   m_cells.emplace_back(new_cell_index, ivertices, std::move(face_indices),
@@ -102,28 +105,47 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
   if (m_vertex_faces.size() < n_vertices())
     m_vertex_faces.resize(n_vertices());
 
-  // size_t face_index = m_faces.size();
-  bool face_exists = false;
   size_t face_index = face_exists_(f.vertices);
-
   if (face_index == constants::invalid_index)
   {
     face_index = m_faces.size();
     m_faces.emplace_back(face_index, f.vertices, f.vtk_id, f.marker,
                          m_cells, m_faces, m_vertices, m_vertex_cells, f.parent);
     if (f.parent != constants::invalid_index)
-        m_faces[f.parent].m_children.push_back(face_index);
+    {
+      m_faces[f.parent].m_children.push_back(face_index);
+    }
+
   }
-  else
-  {
+  else {
+    if (f.parent != constants::invalid_index)
+    {
+      if ( f.parent != face_index )
+      {
+      for (auto v : f.vertices)
+        std::cout << v << " ";
+      std::cout << std::endl;
+        std::cout << "face_index = " << face_index << std::endl;
+        std::cout << "f.parent = " << f.parent << ": ";
+        for (auto v : face( f.parent ).vertices())
+          std::cout << v << " ";
+        std::cout << std::endl;
+      }
+      // assert( f.parent == face_index );
+      //  assert( false && "wtf" );
+      if (f.parent != face_index)  //  this sometimes happens when splitting cell through hanging nodes edge
+        m_faces[f.parent].m_children.push_back(face_index);
+    }
     if (f.marker != constants::default_face_marker)
+    {
       m_faces[face_index].m_marker = f.marker;
-    assert( m_faces[face_index].m_vtk_id == f.vtk_id );
+    }
+
+    assert(m_faces[face_index].m_vtk_id == f.vtk_id);
   }
 
   for (const size_t vertex : f.vertices)
-    if (std::find( m_vertex_faces[vertex].begin(), m_vertex_faces[vertex].end(),
-                   face_index) == m_vertex_faces[vertex].end())
+    if (!std::count( m_vertex_faces[vertex].begin(), m_vertex_faces[vertex].end(), face_index))
       m_vertex_faces[vertex].push_back(face_index);
 
   return face_index;
@@ -385,7 +407,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     assert ( children.size() == 1 );
     return split_cell(*children[0], plane, splitting_face_marker);
   }
-  std::cout << "\nsplit " << cell.index() << " (parent "
+  std::cout << "\n" << splitting_face_marker<< "-split " << cell.index() << " (parent "
             << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"<< std::endl;
   assert (cell.is_active());
   // Bookkeeping:
@@ -403,16 +425,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   }
   // the actual geometry happens here
   const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
-  // std::cout << "unsplit cell faces:" << std::endl;
-  // for (auto face : cell.faces())
-  // {
-  //   for (auto v : face->vertices())
-  //     std::cout << v << " ";
-  //   std::cout << " (";
-  //   for (auto v : face->vertices())
-  //     std::cout << vertex(v) << "\t|\t";
-  //   std::cout << ")"<< std::endl;
-  // }
+ 
   // which polygons in split belong to which faces
   std::vector<size_t> polygroup_polygon_parents;
   angem::split(*polyhedron, plane, split, polygroup_polygon_parents, constants::marker_below_splitting_plane,
@@ -453,7 +466,6 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   // make two groups of faces (polygons that constitute polyhedra) that will form the new cells
   std::vector<FaceTmpData> tmp_faces(split.polygons.size());
   std::vector<size_t> cell_above_faces, cell_below_faces;
-  // std::unordered_map<size_t,std::vector<size_t>> cells_to_insert_hanging_nodes;
   for (size_t i = 0; i < split.polygons.size(); i++)
   {
     FaceTmpData & f = tmp_faces[i];
@@ -464,13 +476,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
                cell_faces[ polygroup_polygon_parents[i] ]->index() :
                constants::invalid_index;
 
-    // mark the neighbors of the non-frac face for inclusion of hanging nodes
-    // if (i != split_face_local_index)
-    //   for (const auto p_cell : face(f.parent).neighbors())
-    //     if (*p_cell != cell)
-    //       cells_to_insert_hanging_nodes[p_cell->index()].push_back(i);
-
-    if ( split.markers[i] == constants::marker_splitting_plane )
+    if ( i == split_face_local_index )
       f.marker = splitting_face_marker;
     else
       f.marker = m_faces[f.parent].marker();
@@ -506,21 +512,28 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
                   << std::endl;
         insert_hanging_node_(this->cell(icell), it_edge.first, it_edge.second);
       }
-  // exit(0);
 
-  // for (const auto &it : cells_to_insert_hanging_nodes)
-  // {
-  //   assert( this->cell(it.first).is_active() );
-  //   if (it.second.size() == 2)
-  //   {
-  //   std::cout << "insert hanging into " << it.first
-  //             << "(" << this->cell(it.first).ultimate_parent().index()
-  //             << ")"<< std::endl;
-  //     insert_cell_with_hanging_nodes_(this->cell(it.first), tmp_faces,
-  //                                     it.second);
-  //   }
+  // finally, we need to split faces of the neighbors by face
+  const auto & splitting_face = tmp_faces[split_face_local_index];
+  for (std::size_t i=0; i<splitting_face.vertices.size(); ++i)
+  {
+    vertex_pair split_edge = {splitting_face.vertices[i], constants::invalid_index};
+    if ( i + 1 <  splitting_face.vertices.size())
+      split_edge.second = splitting_face.vertices[i+1];
+    else split_edge.second = splitting_face.vertices[0];
+    for ( const auto icell : neighbors_indices_(split_edge) )
+      if (icell != cell.index() && icell != child_cell_index1 && icell != child_cell_index2)
+      {
+        const auto & neighbor = this->cell(icell);
+        if (!neighbor.has_edge(split_edge))
+        {
+          std::cout << "split neighbor face " << neighbor.index() << "("
+                    << neighbor.ultimate_parent().index() << std::endl;
+          split_face_in_cell_(neighbor, split_edge);
+        }
 
-  // }
+      }
+  }
 }
 
 active_cell_const_iterator Mesh::begin_active_cells() const
@@ -645,131 +658,6 @@ std::vector<size_t> find_vertices_from_both_groups(const std::vector<size_t> &ve
   return result;
 }
 
-bool Mesh::insert_cell_with_hanging_nodes_(Cell parent,
-                                           std::vector<FaceTmpData> big_face_vector,
-                                           std::vector<size_t> split_faces)
-{
-  assert(split_faces.size() == 2);
-  const auto & child_face1 = big_face_vector[split_faces[0]];
-  const auto & child_face2 = big_face_vector[split_faces[1]];
-  assert( child_face1.parent == child_face2.parent );
-  const auto c1verts = sort_copy_(child_face1.vertices);
-  const auto c2verts = sort_copy_(child_face2.vertices);
-
-  // adjacent faces also get hanging nodes
-  // we need to separate vertices of split face into two unique groupd
-  // to check for hanging nodes in adjacent vertices
-  std::pair<std::vector<size_t>, std::vector<size_t>> unique_split_face_vertices =
-      separate_into_unique_groups(c1verts, c2verts);
-  // copy untouched faces
-  size_t match_counter = 0;
-  // loop parent cell faces and decide whether to modify or leave the face as it is
-  for (const auto p_face : parent.faces())
-  {
-    // if face does not match a split face, then we have two choices
-    // either leave it as it is, or insert a hanging node in there
-    // if the face is adjacent to the split face
-    if (p_face->index() != child_face1.parent)
-    {
-      // if it is a face adjacent to the split face than there would be
-      // an ednge that was also split
-      // match face vertices with the vertices of split face
-      // if there are some vertices on each side of the split, then
-      // this is an adjacent face
-      const std::vector<size_t> old_face_vertices = p_face->vertices();
-      std::vector<size_t> from_both_groups = find_vertices_from_both_groups(old_face_vertices,
-                                                                            unique_split_face_vertices.first,
-                                                                            unique_split_face_vertices.second);
-      assert(from_both_groups.size() <= 2);
-      if (from_both_groups.size() < 2) // this is not an adjacent face
-      {
-        // here there are also two options
-        // sometimes we will encounter a face that has already been split by the same fracture
-        // in this case we skip the face
-        const auto sorted_fverts = sort_copy_(p_face->vertices());
-        if (sorted_fverts == c1verts or sorted_fverts == c2verts)
-        {
-          match_counter++;
-          continue;
-        }
-
-        // the last case is that the face does not require any modification
-        // leave it as it is
-        FaceTmpData f;
-        f.vertices = p_face->vertices();
-        f.parent = p_face->parent().index();
-        f.marker = p_face->marker();
-        f.vtk_id = p_face->vtk_id();
-        split_faces.push_back(big_face_vector.size());
-        big_face_vector.push_back(std::move(f));
-      } // end condition non-adjacent face
-      else // if (from_both_groups.size() == 2)
-      {
-        // find point that needs to be inserted
-        // it needs to lie on a line between vertices in from_both_groups
-        const Point direction = vertex(from_both_groups[1]) - vertex(from_both_groups[0]);
-        angem::Line<3, double> line(vertex(from_both_groups[0]), direction);
-        size_t vertex_to_insert = std::numeric_limits<size_t>::max();
-        for (std::size_t iv = 0; iv < c1verts.size(); ++iv)
-        {
-          if (c1verts[iv] == from_both_groups[0] || c1verts[iv] == from_both_groups[1])
-            continue;
-          vertex_to_insert = c1verts[iv];
-          if (line.distance(vertex(vertex_to_insert)) < 1e-6)
-            break;
-          assert ( iv != c1verts.size() - 1 );
-        }
-
-        // create a face with a new vertex inluded
-        FaceTmpData f;
-        bool need_to_insert = true;
-        // we will loop the face vertices and insert a new node after we come across
-        // a node from either group
-        for (const size_t v : old_face_vertices)
-        {
-          f.vertices.push_back(v);
-          if (need_to_insert)
-            if ( std::count(from_both_groups.begin(), from_both_groups.end(), v) )
-            {
-              f.vertices.push_back(vertex_to_insert);
-              need_to_insert = false;
-            }
-        }
-
-        f.parent = p_face->parent().index();
-        f.marker = p_face->marker();
-        f.vtk_id = constants::vtk_id_general_polygon;
-        split_faces.push_back( big_face_vector.size() );
-        big_face_vector.push_back(std::move(f));
-      } // end condition adjacent face
-    }
-  }
-
-  if (match_counter == 0)
-  {
-    const size_t child_cell_index = insert_cell_(split_faces, big_face_vector, parent.marker());
-    m_cells[child_cell_index].m_parent = parent.index();
-    m_cells[parent.index()].m_children = {child_cell_index};
-    m_n_cells_with_hanging_nodes++;
-    return true;
-  }
-  else assert ( match_counter == 2 );
-  return false;
-}
-
-// const Face & Mesh::ultimate_parent(const Face & face) const
-// {
-//   const Face * par = &m_faces[ face.parent() ];
-//   while (par->parent() != par->index())
-//     par = &m_faces[ par->parent() ];
-//   return *par;
-// }
-
-// Face & Mesh::ultimate_parent(const Face & face)
-// {
-//   return const_cast<Face&>(ultimate_parent(face));
-// }
-
 size_t Mesh::face_exists_(const std::vector<size_t> & face_vertices) const
 {
   const std::vector<size_t> sorted_vertices = sort_copy_(face_vertices);
@@ -862,8 +750,6 @@ void Mesh::insert_hanging_node_(const Cell parent, const vertex_pair edge, const
       if (i != ne - 1)
         f.vertices.push_back(face_edges[i].second);
     }
-    f.parent = face->index();
-    f.marker = face->marker();
     f.vtk_id = face_vtk_id_(f.vertices.size());
     tmp_faces.push_back( std::move(f) );
   }
@@ -873,6 +759,65 @@ void Mesh::insert_hanging_node_(const Cell parent, const vertex_pair edge, const
   m_cells[child_cell_index].m_parent = parent.index();
   m_cells[parent.index()].m_children = {child_cell_index};
   m_n_cells_with_hanging_nodes++;
+}
+
+void Mesh::split_face_in_cell_(const Cell parent, const vertex_pair new_edge)
+{
+  std::vector<FaceTmpData> tmp_faces;
+  tmp_faces.reserve(parent.m_faces.size() + 2);
+
+  FaceTmpData f2;
+  for (auto face : parent.faces())
+  {
+    FaceTmpData f1;
+    f1.parent = face->index();
+    f1.marker = face->marker();
+    if (face->has_vertex(new_edge.first) && face->has_vertex(new_edge.second))
+    {
+      f2.parent = face->index();
+      f2.marker = face->marker();
+      bool in_first_part = true;
+      for (const size_t v : face->vertices())
+      {
+        if (in_first_part) f1.vertices.push_back(v);
+        else               f2.vertices.push_back(v);
+        if (v == new_edge.first || v == new_edge.second)
+        {
+          in_first_part = !in_first_part;
+          if (in_first_part) f1.vertices.push_back(v);
+          else               f2.vertices.push_back(v);
+        }
+
+      }
+      f1.vtk_id = face_vtk_id_(f1.vertices.size());
+      f2.vtk_id = face_vtk_id_(f2.vertices.size());
+      assert( f1.vertices.size() > 2 );
+      assert( f2.vertices.size() > 2 );
+    }
+    else // leave as it is
+    {
+      f1.vertices = face->vertices();
+      f1.vtk_id = face->vtk_id();
+    }
+
+    tmp_faces.push_back(std::move(f1));
+  }
+  if (!f2.vertices.empty())
+  {
+    // std::cout << "success" << std::endl;
+    // std::cout << "f2.vertices.size() = " << f2.vertices.size() << std::endl;
+    // for (auto v : f2.vertices)
+    //   std::cout << v << " ";
+    // std::cout << std::endl;
+    tmp_faces.push_back(std::move(f2));
+    std::vector<size_t> indices_in_tmp(tmp_faces.size());
+    std::iota(indices_in_tmp.begin(), indices_in_tmp.end(), 0);
+    const size_t child_cell_index = insert_cell_(indices_in_tmp, tmp_faces, parent.marker());
+    std::cout << "new cell = " << child_cell_index << std::endl;
+    m_cells[child_cell_index].m_parent = parent.index();
+    m_cells[parent.index()].m_children = {child_cell_index};
+    m_n_cells_with_hanging_nodes++;
+  }
 }
 
 }  // end namespace mesh

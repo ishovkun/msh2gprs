@@ -45,6 +45,8 @@ class Face
   inline const std::vector<std::size_t> & vertices() const { return m_vertices; }
   // get vector of index pairs that represent edges
   std::vector<vertex_pair> edges() const;
+  // check if face contains an edge
+  bool has_edge(const vertex_pair & edge) const;
   // get the coordinates of face vertices
   std::vector<Point> vertex_coordinates() const;
   // get vector of active neighboring cells.

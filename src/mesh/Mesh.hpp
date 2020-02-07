@@ -182,12 +182,11 @@ class Mesh
                            const int                        marker = constants::default_cell_marker);
   std::size_t insert_face_(const FaceTmpData & f);
 
-  bool insert_cell_with_hanging_nodes_(Cell parent,
-                                       std::vector<FaceTmpData> big_face_vector,
-                                       std::vector<size_t> split_faces);
   void insert_hanging_node_(const Cell parent,
                             const vertex_pair edge,
                             const size_t inserted_vertex);
+  /* if any of the cell faces contain the vertices in edge, split that face in two */
+  void split_face_in_cell_(const Cell parent, const vertex_pair new_edge);
   /* get a vector of polygon global vertex indices given a vector with
    * local polygon vertex indices and a mapping vector. */
   std::vector<std::size_t>

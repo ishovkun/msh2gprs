@@ -77,6 +77,8 @@ class Cell
   std::vector<const Cell*> ultimate_children() const;
   // return child cells from all refinement levels
   std::vector<const Cell*> all_level_children() const;
+  // check if cell polyhedron has edge specified by vertex indices
+  bool has_edge(const vertex_pair edge) const;
 
  protected:
   // recursive part of the public ultimate_children() method
