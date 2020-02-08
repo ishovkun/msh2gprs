@@ -116,19 +116,6 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
   else {
     if (f.parent != constants::invalid_index)
     {
-      if ( f.parent != face_index )
-      {
-      for (auto v : f.vertices)
-        std::cout << v << " ";
-      std::cout << std::endl;
-        std::cout << "face_index = " << face_index << std::endl;
-        std::cout << "f.parent = " << f.parent << ": ";
-        for (auto v : face( f.parent ).vertices())
-          std::cout << v << " ";
-        std::cout << std::endl;
-      }
-      // assert( f.parent == face_index );
-      //  assert( false && "wtf" );
       if (f.parent != face_index)  //  this sometimes happens when splitting cell through hanging nodes edge
         m_faces[f.parent].m_children.push_back(face_index);
     }
@@ -495,7 +482,6 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   m_cells[cell.index()].m_children = {child_cell_index1, child_cell_index2};
   m_cells[child_cell_index1].m_parent = cell.index();
   m_cells[child_cell_index2].m_parent = cell.index();
-  // std::cout << "direct children: " << child_cell_index1  << " " << child_cell_index2<< std::endl;
 
   // we need to insert hanging nodes into neighboring cells
   // the eiasiest way to do it is to track split edges
