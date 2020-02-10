@@ -411,8 +411,11 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
  
   // which polygons in split belong to which faces
   std::vector<size_t> polygroup_polygon_parents;
-  angem::split(*polyhedron, plane, split, polygroup_polygon_parents, constants::marker_below_splitting_plane,
-               constants::marker_above_splitting_plane, constants::marker_splitting_plane);
+  angem::split(*polyhedron, plane, split, polygroup_polygon_parents,
+               constants::marker_below_splitting_plane,
+               constants::marker_above_splitting_plane,
+               constants::marker_splitting_plane,
+               /* tol = */ 1e-6);
 
   const std::vector<Face*> & cell_faces = cell.faces();
   // insert new vertices (those that occured due to splitting)

@@ -54,10 +54,16 @@ void WellManager::setup_simple_well_(Well & well)
     p2.z() = cell_center.z() - h * 10;
 
     std::vector<Point> section_data;
-    if (angem::collision(p1, p2, *p_poly_cell, section_data, 1e-6))
+    const double tol = 1e-6*fabs(p1.z()-p2.z());
+    if (angem::collision(p1, p2, *p_poly_cell, section_data, tol))
     {
       if (cell->ultimate_parent() != *cell)
-        throw std::runtime_error("well crosses refined cell. not implemented yet");
+      {
+        throw std::runtime_error("well crosses refined cell " +
+                                 std::to_string(cell->index()) + "(" +
+                                 std::to_string(cell->ultimate_parent().index()) +
+                                 "). not implemented yet");
+      }
 
       assert( section_data.size() == 2 );
 
@@ -73,6 +79,8 @@ void WellManager::setup_simple_well_(Well & well)
       m_data.well_vertex_indices.back().second = m_data.well_vertices.insert(section_data[1]);
     }
   }
+  if ( well.connected_volumes.empty() )
+    throw std::invalid_argument("Well " + well.name + " has no connected volumes");
 }
 
 void WellManager::setup_segmented_well_(Well & well)
@@ -87,7 +95,7 @@ void WellManager::setup_segmented_well_(Well & well)
   //   std::vector<Point> section_data;
   //   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   //   {
-  //     const auto p_poly_cell = cell->polyhedron();
+  //     const auto p_poly_cell = cell>polyhedron();
   //     if (angem::collision(segment.first, segment.second,
   //                          *p_poly_cell, section_data, 1e-6))
   //     {

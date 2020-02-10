@@ -69,6 +69,12 @@ void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
   {
     mesh::Cell & old_cell = m_grid.cell(icell);
     m_grid.split_cell(old_cell, plane, face_marker);
+    // std::cout << "saving stuff" << std::endl;
+  // std::ofstream out;
+  // out.open("stuff.vtk");
+  // IO::VTKWriter::write_geometry(m_grid, out);
+  // out.close();
+  // exit(0);
   }
 }
 
