@@ -30,6 +30,7 @@ void DFEMElement::build_triangulation_()
   api::build_triangulation(_cell);
   // ask gmsh to provide gaussian points, shape functions, and jacobians
   api::get_elements(_element_types, _element_tags, _element_nodes, /* dim = */ 3);
+  std::cout << "element_types.size() = " << _element_tags[0].size() << std::endl;
   numberNodesEndElements_(_element_types, _element_tags, _element_nodes);
 
   std::vector<double> crds, prcrds;
@@ -141,9 +142,9 @@ void DFEMElement::build_jacobian_()
     FeValues fe_values(type, _element_tags[itype].size());
     Eigen::MatrixXd cell_matrix(fe_values.n_vertices(), fe_values.n_vertices());
 
-    for (std::size_t itag=0; itag<_element_tags[itype].size(); ++itag)
+    for (size_t etag=0; etag<_element_tags[itype].size(); ++etag)
     {
-      const size_t tag = _element_tags[itype][itag];
+      const size_t tag = _element_tags[itype][etag];
       const size_t cell_number = _cell_numbering[tag];
       fe_values.update(cell_number);
       cell_matrix.setZero();
@@ -157,11 +158,12 @@ void DFEMElement::build_jacobian_()
                                    fe_values.JxW(q));     // dV
       }
 
+      /* distribute local to global */
       for (size_t i = 0; i < fe_values.n_vertices(); ++i)
         for (size_t j = 0; j < fe_values.n_vertices(); ++j)
         {
-          const size_t itag = _element_nodes[itype][fe_values.n_vertices()*itag + i];
-          const size_t jtag = _element_nodes[itype][fe_values.n_vertices()*itag + j];
+          const size_t itag = _element_nodes[itype][fe_values.n_vertices()*etag + i];
+          const size_t jtag = _element_nodes[itype][fe_values.n_vertices()*etag + j];
           const size_t idof = _node_numbering[itag];
           const size_t jdof = _node_numbering[jtag];
           _system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);

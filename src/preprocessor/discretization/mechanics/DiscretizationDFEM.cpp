@@ -19,8 +19,8 @@ void DiscretizationDFEM::build()
     api::initialize_gmsh();
     std::cout << "cell.index() = " << cell->index() << std::endl;
     DFEMElement discr_element(*cell);
-    exit(0);
     api::finalize_gmsh();
+    exit(0);
   }
 }
 
