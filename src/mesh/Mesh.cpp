@@ -415,7 +415,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
                constants::marker_below_splitting_plane,
                constants::marker_above_splitting_plane,
                constants::marker_splitting_plane,
-               /* tol = */ 1e-6);
+               /* tol = */ 1e-4);
 
   const std::vector<Face*> & cell_faces = cell.faces();
   // insert new vertices (those that occured due to splitting)
