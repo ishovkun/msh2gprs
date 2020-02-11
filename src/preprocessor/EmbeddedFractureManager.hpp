@@ -9,8 +9,10 @@ namespace gprs_data {
 class EmbeddedFractureManager
 {
  public:
+  /* Constructor */
   EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
                           const EDFMMethod edfm_method,
+                          const double min_dist_to_node,
                           SimData & data);
   void split_cells();
   // generate DiscreteFractureConfig object that form due to
@@ -43,6 +45,8 @@ class EmbeddedFractureManager
   std::vector<EmbeddedFractureConfig> &config;
   // simple or pedfm
   EDFMMethod m_method;
+  // minimum distance from fracture to vertex relative to the cell size
+  const double _min_dist_to_node;
   // will be filled
   SimData & m_data;
   mesh::Mesh & m_grid;

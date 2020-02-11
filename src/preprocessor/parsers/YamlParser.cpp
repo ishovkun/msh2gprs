@@ -73,6 +73,10 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
       config.embedded_fractures.emplace_back();
       embedded_fracture(it->second, config.embedded_fractures.back());
     }
+    else if (key == "min_distance_to_vertices")
+    {
+      config.edfm_min_dist_to_node = it->second.as<double>();
+    }
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
