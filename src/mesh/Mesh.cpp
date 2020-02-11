@@ -390,7 +390,7 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     assert ( children.size() == 1 );
     return split_cell(*children[0], plane, splitting_face_marker);
   }
-  std::cout << "\n" << splitting_face_marker<< "-split " << cell.index() << " (parent "
+  std::cout << splitting_face_marker<< "-split " << cell.index() << " (parent "
             << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"<< std::endl;
   assert (cell.is_active());
   // Bookkeeping:
@@ -492,9 +492,9 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     for ( const auto icell : neighbors_indices_(it_edge.first) )
       if (icell != cell.index() && icell != child_cell_index1 && icell != child_cell_index2)
       {
-        std::cout << "insert hanging into " << this->cell(icell).index()
-                  << "(" << this->cell(icell).ultimate_parent().index()
-                  << std::endl;
+        // std::cout << "insert hanging into " << this->cell(icell).index()
+        //           << "(" << this->cell(icell).ultimate_parent().index()
+        //           << std::endl;
         insert_hanging_node_(this->cell(icell), it_edge.first, it_edge.second);
       }
 
@@ -512,8 +512,8 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
         const auto & neighbor = this->cell(icell);
         if (!neighbor.has_edge(split_edge))
         {
-          std::cout << "split neighbor face " << neighbor.index() << "("
-                    << neighbor.ultimate_parent().index() << std::endl;
+          // std::cout << "split neighbor face " << neighbor.index() << "("
+          //           << neighbor.ultimate_parent().index() << std::endl;
           split_face_in_cell_(neighbor, split_edge);
         }
 

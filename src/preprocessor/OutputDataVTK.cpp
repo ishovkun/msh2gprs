@@ -215,6 +215,17 @@ void OutputDataVTK::save_edfm_data(const std::string & fname) const
   IO::VTKWriter::write_surface_geometry(m_data.edfm_grid.get_vertices(),
                                         m_data.edfm_grid.get_polygons(), out);
 
+  // save face markers
+  const auto & grid = m_data.edfm_grid;
+  IO::VTKWriter::enter_section_cell_data(grid.n_polygons(), out);
+  {
+    std::vector<double> property(grid.n_polygons());
+    const std::string keyword = "Marker";
+    for (auto face = grid.begin_polygons(); face != grid.end_polygons(); ++face)
+      property[face.index()] = face.marker();
+    IO::VTKWriter::add_data(property, keyword, out);
+  }
+
   out.close();
 }
 
