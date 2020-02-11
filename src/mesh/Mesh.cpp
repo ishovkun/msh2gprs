@@ -3,6 +3,7 @@
 #include "Cell.hpp"
 #include "angem/PolyhedronFactory.hpp"
 #include "angem/Collisions.hpp"    // angem::split
+#include "yaml/include/yaml-cpp/emittermanip.h"
 #include <unordered_set>
 #include <algorithm>  // std::max
 #include  <numeric>   // iota
@@ -393,6 +394,11 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   std::cout << splitting_face_marker<< "-split " << cell.index() << " (parent "
             << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"<< std::endl;
   assert (cell.is_active());
+  // if (cell.ultimate_parent().index() == 7874)
+  // {
+  //   exit(0);
+  // }
+
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
   // in order to have a map of those to the global vertex indices,
@@ -492,10 +498,12 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
     for ( const auto icell : neighbors_indices_(it_edge.first) )
       if (icell != cell.index() && icell != child_cell_index1 && icell != child_cell_index2)
       {
-        // std::cout << "insert hanging into " << this->cell(icell).index()
-        //           << "(" << this->cell(icell).ultimate_parent().index()
-        //           << std::endl;
-        insert_hanging_node_(this->cell(icell), it_edge.first, it_edge.second);
+          // std::cout << "insert hanging into " << this->cell(icell).index()
+          //           << "(" << this->cell(icell).ultimate_parent().index() << ")"
+          //           << std::endl;
+        const auto & neighbor = this->cell(icell);
+        if (!neighbor.has_vertex(it_edge.second))
+          insert_hanging_node_(neighbor, it_edge.first, it_edge.second);
       }
 
   // finally, we need to split faces of the neighbors by face
@@ -512,8 +520,8 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
         const auto & neighbor = this->cell(icell);
         if (!neighbor.has_edge(split_edge))
         {
-          // std::cout << "split neighbor face " << neighbor.index() << "("
-          //           << neighbor.ultimate_parent().index() << std::endl;
+            // std::cout << "split neighbor face " << neighbor.index() << "("
+            //           << neighbor.ultimate_parent().index() << std::endl;
           split_face_in_cell_(neighbor, split_edge);
         }
 
@@ -657,10 +665,6 @@ size_t Mesh::face_exists_(const std::vector<size_t> & face_vertices) const
       assert( n_faces() > iface );
       const Face & f = m_faces[iface];
       const std::vector<size_t> face_vertices = sort_copy_(f.vertices());
-      // std::cout << "checking ";
-      // for (auto v : face_vertices)
-      //   std::cout << v << " ";
-      // std::cout << std::endl;
       if ( std::equal( face_vertices.begin(), face_vertices.end(),
                        sorted_vertices.begin(), sorted_vertices.end()) )
       {
@@ -713,6 +717,9 @@ std::vector<size_t> Mesh::neighbors_indices_(const vertex_pair & edge) const
 void Mesh::insert_hanging_node_(const Cell parent, const vertex_pair edge, const size_t inserted_vertex)
 {
   assert( edge.first < edge.second );
+  if (inserted_vertex == edge.first || inserted_vertex == edge.second)
+    return;
+
   std::vector<FaceTmpData> tmp_faces;
   tmp_faces.reserve(parent.m_faces.size() + 2);
 
@@ -772,7 +779,6 @@ void Mesh::split_face_in_cell_(const Cell parent, const vertex_pair new_edge)
           if (in_first_part) f1.vertices.push_back(v);
           else               f2.vertices.push_back(v);
         }
-
       }
       f1.vtk_id = face_vtk_id_(f1.vertices.size());
       f2.vtk_id = face_vtk_id_(f2.vertices.size());
@@ -789,16 +795,10 @@ void Mesh::split_face_in_cell_(const Cell parent, const vertex_pair new_edge)
   }
   if (!f2.vertices.empty())
   {
-    // std::cout << "success" << std::endl;
-    // std::cout << "f2.vertices.size() = " << f2.vertices.size() << std::endl;
-    // for (auto v : f2.vertices)
-    //   std::cout << v << " ";
-    // std::cout << std::endl;
     tmp_faces.push_back(std::move(f2));
     std::vector<size_t> indices_in_tmp(tmp_faces.size());
     std::iota(indices_in_tmp.begin(), indices_in_tmp.end(), 0);
     const size_t child_cell_index = insert_cell_(indices_in_tmp, tmp_faces, parent.marker());
-    // std::cout << "new cell = " << child_cell_index << std::endl;
     m_cells[child_cell_index].m_parent = parent.index();
     m_cells[parent.index()].m_children = {child_cell_index};
     m_n_cells_with_hanging_nodes++;

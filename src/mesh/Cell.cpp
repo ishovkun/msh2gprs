@@ -191,4 +191,12 @@ bool Cell::has_edge(const vertex_pair edge) const
   return false;
 }
 
+bool Cell::has_vertex(const size_t vert) const
+{
+  for (const auto & face : faces())
+    if (face->has_vertex(vert))
+      return true;
+  return false;
+}
+
 }  // end namespace
