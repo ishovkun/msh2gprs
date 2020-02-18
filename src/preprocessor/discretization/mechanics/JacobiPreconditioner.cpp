@@ -1,3 +1,4 @@
+#ifdef WITH_EIGEN
 #include "JacobiPreconditioner.hpp"
 
 namespace discretization {
@@ -30,3 +31,5 @@ void JacobiPreconditioner::solve(const Eigen::SparseMatrix<double,Eigen::RowMajo
 
 
 }  // end namespace discretization
+
+#endif

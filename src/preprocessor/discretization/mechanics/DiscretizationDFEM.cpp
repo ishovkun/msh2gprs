@@ -1,5 +1,8 @@
 #include "DiscretizationDFEM.hpp"
+#include "gmsh_interface/GmshInterface.hpp"
+#ifdef WITH_EIGEN
 #include "DFEMElement.hpp"
+#endif
 
 namespace discretization
 {

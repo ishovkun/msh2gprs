@@ -29,7 +29,7 @@ void FeValues::initialize_()
 }
 
 #else
-void FeValues::update(const int element_type, const size_t element_tag)
+void FeValues::initialize_()
 {}
 #endif
 

@@ -1,3 +1,4 @@
+#ifdef WITH_EIGEN
 #include "DFEMElement.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
 #include "gmsh_interface/FeValues.hpp"
@@ -291,3 +292,5 @@ bool DFEMElement::in_global_support_boundary_(const size_t fine_vertex) const
 }
 
 }  // end namespace discretization
+
+#endif  // with_eigen

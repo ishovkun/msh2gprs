@@ -652,7 +652,7 @@ void GmshInterface::get_elements(std::vector<int> & element_types,
 
 #else
 
-void GmshInterface::build_grid(const mesh::Cell & cell)
+void GmshInterface::build_triangulation(const mesh::Cell & cell)
 {
   throw std::invalid_argument("Gmsh is not linked. Gridding options not available");
 }
