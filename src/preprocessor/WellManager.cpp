@@ -36,7 +36,6 @@ void WellManager::setup()
 
 void WellManager::setup_simple_well_(Well & well)
 {
-  std::cout << "simple well " << well.name << std::endl;
   const Point direction = {0, 0, -1};
   const auto & grid = m_data.grid;
   well.reference_depth = -well.coordinate.z();
@@ -54,10 +53,18 @@ void WellManager::setup_simple_well_(Well & well)
     p2.z() = cell_center.z() - h * 10;
 
     std::vector<Point> section_data;
-    if (angem::collision(p1, p2, *p_poly_cell, section_data, 1e-6))
+    const double tol = 1e-6*fabs(p1.z()-p2.z());
+    try
+    {
+      if (angem::collision(p1, p2, *p_poly_cell, section_data, tol))
     {
       if (cell->ultimate_parent() != *cell)
-        throw std::runtime_error("well crosses refined cell. not implemented yet");
+      {
+        throw std::runtime_error("well crosses refined cell " +
+                                 std::to_string(cell->index()) + "(" +
+                                 std::to_string(cell->ultimate_parent().index()) +
+                                 "). not implemented yet");
+      }
 
       assert( section_data.size() == 2 );
 
@@ -72,7 +79,51 @@ void WellManager::setup_simple_well_(Well & well)
       m_data.well_vertex_indices.back().first = m_data.well_vertices.insert(section_data[0]);
       m_data.well_vertex_indices.back().second = m_data.well_vertices.insert(section_data[1]);
     }
+    }
+    catch (const std::exception & e)
+    {
+      std::cout << "e.what() = " << e.what() << std::endl;
+      std::cout << "cell->index() = " << cell->index() << "("
+                << cell->ultimate_parent().index() << ")" << std::endl;
+      std::cout << "cell vertices: ";
+      for (auto v : cell->vertices())
+        std::cout << v << " ";
+      std::cout << std::endl;
+      std::cout << "p1 = " << p_poly_cell->point_inside(p1) << std::endl;
+      std::cout << "p2 = " << p_poly_cell->point_inside(p2) << std::endl;
+      auto & points = p_poly_cell->get_points();
+      int cnt = 0;
+      for (const auto & face : p_poly_cell->get_faces())
+      {
+        std::cout << "try " << cnt++ << ": ";
+        angem::Polygon<double> poly_face(points, face);
+        std::vector<Point> new_section;
+        angem::collision(p1, p2,  poly_face.plane(), new_section, tol);
+        for (size_t i = 0; i < new_section.size(); i++)
+        {
+          bool test = true;
+          try {
+          test = poly_face.point_inside(new_section[i], tol);
+          }
+          catch (const std::exception & e)
+          {
+            for (auto v : poly_face.get_points())
+              std::cout << v << "\t|\t";
+            std::cout << std::endl;
+          }
+          if (test)
+          {
+            std::cout << " dang ";
+          }
+        }
+        std::cout << "ok" << std::endl;
+      }
+      // angem::collision(p1, p2, *p_poly_cell, section_data, tol);
+      throw e;
+    }
   }
+  if ( well.connected_volumes.empty() )
+    throw std::invalid_argument("Well " + well.name + " has no connected volumes");
 }
 
 void WellManager::setup_segmented_well_(Well & well)
@@ -87,7 +138,7 @@ void WellManager::setup_segmented_well_(Well & well)
   //   std::vector<Point> section_data;
   //   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   //   {
-  //     const auto p_poly_cell = cell->polyhedron();
+  //     const auto p_poly_cell = cell>polyhedron();
   //     if (angem::collision(segment.first, segment.second,
   //                          *p_poly_cell, section_data, 1e-6))
   //     {

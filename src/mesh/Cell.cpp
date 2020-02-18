@@ -183,4 +183,20 @@ void Cell::all_level_children_(std::vector<size_t> & ichildren) const
     p_child->all_level_children_(ichildren);
 }
 
+bool Cell::has_edge(const vertex_pair edge) const
+{
+  for (auto face : faces())
+    if (face->has_edge(edge))
+      return true;
+  return false;
+}
+
+bool Cell::has_vertex(const size_t vert) const
+{
+  for (const auto & face : faces())
+    if (face->has_vertex(vert))
+      return true;
+  return false;
+}
+
 }  // end namespace

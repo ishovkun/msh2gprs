@@ -47,11 +47,22 @@ std::vector<const Cell*> Face::neighbors() const
   std::vector<const Cell*> result;
   std::vector<const Cell*> const_neibs = raw_neighbors();
   for (const Cell* p_cell : const_neibs)
-    if (p_cell->is_active())
-      result.push_back( p_cell );
-
-  if (result.size() > 2)
   {
+    if (p_cell->is_active())
+      result.push_back(p_cell);
+  }
+
+  if (result.size() > 2 || result.empty())
+  {
+    std::cout << std::endl;
+    std::cout << "face index " << index() << std::endl;
+    std::cout << "face vertices: ";
+    for (auto v : vertices())
+      std::cout << v << " ";
+    std::cout << std::endl;
+    for (const Cell* p_cell : const_neibs)
+      std::cout << "tried " << p_cell->index() << std::endl;
+    std::cout << "is_active() = " << is_active() << std::endl;
     std::cout << "neibs ";
     for (const auto p_cell : result)
       std::cout << p_cell->index() << " ";
@@ -61,6 +72,7 @@ std::vector<const Cell*> Face::neighbors() const
     std::cout << " )";
     std::cout << std::endl << std::flush;
   }
+  assert(!result.empty());
   assert(result.size() <= 2);
   return result;
 }
@@ -178,6 +190,18 @@ Face & Face::ultimate_parent()
 {
   const auto & cthis = *this;
   return const_cast<Face&>(cthis.ultimate_parent());
+}
+
+bool Face::has_edge(const vertex_pair & edge) const
+{
+  const vertex_pair edge_sorted = std::minmax(edge.first, edge.second);
+  for (const auto e : edges())
+  {
+    const vertex_pair es = std::minmax(e.first, e.second);
+    if ( edge_sorted.first == es.first && edge_sorted.second == es.second )
+      return true;
+  }
+  return false;
 }
 
 }

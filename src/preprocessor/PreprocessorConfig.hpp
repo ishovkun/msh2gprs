@@ -144,6 +144,7 @@ struct PreprocessorConfig
   std::vector<WellConfig>              wells;
 
   EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
+  double edfm_min_dist_to_node = 1e-4;               // minimum distance to grid vertices relative to cell size
   // global container for all cell properties
   CellPropertyConfig cell_properties;
   // vector of cell properties for each subdomain

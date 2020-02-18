@@ -38,7 +38,8 @@ void Preprocessor::run()
   // create discrete fracture manager
   std::cout << "Initializing Fracture managers" << std::endl;
   pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(config.discrete_fractures, data);
-  pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures, config.edfm_method, data);
+  pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures, config.edfm_method,
+                                                          config.edfm_min_dist_to_node, data);
 
   // copy geomechanics grid since base grid will be split
   data.geomechanics_grid = data.grid;

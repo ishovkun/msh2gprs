@@ -1,7 +1,11 @@
 #include "EmbeddedFractureManager.hpp"
 #include "angem/CollisionGJK.hpp"  // collisionGJK
 #include "angem/Collisions.hpp"    // angem::split
+#include <stdexcept>
 #include <utility>                 // provides std::pair
+#include <fstream>                 // debug
+#include "VTKWriter.hpp"
+
 
 namespace gprs_data {
 
@@ -9,12 +13,15 @@ using std::vector;
 using Point = angem::Point<3,double>;
 using std::pair;
 
-EmbeddedFractureManager::
-EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
-                        const EDFMMethod edfm_method,
-                        SimData & data)
-    : config(config), m_method(edfm_method), m_data(data), m_grid(data.grid)
-{}
+EmbeddedFractureManager::EmbeddedFractureManager(
+    std::vector<EmbeddedFractureConfig> &config, const EDFMMethod edfm_method,
+    const double min_dist_to_node, SimData &data)
+    : config(config), m_method(edfm_method),
+      _min_dist_to_node(min_dist_to_node), m_data(data), m_grid(data.grid)
+{
+  if (_min_dist_to_node < 1e-10)
+    throw std::invalid_argument("EDFM min distance to node is too small");
+}
 
 void EmbeddedFractureManager::split_cells()
 {
@@ -31,6 +38,9 @@ void EmbeddedFractureManager::split_cells()
       if (++iter > 100)
         throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
     }
+    if (cells_to_split.empty())
+      throw std::invalid_argument("embedded fracture "+std::to_string(i) + " intersects zero cells");
+
     split_cells_(*frac.body, cells_to_split, face_marker);
     m_marker_config.insert({ face_marker, i });
     face_marker++;
@@ -67,11 +77,11 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
       const std::vector<Point> & vertices = polyhedron->get_points();
       for (const Point & vertex : vertices)
       {
-        const double dist_vert_center = (polyhedron->center() - vertex).norm();
-        if ( std::fabs( fracture.plane().signed_distance(vertex) / dist_vert_center) < 1e-4 )
+        const double h = polyhedron->center().distance(vertex);
+        const double min_dist = h * _min_dist_to_node;
+        if ( std::fabs( fracture.plane().signed_distance(vertex)) < min_dist )
         {
-          const double h = vertices[1].distance(vertices[0]);
-          const Point shift = h/5 * fracture.plane().normal();
+          const Point shift = h/50 * fracture.plane().normal();
           fracture.move(shift);
           return false;
         }
@@ -192,11 +202,14 @@ void EmbeddedFractureManager::build_edfm_grid(const discretization::DoFNumbering
 {
   mesh::SurfaceMesh<double> edfm_grid(1e-6);
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
-    if (is_fracture(face->marker()))
+  {
+    const auto it = m_marker_config.find(face->marker());
+    if (it != m_marker_config.end())
     {
-      edfm_grid.insert(face->polygon());
-      m_data.edfm_cell_mapping.push_back( dofs.face_dof(face->index()) );
+      edfm_grid.insert(face->polygon(), it->second);
+      m_data.edfm_cell_mapping.push_back(dofs.face_dof(face->index()));
     }
+  }
 
   m_data.edfm_grid = std::move(edfm_grid);
 }
