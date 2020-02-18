@@ -68,6 +68,15 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
       else
         throw std::invalid_argument(str_method);
     }
+    else if (key == "mech-method")
+    {
+      const std::string str_method = it->second.as<std::string>();
+      if (str_method == "strong discontinuity")
+        config.mech_edfm_method = MechEDFMMethod::strong_discontinuity;
+      else if (str_method == "discrete")
+        config.mech_edfm_method = MechEDFMMethod::discrete_finite_element;
+      else throw std::invalid_argument("Unknown EDFM mechanics method " + str_method);
+    }
     else if (key == "fracture")
     {
       config.embedded_fractures.emplace_back();

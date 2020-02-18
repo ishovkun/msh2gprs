@@ -61,6 +61,12 @@ enum EDFMMethod
   compartmental, // cEDFM by Chai 2018
 };
 
+enum MechEDFMMethod
+{
+  strong_discontinuity,
+  discrete_finite_element
+};
+
 
 struct EmbeddedFractureConfig
 {
@@ -144,6 +150,7 @@ struct PreprocessorConfig
   std::vector<WellConfig>              wells;
 
   EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
+  MechEDFMMethod mech_edfm_method = MechEDFMMethod::strong_discontinuity;  // mechanics embedded fractures
   double edfm_min_dist_to_node = 1e-4;               // minimum distance to grid vertices relative to cell size
   // global container for all cell properties
   CellPropertyConfig cell_properties;
