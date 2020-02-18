@@ -71,12 +71,12 @@ void SimData::defineEmbeddedFractureProperties()
         for (const auto & vertex : poly_cell.get_points())
         {
           const auto vc = poly_cell.center() - vertex;
-          if ( fabs(frac_conf.body->plane.distance(vertex)/vc.norm()) < 1e-4 )
+          if ( fabs(frac_conf.body->plane().signed_distance(vertex)/vc.norm()) < 1e-4 )
           {
             // shift in the direction perpendicular to fracture
             const double h = (poly_cell.get_points()[1] -
                               poly_cell.get_points()[0]).norm();
-            const Point shift = h/5 * frac_conf.body->plane.normal();
+            const Point shift = h/5 * frac_conf.body->plane().normal();
             total_shift += shift;
             std::cout << "shifting fracture: " << shift ;
             std::cout << " due to collision with vertex: " << vertex;
@@ -105,9 +105,9 @@ void SimData::defineEmbeddedFractureProperties()
     vEfrac[ef_ind].points.assign(n_efrac_cells,
                                  frac_conf.body->center());
     vEfrac[ef_ind].dip.assign(n_efrac_cells,
-                              frac_conf.body->plane.dip_angle());
+                              frac_conf.body->plane().dip_angle());
     vEfrac[ef_ind].strike.assign(n_efrac_cells,
-                                 frac_conf.body->plane.strike_angle());
+                                 frac_conf.body->plane().strike_angle());
 
     vEfrac[ef_ind].cohesion       = frac_conf.cohesion;
     vEfrac[ef_ind].friction_angle = frac_conf.friction_angle;
@@ -148,7 +148,7 @@ void SimData::computeCellClipping()
   for (std::size_t ifrac=0; ifrac<config.fractures.size(); ++ifrac)
   {
     const auto & frac_cells = vEfrac[ifrac].cells;
-    const auto & frac_plane = config.fractures[ifrac].body->plane;
+    const auto & frac_plane = config.fractures[ifrac].body->plane();
 
     std::vector<std::vector<angem::Point<3,double>>> vvSection;
     vvSection.resize(frac_cells.size());
@@ -838,7 +838,7 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
   const std::vector<Point> frac_element_vertices =
       vEfrac[ifrac].mesh.create_poly_iterator(ielement).vertices();
   const auto frac_poly = angem::Polygon(frac_element_vertices);
-  const Point frac_normal = frac_poly.plane.normal();
+  const Point frac_normal = frac_poly.plane().normal();
 
   for (const auto & face : pedfm_select_faces(cell, split))
   {
@@ -851,7 +851,7 @@ apply_projection_edfm(const std::size_t                ifrac,     // embedded fr
     // compute projection
     const auto face_poly = face.polygon();
     const std::vector<Point> projected_frac_vertices =
-        face_poly.plane.project_points(frac_element_vertices);
+        face_poly.plane().project_points(frac_element_vertices);
     const double projection_area = angem::Polygon(projected_frac_vertices).area();
 
     // modify neighbor map
@@ -1409,8 +1409,8 @@ void SimData::computeTransEfracIntersection()
               if (!section.empty())
               {
                 angem::PolyGroup<double> splits(1e-8);
-                angem::split(poly_i, poly_j.plane, splits, i, i);
-                angem::split(poly_j, poly_i.plane, splits, j, j);
+                angem::split(poly_i, poly_j.plane(), splits, i, i);
+                angem::split(poly_j, poly_i.plane(), splits, j, j);
 
                 flow::FlowData frac_frac_flow_data;
                 compute_frac_frac_intersection_transes(splits.vertices.points,
@@ -1493,7 +1493,7 @@ void SimData::meshFractures()
   {
     auto & efrac = vEfrac[f];
     const auto & frac_rect = *(config.fractures[f].body);
-    const angem::Basis<3,double> frac_basis = frac_rect.plane.get_basis();
+    const angem::Basis<3,double> frac_basis = frac_rect.plane().get_basis();
     Point t1 = frac_basis(0);
     Point t2 = frac_basis(1);
 

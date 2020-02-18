@@ -74,7 +74,7 @@ std::vector<std::size_t> face_iterator::vertex_indices() const
 Point face_iterator::normal() const
 {
   const auto poly = angem::Polygon<double>(vertices());
-  return poly.plane.normal();
+  return poly.plane().normal();
 }
 
 
