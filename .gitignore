@@ -4,3 +4,5 @@ compile_commands.json
 .cquery_cached_index/
 src/angem/.cquery_cached_index/
 .ccls-cache/
+.clangd/
+__pycache__/
