@@ -29,7 +29,6 @@ Preprocessor::Preprocessor(const Path config_file_path)
 
 void Preprocessor::run()
 {
-  build_dfem_discretization_();
   // property manager for grid with split cells (due to edfm splitting)
   pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, config.domains, data);
   std::cout << "Generating properties" << std::endl;
@@ -229,12 +228,14 @@ void Preprocessor::build_geomechanics_discretization_()
     ms_handler.build_data();
     ms_handler.fill_output_model(data.ms_mech_data);
   }
+
+  if (config.mech_edfm_method == MechEDFMMethod::discrete_finite_element)
+  {
+    std::cout << "build DFEM discretization" << std::endl;
+    discretization::DiscretizationDFEM dfem_discr(data.grid);
+    dfem_discr.build();
+  }
 }
 
-void Preprocessor::build_dfem_discretization_()
-{
-  discretization::DiscretizationDFEM dfem_discr(data.grid);
-  dfem_discr.build();
-}
 
 }  // end namespace gprs_data

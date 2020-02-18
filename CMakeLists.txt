@@ -38,7 +38,6 @@ else()
 endif()
 
  # SPECIFY GMSJ_INSTALL_PATH if you want gmsh from non-standard location
-# if (DEFINED GMSH_INSTALL_PATH)
 find_package(Gmsh)
 if (Gmsh_FOUND)
   if (Gmsh_VERSION LESS "4.5")
