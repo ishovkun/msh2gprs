@@ -38,7 +38,8 @@ cmake -DCMAKE_INSTALL_PREFIX=$HOME/build/gmsh-git-install \
     -DENABLE_QUADTRI=ON \
     -DENABLE_MSH=ON ..
 ```
-If that does not work, try ticking on ENABLE_ONELAB.
+If you're getting errors while linking the main code with gmsh due to metis
+issues, try to disable METIS at this step.
 
 #### Eigen
 I was writing the code using a system-wide Eigen 3.3.7 installation.
