@@ -13,11 +13,13 @@ namespace discretization
 class DiscretizationDFEM
 {
  public:
-  DiscretizationDFEM(const mesh::Mesh & grid);
+  DiscretizationDFEM(const mesh::Mesh & grid,
+                     const double       msrsb_tol);
   void build();
 
  protected:
   const mesh::Mesh & _grid;
+  const double _msrsb_tol;  // msrsb tolerance
 };
 
 }  // end namepsace discretization

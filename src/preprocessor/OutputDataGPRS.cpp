@@ -141,20 +141,6 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
 
 void OutputDataGPRS::saveGeometry(const std::string & output_path)
 {
-  // // vtk output
-  // // const std::string vtk_file = output_path + "reservoir_mesh.vtk";
-  // // std::cout << "Saving reservoir mesh file: " << vtk_file << std::endl;
-  // // IO::VTKWriter::write_vtk(grid.vertices.points, grid.cells,
-  // //                          grid.shape_ids, vtk_file);
-
-  // // if (data.dfm_faces.size() > 0)
-  // // { // DFM frac geometry
-  //   // const std::string vtk_dfm_file = output_path + "dfm.vtk";
-  //   // IO::VTKWriter::write_geometry(data.dfm_master_grid.get_vertices(),
-  //   //                               data.dfm_master_grid.get_polygons(),
-  //   //                               vtk_dfm_file);
-
-  // // }
 
   // // gprs output
   // std::string outstring;

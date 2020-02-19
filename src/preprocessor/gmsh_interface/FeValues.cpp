@@ -44,11 +44,11 @@ void FeValues::update(const size_t cell_number)
   {
     // build local dx_du matrix
     // dim*dim derivative entries for n_gauss_points for each cell
-    const size_t j_beg = cell_number       * n_q_points() * (dim * dim);
-    const size_t j_end = (cell_number + 1) * n_q_points() * (dim * dim);
+    const size_t j_beg = ( cell_number * n_q_points() + q  ) * (dim * dim);
+    const size_t j_end = ( cell_number * n_q_points() + q+1) * (dim * dim);
     std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
     // gmsh stores jacobians in transposed format
-    dx_du = transpose3x3(dx_du);
+    // dx_du = transpose3x3(dx_du);
 
     // invert du_dx = inv(dx_du)
     std::vector du_dx(dim*dim, 0.0);
@@ -62,6 +62,7 @@ void FeValues::update(const size_t cell_number)
           _grad[q*dim*nv + dim*vertex + i] +=
               du_dx[i*dim + j] * _ref_gradients[q*dim*nv + dim*vertex + j];
   }
+  // debug_print_cell_config();
 }
 
 double FeValues::value(size_t i, size_t q) const
@@ -103,6 +104,35 @@ double FeValues::JxW(const size_t q) const
 {
   // return _weights[q] * _inv_determinants[q];
   return _weights[q] * _determinants[q];
+}
+
+void FeValues::debug_print_cell_config()
+{
+  std::cout << "printing cell" << std::endl;
+  size_t cell_number = 0;
+  const size_t j_beg = cell_number       * 1 * (9);
+  const size_t j_end = (cell_number + 1) * 1 * (9);
+  std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
+  std::cout << "direct jac" << std::endl;
+  for (auto v : dx_du)
+    std::cout << v << " ";
+  std::cout << std::endl;
+  dx_du = transpose3x3(dx_du);
+  std::cout << "direct transpose jac" << std::endl;
+  for (auto v : dx_du)
+    std::cout << v << " ";
+  std::cout << std::endl;
+  std::cout << "integration points" << std::endl;
+  for (auto p : _ref_points)
+    std::cout << p << " ";
+  std::cout << std::endl;
+
+  // gmsh::model::mesh::getJacobians(_element_type, _ref_points,
+  //                                 _jacobians, _determinants, _true_points,
+  //                                 /* tag = */ -1, /* task = */ 0, /* n_tasks = */ 1);
+
+
+  exit(0);
 }
 
 }  // end namespace gprs_data

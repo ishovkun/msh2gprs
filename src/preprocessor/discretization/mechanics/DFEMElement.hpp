@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mesh/Cell.hpp"
+#include "JacobiPreconditioner.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
 #include <Eigen/Sparse>  // provides SparseMatrix
 #include <Eigen/Dense>  // provides MatrixXd, VectorXd
@@ -10,7 +11,7 @@ namespace discretization {
 class DFEMElement
 {
  public:
-  DFEMElement(const mesh::Cell & cell);
+  DFEMElement(const mesh::Cell & cell, const double msrsb_tol);
 
  protected:
   void build_();
@@ -29,7 +30,8 @@ class DFEMElement
   // run iterative msrsb process to compute shape functions
   void run_msrsb_();
   // jacobi iteration over a single fine vertex
-  double jacobi_iteration_(const size_t fine_vertex);
+  double jacobi_iteration_(std::vector<Eigen::VectorXd> & solutions,
+                           const JacobiPreconditioner & prec);
   void enforce_partition_of_unity_(const size_t fine_vertex,
                                    std::vector<Eigen::VectorXd> & solutions);
   void enforce_zero_on_boundary_(const size_t fine_vertex,
@@ -37,9 +39,11 @@ class DFEMElement
   void build_support_boundaries_();
   bool in_support_boundary_(const size_t fine_vertex, const size_t parent_face) const;
   bool in_global_support_boundary_(const size_t fine_vertex) const;
+  void save_support_boundaries_();
 
  private:
   const mesh::Cell & _cell;
+  const double _msrsb_tol;
   std::vector<int> _element_types;
   std::vector<std::vector<std::size_t> > _element_tags;
   std::vector<std::vector<std::size_t> > _element_nodes;

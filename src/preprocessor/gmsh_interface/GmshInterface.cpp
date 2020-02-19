@@ -529,7 +529,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   //
   gmsh::option::setNumber("Mesh.SaveAll", 1);
 
-  const double discr_element_size = 0.2 * compute_element_size_(cell);
+  const double discr_element_size = 0.4 * compute_element_size_(cell);
   std::cout << "discr_element_size = " << discr_element_size << std::endl;
   // build points
   const std::vector<Point> & vertices = cell.get_points();
@@ -538,8 +538,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
     const Point & vertex = vertices[i];
     gmsh::model::geo::addPoint(vertex.x(), vertex.y(), vertex.z(),
                                discr_element_size, /*tag = */ i+1);
-    std::vector<int> elementary_tags = {static_cast<int>(i+1)};
-    gmsh::model::addPhysicalGroup(0, elementary_tags, i+1);
+    gmsh::model::addPhysicalGroup(0, {static_cast<int>(i+1)}, i+1);
   }
 
   // build lines (edges)
@@ -555,7 +554,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   // build faces
   const std::vector<std::vector<std::size_t>> & faces = cell.get_faces();
   std::vector<angem::Polygon<double>> face_polys = cell.get_face_polygons();
-  for (std::size_t i=0; i<face_polys.size(); ++i)
+  for (size_t i=0; i<faces.size(); ++i)
   {
     const auto & face = faces[i];
     const auto & poly = face_polys[i];
@@ -591,13 +590,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
     gmsh::model::geo::addCurveLoop(edge_markers, static_cast<int>(i+1));
     std::cout << "add plane surface " << i+1 << std::endl;
     gmsh::model::geo::addPlaneSurface({static_cast<int>(i+1)}, static_cast<int>(i+1));
-  // gmsh::model::geo::synchronize();
-  // gmsh::model::mesh::generate(2);
-  // gmsh::write("cell.msh");
-  // gmsh::finalize();
-  // std::cout << "exiting" << std::endl;
-  // exit(0);
-
+    gmsh::model::addPhysicalGroup(2, {static_cast<int>(i+1)}, i+1);
   }
 
   // gmsh::model::geo::synchronize();

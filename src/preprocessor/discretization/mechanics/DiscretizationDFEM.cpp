@@ -10,8 +10,8 @@ namespace discretization
 using Point = angem::Point<3,double>;
 using api = gprs_data::GmshInterface;
 
-DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh &grid)
-    : _grid(grid)
+DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msrsb_tol)
+    : _grid(grid), _msrsb_tol( msrsb_tol )
 {
   #ifndef WITH_GMSH
   throw std::runtime_error("Cannot use DFEM method without linking to GMsh");
@@ -29,7 +29,7 @@ void DiscretizationDFEM::build()
   {
     api::initialize_gmsh();
     std::cout << "cell.index() = " << cell->index() << std::endl;
-    DFEMElement discr_element(*cell);
+    DFEMElement discr_element(*cell, _msrsb_tol);
     api::finalize_gmsh();
     exit(0);
   }

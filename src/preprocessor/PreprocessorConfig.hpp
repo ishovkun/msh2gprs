@@ -151,6 +151,7 @@ struct PreprocessorConfig
 
   EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
   MechEDFMMethod mech_edfm_method = MechEDFMMethod::strong_discontinuity;  // mechanics embedded fractures
+  double dfem_msrsb_tolerance = 1e-5;                 // tolerance for msrsb convergence
   double edfm_min_dist_to_node = 1e-4;               // minimum distance to grid vertices relative to cell size
   // global container for all cell properties
   CellPropertyConfig cell_properties;

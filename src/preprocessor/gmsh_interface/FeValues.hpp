@@ -29,6 +29,7 @@ class FeValues
   void compute_shape_grads_();
 
  private:
+  void debug_print_cell_config();
   const int _element_type;
   const size_t _n_elements;
   int _n_comp;

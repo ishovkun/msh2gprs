@@ -232,7 +232,7 @@ void Preprocessor::build_geomechanics_discretization_()
   if (config.mech_edfm_method == MechEDFMMethod::discrete_finite_element)
   {
     std::cout << "build DFEM discretization" << std::endl;
-    discretization::DiscretizationDFEM dfem_discr(data.grid);
+    discretization::DiscretizationDFEM dfem_discr(data.grid, config.dfem_msrsb_tolerance);
     dfem_discr.build();
   }
 }

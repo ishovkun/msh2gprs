@@ -86,6 +86,10 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     {
       config.edfm_min_dist_to_node = it->second.as<double>();
     }
+    else if (key == "dfem-msrsb-tol")
+    {
+      config.dfem_msrsb_tolerance = it->second.as<double>();
+    }
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
