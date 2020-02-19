@@ -155,21 +155,7 @@ double DFEMElement::jacobi_iteration_(std::vector<Eigen::VectorXd> & solutions,
 void DFEMElement::enforce_partition_of_unity_(const size_t fine_vertex,
                                               std::vector<Eigen::VectorXd> & solutions)
 {
-  // if ( !in_global_support_boundary_(fine_vertex) )
-  //   return;
-  // // compute the sum of new values
-  // double sum_new_values = 0;
   const size_t parent_n_vert = _cell.vertices().size();
-  // for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
-  //   sum_new_values += solutions[parent_vertex][fine_vertex];
-
-  // for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
-  //   if (!in_support_boundary_(fine_vertex, parent_vertex))
-  //     solutions[parent_vertex][fine_vertex] =
-  //         ( solutions[parent_vertex][fine_vertex] -
-  //           _basis_functions[parent_vertex][fine_vertex] * sum_new_values ) /
-  //         (1 + sum_new_values);
-
   double sum_shape_functions = 0;
   for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
   {
@@ -200,7 +186,7 @@ void DFEMElement::build_jacobian_()
 {
   // build element jacobian for the homogeneous laplace equation
   _system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(_node_numbering.size(),
-                                                              _node_numbering.size());
+                                                               _node_numbering.size());
 
   for (std::size_t itype = 0; itype < _element_types.size(); ++itype)
   {
