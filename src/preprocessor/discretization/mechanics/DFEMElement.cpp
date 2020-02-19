@@ -155,20 +155,34 @@ double DFEMElement::jacobi_iteration_(std::vector<Eigen::VectorXd> & solutions,
 void DFEMElement::enforce_partition_of_unity_(const size_t fine_vertex,
                                               std::vector<Eigen::VectorXd> & solutions)
 {
-  if ( !in_global_support_boundary_(fine_vertex) )
-    return;
-  // compute the sum of new values
-  double sum_new_values = 0;
+  // if ( !in_global_support_boundary_(fine_vertex) )
+  //   return;
+  // // compute the sum of new values
+  // double sum_new_values = 0;
   const size_t parent_n_vert = _cell.vertices().size();
-  for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
-    sum_new_values += solutions[parent_vertex][fine_vertex];
+  // for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
+  //   sum_new_values += solutions[parent_vertex][fine_vertex];
 
+  // for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
+  //   if (!in_support_boundary_(fine_vertex, parent_vertex))
+  //     solutions[parent_vertex][fine_vertex] =
+  //         ( solutions[parent_vertex][fine_vertex] -
+  //           _basis_functions[parent_vertex][fine_vertex] * sum_new_values ) /
+  //         (1 + sum_new_values);
+
+  double sum_shape_functions = 0;
   for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
-    if (!in_support_boundary_(fine_vertex, parent_vertex))
-      solutions[parent_vertex][fine_vertex] =
-          ( solutions[parent_vertex][fine_vertex] -
-            _basis_functions[parent_vertex][fine_vertex] * sum_new_values ) /
-          (1 + sum_new_values);
+  {
+    const double shape = _basis_functions[parent_vertex][fine_vertex];
+    const double new_value = shape + solutions[parent_vertex][fine_vertex];
+    sum_shape_functions += new_value;
+  }
+  for (size_t parent_vertex = 0; parent_vertex < parent_n_vert; parent_vertex++)
+  {
+    const double shape = _basis_functions[parent_vertex][fine_vertex];
+    const double new_value = (shape + solutions[parent_vertex][fine_vertex]) / sum_shape_functions;
+    solutions[parent_vertex][fine_vertex] = new_value - shape;
+  }
 }
 
 void DFEMElement::enforce_zero_on_boundary_(const size_t fine_vertex,
