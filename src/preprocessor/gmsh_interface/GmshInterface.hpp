@@ -21,6 +21,8 @@ class GmshInterface
   static void finalize_gmsh();
   // build gmsh grid bounded by the faces of the cell
   static void build_triangulation(const mesh::Cell & cell);
+  // build triangulation and save it into grid
+  static void build_triangulation(const mesh::Cell & cell, mesh::Mesh & grid);
   // Get the elements classified on the entity of dimension `dim' and tag
   // `tag'. If `tag' < 0, get the elements for all entities of dimension `dim'.
   // If `dim' and `tag' are negative, get all the elements in the mesh.
@@ -55,6 +57,10 @@ class GmshInterface
   static void build_triangulation_(const angem::Polyhedron<double> & cell);
   // estimate the element size for the triangulation element
   static double compute_element_size_(const angem::Polyhedron<double> & cell);
+  // conveniance function to insert element into Mesh::mesh
+  static void insert_elements_(const int dim, const int tag,
+                               const std::vector<size_t> & vertex_numbering,
+                               mesh::Mesh & grid);
 };
 
 }  // end namespace gprs_data

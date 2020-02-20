@@ -1,6 +1,7 @@
 #include "GmshInterface.hpp"
 #include <cstdlib> // atoi
 #include <numeric>  // provides std;:iota
+#include <algorithm> // max_element
 
 namespace gprs_data
 {
@@ -642,6 +643,96 @@ void GmshInterface::get_elements(std::vector<int> & element_types,
   gmsh::model::mesh::getElements(element_types, element_tags, node_tags, dim, tag);
 }
 
+void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & grid)
+{
+  build_triangulation(cell);
+
+  if (!grid.empty())
+    throw std::invalid_argument("refuse to add gmsh elements to a non-empty grid");
+
+  std::vector<size_t> node_tags;
+  std::vector<double> node_coord, parametric_coord;
+  gmsh::model::mesh::getNodes(node_tags, node_coord, parametric_coord, /*dim = */ 3,
+                              /* tag */ -1, /*includeBoundary =*/ true,
+                              /* return_parametric =  */ false);
+
+  const size_t max_node_tag = *std::max_element(node_tags.begin(), node_tags.end());
+  // find maximum node tag
+  std::vector<size_t> vertex_numbering(max_node_tag);
+  size_t iv = 0;
+  for (const size_t node : node_tags)
+    vertex_numbering[node]  = iv++;
+
+  grid.vertices().reserve(node_tags.size());
+  for (std::size_t i=0; i<node_tags.size(); ++i)
+  {
+    angem::Point<3,double> vertex = { node_coord[3*i], node_coord[3*i+1], node_coord[3*i+2] };
+    grid.vertices().push_back(vertex);
+  }
+
+  // insert cells
+  insert_elements_(3, -1, vertex_numbering, grid);
+  // insert face labels
+  for (size_t parent_face=0; parent_face<cell.faces().size(); ++parent_face)
+  {
+    insert_elements_(2, parent_face+1, vertex_numbering, grid);
+  }
+
+}
+
+void GmshInterface::insert_elements_(const int dim, const int tag,
+                                     const std::vector<size_t> & vertex_numbering,
+                                     mesh::Mesh & grid)
+{
+  std::vector<int> element_types;
+  std::vector<std::vector<size_t> > element_tags;
+  std::vector<std::vector<size_t> > element_node_tags;
+  get_elements(element_types, element_tags, element_node_tags, dim, tag);
+  for (size_t itype=0; itype<element_types.size(); ++itype)
+  {
+    const int element_type = element_types[itype];
+    const int vtk_id = get_vtk_id(element_type);
+    const size_t nv = get_n_vertices(element_type);
+    // std::cout << "element_tags[itype].size() = " << element_tags[itype].size() << std::endl;
+
+    for (size_t ie=0; ie < element_tags[itype].size(); ++ie)
+    {
+      // get vertex indices from gmsh vertex tags
+      std::vector<size_t> verts;
+      verts.reserve(nv);
+      for (size_t iv=0; iv<nv; ++iv)
+      {
+        const size_t vertex_tag = element_node_tags[itype][nv * ie + iv];
+        const size_t vertex = vertex_numbering[vertex_tag];
+        verts.push_back(vertex);
+      }
+
+      // if (gmsh_element_types[element_type] == GmshElementType::face)
+      //   std::cout << "face tag = " << element_tags[itype][ie] << std::endl;
+      // if (gmsh_element_types[element_type] == GmshElementType::cell)
+      //   std::cout << "cell tag = " << element_tags[itype][ie] << std::endl;
+
+      // const int marker = (tag == -1) ? -1 : tag;
+      switch (gmsh_element_types[element_type])
+      {
+        case GmshElementType::node:
+          continue;
+        case GmshElementType::edge:
+          continue;
+        case GmshElementType::face:
+          grid.insert_face(verts, get_vtk_id(element_type), tag);
+          break;
+        case GmshElementType::cell:
+          grid.insert_cell(verts, get_vtk_id(element_type), tag);
+          break;
+        default:
+          const std::string msg = "Unknown element type: " + std::to_string(element_type);
+          throw std::out_of_range(msg);
+      }
+    }
+  }
+}
+
 
 #else
 
@@ -662,6 +753,12 @@ void GmshInterface::get_elements(std::vector<int> & elemen_types,
                                  const int dim,
                                  const int tag)
 {}
+
+static void get_mesh_from_model(mesh:: Mesh & grid)
+{
+  throw std::runtime_error("Gmsh has not been linked");
+}
+
 
 #endif
 }  // end namespace gprs_data

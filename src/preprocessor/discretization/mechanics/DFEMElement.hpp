@@ -44,13 +44,14 @@ class DFEMElement
  private:
   const mesh::Cell & _cell;
   const double _msrsb_tol;
-  std::vector<int> _element_types;
-  std::vector<std::vector<std::size_t> > _element_tags;
-  std::vector<std::vector<std::size_t> > _element_nodes;
-  std::vector<std::size_t> _node_tags;
-  std::vector<angem::Point<3,double>> _node_coord;
-  std::unordered_map<size_t, size_t> _cell_numbering;
-  std::unordered_map<size_t, size_t> _node_numbering;
+  mesh::Mesh _element_grid;
+  // std::vector<int> _element_types;
+  // std::vector<std::vector<std::size_t> > _element_tags;
+  // std::vector<std::vector<std::size_t> > _element_nodes;
+  // std::vector<std::size_t> _node_tags;
+  // std::vector<angem::Point<3,double>> _node_coord;
+  // std::unordered_map<size_t, size_t> _cell_numbering;
+  // std::unordered_map<size_t, size_t> _node_numbering;
   Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;
   // msrsb basis function
   std::vector<Eigen::VectorXd> _basis_functions;
