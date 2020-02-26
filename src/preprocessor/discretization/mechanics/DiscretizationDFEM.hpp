@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mesh/Mesh.hpp"
+#include "FiniteElementData.hpp"
 
 namespace discretization
 {
@@ -16,6 +17,11 @@ class DiscretizationDFEM
   DiscretizationDFEM(const mesh::Mesh & grid,
                      const double       msrsb_tol);
   void build();
+
+  // get vector of finite element data that corresponds to 3D cells
+  std::vector<FiniteElementData> get_cell_data() const;
+  // get vector of finite element data that corresponds to faces of 3D cells
+  std::vector<FiniteElementData> get_face_data() const;
 
  protected:
   const mesh::Mesh & _grid;

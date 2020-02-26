@@ -11,6 +11,10 @@ class FeValues
  public:
   // Constructor
   FeValues(const int element_type, const size_t n_elements);
+  /* update function gradients and jacobians with
+   * custom points inside the element.
+   * Note that the points must be inside the element*/
+  void update(const size_t element_tag, const std::vector<Point> & points );
   /* update function gradients and jacobians */
   void update(const size_t element_tag);
   // get value of shape i in integration point q
@@ -27,15 +31,19 @@ class FeValues
  protected:
   void initialize_();
   void compute_shape_grads_();
+  void get_elements_();
 
  private:
   void debug_print_cell_config();
   const int _element_type;
   const size_t _n_elements;
   int _n_comp;
+  size_t _cell_index;
+  std::vector<size_t> _element_tags;
   std::vector<double> _ref_points;   // integration on reference element
   std::vector<double> _weights;      // integration weights
   // basis function gradients [dxi_duj] on ref element
+  std::vector<double> _ref_values;
   std::vector<double> _ref_gradients;
   // jacobians
   // [e1g1Jxu, e1g1Jyu, e1g1Jzu, e1g1Jxv, ..., e1g1Jzw, e1g2Jxu, ..., e1gGJzw, e2g1Jxu, ...]

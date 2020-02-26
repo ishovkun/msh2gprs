@@ -3,6 +3,7 @@
 #include "mesh/Cell.hpp"
 #include "JacobiPreconditioner.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
+#include "FiniteElementData.hpp"
 #include <Eigen/Sparse>  // provides SparseMatrix
 #include <Eigen/Dense>  // provides MatrixXd, VectorXd
 
@@ -11,7 +12,12 @@ namespace discretization {
 class DFEMElement
 {
  public:
+  /* Constructor */
   DFEMElement(const mesh::Cell & cell, const double msrsb_tol);
+  // get FE data for volume integration
+  const FiniteElementData & get_cell_data() const;
+  // get FE data for surface integration
+  const FiniteElementData & get_face_data() const;
 
  protected:
   void build_();
@@ -37,26 +43,36 @@ class DFEMElement
   void enforce_zero_on_boundary_(const size_t fine_vertex,
                                  std::vector<Eigen::VectorXd> & solutions);
   void build_support_boundaries_();
-  bool in_support_boundary_(const size_t fine_vertex, const size_t parent_face) const;
+  // conveniance function to quickly check if a fine vertex is on support boundary of
+  // the parent vertex
+  bool in_support_boundary_(const size_t fine_vertex, const size_t parent_node) const;
   bool in_global_support_boundary_(const size_t fine_vertex) const;
+  // debug function to help visualize the support regions
   void save_support_boundaries_();
+  // identify the locations of the gauss points for the dfem element
+  void find_integration_points_();
+  // compute shape function values, gradients, and weights in the
+  // integration points
+  void compute_fe_quantities_();
+  // create a pyramid element from a cell face and cell center
+  // and return its center
+  angem::Point<3,double>
+  create_pyramid_and_compute_center_(const std::vector<size_t> & face,
+                                     const std::vector<angem::Point<3,double>>  & vertices) const;
 
  private:
   const mesh::Cell & _cell;
   const double _msrsb_tol;
   mesh::Mesh _element_grid;
-  // std::vector<int> _element_types;
-  // std::vector<std::vector<std::size_t> > _element_tags;
-  // std::vector<std::vector<std::size_t> > _element_nodes;
-  // std::vector<std::size_t> _node_tags;
-  // std::vector<angem::Point<3,double>> _node_coord;
-  // std::unordered_map<size_t, size_t> _cell_numbering;
-  // std::unordered_map<size_t, size_t> _node_numbering;
   Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;
   // msrsb basis function
   std::vector<Eigen::VectorXd> _basis_functions;
   // mrsrb support boundaries
   std::vector<std::unordered_set<size_t>> _support_boundaries;
+  // dfem gauss points
+  std::vector<angem::Point<3,double>> _integration_points;
+  FiniteElementData _cell_data;
+  FiniteElementData _face_data;
 };
 
 }  // end namespace discretization

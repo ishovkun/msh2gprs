@@ -1,4 +1,5 @@
 #include "FeValues.hpp"
+#include "GmshInterface.hpp"
 #include "../utils.hpp"
 
 #ifdef WITH_GMSH
@@ -20,12 +21,23 @@ FeValues::FeValues(const int element_type, const size_t n_elements)
 #ifdef WITH_GMSH
 void FeValues::initialize_()
 {
+  _cell_index = std::numeric_limits<size_t>::max();
+  /* NOTE: this updates quantities in all the grid elements */
   gmsh::model::mesh::getIntegrationPoints(_element_type, "Gauss1", _ref_points, _weights);
-  gmsh::model::mesh::getBasisFunctions(_element_type, _ref_points,
-                                       "GradLagrange", _n_comp, _ref_gradients);
-  gmsh::model::mesh::getJacobians(_element_type, _ref_points,
-                                  _jacobians, _determinants, _true_points,
+  gmsh::model::mesh::getBasisFunctions(_element_type, _ref_points, "Lagrange", _n_comp, _ref_values);
+  gmsh::model::mesh::getBasisFunctions(_element_type, _ref_points, "GradLagrange", _n_comp, _ref_gradients);
+  gmsh::model::mesh::getJacobians(_element_type, _ref_points, _jacobians, _determinants, _true_points,
                                   /* tag = */ -1, /* task = */ 0, /* n_tasks = */ 1);
+  get_elements_();
+}
+
+void FeValues::get_elements_()
+{
+  std::vector<int> element_types;
+  std::vector<std::vector<size_t>> element_node_tags;
+  std::vector<std::vector<size_t>> tags;
+  GmshInterface::get_elements(element_types, tags, element_node_tags, 3, -1);
+  _element_tags = tags[0];
 }
 
 #else
@@ -37,6 +49,7 @@ void FeValues::update(const size_t cell_number)
 {
   const size_t dim = 3;
   const double nv = n_vertices();
+  _cell_index = cell_number;
   _grad.assign( _ref_gradients.size() * n_q_points(), 0.0 );
   _inv_determinants.resize(_weights.size());
  
@@ -62,17 +75,31 @@ void FeValues::update(const size_t cell_number)
           _grad[q*dim*nv + dim*vertex + i] +=
               du_dx[i*dim + j] * _ref_gradients[q*dim*nv + dim*vertex + j];
   }
-  // debug_print_cell_config();
 }
 
-double FeValues::value(size_t i, size_t q) const
+void FeValues::update(const size_t cell_number, const std::vector<Point> & points)
 {
-  throw std::runtime_error("not implemeneted");
-  const double dim = 3;
-  const double n_vertices = _ref_gradients.size() / dim / n_q_points();
-  assert( q < n_q_points() );
-
-  return 0.0;
+  _cell_index = cell_number;
+  const size_t tag = _element_tags[_cell_index];
+  std::vector<double> local_points;
+  local_points.reserve( 3*points.size() );
+  for (const auto & p : points)
+  {
+    double u, v, w;
+    gmsh::model::mesh::getLocalCoordinatesInElement(tag, p(0), p(1), p(2), u, v, w);
+    local_points.push_back( u );
+    local_points.push_back( v );
+    local_points.push_back( w );
+  }
+  gmsh::model::mesh::getBasisFunctions(_element_type, local_points, "Lagrange",
+                                       _n_comp, _ref_values);
+  gmsh::model::mesh::getBasisFunctions(_element_type, local_points, "GradLagrange",
+                                       _n_comp, _ref_gradients);
+  _true_points.clear();
+  std::vector<double> loc_jac, loc_det;
+  gmsh::model::mesh::getJacobians(_element_type, local_points, _jacobians, _determinants, _true_points,
+                                  /* tag = */ -1, /* task = 0 */ _cell_index, /* n_tasks = */ _n_elements);
+  update(cell_number);
 }
 
 size_t FeValues::n_q_points() const
@@ -87,7 +114,7 @@ size_t FeValues::n_vertices() const
 }
 
 
-Point FeValues::grad(size_t vertex, size_t q) const
+Point FeValues::grad(const size_t vertex, const size_t q) const
 {
   const double dim = 3;
   const double nv = n_vertices();
@@ -100,39 +127,18 @@ Point FeValues::grad(size_t vertex, size_t q) const
   return p;
 }
 
+double FeValues::value(const size_t vertex, const size_t q) const
+{
+  const double nv = n_vertices();
+  assert( vertex < nv );
+  assert( q < n_q_points() );
+  return _ref_values[ q*nv + vertex ];
+}
+
 double FeValues::JxW(const size_t q) const
 {
   // return _weights[q] * _inv_determinants[q];
   return _weights[q] * _determinants[q];
-}
-
-void FeValues::debug_print_cell_config()
-{
-  std::cout << "printing cell" << std::endl;
-  size_t cell_number = 0;
-  const size_t j_beg = cell_number       * 1 * (9);
-  const size_t j_end = (cell_number + 1) * 1 * (9);
-  std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
-  std::cout << "direct jac" << std::endl;
-  for (auto v : dx_du)
-    std::cout << v << " ";
-  std::cout << std::endl;
-  dx_du = transpose3x3(dx_du);
-  std::cout << "direct transpose jac" << std::endl;
-  for (auto v : dx_du)
-    std::cout << v << " ";
-  std::cout << std::endl;
-  std::cout << "integration points" << std::endl;
-  for (auto p : _ref_points)
-    std::cout << p << " ";
-  std::cout << std::endl;
-
-  // gmsh::model::mesh::getJacobians(_element_type, _ref_points,
-  //                                 _jacobians, _determinants, _true_points,
-  //                                 /* tag = */ -1, /* task = */ 0, /* n_tasks = */ 1);
-
-
-  exit(0);
 }
 
 }  // end namespace gprs_data

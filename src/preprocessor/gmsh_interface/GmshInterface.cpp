@@ -607,9 +607,9 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
 
   gmsh::model::geo::synchronize();
   gmsh::model::mesh::generate(3);
-  gmsh::write("cell.msh");
-  // gmsh::finalize();
-  // exit(0);
+  // gmsh::write("cell.msh");
+  // // gmsh::finalize();
+  // // exit(0);
 }
 
 double GmshInterface::compute_element_size_(const angem::Polyhedron<double> & cell)
