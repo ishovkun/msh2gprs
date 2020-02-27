@@ -25,13 +25,16 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 
 void DiscretizationDFEM::build()
 {
+  int cnt = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
     api::initialize_gmsh();
-    std::cout << "cell.index() = " << cell->index() << std::endl;
     DFEMElement discr_element(*cell, _msrsb_tol);
+    mesh::Mesh _element_grid;
+    api::build_triangulation(*cell, _element_grid);
     api::finalize_gmsh();
-    exit(0);
+    // // exit(0);
+    // if (cnt++ > 2) break;
   }
 }
 

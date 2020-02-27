@@ -520,7 +520,8 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell)
 
 void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
 {
-  gmsh::option::setNumber("General.Terminal", 1);
+  // gmsh::option::setNumber("General.Terminal", 1);
+  gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
   gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
   gmsh::model::add("cell1");
 
@@ -531,7 +532,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   gmsh::option::setNumber("Mesh.SaveAll", 1);
 
   const double discr_element_size = 0.4 * compute_element_size_(cell);
-  std::cout << "discr_element_size = " << discr_element_size << std::endl;
+  // std::cout << "discr_element_size = " << discr_element_size << std::endl;
   // build points
   const std::vector<Point> & vertices = cell.get_points();
   for (size_t i=0; i < vertices.size(); ++i)
@@ -548,7 +549,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   {
     const std::pair<size_t,size_t> & edge = edges[i];
     gmsh::model::geo::addLine(edge.first+1, edge.second+1, i+1);
-    std::cout << "add line " << i+1 << ": " << edge.first+1 << " " << edge.second+1 << std::endl;
+    // std::cout << "add line " << i+1 << ": " << edge.first+1 << " " << edge.second+1 << std::endl;
     gmsh::model::addPhysicalGroup(1, {static_cast<int>(i+1)}, i+1);
   }
 
@@ -584,12 +585,12 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
     // create line loop and surface
     // NOTE: curve and surface loop must start from 1, otherwise gmsh
     // throws an error, ergo i+1
-    std::cout << "add Line loop " << i+1 << ":";
-    for (auto edge : edge_markers)
-      std::cout << edge <<  " ";
-    std::cout << std::endl;
+    // std::cout << "add Line loop " << i+1 << ":";
+    // for (auto edge : edge_markers)
+    //   std::cout << edge <<  " ";
+    // std::cout << std::endl;
     gmsh::model::geo::addCurveLoop(edge_markers, static_cast<int>(i+1));
-    std::cout << "add plane surface " << i+1 << std::endl;
+    // std::cout << "add plane surface " << i+1 << std::endl;
     gmsh::model::geo::addPlaneSurface({static_cast<int>(i+1)}, static_cast<int>(i+1));
     gmsh::model::addPhysicalGroup(2, {static_cast<int>(i+1)}, i+1);
   }
@@ -609,7 +610,6 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   gmsh::model::mesh::generate(3);
   // gmsh::write("cell.msh");
   // // gmsh::finalize();
-  // // exit(0);
 }
 
 double GmshInterface::compute_element_size_(const angem::Polyhedron<double> & cell)
@@ -656,9 +656,11 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & gr
                               /* tag */ -1, /*includeBoundary =*/ true,
                               /* return_parametric =  */ false);
 
-  const size_t max_node_tag = *std::max_element(node_tags.begin(), node_tags.end());
+  auto it = std::max_element(node_tags.begin(), node_tags.end());
+  assert( it != node_tags.end() );
+  const size_t max_node_tag = *it + 1;
   // find maximum node tag
-  std::vector<size_t> vertex_numbering(max_node_tag);
+  std::vector<size_t> vertex_numbering(max_node_tag, std::numeric_limits<size_t>::max());
   size_t iv = 0;
   for (const size_t node : node_tags)
     vertex_numbering[node]  = iv++;
@@ -666,6 +668,7 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & gr
   grid.vertices().reserve(node_tags.size());
   for (std::size_t i=0; i<node_tags.size(); ++i)
   {
+    assert( node_coord[3*i+2] < node_coord.size() );
     angem::Point<3,double> vertex = { node_coord[3*i], node_coord[3*i+1], node_coord[3*i+2] };
     grid.vertices().push_back(vertex);
   }

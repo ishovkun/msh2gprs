@@ -24,7 +24,7 @@ void DFEMElement::build_()
   build_jacobian_();
   initial_guess_();
   run_msrsb_();
-  debug_save_shape_functions_("shape_functions-final.vtk");
+  // debug_save_shape_functions_("shape_functions-final.vtk");
   // save_support_boundaries_();
   find_integration_points_();
   compute_fe_quantities_();
@@ -96,13 +96,14 @@ void DFEMElement::run_msrsb_()
   {
     dphi = jacobi_iteration_(solutions, preconditioner);
 
-    if (!(iter % 10))  // li'l progress prinout
-      std::cout << "iter = " << iter << " dphi = " << dphi << std::endl;
+    // if (!(iter % 10))  // li'l progress prinout
+    //   std::cout << "iter = " << iter << " dphi = " << dphi << std::endl;
 
     if (iter++ >= max_iter)
       throw std::runtime_error("msrsb did not converge");
 
   } while (dphi > _msrsb_tol);
+  std::cout << "MSRSB converged after " << iter << " iterations" << std::endl;
 }
 
 double DFEMElement::jacobi_iteration_(std::vector<Eigen::VectorXd> & solutions,

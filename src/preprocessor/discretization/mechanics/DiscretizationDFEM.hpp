@@ -19,13 +19,14 @@ class DiscretizationDFEM
   void build();
 
   // get vector of finite element data that corresponds to 3D cells
-  std::vector<FiniteElementData> get_cell_data() const;
+  const std::vector<FiniteElementData> & get_cell_data() const { return _cell_data; }
   // get vector of finite element data that corresponds to faces of 3D cells
-  std::vector<FiniteElementData> get_face_data() const;
+  const std::vector<FiniteElementData> & get_face_data() const { return _face_data; }
 
  protected:
   const mesh::Mesh & _grid;
   const double _msrsb_tol;  // msrsb tolerance
+  std::vector<FiniteElementData> _cell_data, _face_data;
 };
 
 }  // end namepsace discretization

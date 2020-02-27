@@ -395,10 +395,6 @@ void Mesh::split_cell(Cell cell, const angem::Plane<double> & plane,
   std::cout << splitting_face_marker<< "-split " << cell.index() << " (parent "
             << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"<< std::endl;
   assert (cell.is_active());
-  // if (cell.ultimate_parent().index() == 7874)
-  // {
-  //   exit(0);
-  // }
 
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
