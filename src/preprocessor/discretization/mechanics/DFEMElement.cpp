@@ -22,18 +22,23 @@ void DFEMElement::build_()
 {
   build_triangulation_();
   build_jacobian_();
-  initial_guess_();
-  run_msrsb_();
-  // debug_save_shape_functions_("shape_functions-final.vtk");
-  // save_support_boundaries_();
-  find_integration_points_();
-  compute_fe_quantities_();
+  compute_shape_functions_();
+
+  // initial_guess_();
+  // run_msrsb_();
+  debug_save_shape_functions_("shape_functions-final.vtk");
+  // // save_support_boundaries_();
+  // find_integration_points_();
+  // compute_fe_quantities_();
 }
 
 void DFEMElement::build_triangulation_()
 {
   api::build_triangulation(_cell, _element_grid);
-  build_support_boundaries_();
+  // build_support_boundaries_();
+  build_support_edges_();
+  save_support_edges_();
+  // exit(0);
 }
 
 void DFEMElement::build_support_boundaries_()
@@ -49,15 +54,64 @@ void DFEMElement::build_support_boundaries_()
       std::vector<size_t> non_adj;  // parent vertices not in parent face
       for (size_t iv_parent=0; iv_parent<parent_vertices.size(); ++iv_parent)
       {
+        // index in global domain grid
         const size_t parent_vertex = parent_vertices[iv_parent];
         if ( !parent_face->has_vertex(parent_vertex) )
+        {
+          // if (iv_parent == 0 && face->marker() == 6)
+          // {
+          //   std::cout << std::endl;
+          //   std::cout << "parent face vertices ";
+          //   for (auto v : parent_face->vertices())
+          //     std::cout << v << " ";
+          //   std::cout << std::endl;
+          //   std::cout << "parent_vertex = " << parent_vertex << std::endl;
+          //   std::cout << "iv_parent = " << iv_parent << std::endl;
+          //   std::cout << "fuck" << std::endl;
+          //   exit(0);
+          // }
+
           non_adj.push_back(iv_parent);
+        }
       }
       for (const size_t vertex : face->vertices())
         for (const size_t parent_vertex : non_adj)
           _support_boundaries[parent_vertex].insert(vertex);
     }
   }
+}
+
+void DFEMElement::save_support_edges_()
+{
+  const std::string fname = "support_edges.vtk";
+  std::cout << "saving " << fname << std::endl;
+
+  std::ofstream out;
+  out.open(fname.c_str());
+  IO::VTKWriter::write_geometry(_element_grid, out);
+  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::enter_section_point_data(nv, out);
+
+  const size_t n_parent_vertices = _cell.vertices().size();
+  for (std::size_t j=0; j<n_parent_vertices; ++j)
+  {
+    std::vector<double> output(nv, 0);
+    for (const size_t v : _support_edges[j])
+      output[v] = 1;
+    IO::VTKWriter::add_data(output, "support-"+std::to_string(j), out);
+  }
+  // save bnd markers
+  std::vector<double> output(nv, 0);
+  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  {
+    if (face->marker() > 0 && face->neighbors().size() == 1)
+    {
+      for ( const size_t v : face->vertices() )
+        output[v] = face->marker();
+    }
+  }
+  IO::VTKWriter::add_data(output, "bnd-marker", out);
+  out.close();
 }
 
 void DFEMElement::save_support_boundaries_()
@@ -79,6 +133,17 @@ void DFEMElement::save_support_boundaries_()
       output[v] = 1;
     IO::VTKWriter::add_data(output, "support-"+std::to_string(j), out);
   }
+  // save bnd markers
+  std::vector<double> output(nv, 0);
+  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  {
+    if (face->marker() > 0 && face->neighbors().size() == 1)
+    {
+      for ( const size_t v : face->vertices() )
+        output[v] = face->marker();
+    }
+  }
+  IO::VTKWriter::add_data(output, "bnd-marker", out);
   out.close();
 }
 
@@ -91,16 +156,23 @@ void DFEMElement::run_msrsb_()
 
   double dphi = 10  * _msrsb_tol;
   size_t iter = 0;
-  const size_t max_iter = 2000;
+  const size_t max_iter = 700;
   do
   {
-    dphi = jacobi_iteration_(solutions, preconditioner);
+    dphi = jacobi_iteration_(solutions, preconditioner) / solutions[0].size();
 
     // if (!(iter % 10))  // li'l progress prinout
     //   std::cout << "iter = " << iter << " dphi = " << dphi << std::endl;
 
     if (iter++ >= max_iter)
-      throw std::runtime_error("msrsb did not converge");
+    {
+      std::cout << "cell index = " << _cell.index() << std::endl;
+      api::save_gmsh_grid("unconverged.msh");
+      debug_save_shape_functions_("shape_functions-unconverged.vtk");
+      throw std::runtime_error("msrsb did not converge after " + std::to_string(iter) +
+                               " iterations (current error = " + std::to_string(dphi) +
+                               ")");
+    }
 
   } while (dphi > _msrsb_tol);
   std::cout << "MSRSB converged after " << iter << " iterations" << std::endl;
@@ -110,9 +182,8 @@ double DFEMElement::jacobi_iteration_(std::vector<Eigen::VectorXd> & solutions,
                                       const JacobiPreconditioner & prec)
 {
   for (size_t parent_node = 0; parent_node < _cell.vertices().size(); parent_node++)
-  {
     prec.solve(_system_matrix, _basis_functions[parent_node], solutions[parent_node]);
-  }
+
   for (size_t vertex=0; vertex < _element_grid.n_vertices(); vertex++)
   {
     enforce_zero_on_boundary_(vertex, solutions);
@@ -218,8 +289,12 @@ void DFEMElement::initial_guess_()
       const double dist = pn.distance(_element_grid.vertex(v));
       if (dist < 1e-9)
       {
-        std::cout << "point should not be in support region "<< j << " vertex " << v << std::endl;
-        assert(!in_support_boundary_(v, j));
+      //   std::cout << "point should not be in support region "<< j << " vertex " << v << std::endl;
+        // assert(!in_support_boundary_(v, j));
+        if (in_support_boundary_(v, j))
+        {
+          std::cout << "in support " << v << " of " << j << std::endl;
+        }
       }
       if (dist < min_dist)
       {
@@ -229,6 +304,10 @@ void DFEMElement::initial_guess_()
     }
     _basis_functions[closest][v] = 1.0;
   }
+  // save_support_boundaries_();
+  // debug_save_shape_functions_("init-100.vtk");
+
+  // exit(0);
 }
 
 void DFEMElement::debug_save_shape_functions_(const std::string fname)
@@ -336,6 +415,126 @@ void DFEMElement::compute_fe_quantities_()
 const FiniteElementData & DFEMElement::get_cell_data() const
 {
   return _cell_data;
+}
+
+void DFEMElement::build_support_edges_()
+{
+  /* Build structure that store face markers for each vertex in grid */
+  std::vector<std::vector<size_t>> vertex_markers( _element_grid.n_vertices() );
+  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+    if (face->neighbors().size() == 1 && face->marker() > 0)
+    {
+      const size_t ipf = face->marker() - 1;  // i parent face
+      for (size_t v : face->vertices())
+        if (std::find( vertex_markers[v].begin(), vertex_markers[v].end(), ipf ) ==
+            vertex_markers[v].end())
+          vertex_markers[v].push_back(ipf);
+    }
+
+  std::vector<std::list<size_t>> parent_vertex_markers( _cell.n_vertices() );
+  const std::vector<size_t> parent_vertices = _cell.vertices();
+  const std::vector<const mesh::Face*> parent_faces = _cell.faces();
+  for (size_t ipf=0; ipf<parent_faces.size(); ++ipf)
+  {
+    const auto parent_face = parent_faces[ipf];
+
+    for (size_t iv_parent=0; iv_parent<parent_vertices.size(); ++iv_parent)
+    {
+      const size_t parent_vertex = parent_vertices[iv_parent];
+      if (parent_face->has_vertex(parent_vertex))
+        parent_vertex_markers[iv_parent].push_back( ipf );
+    }
+  }
+  _support_edges.resize( parent_vertices.size() );
+  _support_boundary_edges.resize( parent_vertices.size() );
+  const auto parent_nodes = _cell.polyhedron()->get_points();
+  // std::vector<std::map<std::list<size_t>,double>> fartherst_for_marker( parent_vertices.size() );
+  for (size_t v=0; v<_element_grid.n_vertices(); ++v)
+  {
+    if ( vertex_markers[v].size() > 1 )
+    {
+      const auto & markers = vertex_markers[v];
+      for (size_t ivp=0; ivp<parent_vertices.size(); ++ivp)
+      {
+        bool found = false;
+        for (size_t i=0; i<markers.size(); ++i)
+          for (size_t j=i+1; j<markers.size(); ++j)
+          {
+            if ( std::find(parent_vertex_markers[ivp].begin(), parent_vertex_markers[ivp].end(),
+                           markers[i]) != parent_vertex_markers[ivp].end() &&
+                 std::find(parent_vertex_markers[ivp].begin(), parent_vertex_markers[ivp].end(),
+                           markers[j]) != parent_vertex_markers[ivp].end())
+            {
+              found = true;
+              // auto it = fartherst_for_marker[ivp].find( markers[i], markers[j] );
+              // if (it != fartherst_for_marker[ivp].end())
+              // {
+              //   const double dist = _element_grid.vertex(v).distance( parent_nodes[ivp] );
+              //   it->second = std::max(dist, it->second);
+              // }
+              // else
+              break;
+            }
+          }
+        if (found)
+          _support_edges[ivp].insert( v );
+        else
+          _support_boundary_edges[ivp].insert( v );
+      }
+    }
+  }
+
+  // for (size_t ivp=0; ivp<parent_vertices.size(); ++ivp)
+  // {
+  //   std::cout << ivp << ": ";
+  //   for (size_t v : _support_edges[ivp])
+  //     std::cout << v << " ";
+  //   std::cout << std::endl;
+  // }
+
+}
+
+void DFEMElement::compute_shape_functions_()
+{
+  const size_t n_parent_vertices = _cell.vertices().size();
+
+  // allocate shape functions
+  for (std::size_t i=0; i<n_parent_vertices; ++i)
+    _basis_functions.push_back(Eigen::VectorXd::Zero(_element_grid.n_vertices()));
+
+  for (size_t pv=0; pv<n_parent_vertices; ++pv)
+  {
+    // assemble problem with BC's for the parent vertex
+    Eigen::SparseMatrix<double,Eigen::RowMajor> mat = _system_matrix;
+    Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _element_grid.n_vertices() );
+    impose_boundary_conditions_(mat, rhs, pv);
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Upper> cg;
+    cg.compute(mat);
+    _basis_functions[pv] = cg.solve(rhs);
+  }
+}
+
+void DFEMElement::impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
+                                              Eigen::VectorXd & rhs,
+                                              const size_t ipv)
+{
+  for (const size_t v : _support_edges[ipv])
+  {
+    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, v); it; ++it)
+    {
+      it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
+    }
+    rhs[v] = 1.0;
+  }
+  for (const size_t v : _support_boundary_edges[ipv])
+  {
+    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, v); it; ++it)
+    {
+      it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
+    }
+    rhs[v] = 0.0;
+  }
+
 }
 
 }  // end namespace discretization

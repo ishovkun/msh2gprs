@@ -25,6 +25,10 @@ class DFEMElement
   void build_triangulation_();
   // build system matrix for the FEM laplace equation
   void build_jacobian_();
+  void compute_shape_functions_();
+  void impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
+                                              Eigen::VectorXd & rhs,
+                                              const size_t ipv);
   // fill out element_numbering and node_numbering
   void numberNodesEndElements_(std::vector<int> &element_types,
                         std::vector<std::vector<std::size_t> > & element_tags,
@@ -43,12 +47,16 @@ class DFEMElement
   void enforce_zero_on_boundary_(const size_t fine_vertex,
                                  std::vector<Eigen::VectorXd> & solutions);
   void build_support_boundaries_();
+  // mark vertices and compute the value of the dirichlet BC for it
+  void build_support_edges_();
   // conveniance function to quickly check if a fine vertex is on support boundary of
   // the parent vertex
   bool in_support_boundary_(const size_t fine_vertex, const size_t parent_node) const;
   bool in_global_support_boundary_(const size_t fine_vertex) const;
   // debug function to help visualize the support regions
   void save_support_boundaries_();
+  // debug function to help visualize the support regions
+  void save_support_edges_();
   // identify the locations of the gauss points for the dfem element
   void find_integration_points_();
   // compute shape function values, gradients, and weights in the
@@ -69,6 +77,8 @@ class DFEMElement
   std::vector<Eigen::VectorXd> _basis_functions;
   // mrsrb support boundaries
   std::vector<std::unordered_set<size_t>> _support_boundaries;
+  std::vector<std::set<size_t>> _support_edges;
+  std::vector<std::set<size_t>> _support_boundary_edges;
   // dfem gauss points
   std::vector<angem::Point<3,double>> _integration_points;
   FiniteElementData _cell_data;

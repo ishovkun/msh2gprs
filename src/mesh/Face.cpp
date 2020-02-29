@@ -152,7 +152,7 @@ Point Face::center() const
 
 bool Face::has_vertex(const std::size_t vertex_index) const
 {
-  if (std::find(m_vertices.begin(),m_vertices.end(), vertex_index) ==
+  if (std::find(m_vertices.begin(), m_vertices.end(), vertex_index) ==
       m_vertices.end())
     return false;
   else return true;

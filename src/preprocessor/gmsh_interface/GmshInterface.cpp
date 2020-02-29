@@ -518,14 +518,27 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell)
   build_triangulation_(*poly);
 }
 
+std::vector<double>  compute_vertex_element_sizes(const std::vector<std::pair<size_t,size_t>> &edges,
+                                                  const std::vector<angem::Point<3,double>> & coord)
+{
+  std::vector<double> result(coord.size(), std::numeric_limits<double>::max());
+  for (const auto & edge : edges)
+  {
+    const double dist = coord[edge.first].distance(coord[ edge.second ]);
+    result[edge.first] = std::min(result[ edge.first ], dist);
+    result[edge.second] = std::min(result[ edge.second ], dist);
+  }
+  return result;
+}
+
 void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
 {
-  // gmsh::option::setNumber("General.Terminal", 1);
-  gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
+  gmsh::option::setNumber("General.Terminal", 1);
+  // gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
   gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
   gmsh::model::add("cell1");
 
-    // Remember that by default, if physical groups are defined, Gmsh will export
+  // Remember that by default, if physical groups are defined, Gmsh will export
   // in the output mesh file only those elements that belong to at least one
   // physical group. To force Gmsh to save all elements, you can use
   //
@@ -535,23 +548,29 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   // std::cout << "discr_element_size = " << discr_element_size << std::endl;
   // build points
   const std::vector<Point> & vertices = cell.get_points();
+  const auto edges = cell.get_edges();
+  const std::vector<double> element_sizes = compute_vertex_element_sizes(edges,vertices);
+
   for (size_t i=0; i < vertices.size(); ++i)
   {
     const Point & vertex = vertices[i];
     gmsh::model::geo::addPoint(vertex.x(), vertex.y(), vertex.z(),
-                               discr_element_size, /*tag = */ i+1);
+                               element_sizes[i]/4, /*tag = */ i+1);
     gmsh::model::addPhysicalGroup(0, {static_cast<int>(i+1)}, i+1);
   }
 
   // build lines (edges)
-  const auto edges = cell.get_edges();
+  // const auto edges = cell.get_edges();
   for (size_t i=0; i<edges.size(); ++i)
   {
     const std::pair<size_t,size_t> & edge = edges[i];
     gmsh::model::geo::addLine(edge.first+1, edge.second+1, i+1);
-    // std::cout << "add line " << i+1 << ": " << edge.first+1 << " " << edge.second+1 << std::endl;
     gmsh::model::addPhysicalGroup(1, {static_cast<int>(i+1)}, i+1);
   }
+
+  gmsh::model::geo::synchronize();
+  for (size_t i=0; i<edges.size(); ++i)
+    gmsh::model::mesh::setTransfiniteCurve(i+1, 5);
 
   // build faces
   const std::vector<std::vector<std::size_t>> & faces = cell.get_faces();
@@ -578,19 +597,22 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
       const int edge_marker = static_cast<int>(std::distance(edges.begin(), it_edge));
       // figure out the sign of the edge
       if (cell_edge_ordered.first == cell_edge_unordered.first)
+      {
+        assert( cell_edge_ordered.second == cell_edge_unordered.second );
         edge_markers.push_back(edge_marker+1);
+      }
       else  // inverse orientation
         edge_markers.push_back(-(edge_marker+1));
     }
     // create line loop and surface
     // NOTE: curve and surface loop must start from 1, otherwise gmsh
     // throws an error, ergo i+1
-    // std::cout << "add Line loop " << i+1 << ":";
-    // for (auto edge : edge_markers)
-    //   std::cout << edge <<  " ";
-    // std::cout << std::endl;
+    std::cout << "add Line loop " << i+1 << ":";
+    for (auto edge : edge_markers)
+      std::cout << edge <<  " ";
+    std::cout << std::endl;
     gmsh::model::geo::addCurveLoop(edge_markers, static_cast<int>(i+1));
-    // std::cout << "add plane surface " << i+1 << std::endl;
+    std::cout << "add plane surface " << i+1 << std::endl;
     gmsh::model::geo::addPlaneSurface({static_cast<int>(i+1)}, static_cast<int>(i+1));
     gmsh::model::addPhysicalGroup(2, {static_cast<int>(i+1)}, i+1);
   }
@@ -623,6 +645,12 @@ double GmshInterface::compute_element_size_(const angem::Polyhedron<double> & ce
   }
   return min_edge_length;
 }
+
+void GmshInterface::save_gmsh_grid(const std::string fname)
+{
+  gmsh::write(fname);
+}
+
 
 void GmshInterface::initialize_gmsh()
 {
@@ -707,6 +735,9 @@ void GmshInterface::insert_elements_(const int dim, const int tag,
       {
         const size_t vertex_tag = element_node_tags[itype][nv * ie + iv];
         const size_t vertex = vertex_numbering[vertex_tag];
+        if (vertex >= grid.n_vertices())
+          std::cout << "vertex = " << vertex << std::endl;
+        assert (vertex < grid.n_vertices() );
         verts.push_back(vertex);
       }
 

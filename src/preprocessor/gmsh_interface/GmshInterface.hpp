@@ -45,6 +45,8 @@ class GmshInterface
   static size_t get_n_vertices(const int element_type);
   // get vtk id of a gmsh element type
   static int get_vtk_id(const int element_type);
+  // save current gmsh model
+  static void save_gmsh_grid(const std::string fname);
 
  private:
   /* Prohibited */

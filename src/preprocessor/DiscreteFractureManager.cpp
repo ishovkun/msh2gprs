@@ -55,14 +55,43 @@ void DiscreteFractureManager::distribute_properties()
         const auto cells = face->neighbors();
         const auto cell1 = *cells[0];
         const auto cell2 = *cells[1];
+        // const double v1 = cell1.volume();
+        // const double v2 = cell2.volume();
+        double v1;
+        try {
+          v1 = cell1.volume();
+        }
+        catch (const std::exception & e)
+        {
+          std::cout << e.what() << std::endl;
+          std::cout << "cell1.index() = " << cell1.index() << " (" << cell1.ultimate_parent().index()<< std::endl;
+          for (auto f : cell1.faces())
+          {
+            for (auto v : f->vertices())
+              std::cout << v << " ";
+            std::cout << std::endl;
+          }
+          throw e;
+        }
+        double v2;
+        try {
+          v2 = cell2.volume();
+        }
+        catch (const std::exception & e)
+        {
+          std::cout << "cell2.index() = " << cell2.index() << std::endl;
+          std::cout << e.what() << std::endl;
+          for (auto f : cell2.faces())
+            std::cout << f->index() << std::endl;
+          throw e;
+        }
         f.custom_flow_data.resize(m_data.output_flow_properties.size());
         for (size_t j = 0; j < m_data.output_flow_properties.size(); ++j)
         {
           const size_t key = m_data.output_flow_properties[j];
           f.custom_flow_data[j] +=
-              (m_data.cell_properties[key][cell1.index()] * cell1.volume() +
-               m_data.cell_properties[key][cell2.index()] * cell2.volume() ) /
-              ( cell1.volume() + cell2.volume() ) ;
+              (m_data.cell_properties[key][cell1.index()] * v1 +
+               m_data.cell_properties[key][cell2.index()] * v2 ) / ( v2 + v2 ) ;
         }
         m_data.dfm_faces.insert({face->index(), std::move(f)});
       }
