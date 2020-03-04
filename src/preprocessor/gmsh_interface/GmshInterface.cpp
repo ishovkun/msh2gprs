@@ -533,8 +533,8 @@ std::vector<double>  compute_vertex_element_sizes(const std::vector<std::pair<si
 
 void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
 {
-  gmsh::option::setNumber("General.Terminal", 1);
-  // gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
+  // gmsh::option::setNumber("General.Terminal", 1);
+  gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
   gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
   gmsh::model::add("cell1");
 
@@ -607,12 +607,12 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
     // create line loop and surface
     // NOTE: curve and surface loop must start from 1, otherwise gmsh
     // throws an error, ergo i+1
-    std::cout << "add Line loop " << i+1 << ":";
-    for (auto edge : edge_markers)
-      std::cout << edge <<  " ";
-    std::cout << std::endl;
+    // std::cout << "add Line loop " << i+1 << ":";
+    // for (auto edge : edge_markers)
+    //   std::cout << edge <<  " ";
+    // std::cout << std::endl;
     gmsh::model::geo::addCurveLoop(edge_markers, static_cast<int>(i+1));
-    std::cout << "add plane surface " << i+1 << std::endl;
+    // std::cout << "add plane surface " << i+1 << std::endl;
     gmsh::model::geo::addPlaneSurface({static_cast<int>(i+1)}, static_cast<int>(i+1));
     gmsh::model::addPhysicalGroup(2, {static_cast<int>(i+1)}, i+1);
   }
@@ -627,6 +627,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   std::iota(surfaces.begin(), surfaces.end(), 1);
   gmsh::model::geo::addSurfaceLoop(surfaces, 1);
   gmsh::model::geo::addVolume({1}, 1);
+  gmsh::model::addPhysicalGroup(3, {static_cast<int>(1)}, 1);
 
   gmsh::model::geo::synchronize();
   gmsh::model::mesh::generate(3);
@@ -728,6 +729,7 @@ void GmshInterface::insert_elements_(const int dim, const int tag,
 
     for (size_t ie=0; ie < element_tags[itype].size(); ++ie)
     {
+      // if (dim == 3) std::cout << "element_tags[itype] = " << element_tags[itype][ie] << std::endl;
       // get vertex indices from gmsh vertex tags
       std::vector<size_t> verts;
       verts.reserve(nv);
@@ -735,8 +737,6 @@ void GmshInterface::insert_elements_(const int dim, const int tag,
       {
         const size_t vertex_tag = element_node_tags[itype][nv * ie + iv];
         const size_t vertex = vertex_numbering[vertex_tag];
-        if (vertex >= grid.n_vertices())
-          std::cout << "vertex = " << vertex << std::endl;
         assert (vertex < grid.n_vertices() );
         verts.push_back(vertex);
       }

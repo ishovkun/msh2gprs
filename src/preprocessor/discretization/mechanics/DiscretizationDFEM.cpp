@@ -27,16 +27,18 @@ void DiscretizationDFEM::build()
 {
   int cnt = 0;
   {
-    auto & cell = _grid.cell(100);
-    // for (auto v : cell.vertices())
+    // auto & cell = _grid.cell(100);
+
+    auto & cell = _grid.cell(0);
+    // for (auto v : cell.sorted_vertices())
     //   std::cout << _grid.vertex(v) << "\t|\t";
     // std::cout << std::endl;
-    // auto c = cell.polyhedron();
-    // for (auto v : c->get_points())
+    // std::cout << "Poly" << std::endl;
+    // auto p = cell.polyhedron();
+    // for (auto v : p->get_points())
     //   std::cout << v << "\t|\t";
     // std::cout << std::endl;
-    // exit(0);
-    // std::cout << "c->id() = " << c->id() << std::endl;
+
     api::initialize_gmsh();
     DFEMElement discr_element(cell, _msrsb_tol);
     mesh::Mesh _element_grid;

@@ -59,6 +59,8 @@ class Cell
   double volume() const;
   // get a polyhedron that represents a cell
   std::unique_ptr<Polyhedron> polyhedron() const;
+  // get sorted (by vertex index) vector of vertices in the order given by polyhedron() method
+  std::vector<size_t> sorted_vertices() const;
   // true if cell hace a vertex, false otherwise
   bool has_vertex(const std::size_t vertex_index) const;
   // returns true if has no children; else returns false

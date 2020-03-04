@@ -24,20 +24,30 @@ void FeValues::initialize_()
   _cell_index = std::numeric_limits<size_t>::max();
   /* NOTE: this updates quantities in all the grid elements */
   gmsh::model::mesh::getIntegrationPoints(_element_type, "Gauss1", _ref_points, _weights);
+  std::cout << "n_weights = " << _weights.size() << std::endl;
+  // std::cout << "ref point " << _ref_points[0] << " " << _ref_points[1] << " " << _ref_points[2] << std::endl;
+  // for (size_t i = 0; i < _ref_points.size() / 3; ++i) {
+  //   _ref_points[i+0] = 0.58541;
+  //   _ref_points[i+1] = 0.138197;
+  //   _ref_points[i+2] = 0.138197;
+  // }
+
+  // std::cout << "ref point mod " << _ref_points[0] << " " << _ref_points[1]
+  //           << " " << _ref_points[2] << std::endl;
+
   gmsh::model::mesh::getBasisFunctions(_element_type, _ref_points, "Lagrange", _n_comp, _ref_values);
   gmsh::model::mesh::getBasisFunctions(_element_type, _ref_points, "GradLagrange", _n_comp, _ref_gradients);
-  gmsh::model::mesh::getJacobians(_element_type, _ref_points, _jacobians, _determinants, _true_points,
+  gmsh::model::mesh::getJacobians(_element_type, _ref_points, _all_jacobians, _all_determinants, _true_points,
                                   /* tag = */ -1, /* task = */ 0, /* n_tasks = */ 1);
+
   get_elements_();
 }
 
 void FeValues::get_elements_()
 {
-  std::vector<int> element_types;
-  std::vector<std::vector<size_t>> element_node_tags;
-  std::vector<std::vector<size_t>> tags;
-  GmshInterface::get_elements(element_types, tags, element_node_tags, 3, -1);
-  _element_tags = tags[0];
+  std::vector<size_t> element_node_tags;
+  std::vector<size_t> tags;
+  gmsh::model::mesh::getElementsByType( _element_type, _element_tags, element_node_tags, 1 );
 }
 
 #else
@@ -49,32 +59,50 @@ void FeValues::update(const size_t cell_number)
 {
   const size_t dim = 3;
   const double nv = n_vertices();
+  const size_t nq = n_q_points();
   _cell_index = cell_number;
-  _grad.assign( _ref_gradients.size() * n_q_points(), 0.0 );
-  _inv_determinants.resize(_weights.size());
- 
-  for (std::size_t q=0; q<n_q_points(); ++q)
+  _grad.assign( _ref_gradients.size() * nq, 0.0 );
+  _determinants.resize( nq, 0.0 );
+  // _inv_determinants.resize(_weights.size());
+
+  for (std::size_t q=0; q<nq; ++q)
   {
     // build local dx_du matrix
     // dim*dim derivative entries for n_gauss_points for each cell
-    const size_t j_beg = ( cell_number * n_q_points() + q  ) * (dim * dim);
-    const size_t j_end = ( cell_number * n_q_points() + q+1) * (dim * dim);
-    std::vector<double> dx_du (_jacobians.begin() + j_beg, _jacobians.begin() + j_end);
+    const size_t j_beg = 9 * ( cell_number * nq + q  );
+    const size_t j_end = 9 * ( cell_number * nq + q + 1);
+    _determinants[q] = _all_determinants[cell_number * nq + q];
+
+    std::vector<double> dx_du(_all_jacobians.begin() + j_beg, _all_jacobians.begin() + j_end);
+    // std::cout << "untransposed" << std::endl;
+    // for (auto val : dx_du)
+    //   std::cout << val << " ";
+    // std::cout << std::endl;
+
     // gmsh stores jacobians in transposed format
     // dx_du = transpose3x3(dx_du);
+    // std::cout << "transposed" << std::endl;
+    // for (auto val : dx_du)
+    //   std::cout << val << " ";
+    // std::cout << std::endl;
+    // exit(0);
 
     // invert du_dx = inv(dx_du)
     std::vector du_dx(dim*dim, 0.0);
     invert_matrix_3x3(dx_du, du_dx);
-    _inv_determinants[q] = determinant_3x3(du_dx);
+    // _inv_determinants[q] = determinant_3x3(du_dx);
 
     // compute shape function gradients
     for (size_t vertex = 0; vertex < nv; ++vertex)
-      for (std::size_t i=0; i<dim; ++i)
-        for (std::size_t j=0; j<dim; ++j)
+      for (size_t i=0; i<dim; ++i)
+        for (size_t j=0; j<dim; ++j)
           _grad[q*dim*nv + dim*vertex + i] +=
               du_dx[i*dim + j] * _ref_gradients[q*dim*nv + dim*vertex + j];
   }
+  // std::cout << "grad" << std::endl;
+  // for (auto v : _grad)
+  //   std::cout << v << std::endl;
+  // exit(0);
 }
 
 void FeValues::update(const size_t cell_number, const std::vector<Point> & points)
@@ -97,7 +125,7 @@ void FeValues::update(const size_t cell_number, const std::vector<Point> & point
                                        _n_comp, _ref_gradients);
   _true_points.clear();
   std::vector<double> loc_jac, loc_det;
-  gmsh::model::mesh::getJacobians(_element_type, local_points, _jacobians, _determinants, _true_points,
+  gmsh::model::mesh::getJacobians(_element_type, local_points, _all_jacobians, _determinants, _true_points,
                                   /* tag = */ -1, /* task = 0 */ _cell_index, /* n_tasks = */ _n_elements);
   update(cell_number);
 }
@@ -120,10 +148,10 @@ Point FeValues::grad(const size_t vertex, const size_t q) const
   const double nv = n_vertices();
   assert( q < n_q_points() );
   assert( vertex < nv );
-  Point p;
-  p[0] = _grad[q*dim*nv + dim*vertex];
-  p[1] = _grad[q*dim*nv + dim*vertex + 1];
-  p[2] = _grad[q*dim*nv + dim*vertex + 2];
+  Point p (_grad[q*dim*nv + dim*vertex],
+           _grad[q*dim*nv + dim*vertex + 1],
+           _grad[q*dim*nv + dim*vertex + 2]);
+
   return p;
 }
 
@@ -137,8 +165,7 @@ double FeValues::value(const size_t vertex, const size_t q) const
 
 double FeValues::JxW(const size_t q) const
 {
-  // return _weights[q] * _inv_determinants[q];
-  return _weights[q] * _determinants[q];
+  return _weights[q] * std::fabs(1/_determinants[q]);
 }
 
 }  // end namespace gprs_data

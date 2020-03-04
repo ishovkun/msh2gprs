@@ -44,14 +44,17 @@ class FeValues
   std::vector<double> _weights;      // integration weights
   // basis function gradients [dxi_duj] on ref element
   std::vector<double> _ref_values;
+  // derivatives in the reference element: d (shape) / du
   std::vector<double> _ref_gradients;
   // jacobians
   // [e1g1Jxu, e1g1Jyu, e1g1Jzu, e1g1Jxv, ..., e1g1Jzw, e1g2Jxu, ..., e1gGJzw, e2g1Jxu, ...]
-  std::vector<double> _jacobians;
+  std::vector<double> _all_jacobians;
   // determinant of the Jacobian matrix at each integration
   // point: [e1g1, e1g2, ... e1gG, e2g1, ...]
-  std::vector<double> _determinants;
+  std::vector<double> _all_determinants;
   std::vector<double> _true_points;  // integration points on real element
+  // determinant values in each gauss point for the current cell
+  std::vector<double> _determinants;
   // for only a single element at a time
   std::vector<double> _grad;  // shape gradients on real element
   std::vector<double> _inv_determinants;

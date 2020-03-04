@@ -77,8 +77,8 @@ class DFEMElement
   std::vector<Eigen::VectorXd> _basis_functions;
   // mrsrb support boundaries
   std::vector<std::unordered_set<size_t>> _support_boundaries;
-  std::vector<std::set<size_t>> _support_edges;
-  std::vector<std::set<size_t>> _support_boundary_edges;
+  std::vector<std::vector<size_t>> _support_edge_vertices;
+  std::vector<std::vector<double>> _support_edge_values;
   // dfem gauss points
   std::vector<angem::Point<3,double>> _integration_points;
   FiniteElementData _cell_data;
