@@ -27,6 +27,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/DiscretizationDFEM.cpp
   discretization/mechanics/DFEMElement.cpp
   discretization/mechanics/JacobiPreconditioner.cpp
+  discretization/mechanics/PolyhedralElementDirect.cpp
 )
 
 SET_TARGET_PROPERTIES (

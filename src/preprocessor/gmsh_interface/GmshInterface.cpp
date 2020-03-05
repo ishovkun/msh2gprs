@@ -544,7 +544,7 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   //
   gmsh::option::setNumber("Mesh.SaveAll", 1);
 
-  const double discr_element_size = 0.4 * compute_element_size_(cell);
+  // const double discr_element_size = 0.4 * compute_element_size_(cell);
   // std::cout << "discr_element_size = " << discr_element_size << std::endl;
   // build points
   const std::vector<Point> & vertices = cell.get_points();

@@ -33,8 +33,11 @@ class DFEMElement
   void numberNodesEndElements_(std::vector<int> &element_types,
                         std::vector<std::vector<std::size_t> > & element_tags,
                         const std::vector<std::vector<std::size_t> > &node_tags);
+  void initialize_shape_functions_();
   // build vectors for shape functions and fill them with initial guess values
   void initial_guess_();
+  // different guess
+  void initial_guess2_();
   // just for debugging
   void debug_save_shape_functions_(const std::string fname = "shape_functions.vtk");
   // run iterative msrsb process to compute shape functions

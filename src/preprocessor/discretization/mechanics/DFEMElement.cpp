@@ -6,6 +6,7 @@
 #include "VTKWriter.hpp"
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
+// #include <algorithm>  // clamp
 
 namespace discretization {
 
@@ -22,31 +23,44 @@ DFEMElement::DFEMElement(const mesh::Cell & cell,
 
 void DFEMElement::build_()
 {
-  build_triangulation_();
-  build_jacobian_();
-  compute_shape_functions_();
+  api::build_triangulation(_cell, _element_grid);
+  std::cout << "done building discr" << std::endl;
+  std::cout << "_element_grid.n_active_cells " << _element_grid.n_active_cells() << std::endl;
 
-  save_support_edges_();
-  // gmsh::write("cell.msh");
-  debug_save_shape_functions_("shape_functions-final.vtk");
+  // build system matrix
+  build_jacobian_();
+  std::cout << "done building jac" << std::endl;
+
+  // Direct method
+  build_support_edges_();
+  compute_shape_functions_();
+  // save_support_edges_();
+
+  //
+  // // MSRSB method
+  // // // gmsh::write("cell.msh");
+  // build_support_boundaries_();
+  // initialize_shape_functions_();
   // initial_guess_();
+  // // initial_guess2_();
+  // _system_matrix.makeCompressed();
+  // std::cout << "compression done" << std::endl;
+  // debug_save_shape_functions_("shape_functions-initial-guess.vtk");
+  // //
   // run_msrsb_();
-  // // save_support_boundaries_();
+
+
+  // postprocessing
+  debug_save_shape_functions_("shape_functions-final.vtk");
+  // save_support_boundaries_();
   // find_integration_points_();
   // compute_fe_quantities_();
-}
-
-void DFEMElement::build_triangulation_()
-{
-  api::build_triangulation(_cell, _element_grid);
-  // build_support_boundaries_();
-  build_support_edges_();
 }
 
 void DFEMElement::build_support_boundaries_()
 {
   const std::vector<const mesh::Face*> parent_faces = _cell.faces();
-  const std::vector<size_t> parent_vertices = _cell.vertices();
+  const std::vector<size_t> parent_vertices = _cell.sorted_vertices();
   _support_boundaries.resize(parent_vertices.size());
   for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
   {
@@ -59,22 +73,7 @@ void DFEMElement::build_support_boundaries_()
         // index in global domain grid
         const size_t parent_vertex = parent_vertices[iv_parent];
         if ( !parent_face->has_vertex(parent_vertex) )
-        {
-          // if (iv_parent == 0 && face->marker() == 6)
-          // {
-          //   std::cout << std::endl;
-          //   std::cout << "parent face vertices ";
-          //   for (auto v : parent_face->vertices())
-          //     std::cout << v << " ";
-          //   std::cout << std::endl;
-          //   std::cout << "parent_vertex = " << parent_vertex << std::endl;
-          //   std::cout << "iv_parent = " << iv_parent << std::endl;
-          //   std::cout << "fuck" << std::endl;
-          //   exit(0);
-          // }
-
           non_adj.push_back(iv_parent);
-        }
       }
       for (const size_t vertex : face->vertices())
         for (const size_t parent_vertex : non_adj)
@@ -162,13 +161,13 @@ void DFEMElement::run_msrsb_()
 
   double dphi = 10  * _msrsb_tol;
   size_t iter = 0;
-  const size_t max_iter = 700;
+  const size_t max_iter = 10 * _element_grid.n_vertices();
   do
   {
     dphi = jacobi_iteration_(solutions, preconditioner) / solutions[0].size();
 
-    // if (!(iter % 10))  // li'l progress prinout
-    //   std::cout << "iter = " << iter << " dphi = " << dphi << std::endl;
+    if (!(iter % 50))  // li'l progress prinout
+      std::cout << "iter = " << iter << " dphi = " << dphi << std::endl;
 
     if (iter++ >= max_iter)
     {
@@ -243,7 +242,7 @@ void DFEMElement::build_jacobian_()
   // since we only build tetrahedral element mesh
   // 4 is tetrahedron id
   // TODO: write a wrapper for it
-  FeValues fe_values( 4, _element_grid.n_cells() );
+  FeValues fe_values( 4 );
 
   Eigen::MatrixXd cell_matrix(fe_values.n_vertices(), fe_values.n_vertices());
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
@@ -277,12 +276,15 @@ void DFEMElement::build_jacobian_()
   }
 }
 
-void DFEMElement::initial_guess_()
+void DFEMElement::initialize_shape_functions_()
 {
   const size_t parent_n_vert = _cell.vertices().size();
   for (std::size_t i=0; i<parent_n_vert; ++i)
     _basis_functions.push_back(Eigen::VectorXd::Zero(_element_grid.n_vertices()));
+}
 
+void DFEMElement::initial_guess_()
+{
   const auto parent_nodes = _cell.polyhedron()->get_points();
   for (size_t v=0; v < _element_grid.n_vertices(); ++v)
   {
@@ -300,6 +302,34 @@ void DFEMElement::initial_guess_()
     }
     _basis_functions[closest][v] = 1.0;
   }
+}
+
+void DFEMElement::initial_guess2_()
+{
+  const auto parent_nodes = _cell.polyhedron()->get_points();
+  for (size_t v=0; v < _element_grid.n_vertices(); ++v)
+  {
+    const Point & x = _element_grid.vertex(v);
+    for (size_t i = 0; i < parent_nodes.size(); ++i)
+    {
+      const Point & xi = parent_nodes[i];
+      double num = 1, denom = 1;
+      for (size_t j = 0; j < parent_nodes.size(); ++j)
+        if (i != j)
+        {
+          const Point & xj = parent_nodes[j];
+          num *= x.distance(xj);
+          denom *= xi.distance(xj);
+        }
+      _basis_functions[i][v] = num / denom;
+    }
+  }
+  for (size_t v=0; v < _element_grid.n_vertices(); ++v)
+    for (size_t i = 0; i < parent_nodes.size(); ++i)
+    {
+      const double val = _basis_functions[i][v];
+      _basis_functions[i][v] = std::max(0.0, std::min( val, 1.0 ) );
+    }
 }
 
 void DFEMElement::debug_save_shape_functions_(const std::string fname)
@@ -439,15 +469,6 @@ void DFEMElement::build_support_edges_()
     }
   }
 
-  for (size_t pv=0; pv<parent_vertex_markers.size(); ++pv)
-  {
-    std::cout << pv + 1 << ": ";
-    for (auto m : parent_vertex_markers[pv])
-      std::cout << m << " ";
-    std::cout << std::endl;
-  }
-
-
   const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_markers );
 
   _support_edge_vertices.resize( parent_vertices.size() );
@@ -521,9 +542,13 @@ void DFEMElement::compute_shape_functions_()
     impose_boundary_conditions_(mat, rhs, pv);
     mat.makeCompressed();
 
+    // TODO: I cannot currently use conjugate gradient since the matrix is non-symmetric
+    // due to dirichlet conditions. I need to symmetrize the matrix by modifying the
+    // columns that correspond to dirichlet vertices
     // Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Lower|Eigen::Upper> solver;
-    // Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Upper> solver;
-    // solver.setMaxIterations(100);
+    // solver.analyzePattern(mat);
+    // solver.factorize(mat);
+    // solver.setMaxIterations(200);
     // solver.setTolerance(1e-10);
     // solver.compute(mat);
 
@@ -535,32 +560,26 @@ void DFEMElement::compute_shape_functions_()
     solver.factorize(mat);
 
     _basis_functions[pv] = solver.solve(rhs);
-
-    if (pv == 0)
+    // if ( solver.info() ==  Eigen::ComputationInfo::NumericalIssue)
+    //   std::cout << "numerical issue" << std::endl;
+    // else if( solver.info() ==  Eigen::ComputationInfo::NoConvergence)
+    //   std::cout << "no convergence" << std::endl;
+    if (solver.info() != Eigen::ComputationInfo::Success)
     {
-      // std::cout << mat << std::endl;
-      // for (size_t i = 0; i < _element_grid.n_vertices(); i++) {
-      //   // std::cout << _basis_functions[pv][i] << std::endl;
-      //   std::cout << mat.coeffRef(i, i) << " | ";
-      //   std::cout << rhs[i] << std::endl;
-      // }
-
+      throw std::runtime_error( "Conjugate gratient did not converge" );
     }
+    std::cout << "done solving " << pv << std::endl;
   }
-}
 
-// void DFEMElement::impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
-//                                               Eigen::VectorXd & rhs,
-//                                               const size_t ipv)
-// {
-//   for (size_t iv=0; iv<_support_edge_vertices[ipv].size(); ++iv)
-//   {
-//     const size_t v = _support_edge_vertices[ipv][iv];
-//     for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, v); it; ++it)
-//       it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
-//     rhs[v] = _support_edge_values[ipv][iv];
-//   }
-// }
+  for (size_t i=0; i<_element_grid.n_vertices(); ++i)
+  {
+    double sum = 0;
+    for (size_t j=0; j<n_parent_vertices; ++j)
+      sum += _basis_functions[j][i];
+    std::cout << "sum = " << sum << std::endl;
+  }
+
+}
 
 void DFEMElement::impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
                                               Eigen::VectorXd & rhs,
@@ -574,8 +593,6 @@ void DFEMElement::impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::
     rhs[i] = _support_edge_values[ipv][iv];
   }
 }
-
-
 
 }  // end namespace discretization
 

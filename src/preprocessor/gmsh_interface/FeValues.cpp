@@ -1,5 +1,7 @@
 #include "FeValues.hpp"
 #include "GmshInterface.hpp"
+#include "angem/Tensor2.hpp"
+
 #include "../utils.hpp"
 
 #ifdef WITH_GMSH
@@ -12,8 +14,8 @@
 
 namespace gprs_data {
 
-FeValues::FeValues(const int element_type, const size_t n_elements)
-    : _n_comp(1), _element_type(element_type), _n_elements(n_elements)
+FeValues::FeValues(const int element_type, const int element_tag)
+    : _n_comp(1), _element_type(element_type), _element_tag(element_tag)
 {
   initialize_();
 }
@@ -24,7 +26,7 @@ void FeValues::initialize_()
   _cell_index = std::numeric_limits<size_t>::max();
   /* NOTE: this updates quantities in all the grid elements */
   gmsh::model::mesh::getIntegrationPoints(_element_type, "Gauss1", _ref_points, _weights);
-  std::cout << "n_weights = " << _weights.size() << std::endl;
+  // std::cout << "n_weights = " << _weights.size() << std::endl;
   // std::cout << "ref point " << _ref_points[0] << " " << _ref_points[1] << " " << _ref_points[2] << std::endl;
   // for (size_t i = 0; i < _ref_points.size() / 3; ++i) {
   //   _ref_points[i+0] = 0.58541;
@@ -47,7 +49,8 @@ void FeValues::get_elements_()
 {
   std::vector<size_t> element_node_tags;
   std::vector<size_t> tags;
-  gmsh::model::mesh::getElementsByType( _element_type, _element_tags, element_node_tags, 1 );
+  gmsh::model::mesh::getElementsByType( _element_type, _element_tags, element_node_tags, _element_tag );
+  _n_elements = tags.size();
 }
 
 #else
@@ -63,7 +66,6 @@ void FeValues::update(const size_t cell_number)
   _cell_index = cell_number;
   _grad.assign( _ref_gradients.size() * nq, 0.0 );
   _determinants.resize( nq, 0.0 );
-  // _inv_determinants.resize(_weights.size());
 
   for (std::size_t q=0; q<nq; ++q)
   {
@@ -73,36 +75,21 @@ void FeValues::update(const size_t cell_number)
     const size_t j_end = 9 * ( cell_number * nq + q + 1);
     _determinants[q] = _all_determinants[cell_number * nq + q];
 
-    std::vector<double> dx_du(_all_jacobians.begin() + j_beg, _all_jacobians.begin() + j_end);
-    // std::cout << "untransposed" << std::endl;
-    // for (auto val : dx_du)
-    //   std::cout << val << " ";
-    // std::cout << std::endl;
+    // take a portion of the jacobian vector that corresponds to q
+    std::vector<double> jac_local(_all_jacobians.begin() + j_beg, _all_jacobians.begin() + j_end);
+    angem::Tensor2<3, double> dx_du(jac_local);
+    // invert jacobian
+    angem::Tensor2<3, double> du_dx = invert(dx_du);
 
-    // gmsh stores jacobians in transposed format
-    // dx_du = transpose3x3(dx_du);
-    // std::cout << "transposed" << std::endl;
-    // for (auto val : dx_du)
-    //   std::cout << val << " ";
-    // std::cout << std::endl;
-    // exit(0);
-
-    // invert du_dx = inv(dx_du)
-    std::vector du_dx(dim*dim, 0.0);
-    invert_matrix_3x3(dx_du, du_dx);
-    // _inv_determinants[q] = determinant_3x3(du_dx);
-
-    // compute shape function gradients
     for (size_t vertex = 0; vertex < nv; ++vertex)
       for (size_t i=0; i<dim; ++i)
-        for (size_t j=0; j<dim; ++j)
-          _grad[q*dim*nv + dim*vertex + i] +=
-              du_dx[i*dim + j] * _ref_gradients[q*dim*nv + dim*vertex + j];
+      {
+        const size_t offset = q * dim * nv;
+        const size_t n = dim * vertex;
+        for (size_t j = 0; j < dim; ++j)
+          _grad[offset + n + i] += du_dx(i, j) * _ref_gradients[offset + n + j];
+      }
   }
-  // std::cout << "grad" << std::endl;
-  // for (auto v : _grad)
-  //   std::cout << v << std::endl;
-  // exit(0);
 }
 
 void FeValues::update(const size_t cell_number, const std::vector<Point> & points)
@@ -166,6 +153,7 @@ double FeValues::value(const size_t vertex, const size_t q) const
 double FeValues::JxW(const size_t q) const
 {
   return _weights[q] * std::fabs(1/_determinants[q]);
+  // return _weights[q] * std::fabs(_determinants[q]);
 }
 
 }  // end namespace gprs_data

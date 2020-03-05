@@ -10,7 +10,7 @@ class FeValues
 {
  public:
   // Constructor
-  FeValues(const int element_type, const size_t n_elements);
+  FeValues(const int element_type, const int element_tag = -1);
   /* update function gradients and jacobians with
    * custom points inside the element.
    * Note that the points must be inside the element*/
@@ -36,7 +36,8 @@ class FeValues
  private:
   void debug_print_cell_config();
   const int _element_type;
-  const size_t _n_elements;
+  const int _element_tag;
+  size_t _n_elements;
   int _n_comp;
   size_t _cell_index;
   std::vector<size_t> _element_tags;

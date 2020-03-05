@@ -3,6 +3,7 @@
 #include <stdexcept>
 #ifdef WITH_EIGEN
 #include "DFEMElement.hpp"
+#include "PolyhedralElementDirect.hpp"
 #endif
 
 namespace discretization
@@ -25,11 +26,11 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 
 void DiscretizationDFEM::build()
 {
-  int cnt = 0;
+  // int cnt = 0;
   {
-    // auto & cell = _grid.cell(100);
+    auto & cell = _grid.cell(100);
 
-    auto & cell = _grid.cell(0);
+    // auto & cell = _grid.cell(0);
     // for (auto v : cell.sorted_vertices())
     //   std::cout << _grid.vertex(v) << "\t|\t";
     // std::cout << std::endl;
@@ -40,8 +41,10 @@ void DiscretizationDFEM::build()
     // std::cout << std::endl;
 
     api::initialize_gmsh();
-    DFEMElement discr_element(cell, _msrsb_tol);
-    mesh::Mesh _element_grid;
+    PolyhedralElementDirect discr_elemnelement(cell);
+
+    // DFEMElement discr_element(cell, _msrsb_tol);
+    // mesh::Mesh _element_grid;
     api::finalize_gmsh();
     exit(0);
     // if (cnt++ > 2) break;
