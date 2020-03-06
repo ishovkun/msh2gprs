@@ -11,6 +11,12 @@ namespace gprs_data {
 
 using discretization::DoFNumbering;
 
+/**
+ * This class builds dof configurations for flow FVM.
+ * The key functions are distribute_dofs and distribute_unsplit_dofs,
+ * which generate DoFNumbering for matrix and fracture CVs for compartmental EDFM
+ * and regualar/projection EDFM.
+ */
 class DoFManager
 {
  public:

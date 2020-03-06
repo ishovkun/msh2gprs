@@ -7,9 +7,21 @@
 
 namespace gprs_data {
 
+/* This class implementes a manager for grid cell properties.
+ * Its main responsibiilities are to 
+ * (1) distribute properties across the grid and grid subdomains.
+ * (2) upscale and downscale properties upon grid refinement.  */
 class CellPropertyManager
 {
  public:
+  /**
+   * Constructor. 
+   * Requires a generic config and config for each subdomain.
+   * 
+   * @param  {CellPropertyConfig} cell_properties       : generic config
+   * @param  {std::vector<DomainConfig>} domain_configs : config for each gmsh marker
+   * @param  {SimData} data                             : container for output data
+   */
   CellPropertyManager(const CellPropertyConfig & cell_properties,
                       const std::vector<DomainConfig> & domain_configs,
                       SimData & data);

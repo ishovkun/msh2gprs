@@ -7,12 +7,24 @@
 
 namespace gprs_data {
 
+/** 
+ * This class is responsible for identifying discrete fractures 
+ * from the gmsh markers and distributing fracture properties.
+ * It also does splitting of the mesh faces for geomechanics
+ * discrete fracture output.
+ */
 class DiscreteFractureManager
 {
  public:
+  /**
+   * Constructor
+   * 
+   * @param  config : vector of configs for each fracture marked with a marker
+   * @param  data   : storage for input/output properties
+   */
   DiscreteFractureManager(const std::vector<DiscreteFractureConfig> & config,
                           SimData & data);
-  // count the number of dfm faces
+  // count the number of dfm faces in the grid
   size_t count_dfm_faces() const;
   /* Assign flow properties to dfm control volumes */
   void distribute_properties();
@@ -20,7 +32,12 @@ class DiscreteFractureManager
   bool is_fracture(const int face_marker) const;
   /* split grid dfm faces for geomechanics */
   void split_faces(mesh::Mesh & grid);
-  // combine two vectors
+  /** Concatenate two config vectors.
+   * 
+   * @param  {std::vector<DiscreteFractureConfig>} config1 : first vector of fracture configs
+   * @param  {std::vector<DiscreteFractureConfig>} config2 : second vector of fracture configs
+   * @return {std::vector<DiscreteFractureConfig>}         : a concatenated config
+   */
   static std::vector<DiscreteFractureConfig>
   combine_configs(const std::vector<DiscreteFractureConfig> & config1,
                   const std::vector<DiscreteFractureConfig> & config2);

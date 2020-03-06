@@ -187,6 +187,7 @@ void Preprocessor::build_flow_discretization_()
 
   // flow dof numbering
   const std::vector<int> edfm_markers = pm_edfm_mgr->get_face_markers();
+  // generate dofs for split and unsplit flow CVs
   DoFManager dof_manager(data.grid, pm_dfm_mgr->get_face_markers(), edfm_markers);
   std::shared_ptr<DoFNumbering> p_split_dofs = dof_manager.distribute_dofs();
   std::shared_ptr<DoFNumbering> p_unsplit_dofs = dof_manager.distribute_unsplit_dofs();
@@ -194,6 +195,8 @@ void Preprocessor::build_flow_discretization_()
   // build edfm discretization from mixed dfm-edfm discretization
   discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
                                                 data.flow_connection_data, edfm_markers, config.edfm_method);
+  // if we do cedfm use the split matrix dof numbering
+  // else use unsplit matrix dofs
   if ( config.edfm_method == EDFMMethod::compartmental )
     pm_flow_dof_numbering = p_split_dofs;
   else
