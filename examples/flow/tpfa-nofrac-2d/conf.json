@@ -1,0 +1,17 @@
+{
+    "Mesh file" : "geom.msh",
+
+    "Domain Flow Properties" :
+    {
+        "_comment_" : "sort is the order of evaluation!",
+        "file" : "domain.txt",
+        "9999991": [
+            {"RTEMP"                         : "343.15"},
+            {"THCROCK"                       : "2.8"},
+            {"PORO"                          : "0.2"},
+            {"PERM"                          : "10"},
+            {"SWAT"                          : "0.0"},
+            {"PRESSURE"                      : "100"}
+        ]
+    }
+}

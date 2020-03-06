@@ -1,3 +1,3 @@
-[submodule "src/angem"]
-	path = src/angem
+[submodule "external/angem"]
+	path = external/angem
 	url = https://github.com/ishovkun/angem

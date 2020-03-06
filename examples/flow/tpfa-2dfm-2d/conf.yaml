@@ -1,0 +1,23 @@
+Mesh file: geom.msh
+
+Discrete Fractures :
+  fracture:
+    label: 1
+    conductivity : 1
+    aperture : 0.01
+  # fracture:
+  #   label: 2
+  #   conductivity : 1
+  #   aperture : 0.01
+
+Domain Flow Properties:
+  discretization: TPFA
+  domain:
+    label: 9999991
+    Coupled: true
+    RTEMP: 340
+    PORO: 0.2
+    PERM: 10
+    SWAT: 0.0
+    PRESSURE: 100
+

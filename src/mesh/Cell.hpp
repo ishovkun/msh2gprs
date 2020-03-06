@@ -3,6 +3,7 @@
 #include "angem/Point.hpp"
 #include "angem/Polyhedron.hpp"
 #include "Face.hpp"
+#include "constants.hpp"
 #include <vector>
 #include <functional>  // std::reference_wrapper
 
@@ -11,21 +12,26 @@ namespace mesh
 using Point = angem::Point<3,double>;
 using Polyhedron = angem::Polyhedron<double>;
 
-static const int DEFAULT_CELL_MARKER = -1;
-
 class Cell
 {
  public:
   // constructor
-  Cell(const std::size_t          cell_index,
+  Cell(const std::size_t                cell_index,
        const std::vector<std::size_t> & vertices,
        const std::vector<std::size_t> & faces,
-       std::vector<Point>        & grid_vertices,
-       std::vector<Cell>        & grid_cells,
-       std::vector<Face>        & grid_faces,
-       const int                  vtk_id,
-       const int                  marker);
-  // access operators
+       std::vector<Point>             & grid_vertices,
+       std::vector<Cell>              & grid_cells,
+       std::vector<Face>              & grid_faces,
+       const int                        vtk_id,
+       const int                        marker,
+       const std::size_t                parent = constants::invalid_index);
+  // assignment operator
+  Cell & operator=(const Cell & other);
+  // comparison operator
+  inline bool operator==(const Cell & other) const { return index() == other.index(); }
+  // comparison operator
+  inline bool operator!=(const Cell & other) const { return !(*this == other); }
+  // ---------------------- ACCESS OPERATORS ------------------------------- //
   // get cell index
   inline std::size_t index() const { return m_index; }
   // get cell marker
@@ -53,20 +59,50 @@ class Cell
   double volume() const;
   // get a polyhedron that represents a cell
   std::unique_ptr<Polyhedron> polyhedron() const;
+  // get sorted (by vertex index) vector of vertices in the order given by polyhedron() method
+  std::vector<size_t> sorted_vertices() const;
   // true if cell hace a vertex, false otherwise
   bool has_vertex(const std::size_t vertex_index) const;
+  // returns true if has no children; else returns false
+  inline bool is_active() const {return m_children.empty();}
+  // returns the parent cell. If cell has not parents, returns itself.
+  inline const Cell & parent() const { return (*pm_grid_cells)[m_parent]; }
+  // returns the parent cell. If cell has not parents, returns itself.
+  inline Cell & parent() { return (*pm_grid_cells)[m_parent]; }
+  // returns the parent of parent of parent of ....
+  const Cell & ultimate_parent() const;
+  // returns the parent of parent of parent of ....
+  Cell & ultimate_parent();
+  // return a vector of child cell indices
+  std::vector<const Cell*> immediate_children() const;
+  // returns a vector of indices of children of children of...
+  std::vector<const Cell*> ultimate_children() const;
+  // return child cells from all refinement levels
+  std::vector<const Cell*> all_level_children() const;
+  // check if cell polyhedron has edge specified by vertex indices
+  bool has_edge(const vertex_pair edge) const;
 
  protected:
+  // recursive part of the public ultimate_children() method
+  void ultimate_children_(std::vector<size_t> & uc) const;
+  // recursively search all level children of a cell
+  void all_level_children_(std::vector<size_t> & ch) const;
+
   // this cell stuff
   std::size_t m_index;
   int m_marker, m_vtk_id;
   std::vector<std::size_t> m_vertices;
   std::vector<std::size_t> m_faces;
-  // grid stuff
-  std::vector<Point> & m_grid_vertices;
-  std::vector<Cell> & m_grid_cells;
-  std::vector<Face> & m_grid_faces;
+  // global grid stuff
+  std::vector<Point> * pm_grid_vertices;
+  std::vector<Cell> * pm_grid_cells;
+  std::vector<Face> * pm_grid_faces;
+  //  refinement
+  std::size_t m_parent;
+  std::vector<std::size_t> m_children;
   friend class Mesh;
+  friend class active_cell_iterator;
+  friend class active_cell_const_iterator;
 };
 
 }  // end namespace

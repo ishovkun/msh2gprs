@@ -5,8 +5,7 @@ import re
 # case_path = "/home/ishovkun/sim/pedfm-comp/EDFM-horizontal"
 case_path = os.getcwd()
 
-if (case_path[-1] != "/"):
-    case_path += "/"
+if (case_path[-1] != "/"): case_path += "/"
 
 res_mesh_file = case_path + "reservoir_mesh.vtk"
 edfm_mesh_file = case_path + "efrac.vtk"
@@ -225,7 +224,6 @@ if (n_edfm > 0 and os.path.isdir(vtk_dir)):
                                 sda_counter = 0
     print(len(sda_data))
     print(len(times))
-    # exit(0)
 
 # print(sda_data[0][:, 0])
 print("n_volumes = ",                n_volumes,

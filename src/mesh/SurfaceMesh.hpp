@@ -8,7 +8,8 @@
 #include <edge_iterator.hpp>
 #include <const_edge_iterator.hpp>
 #include <surface_element_iterator.hpp>
-
+#include <surface_element_const_iterator.hpp>
+#include "constants.hpp"
 
 
 namespace mesh
@@ -24,7 +25,8 @@ class SurfaceMesh // : PolyGroup<Scalar>
   SurfaceMesh(const double tol = 1e-6);
   // add new polygon (element) to the mesh. no check for duplicates
   // returns new element index
-  std::size_t insert(const angem::Polygon<Scalar> & poly);
+  std::size_t insert(const angem::Polygon<Scalar> & poly,
+                     const int                      marker = constants::default_cell_marker);
   // true if vector of polygons is empty
   bool empty() const {return polygons.empty();}
 
@@ -64,13 +66,21 @@ class SurfaceMesh // : PolyGroup<Scalar>
 
   surface_element_iterator<Scalar> create_poly_iterator(const std::size_t ielement)
   {
-    return surface_element_iterator<Scalar> (ielement, vertices,
-                                             polygons, map_edges);
+    return surface_element_iterator<Scalar> (ielement, vertices, polygons, map_edges, _markers);
+  }
+  surface_element_const_iterator<Scalar> create_poly_const_iterator(const std::size_t ielement) const
+  {
+    return surface_element_const_iterator<Scalar> (ielement, vertices, polygons, map_edges, _markers);
   }
 
+  // create a cell iterator pointing to the element at the beginning of the cell vector
   surface_element_iterator<Scalar> begin_polygons() {return create_poly_iterator(0);}
+  // create a cell iterator pointing to the end of the cell vector
   surface_element_iterator<Scalar> end_polygons() {return create_poly_iterator(polygons.size());}
-
+  // create a cell read-only iterator pointing to the element at the beginning of the cell vector
+  surface_element_const_iterator<Scalar> begin_polygons() const {return create_poly_const_iterator(0);}
+  // create a cell read-only iterator pointing to the end of the cell vector
+  surface_element_const_iterator<Scalar> end_polygons() const {return create_poly_const_iterator(polygons.size());}
 
   // return the vector of all mesh vertices
   inline std::vector<angem::Point<3,Scalar>> & get_vertices() {return vertices.points;}
@@ -93,6 +103,8 @@ class SurfaceMesh // : PolyGroup<Scalar>
   PointSet<3,Scalar>                    vertices;
   // indices of vertices that constitute polygonal elements
   std::vector<std::vector<std::size_t>> polygons;  // indices
+  // cell markers
+  std::vector<int> _markers;
 
   // merge two elements haaving a comon edge
   // the edge is vertex indices
@@ -132,7 +144,8 @@ SurfaceMesh<Scalar>::SurfaceMesh(const double tol)
 
 
 template <typename Scalar>
-std::size_t SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly)
+std::size_t SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly,
+                                        const int                      marker)
 {
   // this part is a copy of PolyGroup add method
   // append vertices, compute vertex indices, and append these indices
@@ -145,7 +158,8 @@ std::size_t SurfaceMesh<Scalar>::insert(const angem::Polygon<Scalar> & poly)
   }
 
   const std::size_t new_element_index = polygons.size();
-  polygons.push_back(indices);
+  polygons.push_back(std::move(indices));
+  _markers.push_back(marker);
 
   // now we need to compute edges
   for (const auto & edge : poly.get_edges())

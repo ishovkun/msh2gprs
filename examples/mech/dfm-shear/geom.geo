@@ -181,8 +181,8 @@ Frac1 = 1;
 
 Physical Surface(Frac1) = {94};
 
-ELASTIC_DRIVER = 9999991;
-SDA_DRIVER = 9999992;
+ELASTIC_DRIVER = 1;
+SDA_DRIVER = 2;
 
 Physical Volume(SDA_DRIVER) = {1, 2, 3, 4, 5, 6, 7};
 
