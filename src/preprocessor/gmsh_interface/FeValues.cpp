@@ -48,9 +48,8 @@ void FeValues::initialize_()
 void FeValues::get_elements_()
 {
   std::vector<size_t> element_node_tags;
-  std::vector<size_t> tags;
   gmsh::model::mesh::getElementsByType( _element_type, _element_tags, element_node_tags, _element_tag );
-  _n_elements = tags.size();
+  _n_elements = _element_tags.size();
 }
 
 #else

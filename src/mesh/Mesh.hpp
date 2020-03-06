@@ -127,7 +127,12 @@ class Mesh
   inline std::size_t n_vertices() const {return m_vertices.size();}
   // get number of faces
   inline std::size_t n_faces() const {return m_faces.size();}
-  // MANIPULATION
+
+  // SEARCHING //
+  // returns face index or invalid index
+  size_t find_face(const std::vector<size_t> & face_vertices) const;
+
+  // MANIPULATION //
   // delete a cell mesh
    void delete_cell(const std::size_t ielement);
   //  // merges jcell into icell if they have a common face
@@ -222,9 +227,6 @@ class Mesh
     partial_sort_copy(vec.begin(), vec.end(), copy.begin(), copy.end());
     return copy;
   }
-
-  // returns face index or invalid index
-  size_t face_exists_(const std::vector<size_t> & face_vertices) const;
 
  private:
   // ATTRIBUTES

@@ -6,7 +6,6 @@
 #include "VTKWriter.hpp"
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
-// #include <algorithm>  // clamp
 
 namespace discretization {
 

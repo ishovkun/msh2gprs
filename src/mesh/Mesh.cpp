@@ -103,7 +103,7 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
   if (m_vertex_faces.size() < n_vertices())
     m_vertex_faces.resize(n_vertices());
 
-  size_t face_index = face_exists_(f.vertices);
+  size_t face_index = find_face(f.vertices);
   if (face_index == constants::invalid_index)
   {
     face_index = m_faces.size();
@@ -648,7 +648,7 @@ std::vector<size_t> find_vertices_from_both_groups(const std::vector<size_t> &ve
   return result;
 }
 
-size_t Mesh::face_exists_(const std::vector<size_t> & face_vertices) const
+size_t Mesh::find_face(const std::vector<size_t> & face_vertices) const
 {
   const std::vector<size_t> sorted_vertices = sort_copy_(face_vertices);
   for (const size_t vertex: face_vertices)

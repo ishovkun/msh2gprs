@@ -1,5 +1,6 @@
 #pragma once
 
+#include "element_types.hpp"
 #include <mesh/Mesh.hpp>
 #include <fstream>  // fstream
 
@@ -47,6 +48,10 @@ class GmshInterface
   static int get_vtk_id(const int element_type);
   // save current gmsh model
   static void save_gmsh_grid(const std::string fname);
+  // get gmsh id from vtk id
+  // searches gmsh element types in time linear to the number of gmsh types
+  // throws std::invalid_argument
+  static int get_gmsh_element_id(const angem::VTK_ID vtk_id);
 
  private:
   /* Prohibited */

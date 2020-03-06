@@ -5,6 +5,7 @@ ADD_LIBRARY(preprocessor
   parsers/YamlParser.cpp
   gmsh_interface/GmshInterface.cpp
   gmsh_interface/FeValues.cpp
+  gmsh_interface/element_types.cpp
   utils.cpp
   CellPropertyManager.cpp
   EmbeddedFractureManager.cpp
