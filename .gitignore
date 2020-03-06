@@ -4,3 +4,9 @@ build/
 compile_commands.json
 .cquery_cached_index/
 src/angem/.cquery_cached_index/
+.ccls-cache/
+*.cmake
+*.make
+.vscode
+CMakeFiles/
+Makefile
