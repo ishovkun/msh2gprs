@@ -6,6 +6,14 @@
 
 namespace gprs_data {
 
+/**
+ * This class is responsible for Embedded fractures.
+ * I can split the grid cells to create a cEDFM approach,
+ * create a DFM-type configuration for embedded fracture to feed to discretization classes,
+ * create a grid for vtk output,
+ * map flow control volumes to edfm elements,
+ * and map geomechanics cells to edfm elements.
+ */
 class EmbeddedFractureManager
 {
  public:
