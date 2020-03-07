@@ -5,6 +5,7 @@
 #include "gmsh_interface/FeValues.hpp"
 #include "EdgeComparison.hpp"
 #include "VTKWriter.hpp"
+#include "FEMFaceDoFManager.hpp"
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
 
@@ -13,6 +14,8 @@ namespace discretization {
 using api = gprs_data::GmshInterface;
 using FeValues = gprs_data::FeValues;
 using Point = angem::Point<3,double>;
+const size_t UNMARKED = std::numeric_limits<size_t>::max();
+
 
 PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell)
     : _parent_cell(cell)
@@ -41,7 +44,7 @@ void PolyhedralElementDirect::compute_vertex_mapping_()
   auto it = std::max_element(node_tags.begin(), node_tags.end());
   assert( it != node_tags.end() );
   const size_t max_node_tag = *it + 1;
-  _vertex_mapping.resize(max_node_tag, std::numeric_limits<size_t>::max());
+  _vertex_mapping.resize(max_node_tag, UNMARKED);
   size_t iv = 0;
   for (const size_t node : node_tags)
     _vertex_mapping[node]  = iv++;
@@ -49,57 +52,72 @@ void PolyhedralElementDirect::compute_vertex_mapping_()
 
 void PolyhedralElementDirect::build_face_boundary_conditions_()
 {
+  build_edge_boundary_conditions_();
   // identify child faces that belong to each face parent
   std::vector<std::vector<size_t>> face_domains = create_face_domains_();
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
-  for (size_t iface=0; iface<face_domains.size(); ++iface)
+  FEMFaceDoFManager dof_manager;
+  // for (size_t iface=0; iface<face_domains.size(); ++iface)
+  size_t iface = 2;
   {
     // identify vertices the will constitute the linear system and create dof mapping
-    const std::vector<size_t> vertex_dofs = create_face_vertex_dofs_(face_domains[iface]);
+    const DoFNumbering vertex_numbering = dof_manager.build(_element_grid, face_domains[iface]);
     // initialize system matrix
     Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix =
-        Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_dofs.size(), vertex_dofs.size());
+        Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
     // fill system matrix
-    build_face_system_matrix_(iface, face_system_matrix, vertex_dofs);
-    const std::vector<size_t> parent_face_vertices = _parent_cell.vertices();
+    build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
+    const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
+    std::cout << "iface = " << iface << std::endl;
     for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
     {
+      // copy matrix, create rhs vector, and impose bc's on them
       Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix_with_bc = face_system_matrix;
-      Eigen::VectorXd rhs = Eigen::VectorXd::Zero( vertex_dofs.size() );
-      impose_bc_on_face_system_( ipv, vertex_dofs, face_system_matrix_with_bc, rhs );
+      Eigen::VectorXd rhs = Eigen::VectorXd::Zero( vertex_numbering.n_dofs() );
+      const size_t pv = std::distance(parent_vertices.begin(),
+                                      std::find( parent_vertices.begin(), parent_vertices.end(),
+                                                 parent_face_vertices[ipv] ));
+      impose_bc_on_face_system_( pv, vertex_numbering, face_system_matrix_with_bc, rhs );
       face_system_matrix_with_bc.makeCompressed();
 
       Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(face_system_matrix_with_bc);
-      solver.factorize(face_system_matrix_with_bc);
       solver.analyzePattern(face_system_matrix_with_bc);
       solver.factorize(face_system_matrix_with_bc);
-      solver.solve(rhs);
+      const Eigen::VectorXd solution = solver.solve(rhs);
+      std::cout << "\tpv = " << pv << std::endl;
+      append_face_solution_(pv, solution, vertex_numbering);
+      // if (pv == 4)
+      //   for (size_t j=0; j<solution.size(); ++j)
+      //     std::cout << "solution[j] = " << solution[j] << std::endl;
     }
-
-
+      debug_save_boundary_face_solution("face_solutions.vtk");
     exit(0);
   }
 }
 
 void PolyhedralElementDirect::impose_bc_on_face_system_(const size_t parent_vertex,
-                                                        const std::vector<size_t> & vertex_dofs,
+                                                        const DoFNumbering & vertex_dofs,
                                                         Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
                                                         Eigen::VectorXd & rhs)
 {
   for (size_t iv=0; iv<_support_edge_vertices[parent_vertex].size(); ++iv)
   {
     const size_t vertex = _support_edge_vertices[parent_vertex][iv];
-    const size_t dof = vertex_dofs[vertex];
-    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, dof); it; ++it)
-      it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
-    rhs[dof] = _support_edge_values[parent_vertex][iv];
+    if (vertex_dofs.has_vertex(vertex))
+    {
+      const size_t dof = vertex_dofs.vertex_dof(vertex);
+      for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, dof); it; ++it)
+        it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
+      rhs[dof] = _support_edge_values[parent_vertex][iv];
+    }
+
   }
 }
 
 void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
                                                         Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
-                                                        const std::vector<size_t> & vertex_dofs)
+                                                        const DoFNumbering & vertex_dofs)
 {
   const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);  // triangle
   // NOTE: gmsh labels faces starting from 1, ergo iface + 1
@@ -117,13 +135,14 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
 
   for (size_t ielement=0; ielement<tags.size(); ++ielement)
   {
+    // std::cout << std::endl;
     for (size_t iv=0; iv<nv; ++iv)
     {
       const size_t vertex_tag = element_node_tags[nv * ielement + iv];
       const size_t vertex = _vertex_mapping[vertex_tag];
       assert (vertex < _element_grid.n_vertices() );
-      face_dofs[iv] = vertex_dofs[ vertex ];
-      assert( face_dofs[iv] !=  std::numeric_limits<size_t>::max());
+      face_dofs[iv] = vertex_dofs.vertex_dof( vertex );
+      assert(vertex_dofs.has_vertex(vertex));
     }
 
     cell_matrix.setZero();
@@ -145,7 +164,6 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
       {
         const size_t idof = face_dofs[i];
         const size_t jdof = face_dofs[j];
-        // std::cout << "ij = " << idof << " " << jdof << std::endl;
         face_system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
       }
   }
@@ -163,22 +181,6 @@ std::vector<std::vector<size_t>> PolyhedralElementDirect::create_face_domains_()
     }
 
   return parent_face_children;
-}
-
-std::vector<size_t> PolyhedralElementDirect::create_face_vertex_dofs_(const std::vector<size_t> & face_indices)
-{
-  const size_t unmarked = std::numeric_limits<size_t>::max();
-  std::vector<size_t> dofs(_element_grid.n_vertices(), unmarked);
-  size_t dof = 0;
-  for (const size_t iface : face_indices)
-  {
-    const mesh::Face & face = _element_grid.face(iface);
-    for (const size_t v : face.vertices())
-      if ( dofs[v] == unmarked)
-        dofs[v] = dof++;
-  }
-
-  return dofs;
 }
 
 void PolyhedralElementDirect::build_edge_boundary_conditions_()
@@ -275,7 +277,48 @@ std::vector<std::list<size_t>> PolyhedralElementDirect::map_parent_vertices_to_p
   return parent_vertex_markers;
 }
 
+void PolyhedralElementDirect::debug_save_boundary_face_solution(const std::string fname) const
+{
+  std::cout << "saving " << fname << std::endl;
 
+  std::ofstream out;
+  out.open(fname.c_str());
+
+  IO::VTKWriter::write_geometry(_element_grid, out);
+  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::enter_section_point_data(nv, out);
+
+  const size_t n_parent_vertices = _parent_cell.vertices().size();
+
+  for (std::size_t j=0; j<n_parent_vertices; ++j)
+  {
+    std::vector<double> output(nv, 0);
+    for (size_t iv=0; iv<_support_boundary_vertices[j].size(); ++iv)
+    {
+      const size_t v = _support_boundary_vertices[j][iv];
+      output[v] = _support_boundary_values[j][iv];
+    }
+
+    IO::VTKWriter::add_data(output, "support-" + std::to_string(j), out);
+  }
+  out.close();
+}
+
+void PolyhedralElementDirect::append_face_solution_(const size_t pv, const Eigen::VectorXd & solution,
+                                                    const DoFNumbering & vertex_numbering)
+{
+  _support_boundary_vertices.resize( _parent_cell.vertices().size() );
+  _support_boundary_values.resize( _parent_cell.vertices().size() );
+
+  _support_boundary_vertices[pv].reserve( _support_boundary_vertices[pv].size() + vertex_numbering.n_dofs() );
+  _support_boundary_values[pv].reserve( _support_boundary_vertices[pv].size() + vertex_numbering.n_dofs() );
+  for (size_t i=0; i<_element_grid.n_vertices(); ++i)
+    if ( vertex_numbering.has_vertex(i) )
+  {
+    _support_boundary_vertices[pv].push_back( i );
+    _support_boundary_values[pv].push_back( solution[ vertex_numbering.vertex_dof(i) ] );
+  }
+}
 
 }  // end namespace discretization
 

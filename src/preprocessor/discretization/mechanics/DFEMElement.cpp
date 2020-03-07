@@ -261,8 +261,6 @@ void DFEMElement::build_jacobian_()
                                  fe_values.grad(j, q) * // grad phi_j(x_q)
                                  fe_values.JxW(q));     // dV
     }
-    // std::cout << "cell_matrix =\n " << cell_matrix << std::endl;
-    // exit(0);
 
     /* distribute local to global */
     for (size_t i = 0; i < nv; ++i)
@@ -554,7 +552,7 @@ void DFEMElement::compute_shape_functions_()
     // Eigen::SparseLU<Eigen::SparseMatrix<double,Eigen::RowMajor>> solver;
     // Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> solver(mat);
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(mat);
-    solver.factorize(mat);
+    // solver.factorize(mat);
     solver.analyzePattern(mat);
     solver.factorize(mat);
 
