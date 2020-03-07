@@ -18,12 +18,13 @@ class EmbeddedFractureManager
 {
  public:
   /**
-   * Constructor
+   * Constructor.
+   * A reference to SimData is made to be filled upon calling various functions.
    * 
-   * @param[in]  {std::vector<EmbeddedFractureConfig>} config : configuration for the class
-   * @param[in]  {EDFMMethod} edfm_method                     : which edfm method to use
-   * @param[in]  {double} min_dist_to_node                    : minimum distance between fracture and grid vertex relative to cell size
-   * @param[out]  {SimData} data                               : container for output data
+   * @param[in]  config           : configuration for the class
+   * @param[in]  edfm_method      : which edfm method to use
+   * @param[in]  min_dist_to_node : minimum distance between fracture and grid vertex relative to cell size
+   * @param[out] data             : container for output data
    */
   EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
                           const EDFMMethod edfm_method,
@@ -49,7 +50,6 @@ class EmbeddedFractureManager
    * @return {std::vector<DiscreteFractureConfig>}  : vector of configs for split embedded fractures
    */
   std::vector<DiscreteFractureConfig> generate_dfm_config();
-  // true if face marker belongs to an edfm fracture after splitting cells
   /**
    * Check whether a face with a marker face_marker is an embedded fracture
    * @param  {int} face_marker : face marker
@@ -67,7 +67,6 @@ class EmbeddedFractureManager
    * @return {std::vector<int>}  : vector of unique face markers that describe split edfm cells
    */
   std::vector<int> get_face_markers() const;
-  // build edfm surface grid for vtk output
   /**
    * Build edfm surface grid for vtk output
    * This fills SimData::edfm_grid and SimData::edfm_cell_mapping
