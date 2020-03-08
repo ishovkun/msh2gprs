@@ -216,7 +216,7 @@ void WellManager::compute_well_index_(Well &well)
     assert ( m_well_connected_cells.back().size() > i );
     const std::size_t icell = m_well_connected_cells.back()[i];
     const angem::Tensor2<3,double> perm = m_data.get_permeability(icell);
-    angem::Point<3,double> dx_dy_dz = get_dx_dy_dz_(icell);
+    angem::Point<3,double> dx_dy_dz = get_bounding_box_(icell);
     angem::Point<3,double> productivity;
     // project on plane yz
     productivity[0] = compute_productivity(perm(1,1), perm(2,2), dx_dy_dz[1], dx_dy_dz[2],
@@ -249,7 +249,7 @@ void WellManager::compute_well_index_(Well &well)
     throw std::runtime_error( "All well indices are zero for well: " + well.name );
 }
 
-angem::Point<3,double> WellManager::get_dx_dy_dz_(const std::size_t icell) const
+angem::Point<3,double> WellManager::get_bounding_box_(const std::size_t icell) const
 {
   const auto cell_poly = m_data.grid.cell(icell).polyhedron();
   angem::Point<3,double> dir, result;
