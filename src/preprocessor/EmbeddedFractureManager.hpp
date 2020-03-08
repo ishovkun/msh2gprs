@@ -1,8 +1,8 @@
 #pragma once
 
-#include "PreprocessorConfig.hpp"
-#include "discretization/flow/DoFNumbering.hpp"
-#include "SimData.hpp"
+#include "PreprocessorConfig.hpp" // provides EmbeddedFractureConfig, EDFMMethod
+#include "discretization/flow/DoFNumbering.hpp" // provides DoFNumbering
+#include "SimData.hpp"  // provides SimData
 
 namespace gprs_data {
 
@@ -87,15 +87,14 @@ class EmbeddedFractureManager
   int find_maximum_face_marker_() const;
   // wrapper around m_marker_config;
   size_t fracture_index_(const int face_marker) const;
-  // ------------------ Variables -----------------
+  // ------------------ Variables ----------------- //
   // non-const cause we move fractures to avoid collision with vertices
   std::vector<EmbeddedFractureConfig> &config;
-  // regular edfm, pedfm, or cedfm
-  EDFMMethod m_method;
+  EDFMMethod m_method;                  // regular edfm, pedfm, or cedfm
   // minimum distance from fracture to vertex relative to the cell size
   const double _min_dist_to_node;
-  SimData & m_data; // container for output data
-  mesh::Mesh & m_grid; // reference to grid object
+  SimData & m_data;                     // container for output data
+  mesh::Mesh & m_grid;                  // reference to grid object
   std::map<int,size_t> m_marker_config; // marker to config index
 };
 

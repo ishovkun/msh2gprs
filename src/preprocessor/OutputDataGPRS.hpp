@@ -1,16 +1,29 @@
 #pragma once
 
-#include "PreprocessorConfig.hpp"
-#include "SimData.hpp"
-// #include "transes.hpp"
+#include "PreprocessorConfig.hpp" // provide GPRSOutputConfig
+#include "SimData.hpp"            // provide SimData
 
 namespace gprs_data
 {
 
+/** This class implements an output writer for AD-GPRS format.
+ * It takes data from SimData container and writes it into a bunch of files
+ * in the appropriate format.
+ **/
 class OutputDataGPRS
 {
 public:
+  /**
+   * Constructor.
+   * 
+   * @param[in]  data   : container for data to be saved
+   * @param[in]  config : file names for GPRS output
+   */
   OutputDataGPRS(const SimData & data, const GPRSOutputConfig config);
+  /**
+   * Save data into output_path director.
+   * @param  {std::string} output_path : string that describes the output path
+   */
   void write_output(const std::string & output_path) const;
 
  private:
