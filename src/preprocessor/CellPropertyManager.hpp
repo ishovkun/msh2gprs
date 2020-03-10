@@ -27,7 +27,7 @@ class CellPropertyManager
                       SimData & data);
   // take config and fill out the grid with properties
   void generate_properties();
-  // create properties that occured after cell splitting
+  // create properties that occured after cell splitting 
   void downscale_properties();
   // map coarse geomechanics cells to flow CVs
   void map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs);

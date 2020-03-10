@@ -5,15 +5,12 @@
 #include "active_cell_iterator.hpp"
 #include "active_cell_const_iterator.hpp"
 #include "active_face_const_iterator.hpp"
-#include "SurfaceMesh.hpp"
-#include <angem/Point.hpp>
-#include <angem/Polyhedron.hpp>
-#include <angem/Polygon.hpp>
-// #include <cell_const_iterator.hpp>
-// #include <face_iterator.hpp>
-// #include <face_const_iterator.hpp>
+#include "SurfaceMesh.hpp"  // mesh::SurfaceMesh
+#include <angem/Point.hpp> // angem::Point
+#include <angem/Polyhedron.hpp> // angem::Polyhedron
+#include <angem/Polygon.hpp> // angem::Polygon
 #include <algorithm> // std::sort
-#include <unordered_set>
+#include <unordered_set> // unordered_set
 
 
 namespace mesh
@@ -33,15 +30,41 @@ using FaceiVertices = std::vector<std::size_t>;
 class Mesh
 {
  public:
-  // Default Constructor
+  /**
+   * Default constructor.
+   * Creates an empty grid object with zero cells, faces, and vertices.
+   */
   Mesh();
-  /* Copy assignment operator */
+  /**
+   * Copy assignment operator
+   * 
+   * @param  {Mesh} other : a mesh object to be copied
+   * @return {Mesh}       : a reference to this.
+   */
   Mesh & operator=(const Mesh & other);
-  /* Insert a standard vtk polyhedron cell into grid */
+  /**
+   * Insert a standard vtk polyhedron cell into grid.
+   * This will always insert a new cell into the grid, even if a cell with the 
+   * same vertices and faces exists.
+   * @param  {std::vector<std::size_t>} ivertices : vector of grid cell vertices
+   * @param  {int} vtk_id                         : vtk_id of the cell polyhedron
+   * @param  {int} marker                         : cell marker (aka domain id)
+   * @return {std::size_t}                        : index of the inserted cell
+   */
   std::size_t insert_cell(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
                           const int                        marker = constants::default_face_marker);
-  /* insert a face into the grid */
+  /**
+   * Insert a face into the grid. If a face with the same vertices exists,
+   * this function will rewrite its vtk_id, optionally marker, and optionally parent.
+   * A new face will not be created if a face with the same vertices is found.
+   * 
+   * @param  {std::vector<std::size_t>} ivertices : vector of face vertex indices
+   * @param  {int} vtk_id                         : vtk id of the face shape
+   * @param  {int} marker                         : face marker
+   * @param  {std::size_t} face_parent            : optional, face parent
+   * @return {std::size_t}                        : inserted face index
+   */
   std::size_t insert_face(const std::vector<std::size_t> & ivertices,
                           const int                        vtk_id,
                           const int                        marker = constants::default_face_marker,
@@ -56,7 +79,8 @@ class Mesh
   inline active_cell_iterator end_active_cells() {return active_cell_iterator(nullptr);}
   // Returns an iterator referring to the past-the-end active cell
   inline active_cell_const_iterator end_active_cells() const {return active_cell_const_iterator(nullptr);}
-  /* RAW cell iterators, use with caution */
+
+  /* -------------------------- RAW cell iterators, use with caution ---------- */
   //  create cell iterator for the first cell
   //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Cell>::iterator begin_cells() {return m_cells.begin();}
@@ -69,10 +93,14 @@ class Mesh
   // end iterator for cells. Must only be used as the range indicator
   //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Cell>::const_iterator end_cells() const {return m_cells.end();}
+
+  /* -------------------------- Active cell iterators ---------------------------- */
   // create an active face iterator
   active_face_const_iterator begin_active_faces() const;
   // create an active face end-iterator
   inline active_face_const_iterator end_active_faces() const {return active_face_const_iterator(nullptr, m_faces);}
+
+  /* -------------------------- RAW face iterators, use with caution ---------- */
   // create a face iterator
   //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Face>::iterator begin_faces(){return m_faces.begin();}
@@ -85,6 +113,8 @@ class Mesh
   // create an end const_iterator for faces
   //  NOTE: RAW cell iterator, use with caution
   inline std::vector<Face>::const_iterator end_faces() const {return m_faces.end();}
+
+  /* -------------------------- Vertex iterators ------------------------------- */
   // create a vertex iterator pointing to the first vertex
   inline std::vector<Point>::iterator begin_vertices() { return m_vertices.begin(); }
   // create a vertex const_iterator pointing to the first vertex
@@ -94,8 +124,7 @@ class Mesh
   // create a vertex const_iterator pointing to the past last vertex
   inline std::vector<Point>::const_iterator end_vertices() const { return m_vertices.end(); }
 
-  // ACCESS OPERATORS
-
+  /* -------------------------- Access operators (Getters) ---------------------- */
   // get reference to a cell object by index
   inline Cell & cell(const size_t cell_index) { return m_cells[cell_index]; }
   // get const reference to a cell object by index
@@ -108,7 +137,6 @@ class Mesh
   inline Point& vertex(const size_t vertex_index) {return m_vertices[vertex_index];}
   // get const reference to a vertex object by index
   inline const Point& vertex(const size_t vertex_index) const {return m_vertices[vertex_index];}
-  // GETTERS
   // get vector of all the grid vertex node coordinates
   inline std::vector<angem::Point<3,double>> & vertices() {return m_vertices;}
   // get const vector of all the grid vertex node coordinates
@@ -133,10 +161,6 @@ class Mesh
   size_t find_face(const std::vector<size_t> & face_vertices) const;
 
   // MANIPULATION //
-  // delete a cell mesh
-   void delete_cell(const std::size_t ielement);
-  //  // merges jcell into icell if they have a common face
-  std::size_t merge_cells(const std::size_t icell, const std::size_t jcell);
   // tell grid which faces to split before calling split_faces method
   void mark_for_split(const std::size_t face_index);
   // split faces marked for splitting with mark_for_split
@@ -155,6 +179,7 @@ class Mesh
                     const std::vector<std::size_t> &splitted_face_indices);
   // coarsen cells split built by split_cell method and restore active cells
   void coarsen_cells();
+
  private:
   // find edge neighboring cells
   std::vector<size_t> neighbors_indices_(const vertex_pair & edge) const;

@@ -7,9 +7,21 @@
 namespace gprs_data
 {
 
+/** 
+ * Implements output into VTK format to visualize the exported data in Paraview. 
+ * The vtk output data is also used by the postprocessor to visualize the output 
+ * of AD-GPRS.
+ **/
 class OutputDataVTK
 {
  public:
+  /**
+   * Constructor.
+   * Saves references to SimData container and filenames to be output.
+   * 
+   * @param  {SimData} sim_data       : data container
+   * @param  {VTKOutputConfig} config : container for relevant file names
+   */
   OutputDataVTK(const SimData & sim_data, const VTKOutputConfig config);
   void write_output(const std::string & output_path) const;
 

@@ -1,17 +1,28 @@
 #pragma once
 
-#include "mesh/Cell.hpp"
-#include "gmsh_interface/GmshInterface.hpp"
-#include "../flow/DoFNumbering.hpp"
-#include <Eigen/Sparse>  // provides SparseMatrix
-#include <Eigen/Dense>  // provides MatrixXd, VectorXd
-
+#include "mesh/Cell.hpp"                    // provices mesh::Cell
+#include "gmsh_interface/GmshInterface.hpp" // provides GmshInterface
+#include "../flow/DoFNumbering.hpp"         // provides DoFNumbering
+#include <Eigen/Sparse>                     // provides SparseMatrix
+#include <Eigen/Dense>                      // provides MatrixXd, VectorXd
 
 namespace discretization {
 
+/** 
+ * This class implements polyhedral element method for a single 
+ * cell. It uses Gmsh (linked during compilation) to triangulate an 
+ * polyhdedral element and a custom FeValues class to build a system matrix 
+ * for Poisson equation to compute FE shape functions.
+ **/
 class PolyhedralElementDirect
 {
  public:
+  /**
+   * Constructor.
+   * Build FEM discretization of the cell.
+   * Input:
+   * @param  {mesh::Cell} cell : grid cell to be discretized
+   */
   PolyhedralElementDirect(const mesh::Cell & cell);
 
  protected:
@@ -57,8 +68,8 @@ class PolyhedralElementDirect
   void debug_save_shape_functions_(const std::string fname) const;
 
  private:
-  const mesh::Cell & _parent_cell;
-  mesh::Mesh _element_grid;
+  const mesh::Cell & _parent_cell;                             // reference to the discretized cell
+  mesh::Mesh _element_grid;                                    // triangulation of the discretized cell
   std::vector<size_t> _vertex_mapping;  // map gmsh vertex to grid vertex
   // data for constructing face boundary-value problem
   std::vector<std::vector<size_t>> _support_edge_vertices;  // edge vertices for each parent vertex
@@ -69,6 +80,5 @@ class PolyhedralElementDirect
   Eigen::SparseMatrix<double,Eigen::ColMajor> _system_matrix;   // 3d cell system matrix with no BC's
   std::vector<Eigen::VectorXd> _basis_functions;                // numerical shape function values
 };
-
 
 }  // end namespace discretization
