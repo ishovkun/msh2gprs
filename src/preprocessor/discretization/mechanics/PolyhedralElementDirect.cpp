@@ -108,8 +108,6 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
     }
 
   }
-    //   debug_save_boundary_face_solution("face_solutions.vtk");
-    // exit(0);
 }
 
 void PolyhedralElementDirect::impose_bc_on_face_system_(const size_t parent_vertex,
