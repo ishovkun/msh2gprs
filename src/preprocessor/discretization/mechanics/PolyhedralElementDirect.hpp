@@ -44,10 +44,17 @@ class PolyhedralElementDirect
   // the 3D domain system
   void append_face_solution_(const size_t pv, const Eigen::VectorXd & solution,
                              const DoFNumbering & vertex_numbering);
-
-
+  // construct the laplace system matrix for the cell volume laplace equation
+  void build_cell_system_matrix_();
+  // impose BC's and solve laplace system to get shape functions
+  void compute_shape_functions_();
+  // impose BC's on the cell laplace system
+  void impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
+                                   Eigen::VectorXd & rhs, const size_t ipv);
   // purely debugging purposes
   void debug_save_boundary_face_solution(const std::string fname) const;
+  // purely debugging purposes
+  void debug_save_shape_functions_(const std::string fname) const;
 
  private:
   const mesh::Cell & _parent_cell;
@@ -59,6 +66,8 @@ class PolyhedralElementDirect
   // boundary conditions for the final cell FEM system
   std::vector<std::vector<size_t>> _support_boundary_vertices;  // face vertices for each parent vertex
   std::vector<std::vector<double>> _support_boundary_values;    // face dirichlet values for each parent vertex
+  Eigen::SparseMatrix<double,Eigen::ColMajor> _system_matrix;   // 3d cell system matrix with no BC's
+  std::vector<Eigen::VectorXd> _basis_functions;                // numerical shape function values
 };
 
 

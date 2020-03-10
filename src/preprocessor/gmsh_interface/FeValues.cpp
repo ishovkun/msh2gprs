@@ -24,19 +24,9 @@ FeValues::FeValues(const int element_type, const int element_tag)
 void FeValues::initialize_()
 {
   _cell_index = std::numeric_limits<size_t>::max();
+
   /* NOTE: this updates quantities in all the grid elements */
   gmsh::model::mesh::getIntegrationPoints(_element_type, "Gauss1", _ref_points, _weights);
-  // std::cout << "n_weights = " << _weights.size() << std::endl;
-  // std::cout << "ref point " << _ref_points[0] << " " << _ref_points[1] << " " << _ref_points[2] << std::endl;
-  // for (size_t i = 0; i < _ref_points.size() / 3; ++i) {
-  //   _ref_points[i+0] = 0.58541;
-  //   _ref_points[i+1] = 0.138197;
-  //   _ref_points[i+2] = 0.138197;
-  // }
-
-  // std::cout << "ref point mod " << _ref_points[0] << " " << _ref_points[1]
-  //           << " " << _ref_points[2] << std::endl;
-
   gmsh::model::mesh::getBasisFunctions(_element_type, _ref_points, "Lagrange", _n_comp, _ref_values);
   gmsh::model::mesh::getBasisFunctions(_element_type, _ref_points, "GradLagrange", _n_comp, _ref_gradients);
   gmsh::model::mesh::getJacobians(_element_type, _ref_points, _all_jacobians, _all_determinants, _true_points,
@@ -69,24 +59,27 @@ void FeValues::update(const size_t cell_number)
   for (std::size_t q=0; q<nq; ++q)
   {
     // build local dx_du matrix
-    // dim*dim derivative entries for n_gauss_points for each cell
+    // 3x3 derivative entries for n_gauss_points for each cell
     const size_t j_beg = 9 * ( cell_number * nq + q  );
-    const size_t j_end = 9 * ( cell_number * nq + q + 1);
+    const size_t j_end = 9 * ( cell_number * nq + q + 1 );
     _determinants[q] = _all_determinants[cell_number * nq + q];
 
     // take a portion of the jacobian vector that corresponds to q
     std::vector<double> jac_local(_all_jacobians.begin() + j_beg, _all_jacobians.begin() + j_end);
+    // construct a local matrix object
     angem::Tensor2<3, double> dx_du(jac_local);
     // invert jacobian
     angem::Tensor2<3, double> du_dx = invert(dx_du);
+    // angem::Tensor2<3, double> prod = dx_du * du_dx; % I checked that this is an identity matrix
 
     for (size_t vertex = 0; vertex < nv; ++vertex)
       for (size_t i=0; i<dim; ++i)
       {
-        const size_t offset = q * dim * nv;
-        const size_t n = dim * vertex;
+        const size_t gauss_offset = q * dim * nv;
+        const size_t vertex_offset = dim * vertex;
         for (size_t j = 0; j < dim; ++j)
-          _grad[offset + n + i] += du_dx(i, j) * _ref_gradients[offset + n + j];
+          // d phi_vert / dx_i = (d phi_vert / d u_j) * (d u_j / d x_i)
+          _grad[gauss_offset + vertex_offset + i] += _ref_gradients[gauss_offset + vertex_offset + j] * du_dx(j, i);
       }
   }
 }
@@ -134,9 +127,11 @@ Point FeValues::grad(const size_t vertex, const size_t q) const
   const double nv = n_vertices();
   assert( q < n_q_points() );
   assert( vertex < nv );
-  Point p (_grad[q*dim*nv + dim*vertex],
-           _grad[q*dim*nv + dim*vertex + 1],
-           _grad[q*dim*nv + dim*vertex + 2]);
+  const size_t gauss_offset = q*dim*nv;
+  const size_t vertex_offset = dim*vertex;
+  Point p (_grad[gauss_offset + vertex_offset + 0],
+           _grad[gauss_offset + vertex_offset + 1],
+           _grad[gauss_offset + vertex_offset + 2]);
 
   return p;
 }
@@ -151,8 +146,8 @@ double FeValues::value(const size_t vertex, const size_t q) const
 
 double FeValues::JxW(const size_t q) const
 {
-  return _weights[q] * std::fabs(1/_determinants[q]);
-  // return _weights[q] * std::fabs(_determinants[q]);
+  // return _weights[q] * std::fabs(1.0/_determinants[q]);
+  return _weights[q] * std::fabs(_determinants[q]);
 }
 
 }  // end namespace gprs_data

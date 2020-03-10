@@ -25,13 +25,18 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell)
 
 void PolyhedralElementDirect::build_()
 {
+  // triangulate the polyhedral element
   api::build_triangulation(_parent_cell, _element_grid);
+  // get the relation between gmsh vertex ids and grid vertices
   compute_vertex_mapping_();
-
-  std::cout << "done building discr" << std::endl;
-  std::cout << "_element_grid.n_active_cells " << _element_grid.n_active_cells() << std::endl;
-
+  // solve problems on faces
   build_face_boundary_conditions_();
+  // construct the laplace system matrix for the cell volume laplace equation
+  build_cell_system_matrix_();
+  // impose BC's and solve laplace system to get shape functions
+  compute_shape_functions_();
+  // TODO: debugging, delete this
+  debug_save_shape_functions_("shape_functions-final.vtk");
 }
 
 void PolyhedralElementDirect::compute_vertex_mapping_()
@@ -58,8 +63,7 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
   FEMFaceDoFManager dof_manager;
-  // for (size_t iface=0; iface<face_domains.size(); ++iface)
-  size_t iface = 2;
+  for (size_t iface=0; iface<face_domains.size(); ++iface)
   {
     // identify vertices the will constitute the linear system and create dof mapping
     const DoFNumbering vertex_numbering = dof_manager.build(_element_grid, face_domains[iface]);
@@ -69,7 +73,6 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
     // fill system matrix
     build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
     const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
-    std::cout << "iface = " << iface << std::endl;
     for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
     {
       // copy matrix, create rhs vector, and impose bc's on them
@@ -85,15 +88,28 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
       solver.analyzePattern(face_system_matrix_with_bc);
       solver.factorize(face_system_matrix_with_bc);
       const Eigen::VectorXd solution = solver.solve(rhs);
-      std::cout << "\tpv = " << pv << std::endl;
+      // add the solution to the face BC container
       append_face_solution_(pv, solution, vertex_numbering);
-      // if (pv == 4)
-      //   for (size_t j=0; j<solution.size(); ++j)
-      //     std::cout << "solution[j] = " << solution[j] << std::endl;
     }
-      debug_save_boundary_face_solution("face_solutions.vtk");
-    exit(0);
+
+    // append zeroes in face vertices to boundary conditions if face doesn't contain a vertex
+    for (size_t pv=0; pv<parent_vertices.size(); ++pv)
+    {
+      const size_t parent_grid_vertex = parent_vertices[pv];
+      if (std::find(parent_face_vertices.begin(), parent_face_vertices.end(),
+                    parent_grid_vertex) == parent_face_vertices.end())
+      {
+        for (size_t vertex = 0; vertex < _element_grid.n_vertices(); ++vertex)
+          if (vertex_numbering.has_vertex(vertex)) {
+            _support_boundary_vertices[pv].push_back(vertex);
+            _support_boundary_values[pv].push_back(0.0);
+          }
+      }
+    }
+
   }
+    //   debug_save_boundary_face_solution("face_solutions.vtk");
+    // exit(0);
 }
 
 void PolyhedralElementDirect::impose_bc_on_face_system_(const size_t parent_vertex,
@@ -115,11 +131,52 @@ void PolyhedralElementDirect::impose_bc_on_face_system_(const size_t parent_vert
   }
 }
 
+void PolyhedralElementDirect::build_cell_system_matrix_()
+{
+  // build element jacobian for the homogeneous laplace equation
+  _system_matrix = Eigen::SparseMatrix<double,Eigen::ColMajor>(_element_grid.n_vertices(),
+                                                               _element_grid.n_vertices());
+
+  // since we only build tetrahedral element mesh
+  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
+  FeValues fe_values( element_type );
+
+  Eigen::MatrixXd cell_matrix(fe_values.n_vertices(), fe_values.n_vertices());
+  for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
+  {
+    cell_matrix.setZero();
+    fe_values.update(cell->index());
+
+    const std::vector<size_t> & cell_vertices = cell->vertices();
+    const size_t nv = cell_vertices.size();
+
+    // This assembles a local matrix for the laplace equation
+    for (size_t q = 0; q < fe_values.n_q_points(); ++q)
+    {
+      for (size_t i = 0; i < nv; ++i)
+        for (size_t j = 0; j < nv; ++j)
+          cell_matrix(i, j) += -(fe_values.grad(i, q) * // grad phi_i(x_q)
+                                 fe_values.grad(j, q) * // grad phi_j(x_q)
+                                 fe_values.JxW(q));     // dV
+    }
+
+    /* distribute local to global */
+    for (size_t i = 0; i < nv; ++i)
+      for (size_t j = 0; j < nv; ++j)
+      {
+        const size_t idof = cell_vertices[i];
+        const size_t jdof = cell_vertices[j];
+        _system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
+      }
+  }
+}
+
 void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
                                                         Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
                                                         const DoFNumbering & vertex_dofs)
 {
-  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);  // triangle
+  // face discretizaiton is triangles
+  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);
   // NOTE: gmsh labels faces starting from 1, ergo iface + 1
   const int gmsh_plane_marker = iface + 1;
   FeValues fe_values( element_type, gmsh_plane_marker );
@@ -130,12 +187,10 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
   gmsh::model::mesh::getElementsByType( element_type, tags, element_node_tags, gmsh_plane_marker );
 
   const size_t nv = api::get_n_vertices(element_type);
-  Eigen::MatrixXd cell_matrix(fe_values.n_vertices(), fe_values.n_vertices());
+  Eigen::MatrixXd cell_matrix(nv, nv);
   std::vector<size_t> face_dofs(nv);
-
   for (size_t ielement=0; ielement<tags.size(); ++ielement)
   {
-    // std::cout << std::endl;
     for (size_t iv=0; iv<nv; ++iv)
     {
       const size_t vertex_tag = element_node_tags[nv * ielement + iv];
@@ -153,9 +208,9 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
     {
       for (size_t i = 0; i < nv; ++i)
         for (size_t j = 0; j < nv; ++j)
-          cell_matrix(i, j) += -(fe_values.grad(i, q) * // grad phi_i(x_q)
-                                 fe_values.grad(j, q) * // grad phi_j(x_q)
-                                 fe_values.JxW(q));     // dV
+          cell_matrix(i, j) += (fe_values.grad(i, q) * // grad phi_i(x_q)
+                                fe_values.grad(j, q) * // grad phi_j(x_q)
+                                fe_values.JxW(q));     // dV
     }
 
     /* distribute local to global */
@@ -314,11 +369,91 @@ void PolyhedralElementDirect::append_face_solution_(const size_t pv, const Eigen
   _support_boundary_values[pv].reserve( _support_boundary_vertices[pv].size() + vertex_numbering.n_dofs() );
   for (size_t i=0; i<_element_grid.n_vertices(); ++i)
     if ( vertex_numbering.has_vertex(i) )
+    {
+      _support_boundary_vertices[pv].push_back( i );
+      _support_boundary_values[pv].push_back( solution[ vertex_numbering.vertex_dof(i) ] );
+    }
+}
+
+void PolyhedralElementDirect::compute_shape_functions_()
+{
+  const size_t n_parent_vertices = _parent_cell.vertices().size();
+  // allocate shape functions
+  for (std::size_t i=0; i<n_parent_vertices; ++i)
+    _basis_functions.push_back(Eigen::VectorXd::Zero(_element_grid.n_vertices()));
+
+  for (size_t pv=0; pv<n_parent_vertices; ++pv)
   {
-    _support_boundary_vertices[pv].push_back( i );
-    _support_boundary_values[pv].push_back( solution[ vertex_numbering.vertex_dof(i) ] );
+    // assemble problem with BC's for the parent vertex
+    // copy system matrix and create a rhs vector
+    Eigen::SparseMatrix<double,Eigen::RowMajor> mat = _system_matrix;
+    Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _element_grid.n_vertices() );
+    // impose boundary conditions
+    impose_boundary_conditions_(mat, rhs, pv);
+    mat.makeCompressed();
+
+    // TODO: I cannot currently use conjugate gradient since the matrix is non-symmetric
+    // due to dirichlet conditions. I need to symmetrize the matrix by modifying the
+    // columns that correspond to dirichlet vertices
+    // Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Lower|Eigen::Upper> solver;
+    // solver.analyzePattern(mat);
+    // solver.factorize(mat);
+    // solver.setMaxIterations(200);
+    // solver.setTolerance(1e-10);
+    // solver.compute(mat);
+
+    // Eigen::SparseLU<Eigen::SparseMatrix<double,Eigen::RowMajor>> solver;
+    // Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> solver(mat);
+    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(mat);
+    // solver.factorize(mat);
+    solver.analyzePattern(mat);
+    solver.factorize(mat);
+
+    _basis_functions[pv] = solver.solve(rhs);
+    // if ( solver.info() ==  Eigen::ComputationInfo::NumericalIssue)
+    //   std::cout << "numerical issue" << std::endl;
+    // else if( solver.info() ==  Eigen::ComputationInfo::NoConvergence)
+    //   std::cout << "no convergence" << std::endl;
+    if (solver.info() != Eigen::ComputationInfo::Success)
+    {
+      throw std::runtime_error( "Conjugate gratient did not converge" );
+    }
   }
 }
+
+void PolyhedralElementDirect::impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
+                                                          Eigen::VectorXd & rhs, const size_t ipv)
+{
+  for (size_t iv=0; iv<_support_boundary_vertices[ipv].size(); ++iv)
+  {
+    const size_t i = _support_boundary_vertices[ipv][iv];
+    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, i); it; ++it)
+      it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
+    rhs[i] = _support_boundary_values[ipv][iv];
+  }
+}
+
+void PolyhedralElementDirect::debug_save_shape_functions_(const std::string fname) const
+{
+  std::cout << "saving " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+
+  IO::VTKWriter::write_geometry(_element_grid, out);
+  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::enter_section_point_data(nv, out);
+
+  const size_t n_parent_vertices = _parent_cell.vertices().size();
+  for (std::size_t j=0; j<n_parent_vertices; ++j)
+  {
+    std::vector<double> output(nv, 0.0);
+    for (size_t i = 0; i < nv; ++i)
+      output[i] = _basis_functions[j][i];
+    IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
+  }
+  out.close();
+}
+
 
 }  // end namespace discretization
 
