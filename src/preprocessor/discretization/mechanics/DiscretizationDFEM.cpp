@@ -26,7 +26,6 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 
 void DiscretizationDFEM::build()
 {
-  // int cnt = 0;
   {
     auto & cell = _grid.cell(100);
 
@@ -54,8 +53,9 @@ void DiscretizationDFEM::build()
   {
     std::cout << "cell->index() = " << cell->index() << std::endl;
     api::initialize_gmsh();
-    DFEMElement discr_element(*cell, _msrsb_tol);
-    mesh::Mesh _element_grid;
+    /* DFEMElement discr_element(*cell, _msrsb_tol); */
+    PolyhedralElementDirect discr_element(*cell);
+    /* mesh::Mesh _element_grid; */
     api::finalize_gmsh();
     // // exit(0);
     // if (cnt++ > 2) break;

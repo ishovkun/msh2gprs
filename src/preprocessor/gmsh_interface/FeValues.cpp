@@ -104,7 +104,8 @@ void FeValues::update(const size_t cell_number, const std::vector<Point> & point
                                        _n_comp, _ref_gradients);
   _true_points.clear();
   std::vector<double> loc_jac, loc_det;
-  gmsh::model::mesh::getJacobians(_element_type, local_points, _all_jacobians, _determinants, _true_points,
+  // gmsh::option::setNumber("General.Terminal", 1);
+  gmsh::model::mesh::getJacobians(_element_type, local_points, _all_jacobians, _all_determinants, _true_points,
                                   /* tag = */ -1, /* task = 0 */ _cell_index, /* n_tasks = */ _n_elements);
   update(cell_number);
 }

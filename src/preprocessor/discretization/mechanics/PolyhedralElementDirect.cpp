@@ -36,7 +36,12 @@ void PolyhedralElementDirect::build_()
   // impose BC's and solve laplace system to get shape functions
   compute_shape_functions_();
   // TODO: debugging, delete this
-  debug_save_shape_functions_("shape_functions-final.vtk");
+  // debug_save_shape_functions_("shape_functions-final.vtk");
+  // identify the locations of the gauss points for the polyhedral element
+  find_integration_points_();
+  // compute shape function values, gradients, and weights in the
+  // integration points
+  compute_fe_quantities_();
 }
 
 void PolyhedralElementDirect::compute_vertex_mapping_()
@@ -278,19 +283,6 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
             }
         }
     }
-  //   // else if (vertex_markers[v].size() == 1)
-  //   // {
-  //   //   const size_t iface = vertex_markers[v].front();
-  //   //   for (size_t pv = 0; pv < _cell.n_vertices(); pv++)
-  //   //   {
-  //   //     if ( std::find( parent_vertex_markers[pv].begin(), parent_vertex_markers[pv].end(),
-  //   //                     iface) == parent_vertex_markers[pv].end() )
-  //   //     {
-  //   //       _support_edge_vertices[pv].push_back(v);
-  //   //       _support_edge_values[pv].push_back(0.0);
-  //   //     }
-  //   //   }
-  //   // }
   }
 }
 
@@ -452,6 +444,71 @@ void PolyhedralElementDirect::debug_save_shape_functions_(const std::string fnam
   out.close();
 }
 
+void PolyhedralElementDirect::compute_fe_quantities_()
+{
+  // allocate vector of point data
+  const size_t n_parents = _basis_functions.size();
+  _cell_data.points.resize(_integration_points.size());
+  // 4 is a gmsh tetra
+  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
+  FeValues fe_values( element_type );
+  for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
+    for (size_t q=0; q<_integration_points.size(); ++q)
+      if ( cell->polyhedron()->point_inside(_integration_points[q]) )
+      {
+        std::vector<angem::Point<3,double>> points = {_integration_points[q]};
+        const std::vector<size_t> & cell_verts = cell->vertices();
+        fe_values.update(cell->index(), points);
+        const size_t nv = cell->vertices().size();
+        const size_t q_loc = 0;  // only one integration point
+        FEPointData data;
+        data.values.resize( _basis_functions.size() );
+        data.grads.resize( _basis_functions.size() );
+        for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
+        {
+          data.values[parent_vertex] = 0;
+          for (size_t vertex=0; vertex<nv; ++vertex)
+          {
+            data.values[parent_vertex] += fe_values.value( vertex, q_loc ) *
+                                          _basis_functions[parent_vertex][cell_verts[vertex]];
+            data.grads[parent_vertex] += fe_values.grad(vertex, q_loc) *
+                                         _basis_functions[parent_vertex][cell_verts[vertex]];
+          }
+        }
+        data.weight = 1.0 / static_cast<double>( _integration_points.size() );
+        _cell_data.points.push_back( std::move(data) );
+      }
+}
+
+void PolyhedralElementDirect::find_integration_points_()
+{
+  /* Split a parent cell into pyramids and find their centers */
+  const auto polyhedron = _parent_cell.polyhedron();
+  std::vector<Point> parent_vertices = polyhedron->get_points();
+  parent_vertices.push_back(_parent_cell.center());
+  for (const auto & face : polyhedron->get_faces())
+    _integration_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
+}
+
+Point PolyhedralElementDirect::create_pyramid_and_compute_center_(const std::vector<size_t> & face,
+                                                                  const std::vector<Point> & vertices) const
+{
+  const size_t vertex_center = vertices.size() - 1;
+  std::vector<std::vector<size_t>> pyramid_faces;
+  for (size_t iv=0; iv<face.size(); ++iv)
+  {
+    size_t v1, v2;
+    v1 = face[iv];
+    if ( iv < face.size() - 1 )
+      v2 = face[iv+1];
+    else
+      v2 = face[0];
+    pyramid_faces.push_back( {v1, v2, vertex_center} );
+  }
+
+  angem::Polyhedron<double> pyramid(vertices, pyramid_faces);
+  return pyramid.center();
+}
 
 }  // end namespace discretization
 
