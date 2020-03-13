@@ -26,9 +26,9 @@ class PolyhedralElementDirect
    */
   PolyhedralElementDirect(const mesh::Cell & cell);
   // get FE data for volume integration
-  const FiniteElementData & get_cell_data() const;
+  const FiniteElementData & get_cell_data() const {return _cell_data;}
   // get FE data for surface integration
-  const FiniteElementData & get_face_data() const;
+  const FiniteElementData & get_face_data() const {return _face_data;}
 
  protected:
   // main method to compute shape functions

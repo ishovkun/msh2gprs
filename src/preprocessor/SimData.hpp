@@ -1,11 +1,12 @@
 #pragma once
 
-#include "discretization/flow/ControlVolumeData.hpp"
-#include "discretization/flow/ConnectionData.hpp"
-#include "mesh/Mesh.hpp"
-#include "Well.hpp"
-#include "MultiScaleOutputData.hpp"
-#include "angem/Tensor2.hpp"
+#include "discretization/flow/ControlVolumeData.hpp"      // provides discretization::ControlVolumeData
+#include "discretization/flow/ConnectionData.hpp"         // provides discretization::ConnectionData
+#include "discretization/mechanics/FiniteElementData.hpp" // provides FiniteElementData
+#include "mesh/Mesh.hpp"                                  // provides mesh::Mesh
+#include "Well.hpp"                                       // provides Well
+#include "MultiScaleOutputData.hpp"                       // provides multiscale::MultiScaleOutputData
+#include "angem/Tensor2.hpp"                              // provides angem::Tensor2
 #include <unordered_map>
 
 namespace gprs_data {
@@ -63,6 +64,9 @@ struct SimData
   angem::PointSet<3,double> well_vertices;  // set of well coordinatees: used for vtk output.
   // vector of well segments: indices of well coordinate points. used for vtk output.
   std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
+  // ----------------------- FEM data  ---------------------- //
+  std::vector<discretization::FiniteElementData> fe_cell_data;  // fe values and gradients for grid cells
+  std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces
   // ----------------------- Boundary conditions ------------ //
   std::vector<size_t> neumann_face_indices;
   std::vector<angem::Point<3,double>> neumann_face_traction;
