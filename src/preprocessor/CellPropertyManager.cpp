@@ -206,7 +206,7 @@ void CellPropertyManager::build_flow_output_property_keys_()
                   m_data.permeability_keys.end(), j) ==
                   m_data.permeability_keys.end())
         if (j != m_data.porosity_key_index)
-      m_data.output_flow_properties.push_back(j);
+          m_data.output_flow_properties.push_back(j);
   }
 }
 

@@ -27,8 +27,8 @@ class DFEMElement
   void build_jacobian_();
   void compute_shape_functions_();
   void impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
-                                              Eigen::VectorXd & rhs,
-                                              const size_t ipv);
+                                   Eigen::VectorXd & rhs,
+                                   const size_t ipv);
   // fill out element_numbering and node_numbering
   void numberNodesEndElements_(std::vector<int> &element_types,
                         std::vector<std::vector<std::size_t> > & element_tags,

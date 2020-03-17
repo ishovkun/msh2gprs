@@ -12,18 +12,19 @@ static constexpr double transmissibility_conversion_factor = 0.00852671467191601
 
 OutputDataGPRS::OutputDataGPRS(const SimData & data, const GPRSOutputConfig config)
     :
-    m_data(data),
-    m_config(config)
+    _data(data),
+    _config(config)
 {}
 
 
 void OutputDataGPRS::write_output(const std::string & output_path) const
 {
+  _output_path = output_path;
   // save flow data
-  save_flow_data_(output_path + "/" + m_config.flow_cv_file,
-                  output_path + "/" + m_config.flow_connection_file);
-  // std::cout << "save geometry" << std::endl;
-  // saveGeometry(output_path);
+  save_flow_data_(_output_path + "/" + _config.flow_cv_file,
+                  _output_path + "/" + _config.flow_connection_file);
+
+  save_geomechanics_data_();
 
   // std::cout << "save custom keyswords" << std::endl;
   // saveGeomechDataNewKeywords(output_path + data.config.domain_file);
@@ -45,10 +46,10 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   //   saveDiscreteFractureProperties(output_path + data.config.discrete_frac_file);
   // }
 
-  if (!m_data.wells.empty())
+  if (!_data.wells.empty())
   {
     std::cout << "save wells" << std::endl;
-    saveWells(output_path + "/" + m_config.wells_file);
+    saveWells(output_path + "/" + _config.wells_file);
   }
 
   // // flow discretization
@@ -69,7 +70,7 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     out.open(cv_file.c_str());
     std::cout << "saving " << cv_file << std::endl;
 
-    const auto & cvs = m_data.cv_data;
+    const auto & cvs = _data.cv_data;
     ///// OUTPUT Dimensions /////
     out << "DIMENS" << std::endl;
     out << cvs.size() << "\t" << 1 << "\t" << 1 << "\t" << std::endl;
@@ -94,10 +95,10 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     out << "/" << std::endl << std::endl;
 
     // additional data (if any)
-    for (std::size_t ivar=0; ivar<m_data.output_flow_properties.size(); ++ivar)
+    for (std::size_t ivar=0; ivar<_data.output_flow_properties.size(); ++ivar)
     {
-      const size_t prop_key = m_data.output_flow_properties[ivar];
-      const std::string keyword = m_data.property_names[prop_key];
+      const size_t prop_key = _data.output_flow_properties[ivar];
+      const std::string keyword = _data.property_names[prop_key];
       out << keyword << std::endl;
       for (const auto & cv : cvs)
         out << cv.custom[ivar] << std::endl;
@@ -111,7 +112,7 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     out.open(con_file.c_str());
     std::cout << "saving " << con_file << std::endl;
 
-    const auto & cons = m_data.flow_connection_data;
+    const auto & cons = _data.flow_connection_data;
 
     /* OUTPUT Transmissibility */
     out << "TPFACONNS" << std::endl;
@@ -139,132 +140,58 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
   }
 }
 
-void OutputDataGPRS::saveGeometry(const std::string & output_path)
+void OutputDataGPRS::save_geometry_() const
 {
 
-  // // gprs output
-  // std::string outstring;
-  // std::ofstream geomechfile;
+  // gprs output
+  std::string outstring;
+  std::ofstream geomechfile;
 
-  // // GEOMETRY
-  // outstring = output_path + data.config.mechanics_domain_file;
-  // std::cout << "writing file " << outstring << std::endl;
+  // GEOMETRY
+  outstring = _output_path + _config.mechanics_domain_file;
+  std::cout << "writing file " << outstring << std::endl;
 
-  // geomechfile.open(outstring.c_str());
-  // geomechfile << "GMDIMS" << endl;
+  geomechfile.open(outstring.c_str());
+  geomechfile << "GMDIMS" << "\n";
 
-  // geomechfile << grid.n_vertices() << "\t"
-  //             << grid.n_cells() << "\t"
-  //             << grid.n_faces();
-  // geomechfile << "/" << endl << endl;
+  const auto & grid = _data.geomechanics_grid;
+  geomechfile << grid.n_vertices() << "\t"
+              << grid.n_cells() << "\t"
+              << grid.n_faces();
+  geomechfile << "/" << "\n\n";
 
-  // geomechfile.precision(6);
-  // cout << "write all coordinates\n";
-  // geomechfile << "GMNODE_COORDS" << endl;
-  // for (const auto & vertex : grid.get_vertices())
-  //     geomechfile << vertex[0] << "\t"
-  //                 << vertex[1] << "\t"
-  //                 << vertex[2] << "\n";
-  // geomechfile << "/" << std::endl << std::endl;
+  // write vertex coordinates
+  geomechfile.precision(6);
+  // std::cout << "write all coordinates\n";
+  geomechfile << "GMNODE_COORDS" << "\n";
+  for (const auto & vertex : grid.vertices())
+      geomechfile << vertex[0] << "\t"
+                  << vertex[1] << "\t"
+                  << vertex[2] << "\n";
+  geomechfile << "/" << std::endl << std::endl;
 
-  // cout << "write all elements\n";
-  // geomechfile << "GMCELL_NODES" << endl;
-  // for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
-  // {
-  //   const auto & vertices = cell.vertex_indices();
-  //   geomechfile << vertices.size() << "\t";
+  // Elemenent data
+  save_cell_geometry_(geomechfile, grid);
 
-  //   switch (cell.vtk_id())
-  //   {
-  //     case 25: // super wierd element 25
-  //       {
-  //         for (int j = 0; j < 8; j++)
-  //           geomechfile << vertices[j] + 1 << "\t";
-  //         geomechfile << vertices[8] + 1 << "\t";
-  //         geomechfile << vertices[11] + 1 << "\t";
-  //         geomechfile << vertices[13] + 1 << "\t";
-  //         geomechfile << vertices[9] + 1 << "\t";
+  // geomechanics -> flow cell mapping
+  geomechfile << "GMCELL_TO_FLOWCELLS" << "\n";
+  for (const auto & flow_cells : _data.gmcell_to_flowcells)
+  {
+    const std::size_t n_connected_elements = flow_cells.size();
+    if (n_connected_elements == 0)
+      geomechfile << 1 << "\t" << -1 << std::endl;
+    else
+    {
+      geomechfile << n_connected_elements << "\t";
+      for (const std::size_t ielement : flow_cells)
+        geomechfile << ielement + 1 << "\t";
+      geomechfile << std::endl;
+    }
+  }
+  geomechfile << "/\n\n";
 
-  //         geomechfile << vertices[16] + 1 << "\t";
-  //         geomechfile << vertices[18] + 1 << "\t";
-  //         geomechfile << vertices[19] + 1 << "\t";
-  //         geomechfile << vertices[17] + 1 << "\t";
-
-  //         geomechfile << vertices[10] + 1 << "\t";
-  //         geomechfile << vertices[12] + 1 << "\t";
-  //         geomechfile << vertices[14] + 1 << "\t";
-  //         geomechfile << vertices[15] + 1 << "\t";
-  //         break;
-  //       }
-  //     case 26:
-  //       {
-  //         for (int j = 0; j < 6; j++)
-  //           geomechfile << vertices[j] + 1 << "\t";
-
-  //         geomechfile << vertices[6] + 1 << "\t";
-  //         geomechfile << vertices[9] + 1 << "\t";
-  //         geomechfile << vertices[7] + 1 << "\t";
-
-  //         geomechfile << vertices[12] + 1 << "\t";
-  //         geomechfile << vertices[14] + 1 << "\t";
-  //         geomechfile << vertices[13] + 1 << "\t";
-
-  //         geomechfile << vertices[8] + 1 << "\t";
-  //         geomechfile << vertices[10] + 1 << "\t";
-  //         geomechfile << vertices[11] + 1 << "\t";
-  //         break;
-  //       }
-  //     default:
-  //       {
-  //         for (const auto vertex : vertices)
-  //           geomechfile << vertex + 1 << "\t";
-  //         break;
-  //       }
-  //   }
-
-  //   geomechfile << std::endl;
-  // }
-
-  // geomechfile << "/" << endl << endl;
-
-  // geomechfile << "GMCELL_TYPE" << endl;
-  // for (auto cell=grid.begin_cells(); cell!=grid.end_cells(); ++cell)
-  //   geomechfile <<  cell.vtk_id() << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
-
-  // geomechfile << "GMCELL_TO_FLOWCELLS" << endl;
-  // for (const auto & flow_cells : data.gm_cell_to_flow_cell)
-  // {
-  //   const std::size_t n_connected_elements = flow_cells.size();
-  //   if (n_connected_elements == 0)
-  //     geomechfile << 1 << "\t" << -1 << std::endl;
-  //   else
-  //   {
-  //     geomechfile << n_connected_elements << "\t";
-  //     for (const std::size_t ielement : flow_cells)
-  //       geomechfile << ielement + 1 << "\t";
-  //     geomechfile << std::endl;
-  //   }
-  // }
-  // geomechfile << "/\n\n";
-
-  // std::cout << "write all faces\n";
-  // geomechfile << "GMFACE_NODES\n";
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  // {
-  //   const std::vector<std::size_t> ivertices = face.vertex_indices();
-  //   geomechfile << ivertices.size() << "\t";
-  //   for (const std::size_t ivertex : ivertices)
-  //     geomechfile << ivertex + 1 << "\t";
-  //   geomechfile << std::endl;
-  // }
-
-  // geomechfile << "/" << std::endl << std::endl;
-
-  // geomechfile << "GMFACE_TYPE" << std::endl;
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  //   geomechfile << face.vtk_id() << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  // Face data
+  save_face_geometry_(geomechfile, grid);
 
   // std::cout << "writing face-cell connection" << std::endl;
   // geomechfile << "GMFACE_GMCELLS" << std::endl;
@@ -301,12 +228,11 @@ void OutputDataGPRS::saveGeometry(const std::string & output_path)
 }
 
 
-void OutputDataGPRS::saveGeomechDataNewKeywords(const std::string file_name)
+void OutputDataGPRS::save_geomechanics_keywords_() const
 {
-  // std::cout << "Writing all domain from user input properties" << std::endl;
-  // {  // write domain properties
-  //   std::ofstream geomechfile;
-  //   geomechfile.open(file_name.c_str());
+  // write domain properties
+  std::ofstream out;
+  out.open(_config.mechanics_domain_file.c_str());
 
   //   for (std::size_t ivar=0; ivar<data.rockPropNames.size(); ++ivar)
   //   {
@@ -324,8 +250,7 @@ void OutputDataGPRS::saveGeomechDataNewKeywords(const std::string file_name)
   //     geomechfile << std::endl << "/" << std::endl << std::endl;
   //   }
 
-  //   geomechfile.close();
-  // }
+    out.close();
 }
 
 
@@ -588,7 +513,7 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
   out.open(file_name.c_str());
 
   out << "WELSPECS" << std::endl;
-  for (const auto & well : m_data.wells)
+  for (const auto & well : _data.wells)
   {
     out << well.name << "\tGROUP1\t";
     // connected volume + j + k empty
@@ -601,7 +526,7 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
 
   out << "COMPDAT" << std::endl;
   out << "-- name\tcell\tidk\tidk\tidk\topen\tidk\tWI\trad" << std::endl;
-  for (const auto & well : m_data.wells)
+  for (const auto & well : _data.wells)
   {
     for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
     {
@@ -672,6 +597,146 @@ void OutputDataGPRS::saveMechMultiScaleData(const std::string file_name)
   // out << "/" << endl << endl;
 
   // out.close();
+}
+
+void OutputDataGPRS::save_geomechanics_data_() const
+{
+  // std::cout << "save geometry" << std::endl;
+  save_geometry_();
+  // save computed element data: shape functions and gradients, gauss weights, JxW
+  save_fem_data_();
+
+  save_geomechanics_keywords_();
+}
+
+void OutputDataGPRS::save_cell_geometry_(std::ofstream & out, const mesh::Mesh & grid) const
+{
+  out << "GMCELL_NODES" << "\n";
+  for (auto cell=grid.begin_active_cells(); cell!=grid.end_active_cells(); ++cell)
+  {
+    const auto & vertices = cell->vertices();
+    out << vertices.size() << "\t";
+
+    switch (cell->vtk_id())
+    {
+      case 25: // super wierd element 25
+        {
+          for (int j = 0; j < 8; j++)
+            out << vertices[j] + 1 << "\t";
+          out << vertices[8] + 1 << "\t";
+          out << vertices[11] + 1 << "\t";
+          out << vertices[13] + 1 << "\t";
+          out << vertices[9] + 1 << "\t";
+
+          out << vertices[16] + 1 << "\t";
+          out << vertices[18] + 1 << "\t";
+          out << vertices[19] + 1 << "\t";
+          out << vertices[17] + 1 << "\t";
+
+          out << vertices[10] + 1 << "\t";
+          out << vertices[12] + 1 << "\t";
+          out << vertices[14] + 1 << "\t";
+          out << vertices[15] + 1 << "\t";
+          break;
+        }
+      case 26:
+        {
+          for (int j = 0; j < 6; j++)
+            out << vertices[j] + 1 << "\t";
+
+          out << vertices[6] + 1 << "\t";
+          out << vertices[9] + 1 << "\t";
+          out << vertices[7] + 1 << "\t";
+
+          out << vertices[12] + 1 << "\t";
+          out << vertices[14] + 1 << "\t";
+          out << vertices[13] + 1 << "\t";
+
+          out << vertices[8] + 1 << "\t";
+          out << vertices[10] + 1 << "\t";
+          out << vertices[11] + 1 << "\t";
+          break;
+        }
+      default:
+        {
+          for (const auto vertex : vertices)
+            out << vertex + 1 << "\t";
+          break;
+        }
+    }
+
+    out << "\n";
+  }
+
+  out << "/" << "\n\n";
+
+  // Cell types //
+  out << "GMCELL_TYPE" << "\n";
+  for (auto cell=grid.begin_active_cells(); cell!=grid.end_active_cells(); ++cell)
+    out <<  cell->vtk_id() << "\n";
+  out << "/" << "\n\n";
+}
+
+void OutputDataGPRS::save_face_geometry_(std::ofstream & out, const mesh::Mesh & grid) const
+{
+  out << "GMFACE_NODES\n";
+  for (auto face=grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+  {
+    const std::vector<std::size_t> ivertices = face->vertices();
+    out << ivertices.size() << "\t";
+    for (const std::size_t ivertex : ivertices)
+      out << ivertex + 1 << "\t";
+    out << "\n";
+  }
+  out << "/" << "\n\n";
+
+  out << "GMFACE_TYPE" << std::endl;
+  for (auto face = grid.begin_active_faces(); face!=grid.end_active_faces(); ++face)
+    out << face->vtk_id() << std::endl;
+  out << "/" << "\n\n";
+}
+
+void OutputDataGPRS::save_fem_data_() const
+{
+  const std::string file_name = _output_path + _config.fem_file;
+  std::ofstream out;
+  out.open(file_name.c_str());
+  // save cell data
+  const std::vector<discretization::FiniteElementData> & cells = _data.fe_cell_data;
+  out << "GMCELL_GAUSS_WEIGHTS" << "\n";
+  for (const auto & cell : cells)
+  {
+    out << cell.element_index << "\t";
+    out << cell.points.size() << "\t";
+    for (const auto & point : cell.points)
+      out << point.weight << "\t";
+    out << "\n";
+  }
+  out << "\n";
+
+  out << "GMCELL_SHAPE_VALUES" << "\n";
+  for (const auto & cell : cells)
+  {
+    for (const auto &point : cell.points)
+      for (const double value : point.values)
+        out << value << "\t";
+    out << "\n";
+  }
+
+  out << "GMCELL_SHAPE_GRADS" << "\n";
+  for (const auto & cell : cells)
+  {
+    for (const auto &point : cell.points)
+      for (const angem::Point<3,double> & grad : point.grads)
+        out << grad << "\t";
+    out << "\n";
+  }
+
+
+  // save face data
+  // std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces
+
+  out.close();
 }
 
 }

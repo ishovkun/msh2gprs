@@ -139,6 +139,7 @@ struct GPRSOutputConfig
   std::string flow_ms_file          = "ms_flow.txt";
   std::string flow_cv_file          = "fl_cell_data.txt";
   std::string flow_connection_file  = "fl_face_data.txt";
+  std::string fem_file              = "gm_fem.txt";
 };
 
 struct PreprocessorConfig

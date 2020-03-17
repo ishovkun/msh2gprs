@@ -239,9 +239,8 @@ void DFEMElement::build_jacobian_()
   _system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(_element_grid.n_vertices(),
                                                                _element_grid.n_vertices());
   // since we only build tetrahedral element mesh
-  // 4 is tetrahedron id
-  // TODO: write a wrapper for it
-  FeValues fe_values( 4 );
+  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
+  FeValues fe_values( element_type );
 
   Eigen::MatrixXd cell_matrix(fe_values.n_vertices(), fe_values.n_vertices());
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)

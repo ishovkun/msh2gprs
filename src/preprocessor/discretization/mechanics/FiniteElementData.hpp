@@ -1,5 +1,6 @@
 #pragma once
 
+#include "angem/Point.hpp"
 #include <vector>
 
 namespace discretization {
@@ -14,6 +15,7 @@ struct FEPointData
 struct FiniteElementData
 {
   std::vector<FEPointData> points;
+  size_t                   element_index;
 };
 
 }  // end namespace discretization

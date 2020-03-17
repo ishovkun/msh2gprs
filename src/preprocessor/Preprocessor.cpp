@@ -237,6 +237,7 @@ void Preprocessor::build_geomechanics_discretization_()
     std::cout << "build DFEM discretization" << std::endl;
     discretization::DiscretizationDFEM dfem_discr(data.grid, config.dfem_msrsb_tolerance);
     dfem_discr.build();
+    data.fe_cell_data = dfem_discr.get_cell_data();
   }
 }
 
