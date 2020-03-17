@@ -33,10 +33,14 @@ public:
   void save_geomechanics_data_() const;
   // save geometry data for geomechanics discretization
   void save_geometry_() const;
-  // save ordered cell vertices for geomechanics
+  // save ordered cell vertices and cell types for geomechanics
   void save_cell_geometry_(std::ofstream & out, const mesh::Mesh & grid) const;
+  // save ordered face vertices and face types for geomechanics
+  void save_face_geometry_(std::ofstream & out, const mesh::Mesh & grid) const;
   // save geomechanics keywords
   void save_geomechanics_keywords_() const;
+  // save computed element data: (grad) shape functions, gauss weights, JxW
+  void save_fem_data_() const;
   void saveEmbeddedFractureProperties(const std::string file_name);
   void saveBoundaryConditions(const std::string file_name);
   void saveDiscreteFractureProperties(const std::string file_name);

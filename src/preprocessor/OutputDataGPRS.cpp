@@ -171,14 +171,7 @@ void OutputDataGPRS::save_geometry_() const
   geomechfile << "/" << std::endl << std::endl;
 
   // Elemenent data
-
   save_cell_geometry_(geomechfile, grid);
-
-  // Cell types //
-  geomechfile << "GMCELL_TYPE" << "\n";
-  for (auto cell=grid.begin_active_cells(); cell!=grid.end_active_cells(); ++cell)
-    geomechfile <<  cell->vtk_id() << std::endl;
-  geomechfile << "/" << std::endl << std::endl;
 
   // geomechanics -> flow cell mapping
   geomechfile << "GMCELL_TO_FLOWCELLS" << "\n";
@@ -197,23 +190,8 @@ void OutputDataGPRS::save_geometry_() const
   }
   geomechfile << "/\n\n";
 
-  // std::cout << "write all faces\n";
-  // geomechfile << "GMFACE_NODES\n";
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  // {
-  //   const std::vector<std::size_t> ivertices = face.vertex_indices();
-  //   geomechfile << ivertices.size() << "\t";
-  //   for (const std::size_t ivertex : ivertices)
-  //     geomechfile << ivertex + 1 << "\t";
-  //   geomechfile << std::endl;
-  // }
-
-  // geomechfile << "/" << std::endl << std::endl;
-
-  // geomechfile << "GMFACE_TYPE" << std::endl;
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  //   geomechfile << face.vtk_id() << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  // Face data
+  save_face_geometry_(geomechfile, grid);
 
   // std::cout << "writing face-cell connection" << std::endl;
   // geomechfile << "GMFACE_GMCELLS" << std::endl;
@@ -252,10 +230,9 @@ void OutputDataGPRS::save_geometry_() const
 
 void OutputDataGPRS::save_geomechanics_keywords_() const
 {
-  // std::cout << "Writing all domain from user input properties" << std::endl;
-  // {  // write domain properties
-  //   std::ofstream geomechfile;
-  //   geomechfile.open(file_name.c_str());
+  // write domain properties
+  std::ofstream out;
+  out.open(_config.mechanics_domain_file.c_str());
 
   //   for (std::size_t ivar=0; ivar<data.rockPropNames.size(); ++ivar)
   //   {
@@ -273,8 +250,7 @@ void OutputDataGPRS::save_geomechanics_keywords_() const
   //     geomechfile << std::endl << "/" << std::endl << std::endl;
   //   }
 
-  //   geomechfile.close();
-  // }
+    out.close();
 }
 
 
@@ -627,6 +603,8 @@ void OutputDataGPRS::save_geomechanics_data_() const
 {
   // std::cout << "save geometry" << std::endl;
   save_geometry_();
+  // save computed element data: shape functions and gradients, gauss weights, JxW
+  save_fem_data_();
 
   save_geomechanics_keywords_();
 }
@@ -691,6 +669,74 @@ void OutputDataGPRS::save_cell_geometry_(std::ofstream & out, const mesh::Mesh &
   }
 
   out << "/" << "\n\n";
+
+  // Cell types //
+  out << "GMCELL_TYPE" << "\n";
+  for (auto cell=grid.begin_active_cells(); cell!=grid.end_active_cells(); ++cell)
+    out <<  cell->vtk_id() << "\n";
+  out << "/" << "\n\n";
+}
+
+void OutputDataGPRS::save_face_geometry_(std::ofstream & out, const mesh::Mesh & grid) const
+{
+  out << "GMFACE_NODES\n";
+  for (auto face=grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+  {
+    const std::vector<std::size_t> ivertices = face->vertices();
+    out << ivertices.size() << "\t";
+    for (const std::size_t ivertex : ivertices)
+      out << ivertex + 1 << "\t";
+    out << "\n";
+  }
+  out << "/" << "\n\n";
+
+  out << "GMFACE_TYPE" << std::endl;
+  for (auto face = grid.begin_active_faces(); face!=grid.end_active_faces(); ++face)
+    out << face->vtk_id() << std::endl;
+  out << "/" << "\n\n";
+}
+
+void OutputDataGPRS::save_fem_data_() const
+{
+  const std::string file_name = _output_path + _config.fem_file;
+  std::ofstream out;
+  out.open(file_name.c_str());
+  // save cell data
+  const std::vector<discretization::FiniteElementData> & cells = _data.fe_cell_data;
+  out << "GMCELL_GAUSS_WEIGHTS" << "\n";
+  for (const auto & cell : cells)
+  {
+    out << cell.element_index << "\t";
+    out << cell.points.size() << "\t";
+    for (const auto & point : cell.points)
+      out << point.weight << "\t";
+    out << "\n";
+  }
+  out << "\n";
+
+  out << "GMCELL_SHAPE_VALUES" << "\n";
+  for (const auto & cell : cells)
+  {
+    for (const auto &point : cell.points)
+      for (const double value : point.values)
+        out << value << "\t";
+    out << "\n";
+  }
+
+  out << "GMCELL_SHAPE_GRADS" << "\n";
+  for (const auto & cell : cells)
+  {
+    for (const auto &point : cell.points)
+      for (const angem::Point<3,double> & grad : point.grads)
+        out << grad << "\t";
+    out << "\n";
+  }
+
+
+  // save face data
+  // std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces
+
+  out.close();
 }
 
 }
