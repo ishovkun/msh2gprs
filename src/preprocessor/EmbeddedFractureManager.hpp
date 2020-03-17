@@ -30,6 +30,7 @@ class EmbeddedFractureManager
                           const EDFMMethod edfm_method,
                           const double min_dist_to_node,
                           SimData & data);
+
   /**
    * Split cells in the grid by embedded fractures.
    * This first computes which cells are affected and then asks

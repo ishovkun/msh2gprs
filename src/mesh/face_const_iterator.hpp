@@ -17,7 +17,6 @@ class face_const_iterator : public std::iterator<std::random_access_iterator_tag
 {
  public:
   // Default constructor
-  // Default constructor
   face_const_iterator(const std::size_t                           face_index,
                       const std::vector<Face>                   & grid_faces,
                       const std::vector<angem::Point<3,double>> & grid_vertices);
@@ -44,14 +43,10 @@ class face_const_iterator : public std::iterator<std::random_access_iterator_tag
   // get face marker, (-1) if not defined
   int marker() const;
   // get face index
-  std::size_t index() const {return operator*()->index;}
+  std::size_t index() const {return operator*()->index();}
   // get an index of the parent (master) face that existed before the split
   // same as index() if the face has not been split
-  std::size_t master_index() const {return operator*()->master_face_index;}
-  // get vtk id of the face
-  int vtk_id() const {return operator*()->vtk_id;}
-  // get vector of neighbor cell indices
-  inline const std::vector<std::size_t> & neighbors() const {return operator*()->neighbor_cells;}
+  // std::size_t master_index() const {return operator*()->master_face_index;}
   // get vector of face vertex coordinates
   std::vector<Point> vertex_coordinates() const;
   // get vector of face vertex indices
