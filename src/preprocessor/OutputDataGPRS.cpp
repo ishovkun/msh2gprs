@@ -148,7 +148,7 @@ void OutputDataGPRS::save_geometry_() const
   std::ofstream geomechfile;
 
   // GEOMETRY
-  outstring = _output_path + _config.mechanics_domain_file;
+  outstring = _output_path + "/" + _config.geometry_file;
   std::cout << "writing file " << outstring << std::endl;
 
   geomechfile.open(outstring.c_str());
@@ -232,25 +232,26 @@ void OutputDataGPRS::save_geomechanics_keywords_() const
 {
   // write domain properties
   std::ofstream out;
-  out.open(_config.mechanics_domain_file.c_str());
+  out.open(_output_path + "/" + _config.mechanics_kwd_file.c_str());
 
-  //   for (std::size_t ivar=0; ivar<data.rockPropNames.size(); ++ivar)
-  //   {
-  //     if ( data.config.expression_type[ivar] != 1 )  // only mechanics kwds
-  //       continue;
+  const auto & grid = _data.geomechanics_grid;
+  size_t cnt = 0;
+  for (std::size_t ivar=0; ivar<_data.output_mech_properties.size(); ++ivar)
+  {
+    const size_t prop_key = _data.output_flow_properties[ivar];
+    const std::string keyword = _data.property_names[prop_key];
+    out << keyword << "\n";
+    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+    {
+      const std::size_t icell = cell->index();
+      out << _data.cell_properties[prop_key][cell->index()] << "\t";
+        if (++cnt % n_entries_per_line == 0)
+          out << "\n";
+    }
+    out << "/\n\n";
+  }
 
-  //     geomechfile << data.rockPropNames[ivar] << std::endl;
-  //     for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
-  //     {
-  //       const std::size_t icell = cell->index();
-  //       geomechfile << data.vsCellRockProps[icell].v_props[ivar] << "\t";
-  //       if ((icell + 1) % n_entries_per_line == 0)
-  //         geomechfile << std::endl;
-  //     }
-  //     geomechfile << std::endl << "/" << std::endl << std::endl;
-  //   }
-
-    out.close();
+  out.close();
 }
 
 
@@ -698,7 +699,10 @@ void OutputDataGPRS::save_face_geometry_(std::ofstream & out, const mesh::Mesh &
 
 void OutputDataGPRS::save_fem_data_() const
 {
-  const std::string file_name = _output_path + _config.fem_file;
+  if (_data.fe_cell_data.empty())
+    return;
+
+  const std::string file_name = _output_path + "/" + _config.fem_file;
   std::ofstream out;
   out.open(file_name.c_str());
   // save cell data
@@ -712,7 +716,7 @@ void OutputDataGPRS::save_fem_data_() const
       out << point.weight << "\t";
     out << "\n";
   }
-  out << "\n";
+  out << "/\n\n";
 
   out << "GMCELL_SHAPE_VALUES" << "\n";
   for (const auto & cell : cells)
@@ -722,6 +726,7 @@ void OutputDataGPRS::save_fem_data_() const
         out << value << "\t";
     out << "\n";
   }
+  out << "/\t\t";
 
   out << "GMCELL_SHAPE_GRADS" << "\n";
   for (const auto & cell : cells)
@@ -731,6 +736,7 @@ void OutputDataGPRS::save_fem_data_() const
         out << grad << "\t";
     out << "\n";
   }
+  out << "/\t\t";
 
 
   // save face data

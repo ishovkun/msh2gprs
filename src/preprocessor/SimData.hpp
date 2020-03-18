@@ -44,7 +44,8 @@ struct SimData
   std::vector<std::vector<double>> cell_properties;
   std::array<int,6> permeability_keys = {-1, -1, -1, -1, -1, -1};  // permeability key indices in cell_properties
   size_t porosity_key_index = std::numeric_limits<size_t>::max();  // porosity key index in cell_properties
-  std::vector<size_t> output_flow_properties;
+  std::vector<size_t> output_flow_properties;                      // indices of flow property keywords
+  std::vector<size_t> output_mech_properties;                      // indices of mech property keywords
   // ----------------------- DFM ------------------------ //
   std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces

@@ -29,9 +29,9 @@ void YamlParser::parse_file(const std::string & fname)
     if (key == "Mesh file")
       config.mesh_file = it->second.as<std::string>();
     else if (key == "Domain Flow Properties")
-      section_domain_props(it->second, 0);
+      section_domain_props(it->second, ExpressionDomainType::flow);
     else if (key == "Domain Mechanical Properties")
-      section_domain_props(it->second, 1);
+      section_domain_props(it->second, ExpressionDomainType::mechanics);
     else if (key == "Embedded Fractures")
       embedded_fracs(it->second);
     else if (key == "Discrete Fractures")
@@ -220,20 +220,17 @@ void YamlParser::discrete_fracture(const YAML::Node       & node,
   }
 }
 
-void YamlParser::section_domain_props(const YAML::Node & node,
-                                      const int          var_type)
+void YamlParser::section_domain_props(const YAML::Node &         node,
+                                      const ExpressionDomainType var_type)
 {
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
-    // std::cout << "\treading entry " << key << std::endl;
 
     if (key == "file")  // where to ouput properties
     {
-      // if (var_type == 0)
-      //   config.domain_file = it->second.as<std::string>();
-      if (var_type == 1)
-        config.gprs_output.mechanics_domain_file = it->second.as<std::string>();
+      if (var_type == ExpressionDomainType::mechanics)
+        config.gprs_output.mechanics_kwd_file = it->second.as<std::string>();
       continue;
     }
     else if (key == "domain")
@@ -295,9 +292,9 @@ std::size_t find(const typename iterable::value_type & item,
   return counter;
 }
 
-void YamlParser::domain(const YAML::Node & node,
-                        const int          var_type,
-                        DomainConfig     & conf)
+void YamlParser::domain(const YAML::Node &         node,
+                        const ExpressionDomainType var_type,
+                        DomainConfig     &         conf)
 {
   std::size_t exp_counter = conf.expressions.size();
 
@@ -328,7 +325,7 @@ void YamlParser::domain(const YAML::Node & node,
         // special case - service variable (not outputted)
         if ( find(key, config.cell_properties.special_keywords) <
              config.cell_properties.special_keywords.size())
-          config.cell_properties.expression_type.push_back(-1);
+          config.cell_properties.expression_type.push_back(ExpressionDomainType::service);
         else
           config.cell_properties.expression_type.push_back(var_type);
       }

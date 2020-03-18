@@ -18,8 +18,8 @@ class YamlParser
  private:
   // sections
   // var type can be 0 or 1: flow domain or geomechanics domain
-  void section_domain_props(const YAML::Node & node,
-                            const int          var_type);
+  void section_domain_props(const YAML::Node &         node,
+                            const ExpressionDomainType var_type);
   void embedded_fracs(const YAML::Node & node);
   void discrete_fracs(const YAML::Node & node);
   void boundary_conditions(const YAML::Node & node);
@@ -33,9 +33,9 @@ class YamlParser
                          EmbeddedFractureConfig & conf);
   void discrete_fracture(const YAML::Node       & node,
                          DiscreteFractureConfig & conf);
-  void domain(const YAML::Node & node,
-              const int          var_type,
-              DomainConfig     & conf);
+  void domain(const YAML::Node &         node,
+              const ExpressionDomainType var_type,
+              DomainConfig     &         conf);
   void read_well(const YAML::Node & node,
                  WellConfig & conf);
   // subsubsection

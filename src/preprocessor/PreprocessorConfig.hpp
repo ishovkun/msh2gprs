@@ -14,12 +14,17 @@ enum MSPartitioning : int
   method_mechanics = 3  // igor's mechanics method
 };
 
-
 enum OutputFormat
 {
   gprs, vtk, postprocessor
 };
 
+enum ExpressionDomainType
+{
+  flow,
+  mechanics,
+  service
+};
 
 struct DomainConfig
 {
@@ -75,9 +80,9 @@ struct EmbeddedFractureConfig
   double cohesion = 0;
   double friction_angle = 30;
   double dilation_angle = 0;
-  double aperture = 1e-3;  // hydraulic aperture of the fracture [m]
-  double conductivity = 10;  // hydraulic conductivity of dfm fracture [m·md]
-  bool coupled = true;  // whether to couple with geomechanics
+  double aperture = 1e-3;   // hydraulic aperture of the fracture [m]
+  double conductivity = 10; // hydraulic conductivity of dfm fracture [m·md]
+  bool coupled = true;      // whether to couple with geomechanics
 };
 
 
@@ -130,7 +135,8 @@ struct VTKOutputConfig
 struct GPRSOutputConfig
 {
   std::string domain_file           = "domain.txt";
-  std::string mechanics_domain_file = "gm_geometry.txt";
+  std::string geometry_file         = "gm_geometry.txt";
+  std::string mechanics_kwd_file    = "gm_keywords.txt";
   std::string efrac_file            = "gm_SDA.txt";
   std::string discrete_frac_file    = "gm_DFM.txt";
   std::string bcond_file            = "bcond.txt";

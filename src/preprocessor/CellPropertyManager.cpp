@@ -202,11 +202,10 @@ void CellPropertyManager::build_flow_output_property_keys_()
 {
   for (size_t j = 0; j < m_data.property_names.size(); j++)
   {
-    if (std::find(m_data.permeability_keys.begin(),
-                  m_data.permeability_keys.end(), j) ==
-                  m_data.permeability_keys.end())
-        if (j != m_data.porosity_key_index)
-          m_data.output_flow_properties.push_back(j);
+    if (config.expression_type[j] == ExpressionDomainType::flow)
+      m_data.output_flow_properties.push_back(j);
+    else if (config.expression_type[j] == ExpressionDomainType::mechanics)
+      m_data.output_mech_properties.push_back(j);
   }
 }
 
