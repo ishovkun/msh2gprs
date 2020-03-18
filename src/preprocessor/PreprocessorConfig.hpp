@@ -166,7 +166,7 @@ struct PreprocessorConfig
   std::vector<DomainConfig>            domains;
   // special keywords needed for computing fluid data
   // (they are not outputted)
-  static constexpr double nan = -999.999;
+  static constexpr double nan = std::numeric_limits<double>::max();
   double node_search_tolerance = 1e-10;
   double frac_cell_elinination_factor = 0.2;
 

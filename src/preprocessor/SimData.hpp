@@ -69,8 +69,9 @@ struct SimData
   std::vector<discretization::FiniteElementData> fe_cell_data;  // fe values and gradients for grid cells
   std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces
   // ----------------------- Boundary conditions ------------ //
-  std::vector<size_t> neumann_face_indices;
-  std::vector<angem::Point<3,double>> neumann_face_traction;
+  std::vector<size_t> neumann_face_indices;  // indices of neumann faces
+  std::vector<angem::Point<3,double>> neumann_face_traction;  // values of neuman bc's
+  std::vector<size_t> dirichlet_indices_x, dirichlet_indices_y, dirichlet_indices_z;
   // ----------------------- Multiscale ------------ //
   multiscale::MultiScaleOutputData ms_mech_data;
   // ----------------------- Other ---------------------- //

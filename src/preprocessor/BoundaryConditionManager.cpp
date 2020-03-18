@@ -5,44 +5,56 @@ namespace gprs_data {
 BoundaryConditionManager::BoundaryConditionManager(const std::vector<BCConfig> & face_config,
                                                    const std::vector<BCNodeConfig> & node_config,
                                                    SimData & data)
-    : m_node_config(node_config) , m_face_config(face_config),
-    m_data(data)
+    : _node_config(node_config) , _face_config(face_config),
+    _data(data)
 {
+  build_boundary_conditions_();
 }
 
-void BoundaryConditionManager::create_properties()
+void BoundaryConditionManager::build_boundary_conditions_()
 {
-  const std::unordered_map<size_t,size_t> face_to_frac = create_boundary_faces_();
-  create_neumann_faces_(face_to_frac);
-}
+  const auto & grid = _data.geomechanics_grid;
+  _node_to_config.resize(grid.n_vertices());
 
-std::unordered_map<size_t,size_t> BoundaryConditionManager::create_boundary_faces_() const
-{
-  std::map<int,size_t> marker_config;
-  for (std::size_t i=0; i<m_face_config.size(); ++i)
-    marker_config.insert({m_face_config[i].label, i});
-
-  const auto & grid = m_data.grid;
-  std::unordered_map<size_t, size_t> face_config;
+  size_t iface = 0;
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
   {
-    const auto it = marker_config.find(face->marker());
-    if (it != marker_config.end())
-      face_config[face->index()] = it->second;
+    for (size_t iconf=0; iconf<_face_config.size(); ++iconf)
+    {
+      const auto & conf = _face_config[iconf];
+      if ( face->marker() == conf.label )
+      {
+        if ( conf.type == BoundaryConditionType::dirichlet )
+          process_dirichlet_face_(*face, iconf);
+        else // if ( conf.type == BoundaryConditionType::neumann )
+          process_neumann_face_(conf, iface);
+      }
+    }
+    iface++;
   }
-  return face_config;
+  create_dirichlet_data_();
 }
 
-void BoundaryConditionManager::create_neumann_faces_(const std::unordered_map<size_t,size_t> & face_to_frac)
+void BoundaryConditionManager::create_dirichlet_data_()
 {
-  for (const auto & it : face_to_frac)
+  for (size_t v=0; v<_node_to_config.size(); ++v)
   {
-    if (m_face_config[it.second].type == BoundaryConditionType::neumann)
-    {
-      m_data.neumann_face_indices.push_back( it.first );
-      m_data.neumann_face_traction.push_back(m_face_config[it.second].value);
-    }
+   
   }
+}
+
+void BoundaryConditionManager::process_dirichlet_face_(const mesh::Face & face, const size_t config_index)
+{
+  for (const size_t v : face.vertices())
+  {
+    _node_to_config[v].push_back( config_index );
+  }
+}
+
+void BoundaryConditionManager::process_neumann_face_(const BCConfig & conf, const size_t face_index)
+{
+  _data.neumann_face_indices.push_back( face_index );
+  _data.neumann_face_traction.push_back( conf.value );
 }
 
 }  // end namespace gprs_data

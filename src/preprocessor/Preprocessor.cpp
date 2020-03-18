@@ -67,7 +67,6 @@ void Preprocessor::run()
 
   // build mechanics boundary conditions
   BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
-  bc_mgr.create_properties();
 
   write_output_();
 }

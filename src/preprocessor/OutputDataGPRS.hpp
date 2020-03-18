@@ -42,7 +42,8 @@ public:
   // save computed element data: (grad) shape functions, gauss weights, JxW
   void save_fem_data_() const;
   void saveEmbeddedFractureProperties(const std::string file_name);
-  void saveBoundaryConditions(const std::string file_name);
+  // save dirichlet and neumann boundary conditions for geomechanics
+  void save_geomechanics_boundary_conditions_() const;
   void saveDiscreteFractureProperties(const std::string file_name);
   void saveWells(const std::string file_name) const;
   void saveFlowMultiScaleData(const std::string file_name);

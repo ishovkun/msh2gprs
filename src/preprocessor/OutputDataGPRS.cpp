@@ -142,15 +142,11 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
 
 void OutputDataGPRS::save_geometry_() const
 {
-
-  // gprs output
-  std::string outstring;
-  std::ofstream geomechfile;
-
-  // GEOMETRY
-  outstring = _output_path + "/" + _config.geometry_file;
+  const std::string outstring = _output_path + "/" + _config.geometry_file;
   std::cout << "saving " << outstring << std::endl;
 
+  // gprs output
+  std::ofstream geomechfile;
   geomechfile.open(outstring.c_str());
   geomechfile << "GMDIMS" << "\n";
 
@@ -322,10 +318,12 @@ void OutputDataGPRS::saveEmbeddedFractureProperties(const std::string file_name)
 }
 
 
-void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
+void OutputDataGPRS::save_geomechanics_boundary_conditions_() const
 {
-  // std::ofstream geomechfile;
-  // std::cout << "Computing Dirichlet nodes" << std::endl;
+  const std::string file_name = _output_path + "/" + _config.bcond_file;
+  std::cout << "save mech boundary conditions: " << file_name << std::endl;
+
+  std::ofstream out(file_name);
 
   // /* this chunk of code find dirichlet nodes
   //  * Algorithm:
@@ -437,7 +435,7 @@ void OutputDataGPRS::saveBoundaryConditions(const std::string file_name)
   //   geomechfile << "/" << std::endl << std::endl;
   // }
 
-  // geomechfile.close();
+  out.close();
 }
 
 
