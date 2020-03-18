@@ -149,7 +149,7 @@ void OutputDataGPRS::save_geometry_() const
 
   // GEOMETRY
   outstring = _output_path + "/" + _config.geometry_file;
-  std::cout << "writing file " << outstring << std::endl;
+  std::cout << "saving " << outstring << std::endl;
 
   geomechfile.open(outstring.c_str());
   geomechfile << "GMDIMS" << "\n";
@@ -232,21 +232,23 @@ void OutputDataGPRS::save_geomechanics_keywords_() const
 {
   // write domain properties
   std::ofstream out;
-  out.open(_output_path + "/" + _config.mechanics_kwd_file.c_str());
+  const std::string file_name = _output_path + "/" + _config.mechanics_kwd_file;
+  std::cout << "saving " << file_name << std::endl;
+  out.open(file_name.c_str());
 
   const auto & grid = _data.geomechanics_grid;
   size_t cnt = 0;
   for (std::size_t ivar=0; ivar<_data.output_mech_properties.size(); ++ivar)
   {
-    const size_t prop_key = _data.output_flow_properties[ivar];
+    const size_t prop_key = _data.output_mech_properties[ivar];
     const std::string keyword = _data.property_names[prop_key];
     out << keyword << "\n";
     for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     {
       const std::size_t icell = cell->index();
       out << _data.cell_properties[prop_key][cell->index()] << "\t";
-        if (++cnt % n_entries_per_line == 0)
-          out << "\n";
+      if (++cnt % n_entries_per_line == 0)
+        out << "\n";
     }
     out << "/\n\n";
   }
@@ -608,6 +610,7 @@ void OutputDataGPRS::save_geomechanics_data_() const
   save_fem_data_();
 
   save_geomechanics_keywords_();
+  std::cout << "done saving kwds" << std::endl;
 }
 
 void OutputDataGPRS::save_cell_geometry_(std::ofstream & out, const mesh::Mesh & grid) const
@@ -703,6 +706,7 @@ void OutputDataGPRS::save_fem_data_() const
     return;
 
   const std::string file_name = _output_path + "/" + _config.fem_file;
+  std::cout << "saving " << file_name << std::endl;
   std::ofstream out;
   out.open(file_name.c_str());
   // save cell data
