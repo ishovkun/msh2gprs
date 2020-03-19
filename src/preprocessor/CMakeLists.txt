@@ -24,6 +24,7 @@ ADD_LIBRARY(preprocessor
   VTKWriter.cpp
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
+  GridCellNumberingManager.cpp
   UnionFind.cpp
   discretization/mechanics/DiscretizationDFEM.cpp
   discretization/mechanics/DFEMElement.cpp

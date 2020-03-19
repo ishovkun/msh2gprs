@@ -136,7 +136,6 @@ struct VTKOutputConfig
 
 struct GPRSOutputConfig
 {
-  std::string domain_file           = "domain.txt";
   std::string geometry_file         = "gm_geometry.txt";
   std::string mechanics_kwd_file    = "gm_keywords.txt";
   std::string efrac_file            = "gm_SDA.txt";

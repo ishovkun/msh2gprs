@@ -5,7 +5,11 @@
 #include <vector>        //std::vector
 #include <unordered_map> //unordered_map
 
-namespace gprs_data { class DoFManager; }
+namespace gprs_data {
+class DoFManager;
+class GridCellNumberingManager;
+}
+
 
 namespace discretization {
 
@@ -51,6 +55,7 @@ class DoFNumbering
   // buds
   friend class gprs_data::DoFManager;
   friend class FEMFaceDoFManager;
+  friend class gprs_data::GridCellNumberingManager;
 };
 
 }  // end namespace discretization

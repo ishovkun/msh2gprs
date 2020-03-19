@@ -146,53 +146,53 @@ void OutputDataGPRS::save_geometry_() const
   std::cout << "saving " << outstring << std::endl;
 
   // gprs output
-  std::ofstream geomechfile;
-  geomechfile.open(outstring.c_str());
-  geomechfile << "GMDIMS" << "\n";
+  std::ofstream out;
+  out.open(outstring.c_str());
+  out << "GMDIMS" << "\n";
 
   const auto & grid = _data.geomechanics_grid;
-  geomechfile << grid.n_vertices() << "\t"
+  out << grid.n_vertices() << "\t"
               << grid.n_cells() << "\t"
               << grid.n_faces();
-  geomechfile << "/" << "\n\n";
+  out << "/" << "\n\n";
 
   // write vertex coordinates
-  geomechfile.precision(6);
+  out.precision(6);
   // std::cout << "write all coordinates\n";
-  geomechfile << "GMNODE_COORDS" << "\n";
+  out << "GMNODE_COORDS" << "\n";
   for (const auto & vertex : grid.vertices())
-      geomechfile << vertex[0] << "\t"
+      out << vertex[0] << "\t"
                   << vertex[1] << "\t"
                   << vertex[2] << "\n";
-  geomechfile << "/" << std::endl << std::endl;
+  out << "/" << std::endl << std::endl;
 
   // Elemenent data
-  save_cell_geometry_(geomechfile, grid);
+  save_cell_geometry_(out, grid);
 
   // geomechanics -> flow cell mapping
-  geomechfile << "GMCELL_TO_FLOWCELLS" << "\n";
+  out << "GMCELL_TO_FLOWCELLS" << "\n";
   for (const auto & flow_cells : _data.gmcell_to_flowcells)
   {
     const std::size_t n_connected_elements = flow_cells.size();
     if (n_connected_elements == 0)
-      geomechfile << 1 << "\t" << -1 << std::endl;
+      out << 1 << "\t" << -1 << std::endl;
     else
     {
-      geomechfile << n_connected_elements << "\t";
+      out << n_connected_elements << "\t";
       for (const std::size_t ielement : flow_cells)
-        geomechfile << ielement + 1 << "\t";
-      geomechfile << std::endl;
+        out << ielement + 1 << "\t";
+      out << std::endl;
     }
   }
-  geomechfile << "/\n\n";
+  out << "/\n\n";
 
   // Face data
-  save_face_geometry_(geomechfile, grid);
+  save_face_geometry_(out, grid);
 
-  // std::cout << "writing face-cell connection" << std::endl;
-  // geomechfile << "GMFACE_GMCELLS" << std::endl;
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  // {
+  // map faces to cells
+  out << "GMFACE_GMCELLS" << std::endl;
+  for (auto face=grid.begin_active_faces(); face!=grid.end_active_faces(); ++face)
+  {
   //   if (data.is_fracture(face.marker()))  // timur want to retain neighbors of master frac face
   //   {
   //     if (face.index() == face.master_index())
@@ -204,22 +204,22 @@ void OutputDataGPRS::save_geometry_() const
   //       }
   //       const auto & neighbors = it_frac_face->second.neighbor_cells;
 
-  //       geomechfile << neighbors.size() << "\t";
+  //       out << neighbors.size() << "\t";
   //       for (const auto & neighbor : neighbors)
-  //         geomechfile << neighbor + 1 << "\t";
-  //       geomechfile << std::endl;
+  //         out << neighbor + 1 << "\t";
+  //       out << std::endl;
   //     }
   //   }
   //   else
   //   {
-  //     const auto & neighbors = face.neighbors();
-  //     geomechfile << neighbors.size() << "\t";
-  //     for (const auto & neighbor : neighbors)
-  //       geomechfile << neighbor + 1 << "\t";
-  //     geomechfile << std::endl;
+      const std::vector<const mesh::Cell*> neighbors = face->neighbors();
+      out << neighbors.size() << "\t";
+      for (const mesh::Cell* neighbor : neighbors)
+        out << _data.mech_cell_numbering->cell_dof(neighbor->index()) + 1 << "\t";
+      out << "\n";
   //   }
-  // }
-  // geomechfile << "/" << std::endl << std::endl;
+  }
+  out << "/\n\n";
 
 }
 
@@ -458,7 +458,7 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
       // j, k1:k2 open sat_table_number
       out << "1\t1\t1\tOPEN\t1*\t";
       out << well.indices[i] * transmissibility_conversion_factor << "\t";
-      out << 2*well.radius << "\t";
+      out << 2*well.radius << "\t";  // adgprs needs well diameter
       out << "/" << std::endl;
     }
   }
