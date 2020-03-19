@@ -38,9 +38,18 @@ void BoundaryConditionManager::build_boundary_conditions_()
 void BoundaryConditionManager::create_dirichlet_data_()
 {
   for (size_t v=0; v<_node_to_config.size(); ++v)
-  {
-   
-  }
+    if ( !_node_to_config[v].empty() )
+    {
+      for (const size_t iconf : _node_to_config[v])
+        for (std::size_t i=0; i<3; ++i)
+        {
+          if ( _face_config[iconf].value[i]  != BCConfig::nan)
+          {
+            _data.dirichlet_indices[i].push_back(v);
+            _data.dirichlet_values[i].push_back( _face_config[iconf].value[i] );
+          }
+        }
+    }
 }
 
 void BoundaryConditionManager::process_dirichlet_face_(const mesh::Face & face, const size_t config_index)

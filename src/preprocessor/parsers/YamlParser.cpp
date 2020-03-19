@@ -403,7 +403,7 @@ void YamlParser::bc_face(const YAML::Node & node,
       for (std::size_t i=0; i<3; ++i)
       {
         if (str_values[i] == "nan")
-          conf.value[i] = config.nan;
+          conf.value[i] = BCConfig::nan;
         else
           conf.value[i] = std::atof(str_values[i].c_str());
       }
@@ -455,7 +455,7 @@ void YamlParser::bc_node(const YAML::Node & node, BCNodeConfig & conf)
       for (std::size_t i=0; i<3; ++i)
       {
         if (str_values[i] == "nan")
-          conf.value[i] = config.nan;
+          conf.value[i] = BCConfig::nan;
         else
           conf.value[i] = std::atof(str_values[i].c_str());
       }

@@ -44,6 +44,8 @@ public:
   void saveEmbeddedFractureProperties(const std::string file_name);
   // save dirichlet and neumann boundary conditions for geomechanics
   void save_geomechanics_boundary_conditions_() const;
+  void save_dirichlet_component_vertices(const size_t comp, const std::string comp_name,
+                                         std::ofstream & out) const;
   void saveDiscreteFractureProperties(const std::string file_name);
   void saveWells(const std::string file_name) const;
   void saveFlowMultiScaleData(const std::string file_name);

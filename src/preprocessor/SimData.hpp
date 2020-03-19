@@ -71,7 +71,8 @@ struct SimData
   // ----------------------- Boundary conditions ------------ //
   std::vector<size_t> neumann_face_indices;  // indices of neumann faces
   std::vector<angem::Point<3,double>> neumann_face_traction;  // values of neuman bc's
-  std::vector<size_t> dirichlet_indices_x, dirichlet_indices_y, dirichlet_indices_z;
+  std::array<std::vector<size_t>, 3> dirichlet_indices;       // indices of dirichlet vertices
+  std::array<std::vector<double>, 3> dirichlet_values;        // dirichlet values in vertices
   // ----------------------- Multiscale ------------ //
   multiscale::MultiScaleOutputData ms_mech_data;
   // ----------------------- Other ---------------------- //

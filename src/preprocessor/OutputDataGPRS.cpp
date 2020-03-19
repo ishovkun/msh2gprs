@@ -321,123 +321,44 @@ void OutputDataGPRS::saveEmbeddedFractureProperties(const std::string file_name)
 void OutputDataGPRS::save_geomechanics_boundary_conditions_() const
 {
   const std::string file_name = _output_path + "/" + _config.bcond_file;
-  std::cout << "save mech boundary conditions: " << file_name << std::endl;
+  std::cout << "saving " << file_name << std::endl;
 
   std::ofstream out(file_name);
+  // save dirichlet BC's
+  if ( !_data.dirichlet_indices[0].empty() )
+    save_dirichlet_component_vertices(0, "X", out);
+  if ( !_data.dirichlet_indices[1].empty() )
+    save_dirichlet_component_vertices(1, "Y", out);
+  if ( !_data.dirichlet_indices[2].empty() )
+    save_dirichlet_component_vertices(2, "Z", out);
 
-  // /* this chunk of code find dirichlet nodes
-  //  * Algorithm:
-  //  * 1. First add all Dirichlet nodes specified by the user
-  //  * to the set
-  //  * 2. loop Dirichlet faces.
-  //  * loop nodes withing dirichlet faces
-  //  * add node as a part of dirichlet face
-  //  */
-  // const int dim = 3;
-  // std::vector<std::unordered_set<std::size_t>> setDisp(dim);
-  // std::vector<std::vector<std::size_t>> vv_disp_node_ind(dim);
-  // std::vector<std::vector<double>> vv_disp_node_values(dim);
+  if ( !_data.neumann_face_indices.empty() )
+  {
+    out << "GMFACE_TRACTION_TXYZ" << "\n";
 
-  // // search tolerance
-  // const double tol = data.config.node_search_tolerance;
-
-  // for (std::size_t ivert=0; ivert<grid.n_vertices(); ++ivert)
-  // {
-  //   const auto & vertex = grid.vertex(ivert);
-
-  //   for (const auto & bc_node : data.config.bc_nodes)
-  //   {
-  //     if (bc_node.coord.distance(vertex) < tol)
-  //     {
-  //       for (int d=0; d<dim; ++d)
-  //         if (bc_node.value[d] != data.config.nan)
-  //         {
-  //           setDisp[d].insert(ivert);
-  //           vv_disp_node_values[d].push_back(bc_node.value[d]);
-  //           vv_disp_node_ind[d].push_back(ivert);
-  //         }
-  //     }
-  //   }
-  // }
-
-  // if ( data.n_dirichlet_faces > 0 )
-  // for (auto face=grid.begin_faces(); face!=grid.end_faces(); ++face)
-  //     if (data.is_boundary(face->marker()))
-  //     {
-  //       const auto facet_it = data.boundary_faces.find(face->master_index());
-  //       if (facet_it != data.boundary_faces.end())
-  //       {
-  //         if (facet_it->second.ntype == 1) // dirichlet
-  //           for (std::size_t d=0; d<dim; ++d)
-  //             if (facet_it->second.condition[d] != data.config.nan)
-  //               for (const auto ivertex : face->vertices())
-  //               {
-  //                 const auto ret = setDisp[d].insert(ivertex);
-  //                 // check if already in set
-  //                 if(ret.second)
-  //                 {
-  //                   vv_disp_node_ind[d].push_back(ivertex);
-  //                   vv_disp_node_values[d].push_back(facet_it->second.condition[d]);
-  //                 } // end if vertex is new
-  //               }
-  //       }
-  //       else  // should not happen
-  //       {
-  //         std::cout << "face " << face->index()
-  //                   << " is not a boundary face!! Aborting!!!"
-  //                   << std::endl;
-  //         abort();
-  //       }
-  //     }
-
-  // setDisp.clear();
-
-  // geomechfile.open(file_name.c_str());
-
-  // // save dirichlet faces
-  // for (std::size_t j=0; j<dim; ++j)
-  //   if (vv_disp_node_ind[j].size() > 0)
-  //   {
-  //     std::cout << "write all Dirichlet nodes" << std::endl;
-  //     switch (j)
-  //     {
-  //       case 0:
-  //         geomechfile << "GMNODE_BCDISPX" << std::endl;
-  //         break;
-  //       case 1:
-  //         geomechfile << "GMNODE_BCDISPY" << std::endl;
-  //         break;
-  //       case 2:
-  //         geomechfile << "GMNODE_BCDISPZ" << std::endl;
-  //         break;
-  //     }
-
-  //     for(std::size_t i = 0; i < vv_disp_node_ind[j].size(); ++i)
-  //     {
-  //       geomechfile << vv_disp_node_ind[j][i] + 1 << "\t";
-  //       geomechfile << vv_disp_node_values[j][i] << std::endl;
-  //     }
-  //     geomechfile << "/" << std::endl << std::endl;
-  //   }
-
-  // if ( data.n_neumann_faces > 0 )
-  // {
-  //   std::cout << "write all Neumann faces" << std::endl;
-
-  //   geomechfile << "GMFACE_TRACTION_TXYZ" << std::endl;
-  //   for (const auto & facet_it : data.boundary_faces)
-  //     if (facet_it.second.ntype == 2)  // neumann
-  //     {
-  //       geomechfile << facet_it.second.nface + 1 << "\t";
-  //       geomechfile << facet_it.second.condition << std::endl;
-  //     }
-
-  //   geomechfile << "/" << std::endl << std::endl;
-  // }
+    for (std::size_t i=0; i<_data.neumann_face_indices.size(); ++i)
+    {
+      out << _data.neumann_face_indices[i] + 1 << "\t";
+      out << _data.neumann_face_traction[i] << "\n";
+    }
+    out << "/\n\n";
+  }
 
   out.close();
 }
 
+void OutputDataGPRS::save_dirichlet_component_vertices(const size_t comp,
+                                                       const std::string comp_name,
+                                                       std::ofstream & out) const
+{
+  out << "GMNODE_BCDISP" << comp_name << "\n";
+  for (std::size_t i=0; i<_data.dirichlet_indices[comp].size(); ++i)
+  {
+    out << _data.dirichlet_indices[comp][i] + 1 << "\t";
+    out << _data.dirichlet_values[comp][i] << "\n";
+  }
+  out << "/\n\n";
+}
 
 void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
 {
@@ -608,7 +529,8 @@ void OutputDataGPRS::save_geomechanics_data_() const
   save_fem_data_();
 
   save_geomechanics_keywords_();
-  std::cout << "done saving kwds" << std::endl;
+
+  save_geomechanics_boundary_conditions_();
 }
 
 void OutputDataGPRS::save_cell_geometry_(std::ofstream & out, const mesh::Mesh & grid) const

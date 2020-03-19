@@ -56,6 +56,8 @@ struct BCConfig
   int label;
   BoundaryConditionType type;
   angem::Point<3,double> value;
+  // undefined boundary value (do not impose)
+  static constexpr double nan = std::numeric_limits<double>::max();
 };
 
 
@@ -139,7 +141,7 @@ struct GPRSOutputConfig
   std::string mechanics_kwd_file    = "gm_keywords.txt";
   std::string efrac_file            = "gm_SDA.txt";
   std::string discrete_frac_file    = "gm_DFM.txt";
-  std::string bcond_file            = "bcond.txt";
+  std::string bcond_file            = "gm_bcond.txt";
   std::string wells_file            = "wells.txt";
   std::string mech_ms_file          = "ms_mech.txt";
   std::string flow_ms_file          = "ms_flow.txt";
@@ -164,9 +166,6 @@ struct PreprocessorConfig
   CellPropertyConfig cell_properties;
   // vector of cell properties for each subdomain
   std::vector<DomainConfig>            domains;
-  // special keywords needed for computing fluid data
-  // (they are not outputted)
-  static constexpr double nan = std::numeric_limits<double>::max();
   double node_search_tolerance = 1e-10;
   double frac_cell_elinination_factor = 0.2;
 
