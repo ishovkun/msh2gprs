@@ -151,9 +151,13 @@ void OutputDataGPRS::save_geometry_() const
   out << "GMDIMS" << "\n";
 
   const auto & grid = _data.geomechanics_grid;
+  size_t n_active_faces = 0;
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+    n_active_faces++;
+
   out << grid.n_vertices() << "\t"
-              << grid.n_cells() << "\t"
-              << grid.n_faces();
+              << grid.n_active_cells() << "\t"
+              << n_active_faces;
   out << "/" << "\n\n";
 
   // write vertex coordinates
@@ -233,12 +237,12 @@ void OutputDataGPRS::save_geomechanics_keywords_() const
   out.open(file_name.c_str());
 
   const auto & grid = _data.geomechanics_grid;
-  size_t cnt = 0;
   for (std::size_t ivar=0; ivar<_data.output_mech_properties.size(); ++ivar)
   {
     const size_t prop_key = _data.output_mech_properties[ivar];
     const std::string keyword = _data.property_names[prop_key];
     out << keyword << "\n";
+    size_t cnt = 0;
     for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     {
       const std::size_t icell = cell->index();
@@ -488,7 +492,7 @@ void OutputDataGPRS::saveMechMultiScaleData(const std::string file_name)
   //   out << ms.partitioning[i] << " ";
   // }
   // out << "/" << endl << endl;
-
+
   // // save support
   // out << "GMMSSUPPORT ";
   // for (std::size_t i=0; i < ms.n_coarse; ++i)
