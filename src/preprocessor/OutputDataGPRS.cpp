@@ -666,7 +666,6 @@ void OutputDataGPRS::save_fem_data_() const
   }
   out << "/\t\t";
 
-
   // save face data
   // std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces
 

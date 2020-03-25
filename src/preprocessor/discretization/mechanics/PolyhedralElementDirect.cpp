@@ -40,8 +40,11 @@ void PolyhedralElementDirect::build_()
   // identify the locations of the gauss points for the polyhedral element
   find_integration_points_();
   // compute shape function values, gradients, and weights in the
-  // integration points
-  compute_fe_quantities_();
+  // integration points in cells
+  compute_cell_fe_quantities_();
+  // compute shape function values, gradients, and weights in the
+  // integration points in faces
+  compute_face_fe_quantities_();
 }
 
 void PolyhedralElementDirect::compute_vertex_mapping_()
@@ -444,19 +447,18 @@ void PolyhedralElementDirect::debug_save_shape_functions_(const std::string fnam
   out.close();
 }
 
-void PolyhedralElementDirect::compute_fe_quantities_()
+void PolyhedralElementDirect::compute_cell_fe_quantities_()
 {
   // allocate vector of point data
   const size_t n_parents = _basis_functions.size();
-  _cell_data.points.resize(_integration_points.size());
-  // 4 is a gmsh tetra
+  _cell_data.points.resize(_cell_gauss_points.size());
   const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
   FeValues fe_values( element_type );
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
-    for (size_t q=0; q<_integration_points.size(); ++q)
-      if ( cell->polyhedron()->point_inside(_integration_points[q]) )
+    for (size_t q=0; q<_cell_gauss_points.size(); ++q)  //
+      if ( cell->polyhedron()->point_inside(_cell_gauss_points[q]) )
       {
-        std::vector<angem::Point<3,double>> points = {_integration_points[q]};
+        std::vector<angem::Point<3,double>> points = {_cell_gauss_points[q]};
         const std::vector<size_t> & cell_verts = cell->vertices();
         fe_values.update(cell->index(), points);
         const size_t nv = cell->vertices().size();
@@ -475,7 +477,7 @@ void PolyhedralElementDirect::compute_fe_quantities_()
                                          _basis_functions[parent_vertex][cell_verts[vertex]];
           }
         }
-        data.weight = 1.0 / static_cast<double>( _integration_points.size() );
+        data.weight = 1.0 / static_cast<double>( _cell_gauss_points.size() );
         _cell_data.points.push_back( std::move(data) );
       }
 }
@@ -487,7 +489,15 @@ void PolyhedralElementDirect::find_integration_points_()
   std::vector<Point> parent_vertices = polyhedron->get_points();
   parent_vertices.push_back(_parent_cell.center());
   for (const auto & face : polyhedron->get_faces())
-    _integration_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
+    _cell_gauss_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
+
+  /* Loop parent faces, split each face into triangles, and find their centers */
+  for (const auto & face_poly : polyhedron->get_face_polygons())
+  {
+    std::vector<angem::Point<3,double>> face_gauss_points =
+        split_into_triangles_and_compute_center_(face_poly);
+    _face_gauss_points.push_back( face_gauss_points );
+  }
 }
 
 Point PolyhedralElementDirect::create_pyramid_and_compute_center_(const std::vector<size_t> & face,
@@ -508,6 +518,57 @@ Point PolyhedralElementDirect::create_pyramid_and_compute_center_(const std::vec
 
   angem::Polyhedron<double> pyramid(vertices, pyramid_faces);
   return pyramid.center();
+}
+
+std::vector<angem::Point<3,double>>
+PolyhedralElementDirect::split_into_triangles_and_compute_center_(const angem::Polygon<double> & poly)
+{
+  const angem::Point<3,double> center = poly.center();
+  const std::vector<angem::Point<3,double>> & vertices = poly.get_points();
+  std::vector<angem::Point<3,double>> result;
+  for (size_t i=0; i<vertices.size(); ++i)
+  {
+    size_t v1, v2;
+    if ( i <  vertices.size() - 1)
+    {
+      v2 = i + 1;
+    }
+    else
+    {
+      v2 = 0;
+    }
+
+    v1 = i;
+
+    std::vector<angem::Point<3,double>> triangle_vertices =
+        {vertices[v1], vertices[v2], center};
+    angem::Polygon<double> triangle(triangle_vertices);
+    result.push_back( triangle.center() );
+  }
+  return result;
+}
+
+void PolyhedralElementDirect::compute_face_fe_quantities_()
+{
+  _face_data.points.resize( _face_gauss_points.size() );
+  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);
+  FeValues fe_values( element_type );
+  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+    if ( face->marker() > 0 )  // only marked boundary faces
+    {
+      const size_t parent_face = face->marker() - 1;
+      const auto face_poly = face->polygon();
+      const auto & face_qpoints = _face_gauss_points[parent_face];
+      for (size_t q = 0; q < face_qpoints.size(); ++q) //
+        if (face_poly.point_inside(face_qpoints[q]))
+        {
+          std::vector<angem::Point<3,double>> points = {face_qpoints[q]};
+          const std::vector<size_t> & face_verts = face->vertices();
+          // fe_values.update(cell->index(), points);
+          assert( false && "Finish code for face shape extraction" );
+        }
+    }
+
 }
 
 }  // end namespace discretization

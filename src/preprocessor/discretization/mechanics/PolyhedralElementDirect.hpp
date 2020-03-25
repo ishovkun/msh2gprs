@@ -70,8 +70,11 @@ class PolyhedralElementDirect
   // identify the locations of the gauss points for the polyhedral element
   void find_integration_points_();
   // compute shape function values, gradients, and weights in the
-  // integration points
-  void compute_fe_quantities_();
+  // integration points in cells
+  void compute_cell_fe_quantities_();
+  // compute shape function values, gradients, and weights in the
+  // integration points in faces
+  void compute_face_fe_quantities_();
   // purely debugging purposes
   void debug_save_boundary_face_solution(const std::string fname) const;
   // purely debugging purposes
@@ -81,6 +84,16 @@ class PolyhedralElementDirect
   angem::Point<3,double>
   create_pyramid_and_compute_center_(const std::vector<size_t> & face,
                                      const std::vector<angem::Point<3,double>>  & vertices) const;
+
+  /**
+   * Split a polygon into triangles, and compute their centers
+   * Parameters:
+   * \param[in] poly : a polyhedron(represents a face)
+   * Returns:
+   * vector of triangle center coordinates
+   */
+  std::vector<angem::Point<3,double>>
+  split_into_triangles_and_compute_center_(const angem::Polygon<double> & poly);
 
  private:
   const mesh::Cell & _parent_cell;                             // reference to the discretized cell
@@ -92,7 +105,8 @@ class PolyhedralElementDirect
   std::vector<std::vector<double>> _support_boundary_values;   // face dirichlet values for each parent vertex
   Eigen::SparseMatrix<double,Eigen::ColMajor> _system_matrix;  // 3d cell system matrix with no BC's
   std::vector<Eigen::VectorXd> _basis_functions;               // numerical shape function values
-  std::vector<angem::Point<3,double>> _integration_points;     // FEM gauss points
+  std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
+  std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
   FiniteElementData _cell_data;                                // FEM values and gradients in cell integration points
   FiniteElementData _face_data;                                // FEM values and gradients in face integration points
 };

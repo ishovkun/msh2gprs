@@ -372,7 +372,7 @@ void DFEMElement::find_integration_points_()
   std::vector<Point> parent_vertices = polyhedron->get_points();
   parent_vertices.push_back(_cell.center());
   for (const auto & face : polyhedron->get_faces())
-    _integration_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
+    _cell_gauss_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
 }
 
 Point DFEMElement::create_pyramid_and_compute_center_(const std::vector<size_t> & face,
@@ -399,14 +399,14 @@ void DFEMElement::compute_fe_quantities_()
 {
   // allocate vector of point data
   const size_t n_parents = _basis_functions.size();
-  _cell_data.points.resize(_integration_points.size());
+  _cell_data.points.resize(_cell_gauss_points.size());
   // 4 is a gmsh tetra
   FeValues fe_values( 4, _element_grid.n_cells() );
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
-    for (size_t q=0; q<_integration_points.size(); ++q)
-      if ( cell->polyhedron()->point_inside(_integration_points[q]) )
+    for (size_t q=0; q<_cell_gauss_points.size(); ++q)
+      if ( cell->polyhedron()->point_inside(_cell_gauss_points[q]) )
       {
-        std::vector<angem::Point<3,double>> points = {_integration_points[q]};
+        std::vector<angem::Point<3,double>> points = {_cell_gauss_points[q]};
         const std::vector<size_t> & cell_verts = cell->vertices();
         fe_values.update(cell->index(), points);
         const size_t nv = cell->vertices().size();
@@ -425,7 +425,7 @@ void DFEMElement::compute_fe_quantities_()
                                          _basis_functions[parent_vertex][cell_verts[vertex]];
           }
         }
-        data.weight = 1.0 / static_cast<double>( _integration_points.size() );
+        data.weight = 1.0 / static_cast<double>( _cell_gauss_points.size() );
         _cell_data.points.push_back( std::move(data) );
       }
 }

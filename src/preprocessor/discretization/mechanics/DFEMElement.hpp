@@ -83,7 +83,7 @@ class DFEMElement
   std::vector<std::vector<size_t>> _support_edge_vertices;
   std::vector<std::vector<double>> _support_edge_values;
   // dfem gauss points
-  std::vector<angem::Point<3,double>> _integration_points;
+  std::vector<angem::Point<3,double>> _cell_gauss_points;
   FiniteElementData _cell_data;
   FiniteElementData _face_data;
 };
