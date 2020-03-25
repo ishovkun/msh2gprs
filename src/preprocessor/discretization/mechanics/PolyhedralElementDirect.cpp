@@ -551,23 +551,36 @@ PolyhedralElementDirect::split_into_triangles_and_compute_center_(const angem::P
 void PolyhedralElementDirect::compute_face_fe_quantities_()
 {
   _face_data.points.resize( _face_gauss_points.size() );
-  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);
-  FeValues fe_values( element_type );
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
-    if ( face->marker() > 0 )  // only marked boundary faces
+  // const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);
+
+  const size_t nfaces = _parent_cell.faces().size();
+  for (size_t iface=0; iface<nfaces; ++iface)
+  {
+    const int gmsh_plane_marker = iface + 1;
+    // FeValues fe_values( element_type, gmsh_plane_marker );
+
+    // get imformation on the elements we're gonna be looping over
+    // std::vector<size_t> element_node_tags;
+    // std::vector<size_t> tags;
+    // gmsh::model::mesh::getElementsByType( element_type, tags, element_node_tags, gmsh_plane_marker );
+    // const size_t nv = api::get_n_vertices(element_type);
+    const size_t nq = _face_gauss_points[iface].size();
+    for (size_t q=0; q<nq; ++q)
     {
-      const size_t parent_face = face->marker() - 1;
-      const auto face_poly = face->polygon();
-      const auto & face_qpoints = _face_gauss_points[parent_face];
-      for (size_t q = 0; q < face_qpoints.size(); ++q) //
-        if (face_poly.point_inside(face_qpoints[q]))
-        {
-          std::vector<angem::Point<3,double>> points = {face_qpoints[q]};
-          const std::vector<size_t> & face_verts = face->vertices();
-          // fe_values.update(cell->index(), points);
-          assert( false && "Finish code for face shape extraction" );
-        }
+      const auto & coord = _face_gauss_points[iface][q];
+      size_t gmsh_face_tag;
+      std::vector<std::size_t> node_tags;
+      int element_type;
+      double u, v, w;
+      gmsh::model::mesh::getElementByCoordinates(coord.x(), coord.y(), coord.z(),
+                                                 gmsh_face_tag, element_type,
+                                                 node_tags, u, v, w, /*dim=*/ 2,
+                                                 /*strict =*/ false);
+      assert ( false && "finish writing code for face shape extraction" );
     }
+
+  }
+
 
 }
 
