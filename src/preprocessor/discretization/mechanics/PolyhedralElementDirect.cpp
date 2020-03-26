@@ -559,11 +559,6 @@ void PolyhedralElementDirect::compute_face_fe_quantities_()
     const int gmsh_plane_marker = iface + 1;
     // FeValues fe_values( element_type, gmsh_plane_marker );
 
-    // get imformation on the elements we're gonna be looping over
-    // std::vector<size_t> element_node_tags;
-    // std::vector<size_t> tags;
-    // gmsh::model::mesh::getElementsByType( element_type, tags, element_node_tags, gmsh_plane_marker );
-    // const size_t nv = api::get_n_vertices(element_type);
     const size_t nq = _face_gauss_points[iface].size();
     for (size_t q=0; q<nq; ++q)
     {
@@ -576,6 +571,8 @@ void PolyhedralElementDirect::compute_face_fe_quantities_()
                                                  gmsh_face_tag, element_type,
                                                  node_tags, u, v, w, /*dim=*/ 2,
                                                  /*strict =*/ false);
+      std::cout << "element_type = " << element_type << std::endl;
+      std::cout << "gmsh_face_tag = " << gmsh_face_tag << std::endl;
       assert ( false && "finish writing code for face shape extraction" );
     }
 
