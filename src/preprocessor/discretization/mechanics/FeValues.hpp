@@ -106,6 +106,16 @@ class FeValues
   // compute the gradients of shape fucntions in qpoint in master element
   std::array<Point,N_ELEMENT_VERTICES<vtk_id>> compute_ref_gradient_(const size_t qpoint) const;
 
+  /**
+   * Map from real coordinates xyz to local coordinates in the master element uvw
+   */
+   Point map_real_to_local_(const Point & p) const;
+
+  /**
+   * Get vertex coordinate
+   */
+  const Point & vertex_(const size_t i) const {return _grid.vertex(_element_vertices[i]);}
+
   const mesh::Mesh & _grid;
   std::vector<Point> _qpoints;
   std::vector<std::array<double,N_ELEMENT_VERTICES<vtk_id>>> _shape_values;
@@ -246,6 +256,7 @@ std::array<Point,N_ELEMENT_VERTICES<vtk_id>> FeValues<vtk_id>::compute_ref_gradi
     ref_grad[v] = eval_derivative_(_qpoints[q], v);
   return ref_grad;
 }
+
 
 }  // end namespace discretization
 

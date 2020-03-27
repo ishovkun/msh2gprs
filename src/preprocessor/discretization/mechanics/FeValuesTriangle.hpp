@@ -51,4 +51,39 @@ std::vector<double> FeValues<VTK_ID::TriangleID>::get_master_integration_weights
   return {1.0};
 }
 
+template <>
+Point FeValues<VTK_ID::TriangleID>::map_real_to_local_(const Point & xyz) const
+{
+  /**
+   * This code is copied from gmsh and sligtly modified to adapt to the
+   * angem Point class. */
+  const Point O = {vertex_(0).x(), vertex_(0).y(), vertex_(0).z()};
+  const Point d = {xyz[0] - O[0], xyz[1] - O[1], xyz[2] - O[2]};
+  const Point d1 = {vertex_(1).x() - O[0], vertex_(1).y() - O[1], vertex_(1).z() - O[2]};
+  const Point d2 = {vertex_(2).x() - O[0], vertex_(2).y() - O[1], vertex_(2).z() - O[2]};
+
+  const double Jxy = d1[0] * d2[1] - d1[1] * d2[0];
+  const double Jxz = d1[0] * d2[2] - d1[2] * d2[0];
+  const double Jyz = d1[1] * d2[2] - d1[2] * d2[1];
+
+  Point uvw;
+
+  if((std::abs(Jxy) > std::abs(Jxz)) && (std::abs(Jxy) > std::abs(Jyz))) {
+    uvw[0] = (d[0] * d2[1] - d[1] * d2[0]) / Jxy;
+    uvw[1] = (d[1] * d1[0] - d[0] * d1[1]) / Jxy;
+  }
+  else if(std::abs(Jxz) > std::abs(Jyz)) {
+    uvw[0] = (d[0] * d2[2] - d[2] * d2[0]) / Jxz;
+    uvw[1] = (d[2] * d1[0] - d[0] * d1[2]) / Jxz;
+  }
+  else {
+    uvw[0] = (d[1] * d2[2] - d[2] * d2[1]) / Jyz;
+    uvw[1] = (d[2] * d1[1] - d[1] * d1[2]) / Jyz;
+  }
+  uvw[2] = 0.0;
+
+  return uvw;
+}
+
+
 }  // end namespace discretization
