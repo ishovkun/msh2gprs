@@ -55,6 +55,24 @@ std::vector<double> FeValues<VTK_ID::TetrahedronID>::get_master_integration_weig
   return {1.0};
 }
 
+template <>
+Point FeValues<VTK_ID::TetrahedronID>::map_real_to_local_(const Point & xyz) const
+{
+  const angem::Tensor2<3,double> mat = {
+    vertex_(1).x() - vertex_(0).x(),
+    vertex_(2).x() - vertex_(0).x(),
+    vertex_(3).x() - vertex_(0).x(),
+    vertex_(1).y() - vertex_(0).y(),
+    vertex_(2).y() - vertex_(0).y(),
+    vertex_(3).y() - vertex_(0).y(),
+    vertex_(1).z() - vertex_(0).z(),
+    vertex_(2).z() - vertex_(0).z(),
+    vertex_(3).z() - vertex_(0).z()
+  };
+  const angem::Tensor2<3,double> mat_inv = invert(mat);
+  return mat_inv * xyz;
+}
+
 
 
 }  // end namespace discretization

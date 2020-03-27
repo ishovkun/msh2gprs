@@ -149,9 +149,7 @@ void FeValues<vtk_id>::update(const mesh::Cell & cell, const angem::Point<3,doub
                 "This function only exists for 3D elements and is only implemented for tetras");
   _element_vertices = cell.vertices();
   _weights = {1.0};
-  _qpoints.resize(1);
-  _qpoints[0] = point;
-  assert(false && "Implement mapping of real coordinates into reference coordinated");
+  _qpoints = {map_real_to_local_(point)};
   update_();
 }
 
