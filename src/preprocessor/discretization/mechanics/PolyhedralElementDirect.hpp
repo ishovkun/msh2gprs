@@ -44,7 +44,8 @@ class PolyhedralElementDirect
   // build system matrix for the face poisson problem
   void build_face_system_matrix_(const size_t parent_face,
                                  Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
-                                 const std::vector<size_t> & face_indices);
+                                 const std::vector<size_t> & face_indices,
+                                 const DoFNumbering & vertex_dofs);
   // get the relation between gmsh vertex ids and grid vertices
   void compute_vertex_mapping_();
   // impose boundary conditions on a poisson system for faces (to get bc's)

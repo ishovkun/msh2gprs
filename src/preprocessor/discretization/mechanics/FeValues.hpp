@@ -72,6 +72,11 @@ class FeValues
    */
   double JxW(const size_t qpoint) const;
 
+  /**
+   * Number of integration points in the quadrature rule.
+   */
+  size_t n_integration_points() const { return 1; }
+
  protected:
   /**
    * Given element vertices and integration points, update shape values,
