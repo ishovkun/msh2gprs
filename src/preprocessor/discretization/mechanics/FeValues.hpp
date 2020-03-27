@@ -29,13 +29,37 @@ class FeValues
    * during the loop
    */
   void update(const mesh::Cell & cell);
+  /**
+   * Update the needed quantities in the cell in the gived integration point.
+   * The point coordinate is the real (not reference) coordinates of the integration point.
+   */
   void update(const mesh::Cell & cell, const angem::Point<3,double> & point);
   void update(const mesh::Face & face);
   void update(const mesh::Face & cell, const angem::Point<3,double> & point);
   /**
    * Computes a vector of integration points in the master element
    */
-   std::vector<Point> get_master_integration_points() const;
+  std::vector<Point> get_master_integration_points() const;
+
+  /**
+   * Return the value of the shape function indexed by shape_index in the
+   * qpoint integration point in the current element.
+   * NOTE: must call update() before calling this function.
+   */
+  double value(const size_t shape_index, const size_t qpoint) const;
+  /**
+   * Return the gradient of the shape function indexed by shape_index in the
+   * qpoint integration point in the current element.
+   * NOTE: must call update() before calling this function.
+   */
+  Point grad(const size_t shape_index, const size_t qpoint) const;
+  /**
+   * Return the JxW value at the integration point indexed by qpoint.
+   * JxW is a product of the determinant of the transformation jacobian by
+   * the weight of the integration point.
+   * NOTE: must call update() before calling this function.
+   */
+  double JxW(const size_t qpoint) const;
 
  protected:
   /**
@@ -130,7 +154,7 @@ angem::Tensor2<3, double> FeValues<vtk_id>::compute_jacobian_()
   for (std::size_t i=0; i<3; ++i)
     for (std::size_t j=0; j<3; ++j)
       for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
-        J( j, i ) += ref_grad_center[v][j] * _grid.vertex(v)[i];
+        J( j, i ) += ref_grad_center[v][j] * _grid.vertex(_element_vertices[v])[i];
   return J;
 }
 
@@ -145,6 +169,7 @@ void FeValues<vtk_id>::update_()
 
   // compute transformation jacobian
   angem::Tensor2<3, double> dx_du = compute_jacobian_();
+  std::cout << "dx_du_my = " << dx_du << std::endl;
   // compute the determinant of transformation jacobian
   _determinant = det(dx_du);
   if ( _determinant <= 0 )
@@ -168,7 +193,23 @@ void FeValues<vtk_id>::update_()
           _shape_grads[q][vertex][i] += ref_grads[q][vertex][j] * du_dx(j, i);
 }
 
+template<VTK_ID vtk_id>
+double FeValues<vtk_id>::value(const size_t shape_index, const size_t qpoint) const
+{
+  assert( qpoint < _qpoints.size() && "qpoint too large" );
+  assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
+  return _shape_values[qpoint][shape_index];
+}
+
+template<VTK_ID vtk_id>
+Point FeValues<vtk_id>::grad(const size_t shape_index, const size_t qpoint) const
+{
+  assert( qpoint < _qpoints.size() && "qpoint too large" );
+  assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
+  return _shape_grads[qpoint][shape_index];
+}
 
 }  // end namespace discretization
 
 #include "FeValuesTriangle.hpp"
+#include "FeValuesTetra.hpp"

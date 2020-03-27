@@ -45,7 +45,8 @@ Point FeValues<VTK_ID::TetrahedronID>::eval_derivative_(const Point & point, con
 template <>
 std::vector<Point> FeValues<VTK_ID::TetrahedronID>::get_master_integration_points() const
 {
-  return {Point(0.125, 0.125, 0.125)};
+  // return {Point(0.125, 0.125, 0.125)};
+  return {Point(0.25, 0.25, 0.25)};
 }
 
 

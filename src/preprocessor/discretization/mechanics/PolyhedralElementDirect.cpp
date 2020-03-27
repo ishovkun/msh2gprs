@@ -3,6 +3,7 @@
 #include "EdgeComparison.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
 #include "gmsh_interface/FeValues.hpp"
+#include "FeValues.hpp"
 #include "EdgeComparison.hpp"
 #include "VTKWriter.hpp"
 #include "FEMFaceDoFManager.hpp"
@@ -12,7 +13,6 @@
 namespace discretization {
 
 using api = gprs_data::GmshInterface;
-using FeValues = gprs_data::FeValues;
 using Point = angem::Point<3,double>;
 const size_t UNMARKED = std::numeric_limits<size_t>::max();
 
@@ -27,6 +27,7 @@ void PolyhedralElementDirect::build_()
 {
   // triangulate the polyhedral element
   api::build_triangulation(_parent_cell, _element_grid);
+  debug_print_fe_values();
   // get the relation between gmsh vertex ids and grid vertices
   compute_vertex_mapping_();
   // solve problems on faces
@@ -46,6 +47,21 @@ void PolyhedralElementDirect::build_()
   // integration points in faces
   compute_face_fe_quantities_();
 }
+
+void PolyhedralElementDirect::debug_print_fe_values() const
+{
+  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
+  gprs_data::FeValues fe_values( element_type );
+  FeValues<angem::VTK_ID::TetrahedronID> fe_values1(_element_grid);
+  for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
+  {
+    fe_values.update(cell->index());
+    fe_values1.update(*cell);
+    exit(0);
+  }
+ 
+}
+
 
 void PolyhedralElementDirect::compute_vertex_mapping_()
 {
@@ -80,6 +96,7 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
         Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
     // fill system matrix
     build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
+    // build_face_system_matrix_(iface, face_system_matrix, face_domains[iface]);
     const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
     for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
     {
@@ -145,16 +162,31 @@ void PolyhedralElementDirect::build_cell_system_matrix_()
 
   // since we only build tetrahedral element mesh
   const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
-  FeValues fe_values( element_type );
+  gprs_data::FeValues fe_values( element_type );
+  FeValues<angem::VTK_ID::TetrahedronID> fe_values1(_element_grid);
+
 
   Eigen::MatrixXd cell_matrix(fe_values.n_vertices(), fe_values.n_vertices());
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
   {
     cell_matrix.setZero();
     fe_values.update(cell->index());
+    fe_values1.update(*cell);
 
     const std::vector<size_t> & cell_vertices = cell->vertices();
     const size_t nv = cell_vertices.size();
+
+    for (size_t i = 0; i < nv; ++i)
+    {
+    size_t q = 0;
+      std::cout << "i = " << i << std::endl;
+      // std::cout << "my = " << fe_values.value(i,q) << std::endl;
+      // std::cout << "their = " << fe_values1.value(i,q) << std::endl;
+      std::cout << "their " << fe_values.grad(i,q) << std::endl;
+      std::cout << "my " << fe_values1.grad(i,q) << std::endl;
+      std::cout << std::endl;
+    }
+    exit(0);
 
     // This assembles a local matrix for the laplace equation
     for (size_t q = 0; q < fe_values.n_q_points(); ++q)
@@ -185,7 +217,7 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
   const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);
   // NOTE: gmsh labels faces starting from 1, ergo iface + 1
   const int gmsh_plane_marker = iface + 1;
-  FeValues fe_values( element_type, gmsh_plane_marker );
+  gprs_data::FeValues fe_values( element_type, gmsh_plane_marker );
 
   // get imformation on the elements we're gonna be looping over
   std::vector<size_t> element_node_tags;
@@ -229,6 +261,20 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
       }
   }
 }
+
+void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face,
+                                                        Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
+                                                        const std::vector<size_t> & face_indices)
+{
+  FeValues<angem::VTK_ID::TriangleID> fe_values(_element_grid);
+
+  for (const size_t iface : face_indices)
+  {
+    const mesh::Face & face = _element_grid.face(iface);
+    fe_values.update(face);
+  }
+}
+
 
 
 std::vector<std::vector<size_t>> PolyhedralElementDirect::create_face_domains_()
@@ -453,7 +499,7 @@ void PolyhedralElementDirect::compute_cell_fe_quantities_()
   const size_t n_parents = _basis_functions.size();
   _cell_data.points.resize(_cell_gauss_points.size());
   const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
-  FeValues fe_values( element_type );
+  gprs_data::FeValues fe_values( element_type );
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
     for (size_t q=0; q<_cell_gauss_points.size(); ++q)  //
       if ( cell->polyhedron()->point_inside(_cell_gauss_points[q]) )
