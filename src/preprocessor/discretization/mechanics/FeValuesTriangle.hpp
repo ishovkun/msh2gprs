@@ -45,4 +45,10 @@ std::vector<Point> FeValues<VTK_ID::TriangleID>::get_master_integration_points()
   return {Point(0.33333, 0.33333, 0)};
 }
 
+template <>
+std::vector<double> FeValues<VTK_ID::TriangleID>::get_master_integration_weights() const
+{
+  return {1.0};
+}
+
 }  // end namespace discretization

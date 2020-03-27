@@ -25,8 +25,7 @@ class FeValues
   FeValues(const mesh::Mesh & grid);
   /**
    * Update the needed quantities in the cell.
-   * Use this method before using the fem quantities in the new cell
-   * during the loop
+   * Use this method before using the fem quantities in the new cell during the loop.
    */
   void update(const mesh::Cell & cell);
   /**
@@ -34,12 +33,24 @@ class FeValues
    * The point coordinate is the real (not reference) coordinates of the integration point.
    */
   void update(const mesh::Cell & cell, const angem::Point<3,double> & point);
+  /**
+   * Update the needed quantities in the face.
+   * Use this method before using the fem quantities in the new face during the loop.
+   */
   void update(const mesh::Face & face);
+  /**
+   * Update the needed quantities in the face in the gived integration point.
+   * The point coordinate is the real (not reference) coordinates of the integration point.
+   */
   void update(const mesh::Face & cell, const angem::Point<3,double> & point);
   /**
    * Computes a vector of integration points in the master element
    */
   std::vector<Point> get_master_integration_points() const;
+  /**
+   * Computes a vector of integration point weights in the master element
+   */
+  std::vector<double> get_master_integration_weights() const;
 
   /**
    * Return the value of the shape function indexed by shape_index in the
@@ -99,9 +110,9 @@ class FeValues
   std::vector<Point> _qpoints;
   std::vector<std::array<double,N_ELEMENT_VERTICES<vtk_id>>> _shape_values;
   std::vector<std::array<Point,N_ELEMENT_VERTICES<vtk_id>>> _shape_grads;
+  std::vector<double> _weights;
   std::vector<double> _determinants;
   std::vector<size_t> _element_vertices;
-  Point _element_center;
 };
 
 template<VTK_ID vtk_id>
@@ -116,8 +127,8 @@ void FeValues<vtk_id>::update(const mesh::Cell & cell)
   static_assert(vtk_id == VTK_ID::TetrahedronID,
                 "This function only exists for 3D elements and is only implemented for tetras");
   _element_vertices = cell.vertices();
-  _element_center = cell.center();
   _qpoints = get_master_integration_points();
+  _weights = get_master_integration_weights();
   update_();
 }
 
@@ -127,9 +138,10 @@ void FeValues<vtk_id>::update(const mesh::Cell & cell, const angem::Point<3,doub
   static_assert(vtk_id == VTK_ID::TetrahedronID,
                 "This function only exists for 3D elements and is only implemented for tetras");
   _element_vertices = cell.vertices();
-  _element_center = cell.center();
+  _weights = {1.0};
   _qpoints.resize(1);
   _qpoints[0] = point;
+  assert(false && "Implement mapping of real coordinates into reference coordinated");
   update_();
 }
 
@@ -140,8 +152,8 @@ void FeValues<vtk_id>::update(const mesh::Face & face)
                 "This function only exists for 2D elements and is only implemented for triangles");
 
   _element_vertices = face.vertices();
-  _element_center = face.center();
   _qpoints = get_master_integration_points();
+  _weights = get_master_integration_weights();
   update_();
 }
 
@@ -208,6 +220,14 @@ Point FeValues<vtk_id>::grad(const size_t shape_index, const size_t qpoint) cons
   assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
   return _shape_grads[qpoint][shape_index];
 }
+
+template<VTK_ID vtk_id>
+double FeValues<vtk_id>::JxW(const size_t qpoint) const
+{
+  assert( qpoint < _qpoints.size() && "qpoint too large" );
+  return _determinants[qpoint] * _weights[qpoint];
+}
+
 
 template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update_shape_values_()
