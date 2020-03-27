@@ -7,22 +7,16 @@ namespace discretization {
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
 
 template <>
-FeValues<VTK_ID::TriangleID>::FeValues(const mesh::Mesh & grid)
-    : _grid(grid)
-{}
-
-template <>
 double FeValues<VTK_ID::TriangleID>::eval_(const Point & point, const size_t vertex)
 {
-  assert( vertex < 3 );
   switch (vertex)
   {
     case 0:
-      return  1.0 - point[0] - point[1]; // phi_0 = (1 - x - y)
+      return  1.0 - point[0] - point[1]; // phi_0 = (1 - u - v)
     case 1:
-      return point[0];  // phi_1 = x
+      return point[0];  // phi_1 = u
     case 2:
-      return point[1];  // phi_2 = y
+      return point[1];  // phi_2 = v
     default:
       throw std::invalid_argument( "vertex cannot be larger than 2" );
   }

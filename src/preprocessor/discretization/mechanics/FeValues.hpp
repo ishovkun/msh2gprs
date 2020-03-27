@@ -74,10 +74,20 @@ class FeValues
 };
 
 template<VTK_ID vtk_id>
+FeValues<vtk_id>::FeValues(const mesh::Mesh & grid)
+    : _grid(grid)
+{}
+
+
+template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Cell & cell)
 {
   static_assert(vtk_id == VTK_ID::TetrahedronID,
                 "This function only exists for 3D elements and is only implemented for tetras");
+  _element_vertices = cell.vertices();
+  _element_center = cell.center();
+  _qpoints = get_master_integration_points();
+  update_();
 }
 
 template<VTK_ID vtk_id>
@@ -85,6 +95,11 @@ void FeValues<vtk_id>::update(const mesh::Cell & cell, const angem::Point<3,doub
 {
   static_assert(vtk_id == VTK_ID::TetrahedronID,
                 "This function only exists for 3D elements and is only implemented for tetras");
+  _element_vertices = cell.vertices();
+  _element_center = cell.center();
+  _qpoints.resize(1);
+  _qpoints[0] = point;
+  update_();
 }
 
 template<VTK_ID vtk_id>
