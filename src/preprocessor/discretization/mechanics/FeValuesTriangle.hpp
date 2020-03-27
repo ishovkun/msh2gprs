@@ -7,7 +7,7 @@ namespace discretization {
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
 
 template <>
-double FeValues<VTK_ID::TriangleID>::eval_(const Point & point, const size_t vertex)
+double FeValues<VTK_ID::TriangleID>::eval_(const Point & point, const size_t vertex) const
 {
   switch (vertex)
   {
@@ -23,7 +23,7 @@ double FeValues<VTK_ID::TriangleID>::eval_(const Point & point, const size_t ver
 }
 
 template <>
-Point FeValues<VTK_ID::TriangleID>::eval_derivative_(const Point & point, const size_t vertex)
+Point FeValues<VTK_ID::TriangleID>::eval_derivative_(const Point & point, const size_t vertex) const
 {
   switch (vertex)
   {
