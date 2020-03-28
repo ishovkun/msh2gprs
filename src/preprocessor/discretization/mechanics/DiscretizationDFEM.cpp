@@ -38,6 +38,7 @@ void DiscretizationDFEM::build()
   //   exit(0);
   //   // if (cnt++ > 2) break;
   // }
+  _face_data.resize( _grid.n_faces() );
 
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
@@ -51,6 +52,17 @@ void DiscretizationDFEM::build()
    FiniteElementData cell_fem_data =  discr_element.get_cell_data();
    cell_fem_data.element_index = cell->index();
    _cell_data.push_back( cell_fem_data );
+
+   std::vector<FiniteElementData> face_data = discr_element.get_face_data();
+   size_t iface = 0;
+   for ( const mesh::Face * face : cell->faces() )
+   {
+     if ( _face_data[face->index()].points.empty() )
+     {
+       face_data[iface].element_index = face->index();
+       _face_data[face->index()] = face_data[iface++];
+     }
+   }
 
     // // exit(0);
     // if (cnt++ > 2) break;
