@@ -637,6 +637,7 @@ void OutputDataGPRS::save_fem_data_() const
   const std::vector<discretization::FiniteElementData> & cells = _data.fe_cell_data;
   out << "GMCELL_GAUSS_WEIGHTS" << "\n";
   for (const auto & cell : cells)
+    if (!cell.points.empty())
   {
     out << cell.element_index << "\t";
     out << cell.points.size() << "\t";
@@ -648,26 +649,64 @@ void OutputDataGPRS::save_fem_data_() const
 
   out << "GMCELL_SHAPE_VALUES" << "\n";
   for (const auto & cell : cells)
+    if (!cell.points.empty())
   {
     for (const auto &point : cell.points)
       for (const double value : point.values)
         out << value << "\t";
     out << "\n";
   }
-  out << "/\t\t";
+  out << "/\n\n";
 
   out << "GMCELL_SHAPE_GRADS" << "\n";
   for (const auto & cell : cells)
+    if (!cell.points.empty())
   {
     for (const auto &point : cell.points)
       for (const angem::Point<3,double> & grad : point.grads)
         out << grad << "\t";
     out << "\n";
   }
-  out << "/\t\t";
+  out << "/\n\n";
 
-  // save face data
-  // std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces
+  // SAVE FACE DATA
+  // face gauss weights
+  const auto & faces = _data.fe_face_data;  // fe values and gradients for grid faces
+  out << "GMFACE_GAUSS_WEIGHTS" << "\n";
+  for (const auto & face : faces)
+    if (!face.points.empty())
+  {
+    out << face.element_index << "\t";
+    out << face.points.size() << "\t";
+    for (const auto & point : face.points)
+      out << point.weight << "\t";
+    out << "\n";
+  }
+  out << "/\n\n";
+
+  // face shape function values
+  out << "GMFACE_SHAPE_VALUES" << "\n";
+  for (const auto & face : faces)
+    if (!face.points.empty())
+  {
+    for (const auto &point : face.points)
+      for (const double value : point.values)
+        out << value << "\t";
+    out << "\n";
+  }
+  out << "/\n\n";
+
+  // output face shape grads
+  out << "GMFACE_SHAPE_GRADS" << "\n";
+  for (const auto & face : faces)
+    if (!face.points.empty())
+  {
+    for (const auto &point : face.points)
+      for (const angem::Point<3,double> & grad : point.grads)
+        out << grad << "\t";
+    out << "\n";
+  }
+  out << "/\n\n";
 
   out.close();
 }

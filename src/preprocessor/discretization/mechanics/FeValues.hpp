@@ -217,7 +217,12 @@ void FeValues<vtk_id>::update_()
     _determinants[q] = det(dx_du);
     // must be positive
     if ( _determinants[q] <= 0 )
+    {
+      std::cout << "error: " << std::endl;
+      std::cout << "vtk_id = " << vtk_id << std::endl;
+      std::cout << dx_du << std::endl;
       throw std::runtime_error("Transformation Jacobian is not invertible");
+    }
     // invert the jacobian to compute shape function gradients
     angem::Tensor2<3, double> du_dx = invert(dx_du);
 
