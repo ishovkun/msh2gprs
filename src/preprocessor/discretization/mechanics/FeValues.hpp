@@ -24,17 +24,17 @@ class FeValues
    */
   FeValues(const mesh::Mesh & grid);
   /**
-   * Update the needed quantities in the cell.
+   * Update the needed internal quantities in the cell.
    * Use this method before using the fem quantities in the new cell during the loop.
    */
   void update(const mesh::Cell & cell);
   /**
-   * Update the needed quantities in the cell in the gived integration point.
+   * Update the needed internal quantities in the cell in the gived integration point.
    * The point coordinate is the real (not reference) coordinates of the integration point.
    */
   void update(const mesh::Cell & cell, const angem::Point<3,double> & point);
   /**
-   * Update the needed quantities in the face.
+   * Update the needed internal quantities in the face element.
    * Use this method before using the fem quantities in the new face during the loop.
    */
   void update(const mesh::Face & face);
@@ -157,6 +157,19 @@ void FeValues<vtk_id>::update(const mesh::Cell & cell, const angem::Point<3,doub
   _qpoints = {map_real_to_local_(point)};
   update_();
 }
+
+template<VTK_ID vtk_id>
+void FeValues<vtk_id>::update(const mesh::Face & face, const angem::Point<3,double> & point)
+{
+  static_assert(vtk_id == VTK_ID::TriangleID,
+                "This function only exists for 2D elements and is only implemented for triangles");
+
+  _element_vertices = face.vertices();
+  _weights = {1.0};
+  _qpoints = {map_real_to_local_(point)};
+  update_();
+}
+
 
 template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Face & face)

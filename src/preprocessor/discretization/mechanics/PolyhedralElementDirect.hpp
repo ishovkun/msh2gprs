@@ -28,7 +28,7 @@ class PolyhedralElementDirect
   // get FE data for volume integration
   const FiniteElementData & get_cell_data() const {return _cell_data;}
   // get FE data for surface integration
-  const FiniteElementData & get_face_data() const {return _face_data;}
+  const std::vector<FiniteElementData> & get_face_data() const {return _face_data;}
 
  protected:
   // main method to compute shape functions
@@ -78,8 +78,8 @@ class PolyhedralElementDirect
   // integration points in cells
   void compute_cell_fe_quantities_();
   // compute shape function values, gradients, and weights in the
-  // integration points in faces
-  void compute_face_fe_quantities_();
+  // integration points in a given face face
+  void compute_face_fe_quantities_(const size_t parent_face);
   // purely debugging purposes
   void debug_save_boundary_face_solution(const std::string fname) const;
   // purely debugging purposes
@@ -106,6 +106,7 @@ class PolyhedralElementDirect
   const mesh::Cell & _parent_cell;                             // reference to the discretized cell
   mesh::Mesh _element_grid;                                    // triangulation of the discretized cell
   std::vector<size_t> _vertex_mapping;                         // map gmsh vertex to grid vertex
+  std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<std::vector<size_t>> _support_edge_vertices;     // edge vertices for each parent vertex
   std::vector<std::vector<double>> _support_edge_values;       // edge dirichlet values for each parent vertex
   std::vector<std::vector<size_t>> _support_boundary_vertices; // face vertices for each parent vertex
@@ -115,7 +116,7 @@ class PolyhedralElementDirect
   std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
   FiniteElementData _cell_data;                                // FEM values and gradients in cell integration points
-  FiniteElementData _face_data;                                // FEM values and gradients in face integration points
+  std::vector<FiniteElementData> _face_data;                                // FEM values and gradients in face integration points
 };
 
 }  // end namespace discretization

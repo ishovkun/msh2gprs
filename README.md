@@ -3,7 +3,7 @@ ERSP is a tool to easily create models for reservoir simulation.
 It currently only supports output to AD-GRPS but can easily be extended
 to other file formats.
 It currently supports mesh files created with GMsh tool.
-The properties can be assigned YAML human-readable formats.
+The properties can be assigned YAML human-readable format.
 
 ## Features
 - Supports arbitrary keywords

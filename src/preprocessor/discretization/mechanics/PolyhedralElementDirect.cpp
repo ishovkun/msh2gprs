@@ -44,7 +44,10 @@ void PolyhedralElementDirect::build_()
   compute_cell_fe_quantities_();
   // compute shape function values, gradients, and weights in the
   // integration points in faces
-  compute_face_fe_quantities_();
+  _face_data.resize( _face_gauss_points.size() );
+  const size_t nfaces = _parent_cell.faces().size();
+  for (size_t iface=0; iface<nfaces; ++iface)
+    compute_face_fe_quantities_(iface);
 }
 
 void PolyhedralElementDirect::compute_vertex_mapping_()
@@ -67,20 +70,20 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
 {
   build_edge_boundary_conditions_();
   // identify child faces that belong to each face parent
-  std::vector<std::vector<size_t>> face_domains = create_face_domains_();
+  _face_domains = create_face_domains_();
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
   FEMFaceDoFManager dof_manager;
-  for (size_t iface=0; iface<face_domains.size(); ++iface)
+  for (size_t iface=0; iface<_face_domains.size(); ++iface)
   {
     // identify vertices the will constitute the linear system and create dof mapping
-    const DoFNumbering vertex_numbering = dof_manager.build(_element_grid, face_domains[iface]);
+    const DoFNumbering vertex_numbering = dof_manager.build(_element_grid, _face_domains[iface]);
     // initialize system matrix
     Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix =
         Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
     // fill system matrix
-    build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
-    // build_face_system_matrix_(iface, face_system_matrix, face_domains[iface]);
+    // build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
+    build_face_system_matrix_(iface, face_system_matrix, _face_domains[iface], vertex_numbering);
     const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
     for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
     {
@@ -494,7 +497,6 @@ void PolyhedralElementDirect::compute_cell_fe_quantities_()
 {
   // allocate vector of point data
   const size_t n_parents = _basis_functions.size();
-  _cell_data.points.resize(_cell_gauss_points.size());
   // const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
   // gprs_data::FeValues fe_values( element_type );
   FeValues<angem::VTK_ID::TetrahedronID> fe_values(_element_grid);
@@ -593,33 +595,46 @@ PolyhedralElementDirect::split_into_triangles_and_compute_center_(const angem::P
   return result;
 }
 
-void PolyhedralElementDirect::compute_face_fe_quantities_()
+void PolyhedralElementDirect::compute_face_fe_quantities_(const size_t parent_face)
 {
-  _face_data.points.resize( _face_gauss_points.size() );
-  // const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TriangleID);
-
-  const size_t nfaces = _parent_cell.faces().size();
-  for (size_t iface=0; iface<nfaces; ++iface)
+  const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
+  const std::vector<size_t> parent_face_vertices = parent_faces[parent_face]->vertices();
+  const std::vector<size_t> parent_vertices = _parent_cell.vertices();
+  FeValues<angem::VTK_ID::TriangleID> fe_values(_element_grid);
+  const size_t nv = 3; // n vertices in triangle
+  const size_t q_loc = 0;  // only one integration point
+  for (const size_t iface : _face_domains[parent_face])
   {
-    const int gmsh_plane_marker = iface + 1;
-    // FeValues fe_values( element_type, gmsh_plane_marker );
+    const mesh::Face & face = _element_grid.face(iface);
+    const angem::Polygon<double> face_poly = face.polygon();
+    const std::vector<size_t> & face_verts = face.vertices();
 
     const size_t nq = _face_gauss_points[iface].size();
     for (size_t q=0; q<nq; ++q)
-    {
-      const auto & coord = _face_gauss_points[iface][q];
-      size_t gmsh_face_tag;
-      std::vector<std::size_t> node_tags;
-      int element_type;
-      double u, v, w;
-      gmsh::model::mesh::getElementByCoordinates(coord.x(), coord.y(), coord.z(),
-                                                 gmsh_face_tag, element_type,
-                                                 node_tags, u, v, w, /*dim=*/ 2,
-                                                 /*strict =*/ false);
-      std::cout << "element_type = " << element_type << std::endl;
-      std::cout << "gmsh_face_tag = " << gmsh_face_tag << std::endl;
-      assert ( false && "finish writing code for face shape extraction" );
-    }
+      if (face_poly.point_inside(_face_gauss_points[parent_face][q]))
+      {
+        const auto & coord = _face_gauss_points[iface][q];
+        fe_values.update(face, coord);
+        FEPointData data;
+        data.values.resize( parent_face_vertices.size() );
+        data.grads.resize( parent_face_vertices.size() );
+        for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
+        {
+          const size_t pv = std::distance(parent_vertices.begin(),
+                                          std::find( parent_vertices.begin(), parent_vertices.end(),
+                                                     parent_face_vertices[ipv] ));
+          for (std::size_t vertex=0; vertex<nv; ++vertex)
+          {
+            data.values[ipv] += fe_values.value( vertex, q_loc ) *
+                _basis_functions[pv][face_verts[vertex]];
+            data.grads[ipv] += fe_values.grad(vertex, q_loc) *
+                _basis_functions[pv][face_verts[vertex]];
+          }
+          data.weight = 1.0 / static_cast<double>( _face_gauss_points.size() );
+          _face_data[iface].points.push_back( std::move(data) );
+        }
+        assert ( false && "finish writing code for face shape extraction" );
+      }
 
   }
 
