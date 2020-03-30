@@ -5,6 +5,7 @@
 namespace discretization {
 
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
+template<> constexpr size_t ELEMENT_DIM<VTK_ID::TriangleID> = 2;
 
 template <>
 double FeValues<VTK_ID::TriangleID>::eval_(const Point & point, const size_t vertex) const
@@ -57,10 +58,12 @@ Point FeValues<VTK_ID::TriangleID>::map_real_to_local_(const Point & xyz) const
   /**
    * This code is copied from gmsh and sligtly modified to adapt to the
    * angem Point class. */
-  const Point O = {vertex_(0).x(), vertex_(0).y(), vertex_(0).z()};
+  const Point O = {_vertex_coord[0].x(), _vertex_coord[0].y(), _vertex_coord[0].z()};
   const Point d = {xyz[0] - O[0], xyz[1] - O[1], xyz[2] - O[2]};
-  const Point d1 = {vertex_(1).x() - O[0], vertex_(1).y() - O[1], vertex_(1).z() - O[2]};
-  const Point d2 = {vertex_(2).x() - O[0], vertex_(2).y() - O[1], vertex_(2).z() - O[2]};
+  const Point d1 = {_vertex_coord[1].x() - O[0], _vertex_coord[1].y() - O[1],
+                    _vertex_coord[1].z() - O[2]};
+  const Point d2 = {_vertex_coord[2].x() - O[0], _vertex_coord[2].y() - O[1],
+                    _vertex_coord[2].z() - O[2]};
 
   const double Jxy = d1[0] * d2[1] - d1[1] * d2[0];
   const double Jxz = d1[0] * d2[2] - d1[2] * d2[0];
