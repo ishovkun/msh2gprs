@@ -238,6 +238,7 @@ void Preprocessor::build_geomechanics_discretization_()
     discretization::DiscretizationDFEM dfem_discr(data.grid, config.dfem_msrsb_tolerance);
     dfem_discr.build();
     data.fe_cell_data = dfem_discr.get_cell_data();
+    data.fe_face_data = dfem_discr.get_face_data();
     data.geomechanics_grid = data.grid;
   }
 

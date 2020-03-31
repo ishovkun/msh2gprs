@@ -150,7 +150,6 @@ void PolyhedralElementDirect::build_cell_system_matrix_()
   // since we only build tetrahedral element mesh
   const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
   const size_t nv = 4;
-  // gprs_data::FeValues fe_values( element_type );
   FeValues<angem::VTK_ID::TetrahedronID> fe_values(_element_grid);
 
   Eigen::MatrixXd cell_matrix(nv, nv);
@@ -539,6 +538,7 @@ void PolyhedralElementDirect::find_integration_points_()
     _cell_gauss_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
 
   /* Loop parent faces, split each face into triangles, and find their centers */
+  _face_gauss_points.clear();
   for (const auto & face_poly : polyhedron->get_face_polygons())
   {
     std::vector<angem::Point<3,double>> face_gauss_points =
@@ -609,15 +609,15 @@ void PolyhedralElementDirect::compute_face_fe_quantities_(const size_t parent_fa
     const angem::Polygon<double> face_poly = face.polygon();
     const std::vector<size_t> & face_verts = face.vertices();
 
-    const size_t nq = _face_gauss_points[iface].size();
+    const size_t nq = _face_gauss_points[parent_face].size();
     for (size_t q=0; q<nq; ++q)
       if (face_poly.point_inside(_face_gauss_points[parent_face][q]))
       {
-        const auto & coord = _face_gauss_points[iface][q];
+        const Point coord = _face_gauss_points[parent_face][q];
         fe_values.update(face, coord);
         FEPointData data;
-        data.values.resize( parent_face_vertices.size() );
-        data.grads.resize( parent_face_vertices.size() );
+        data.values.resize( parent_face_vertices.size(), 0.0 );
+        data.grads.resize( parent_face_vertices.size(), {0,0,0} );
         for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
         {
           const size_t pv = std::distance(parent_vertices.begin(),
@@ -626,14 +626,13 @@ void PolyhedralElementDirect::compute_face_fe_quantities_(const size_t parent_fa
           for (std::size_t vertex=0; vertex<nv; ++vertex)
           {
             data.values[ipv] += fe_values.value( vertex, q_loc ) *
-                _basis_functions[pv][face_verts[vertex]];
+                                _basis_functions[pv][face_verts[vertex]];
             data.grads[ipv] += fe_values.grad(vertex, q_loc) *
-                _basis_functions[pv][face_verts[vertex]];
+                               _basis_functions[pv][face_verts[vertex]];
           }
-          data.weight = 1.0 / static_cast<double>( _face_gauss_points.size() );
-          _face_data[iface].points.push_back( std::move(data) );
         }
-        assert ( false && "finish writing code for face shape extraction" );
+        data.weight = 1.0 / static_cast<double>( _face_gauss_points.size() );
+        _face_data[parent_face].points.push_back( std::move(data) );
       }
 
   }

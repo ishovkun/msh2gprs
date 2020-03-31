@@ -262,6 +262,7 @@ void FeValues<vtk_id>::update_face_()
     // compute shape grad in in master element
     const auto ref_grad = compute_ref_gradient_(q);
     const auto [du_dx, detJ] = compute_detJ_and_invert_face_jacobian_(ref_grad);
+    _determinants[q] = detJ;
     // compute the true shape function gradients
     update_shape_grads_(ref_grad, du_dx, q);
   }
@@ -340,30 +341,22 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
   for (size_t i=0; i<_vertex_coord.size(); ++i)
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
 
-  std::cout << "loc:" << std::endl;
-  for (auto c : loc_coord)
-    std::cout << c << std::endl;
-
   angem::Tensor2<3, double> J;
   for (std::size_t i=0; i<3; ++i)
     for (std::size_t j=0; j<3; ++j)
       for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
         J( j, i ) += ref_grad[v][j] * loc_coord[v][i];
-  std::cout << J << std::endl;
-  // return J;
-  const angem::Tensor2<2, double> J2 = {
-    J(0, 0), J(0, 1),
-    J(1, 0), J(1, 1)
-  };
 
+  // since the shape is 2d, we need to cast this down in 2D
+  // since the third row and column of J are zero
+  const angem::Tensor2<2, double> J2 = {J(0, 0), J(0, 1),
+                                        J(1, 0), J(1, 1)};
   const angem::Tensor2<2, double> J2_inv = invert(J2);
 
-  const angem::Tensor2<3, double> J_inv =
-      {
-        J2_inv(0,0), J2_inv(0,1), 0.0,
-        J2_inv(1,0), J2_inv(1,1), 0.0,
-        0.0,         0.0,         0.0
-      };
+  // cast it back to 3D since that's what the code uses to compute shape gradients
+  const angem::Tensor2<3, double> J_inv = {J2_inv(0,0), J2_inv(0,1), 0.0,
+                                           J2_inv(1,0), J2_inv(1,1), 0.0,
+                                           0.0,         0.0,         0.0};
   const double detJ = det(J2);
 
   return {J_inv, detJ};
