@@ -6,7 +6,7 @@
 #include "discretization/flow/DiscretizationTPFA.hpp"
 #include "discretization/flow/DiscretizationEDFM.hpp"
 #include "discretization/flow/DiscretizationDFM.hpp"
-#include "GridCellNumberingManager.hpp"
+#include "GridEntityNumberingManager.hpp"
 #include "MultiScaleDataMech.hpp"
 #include "DoFManager.hpp"
 #include "WellManager.hpp"
@@ -242,9 +242,9 @@ void Preprocessor::build_geomechanics_discretization_()
     data.geomechanics_grid = data.grid;
   }
 
-  GridCellNumberingManager cell_numbering_mgr(data.geomechanics_grid);
+  GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
   data.mech_cell_numbering = std::shared_ptr<discretization::DoFNumbering>
-      (cell_numbering_mgr.get_cell_numbering());
+      (mech_numbering_mgr.get_numbering());
 }
 
 

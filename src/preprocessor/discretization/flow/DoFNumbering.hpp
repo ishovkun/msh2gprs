@@ -7,7 +7,7 @@
 
 namespace gprs_data {
 class DoFManager;
-class GridCellNumberingManager;
+class GridEntityNumberingManager;
 }
 
 
@@ -55,7 +55,7 @@ class DoFNumbering
   // buds
   friend class gprs_data::DoFManager;
   friend class FEMFaceDoFManager;
-  friend class gprs_data::GridCellNumberingManager;
+  friend class gprs_data::GridEntityNumberingManager;
 };
 
 }  // end namespace discretization
