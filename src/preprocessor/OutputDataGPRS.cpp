@@ -639,7 +639,6 @@ void OutputDataGPRS::save_fem_data_() const
   for (const auto & cell : cells)
     if (!cell.points.empty())
   {
-    // out << cell.element_index << "\t";
     out << _data.mech_cell_numbering->cell_dof(cell.element_index) + 1 << "\t";
     out << cell.points.size() << "\t";
     for (const auto & point : cell.points)
@@ -647,27 +646,56 @@ void OutputDataGPRS::save_fem_data_() const
     out << "\n";
   }
   out << "/\n\n";
+  // cell center
+  out << "GMCELL_GAUSS_WEIGHTS_CENTER" << "\n";
+  for (const auto & cell : cells)
+    if (!cell.points.empty())
+    {
+      out << cell.center.weight << "\t";
+      out << "\n";
+    }
+  out << "/\n\n";
 
   out << "GMCELL_SHAPE_VALUES" << "\n";
   for (const auto & cell : cells)
     if (!cell.points.empty())
-  {
-    for (const auto &point : cell.points)
-      for (const double value : point.values)
-        out << value << "\t";
-    out << "\n";
-  }
+    {
+      for (const auto &point : cell.points)
+        for (const double value : point.values)
+          out << value << "\t";
+      out << "\n";
+    }
+  out << "/\n\n";
+  // center
+  out << "GMCELL_SHAPE_VALUES_CENTER" << "\n";
+  for (const auto & cell : cells)
+    if (!cell.points.empty())
+    {
+      for (const double value : cell.center.values)
+          out << value << "\t";
+      out << "\n";
+    }
   out << "/\n\n";
 
   out << "GMCELL_SHAPE_GRADS" << "\n";
   for (const auto & cell : cells)
     if (!cell.points.empty())
-  {
-    for (const auto &point : cell.points)
-      for (const angem::Point<3,double> & grad : point.grads)
-        out << grad << "\t";
-    out << "\n";
-  }
+    {
+      for (const auto &point : cell.points)
+        for (const angem::Point<3,double> & grad : point.grads)
+          out << grad << "\t";
+      out << "\n";
+    }
+  out << "/\n\n";
+  // center
+  out << "GMCELL_SHAPE_GRADS_CENTER" << "\n";
+  for (const auto & cell : cells)
+    if (!cell.points.empty())
+    {
+      for (const angem::Point<3,double> & grad : cell.center.grads)
+          out << grad << "\t";
+      out << "\n";
+    }
   out << "/\n\n";
 
   // SAVE FACE DATA
