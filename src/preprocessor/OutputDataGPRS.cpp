@@ -704,37 +704,63 @@ void OutputDataGPRS::save_fem_data_() const
   out << "GMFACE_GAUSS_WEIGHTS" << "\n";
   for (const auto & face : faces)
     if (!face.points.empty())
-  {
-    out << _data.mech_cell_numbering->face_dof(face.element_index) + 1 << "\t";
-    out << face.points.size() << "\t";
-    for (const auto & point : face.points)
-      out << point.weight << "\t";
-    out << "\n";
-  }
+    {
+      out << _data.mech_cell_numbering->face_dof(face.element_index) + 1 << "\t";
+      out << face.points.size() << "\t";
+      for (const auto & point : face.points)
+        out << point.weight << "\t";
+      out << "\n";
+    }
+  out << "/\n\n";
+
+  out << "GMFACE_GAUSS_WEIGHTS_CENTER" << "\n";
+  for (const auto & face : faces)
+    if (!face.points.empty())
+      out << face.center.weight << "\n";
   out << "/\n\n";
 
   // face shape function values
   out << "GMFACE_SHAPE_VALUES" << "\n";
   for (const auto & face : faces)
     if (!face.points.empty())
-  {
-    for (const auto &point : face.points)
-      for (const double value : point.values)
+    {
+      for (const auto &point : face.points)
+        for (const double value : point.values)
+          out << value << "\t";
+      out << "\n";
+    }
+  out << "/\n\n";
+
+  out << "GMFACE_SHAPE_VALUES_CENTER" << "\n";
+  for (const auto & face : faces)
+    if (!face.points.empty())
+    {
+      for (const double value : face.center.values)
         out << value << "\t";
-    out << "\n";
-  }
+      out << "\n";
+    }
   out << "/\n\n";
 
   // output face shape grads
   out << "GMFACE_SHAPE_GRADS" << "\n";
   for (const auto & face : faces)
     if (!face.points.empty())
-  {
-    for (const auto &point : face.points)
-      for (const angem::Point<3,double> & grad : point.grads)
+    {
+      for (const auto &point : face.points)
+        for (const angem::Point<3,double> & grad : point.grads)
+          out << grad << "\t";
+      out << "\n";
+    }
+  out << "/\n\n";
+
+  out << "GMFACE_SHAPE_GRADS_CENTER" << "\n";
+  for (const auto & face : faces)
+    if (!face.points.empty())
+    {
+      for (const angem::Point<3,double> & grad : face.center.grads)
         out << grad << "\t";
-    out << "\n";
-  }
+      out << "\n";
+    }
   out << "/\n\n";
 
   out.close();
