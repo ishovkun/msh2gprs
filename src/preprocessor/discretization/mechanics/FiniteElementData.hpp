@@ -15,6 +15,7 @@ struct FEPointData
 struct FiniteElementData
 {
   std::vector<FEPointData> points;
+  FEPointData              center;
   size_t                   element_index;
 };
 

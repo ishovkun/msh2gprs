@@ -523,8 +523,17 @@ void PolyhedralElementDirect::compute_cell_fe_quantities_()
                                          _basis_functions[parent_vertex][cell_verts[vertex]];
           }
         }
-        data.weight = 1.0 / static_cast<double>( _cell_gauss_points.size() );
-        _cell_data.points.push_back( std::move(data) );
+
+        if ( q < _cell_gauss_points.size() - 1 )
+        {
+          data.weight = 1.0 / static_cast<double>( _cell_gauss_points.size() - 1 ); // -1 since center is not a gauss point
+          _cell_data.points.push_back( std::move(data) );
+        }
+        else // last point is center
+        {
+          data.weight = 1.0;
+          _cell_data.center = std::move(data);
+        }
       }
 }
 
@@ -536,6 +545,8 @@ void PolyhedralElementDirect::find_integration_points_()
   parent_vertices.push_back(_parent_cell.center());
   for (const auto & face : polyhedron->get_faces())
     _cell_gauss_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
+  // add center point to the end of gauss list
+  _cell_gauss_points.push_back( _parent_cell.center() );
 
   /* Loop parent faces, split each face into triangles, and find their centers */
   _face_gauss_points.clear();
@@ -544,6 +555,8 @@ void PolyhedralElementDirect::find_integration_points_()
     std::vector<angem::Point<3,double>> face_gauss_points =
         split_into_triangles_and_compute_center_(face_poly);
     _face_gauss_points.push_back( face_gauss_points );
+    // add face center point
+    _face_gauss_points.back().push_back(face_poly.center());
   }
 }
 
@@ -631,8 +644,16 @@ void PolyhedralElementDirect::compute_face_fe_quantities_(const size_t parent_fa
                                _basis_functions[pv][face_verts[vertex]];
           }
         }
-        data.weight = 1.0 / static_cast<double>( _face_gauss_points.size() );
-        _face_data[parent_face].points.push_back( std::move(data) );
+        if ( q < nq - 1 )
+        {
+          data.weight = 1.0 / static_cast<double>( nq - 1 );
+          _face_data[parent_face].points.push_back( std::move(data) );
+        }
+        else
+        {
+          data.weight = 1.0;
+          _face_data[parent_face].center = std::move(data);
+        }
       }
 
   }

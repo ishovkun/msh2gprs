@@ -677,7 +677,6 @@ void OutputDataGPRS::save_fem_data_() const
   for (const auto & face : faces)
     if (!face.points.empty())
   {
-    // out << face.element_index << "\t";
     out << _data.mech_cell_numbering->face_dof(face.element_index) + 1 << "\t";
     out << face.points.size() << "\t";
     for (const auto & point : face.points)
