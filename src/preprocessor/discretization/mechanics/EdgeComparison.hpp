@@ -75,8 +75,7 @@ class EdgeComparison
   static std::vector<Edge> get_permutations(const std::list<size_t> & values)
   {
     std::vector<Edge> result;
-    auto iit = values.begin();
-    for (; iit != values.end(); ++iit)
+    for (auto iit = values.begin(); iit != values.end(); ++iit)
     {
       auto jit = iit; ++jit;
       for (; jit != values.end(); ++jit)

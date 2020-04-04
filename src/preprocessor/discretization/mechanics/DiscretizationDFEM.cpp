@@ -27,17 +27,20 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 void DiscretizationDFEM::build()
 {
   // {
-  //   auto & cell = _grid.cell(100);
+  //   auto & cell = _grid.cell(20);
 
   //   api::initialize_gmsh();
-  //   PolyhedralElementDirect discr_elemnelement(cell);
+  //   PolyhedralElementDirect de(cell);
+  //   de.debug_save_shape_functions_("cell20.vtk");
+  //   de.debug_save_boundary_face_solution("cell20_faces.vtk");
+  //   gmsh::write("cell20.msh");
 
   //   // DFEMElement discr_element(cell, _msrsb_tol);
   //   // mesh::Mesh _element_grid;
   //   api::finalize_gmsh();
   //   exit(0);
-  //   // if (cnt++ > 2) break;
   // }
+
   _face_data.resize( _grid.n_faces() );
 
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)

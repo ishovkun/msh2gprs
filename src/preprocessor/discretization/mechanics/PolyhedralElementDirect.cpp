@@ -28,7 +28,7 @@ void PolyhedralElementDirect::build_()
   // triangulate the polyhedral element
   api::build_triangulation(_parent_cell, _element_grid);
   // get the relation between gmsh vertex ids and grid vertices
-  compute_vertex_mapping_();
+  // compute_vertex_mapping_();
   // solve problems on faces
   build_face_boundary_conditions_();
   // construct the laplace system matrix for the cell volume laplace equation
@@ -72,7 +72,7 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
   // identify child faces that belong to each face parent
   _face_domains = create_face_domains_();
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
-  const std::vector<size_t> parent_vertices = _parent_cell.vertices();
+  const std::vector<size_t> parent_vertices = _parent_cell.sorted_vertices();
   FEMFaceDoFManager dof_manager;
   for (size_t iface=0; iface<_face_domains.size(); ++iface)
   {
@@ -82,7 +82,6 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
     Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix =
         Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
     // fill system matrix
-    // build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
     build_face_system_matrix_(iface, face_system_matrix, _face_domains[iface], vertex_numbering);
     const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
     for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
@@ -322,7 +321,7 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
           _support_edge_vertices[vp2].push_back(v);
           _support_edge_values[vp2].push_back( (dp - d2) / dp );
 
-          // also set zero on edges that are not either parent
+          // also set zero on edges that do not have either parent
           for (size_t vp=0; vp<parent_nodes.size(); ++vp)
             if (vp != vp1 && vp != vp2)
             {
