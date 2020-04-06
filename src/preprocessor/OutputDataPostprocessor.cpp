@@ -12,6 +12,7 @@ OutputDataPostprocessor::OutputDataPostprocessor(const SimData & data, const Pre
 void OutputDataPostprocessor::write_output(const std::string file_name)
 {
   m_root["output_directory"] = m_config.postprocessor_output_dir;
+  m_root["mech_reservoir_grid_file"] = m_output_dir + "/" + m_config.vtk_config.mechanics_reservoir_grid_file;
   m_root["flow_reservoir_grid_file"] = m_output_dir + "/" + m_config.vtk_config.flow_reservoir_grid_file;
   m_root["edfm_grid_file"] = m_output_dir + "/" + m_config.vtk_config.edfm_grid_file;
   m_root["dfm_flow_grid_file"]  = m_output_dir + "/" + m_config.vtk_config.dfm_flow_grid_file;

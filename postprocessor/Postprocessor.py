@@ -19,6 +19,7 @@ class Postprocessor:
         self.matrix_flow_grid_reader = vtk.vtkDataSetReader()
         self.edfm_flow_grid_reader = vtk.vtkDataSetReader()
         self.dfm_flow_grid_reader = vtk.vtkDataSetReader()
+        self.matrix_mech_grid_reader = vtk.vtkDataSetReader()
         self.writer = vtk.vtkDataSetWriter()
         self.readGeometry_()
         self.output_file_number = 0
@@ -28,13 +29,13 @@ class Postprocessor:
         gprs_reader = self.makeReader_()
         self.prepareOutputDirectory_()
 
-        printProgressBar(0, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+        # printProgressBar(0, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
         while gprs_reader.advanceTimeStep():
            t = gprs_reader.getTime()
            data = gprs_reader.getData()
            self.saveReservoirData_(t, data)
-           printProgressBar(gprs_reader.getRelativePosition(), 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
-        printProgressBar(1, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+           # printProgressBar(gprs_reader.getRelativePosition(), 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+        # printProgressBar(1, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
 
     def readConfig_(self):
         if (not os.path.isdir(self.case_path)):
@@ -65,6 +66,12 @@ class Postprocessor:
             reader.SetFileName(vtk_file_path)
             reader.Update()
             assert reader.GetOutput().GetNumberOfCells() == len(self.config["edfm_cell_to_flow_dof"])
+        # geomechanics
+        reader = self.matrix_mech_grid_reader
+        vtk_file_path = self.case_path + self.config['flow_reservoir_grid_file']
+        reader.SetFileName(vtk_file_path)
+        reader.Update()
+        self.n_mech_vertices = reader.GetOutput().GetNumberOfPoints()
 
     def saveReservoirData_(self, t, data):
         assert data.shape[0] == (len(self.config["matrix_cell_to_flow_dof"]) +
@@ -110,7 +117,7 @@ class Postprocessor:
         if (os.path.isfile(self.case_path + "OUTPUT.vars.h5")):
             return GprsHDF5Reader(self.case_path + "OUTPUT.vars.h5")
         elif (os.path.isfile(self.case_path + "OUTPUT.vars.txt")):
-            return GprsAsciiReader(self.case_path + "OUTPUT.vars.txt")
+            return GprsAsciiReader(self.case_path + "OUTPUT.vars.txt", self.n_mech_vertices)
         else:
            raise FileExistsError("Could not find GPRS output file")
 
