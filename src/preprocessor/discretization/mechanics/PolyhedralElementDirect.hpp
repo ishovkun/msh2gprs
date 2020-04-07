@@ -22,7 +22,7 @@ class PolyhedralElementDirect
    * Constructor.
    * Build FEM discretization of the cell.
    * Input:
-   * @param  {mesh::Cell} cell : grid cell to be discretized
+   * @param[in] cell : grid cell to be discretized
    */
   PolyhedralElementDirect(const mesh::Cell & cell);
   // get FE data for volume integration

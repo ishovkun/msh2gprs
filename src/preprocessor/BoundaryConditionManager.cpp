@@ -15,9 +15,9 @@ void BoundaryConditionManager::build_boundary_conditions_()
 {
   const auto & grid = _data.geomechanics_grid;
   _node_to_config.resize(grid.n_vertices());
-
   size_t iface = 0;
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+    if (face->marker() > 0)
   {
     for (size_t iconf=0; iconf<_face_config.size(); ++iconf)
     {

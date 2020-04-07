@@ -36,6 +36,14 @@ std::unique_ptr<Polyhedron> Cell::polyhedron() const
                                                      faces_vertices, vtk_id());
 }
 
+std::vector<Point> Cell::vertex_coordinates() const
+{
+  std::vector<Point> coordinates;
+  coordinates.reserve(m_vertices.size());
+  for (const std::size_t vertex_index : vertices())
+    coordinates.push_back( (*pm_grid_vertices)[vertex_index] );
+  return coordinates;
+}
 
 std::vector<Face*> Cell::faces()
 {

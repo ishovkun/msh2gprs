@@ -1,11 +1,10 @@
-#pragma once
 #include "FeValues.hpp"
 #include <cassert>
 
 namespace discretization {
 
-template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
-template<> constexpr size_t ELEMENT_DIM<VTK_ID::TriangleID> = 2;
+// template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
+// template<> constexpr size_t ELEMENT_DIM<VTK_ID::TriangleID> = 2;
 
 template <>
 double FeValues<VTK_ID::TriangleID>::eval_(const Point & point, const size_t vertex) const

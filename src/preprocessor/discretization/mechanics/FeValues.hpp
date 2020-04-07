@@ -1,6 +1,7 @@
 #pragma once
-#include "angem/VTK_ID.hpp"
+
 #include "mesh/Mesh.hpp"
+#include "angem/VTK_ID.hpp"
 #include "angem/Tensor2.hpp"
 
 namespace discretization {
@@ -23,7 +24,7 @@ class FeValues
    * Constructor.
    * This is an abstract class so the constuctor is protected.
    */
-  FeValues(const mesh::Mesh & grid);
+  FeValues();
   /**
    * Update the needed internal quantities in the cell.
    * Use this method before using the fem quantities in the new cell during the loop.
@@ -76,7 +77,7 @@ class FeValues
   /**
    * Number of integration points in the quadrature rule.
    */
-  size_t n_integration_points() const { return 1; }
+  size_t n_integration_points() const { return _qpoints.size(); }
 
  protected:
   /**
@@ -96,7 +97,7 @@ class FeValues
    * Given a vector of the grid vertex indices, fill out the interal
    * _vertex_coord array.
    */
-  void update_vertex_coord_(const std::vector<size_t> & vertex_indices);
+  void update_vertex_coord_(const std::vector<Point> & vertex_coordinates);
   /**
    * Evalues the values of the ith shape function in point in the reference element
    * \param[in] point  : coordinates in the reference element
@@ -142,7 +143,6 @@ class FeValues
   std::pair<angem::Tensor2<3, double>,double>
   compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad) const;
 
-  const mesh::Mesh & _grid;
   std::vector<Point> _qpoints;  // gauss point coordinates in master element
   std::vector<std::array<double,N_ELEMENT_VERTICES<vtk_id>>> _shape_values;
   std::vector<std::array<Point,N_ELEMENT_VERTICES<vtk_id>>> _shape_grads;
@@ -152,16 +152,14 @@ class FeValues
 };
 
 template<VTK_ID vtk_id>
-FeValues<vtk_id>::FeValues(const mesh::Mesh & grid)
-    : _grid(grid)
+FeValues<vtk_id>::FeValues()
 {}
-
 
 template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Cell & cell)
 {
   static_assert(ELEMENT_DIM<vtk_id> == 3, "This function only exists for 3D elements");
-  update_vertex_coord_(cell.vertices());
+  update_vertex_coord_(cell.vertex_coordinates());
   _qpoints = get_master_integration_points();
   _weights = get_master_integration_weights();
   update_();
@@ -171,7 +169,7 @@ template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Cell & cell, const angem::Point<3,double> & point)
 {
   static_assert(ELEMENT_DIM<vtk_id> == 3, "This function only exists for 3D elements");
-  update_vertex_coord_(cell.vertices());
+  update_vertex_coord_(cell.vertex_coordinates());
   _weights = {1.0};
   _qpoints = {map_real_to_local_(point)};
   update_();
@@ -181,8 +179,7 @@ template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Face & face, const angem::Point<3,double> & point)
 {
   static_assert(ELEMENT_DIM<vtk_id> == 2, "This function only exists for 2D elements");
-
-  update_vertex_coord_(face.vertices());
+  update_vertex_coord_(face.vertex_coordinates());
   _weights = {1.0};
   _qpoints = {map_real_to_local_(point)};
   update_face_();
@@ -192,8 +189,7 @@ template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Face & face)
 {
   static_assert(ELEMENT_DIM<vtk_id> == 2, "This function only exists for 2D elements");
-
-  update_vertex_coord_(face.vertices());
+  update_vertex_coord_(face.vertex_coordinates());
   _qpoints = get_master_integration_points();
   _weights = get_master_integration_weights();
   update_face_();
@@ -281,10 +277,11 @@ void FeValues<vtk_id>::update_shape_grads_(const std::array<Point,N_ELEMENT_VERT
 }
 
 template<VTK_ID vtk_id>
-void FeValues<vtk_id>::update_vertex_coord_(const std::vector<size_t> & vertex_indices)
+void FeValues<vtk_id>::update_vertex_coord_(const std::vector<Point> & vertex_coordinates)
 {
-  for (size_t iv=0; iv<vertex_indices.size(); ++iv)
-    _vertex_coord[iv] = _grid.vertex(vertex_indices[iv]);
+  assert( vertex_coordinates.size() == N_ELEMENT_VERTICES<vtk_id> );
+  for (size_t iv=0; iv<N_ELEMENT_VERTICES<vtk_id>; ++iv)
+    _vertex_coord[iv] = vertex_coordinates[iv];
 }
 
 template<VTK_ID vtk_id>
@@ -362,7 +359,15 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
   return {J_inv, detJ};
 }
 
+template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
+template<> constexpr size_t ELEMENT_DIM<VTK_ID::TriangleID> = 2;
+
+template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TetrahedronID> = 4;
+template<> constexpr size_t ELEMENT_DIM<VTK_ID::TetrahedronID> = 3;
+
+template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::HexahedronID> = 8;
+template<> constexpr size_t ELEMENT_DIM<VTK_ID::HexahedronID> = 3;
+
+
 }  // end namespace discretization
 
-#include "FeValuesTriangle.hpp"
-#include "FeValuesTetra.hpp"

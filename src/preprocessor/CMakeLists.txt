@@ -30,7 +30,11 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/DFEMElement.cpp
   discretization/mechanics/JacobiPreconditioner.cpp
   discretization/mechanics/PolyhedralElementDirect.cpp
+  discretization/mechanics/StandardFiniteElement.cpp
   discretization/mechanics/FEMFaceDoFManager.cpp
+  discretization/mechanics/FeValuesTriangle.cpp
+  discretization/mechanics/FeValuesTetrahedron.cpp
+  discretization/mechanics/FeValuesHexahedron.cpp
 )
 
 SET_TARGET_PROPERTIES (

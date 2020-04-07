@@ -149,7 +149,7 @@ void PolyhedralElementDirect::build_cell_system_matrix_()
   // since we only build tetrahedral element mesh
   const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
   const size_t nv = 4;
-  FeValues<angem::VTK_ID::TetrahedronID> fe_values(_element_grid);
+  FeValues<angem::VTK_ID::TetrahedronID> fe_values;
 
   Eigen::MatrixXd cell_matrix(nv, nv);
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
@@ -240,7 +240,7 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face
                                                         const std::vector<size_t> & face_indices,
                                                         const DoFNumbering & vertex_dofs)
 {
-  FeValues<angem::VTK_ID::TriangleID> fe_values(_element_grid);
+  FeValues<angem::VTK_ID::TriangleID> fe_values;
   const size_t nv = 3;
   Eigen::MatrixXd cell_matrix(nv, nv);
   std::vector<size_t> face_dofs(nv);
@@ -497,7 +497,7 @@ void PolyhedralElementDirect::compute_cell_fe_quantities_()
   const size_t n_parents = _basis_functions.size();
   // const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
   // gprs_data::FeValues fe_values( element_type );
-  FeValues<angem::VTK_ID::TetrahedronID> fe_values(_element_grid);
+  FeValues<angem::VTK_ID::TetrahedronID> fe_values;
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
     for (size_t q=0; q<_cell_gauss_points.size(); ++q)  //
       if ( cell->polyhedron()->point_inside(_cell_gauss_points[q]) )
@@ -612,7 +612,7 @@ void PolyhedralElementDirect::compute_face_fe_quantities_(const size_t parent_fa
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
   const std::vector<size_t> parent_face_vertices = parent_faces[parent_face]->vertices();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
-  FeValues<angem::VTK_ID::TriangleID> fe_values(_element_grid);
+  FeValues<angem::VTK_ID::TriangleID> fe_values;
   const size_t nv = 3; // n vertices in triangle
   const size_t q_loc = 0;  // only one integration point
   for (const size_t iface : _face_domains[parent_face])
