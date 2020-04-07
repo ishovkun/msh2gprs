@@ -29,13 +29,14 @@ class Postprocessor:
         gprs_reader = self.makeReader_()
         self.prepareOutputDirectory_()
 
-        # printProgressBar(0, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+        printProgressBar(0, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
         while gprs_reader.advanceTimeStep():
            t = gprs_reader.getTime()
            data = gprs_reader.getData()
-           self.saveReservoirData_(t, data)
-           # printProgressBar(gprs_reader.getRelativePosition(), 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
-        # printProgressBar(1, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+           mech_data = gprs_reader.getMechData()
+           self.saveReservoirData_(t, data, mech_data=mech_data)
+           printProgressBar(gprs_reader.getRelativePosition(), 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+        printProgressBar(1, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
 
     def readConfig_(self):
         if (not os.path.isdir(self.case_path)):
@@ -73,7 +74,7 @@ class Postprocessor:
         reader.Update()
         self.n_mech_vertices = reader.GetOutput().GetNumberOfPoints()
 
-    def saveReservoirData_(self, t, data):
+    def saveReservoirData_(self, t, data, mech_data=None):
         assert data.shape[0] == (len(self.config["matrix_cell_to_flow_dof"]) +
                                  len(self.config["dfm_cell_to_flow_dof"]) +
                                  len(self.config["edfm_cell_to_flow_dof"])), "Data size " + \
@@ -88,6 +89,8 @@ class Postprocessor:
             self.addDataToReader_(self.edfm_flow_grid_reader, data, self.config["edfm_cell_to_flow_dof"])
         if len(self.config["dfm_cell_to_flow_dof"]) > 0:
             self.addDataToReader_(self.dfm_flow_grid_reader, data, self.config["dfm_cell_to_flow_dof"])
+        self.addMechDataToReader(self.matrix_flow_grid_reader, mech_data)
+
         # save output
         self.writeFile_(self.matrix_flow_grid_reader, "matrix-%d"%self.output_file_number)
         if len(self.config["edfm_cell_to_flow_dof"]) > 0:
@@ -102,6 +105,14 @@ class Postprocessor:
             x = numpy_support.numpy_to_vtk(data[key].values[mapping])
             x.SetName(key)
             output.GetCellData().AddArray(x)
+
+    def addMechDataToReader(self, reader, data):
+        output = reader.GetOutput()
+        for key in data.keys():
+            x = numpy_support.numpy_to_vtk(data[key].values)
+            x.SetName(key)
+            output.GetPointData().AddArray(x)
+
 
     def writeFile_(self, reader, file_name):
         self.writer.SetFileName(self.output_dir + "/" + file_name + ".vtk")

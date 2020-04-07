@@ -13,6 +13,7 @@ class GprsAsciiReader:
     n_nodes = 0                 # for geomech
     current_time = 0.0
     data = pd.DataFrame()
+    mech_data = pd.DataFrame()
 
     def __init__(self, file_name, n_mech_vert=0):
         """
@@ -50,6 +51,10 @@ class GprsAsciiReader:
             for i in range(self.n_nodes):
                 values = [float(x) for x in self.input_file.readline().split() ]
                 storage[i, :] = values
+
+            # put into dataframe
+            self.mech_data = pd.DataFrame(storage, columns=keys)
+
             # skip till flow data
             line = self.input_file.readline() # Time  = ...
             while (not line.strip()):             # skip empty
@@ -65,8 +70,8 @@ class GprsAsciiReader:
                 values = [float(x) for x in self.input_file.readline().split() ]
                 storage[i, :] = values
 
-        # put into dataframe
-        self.data = pd.DataFrame(storage, columns=keys)
+            # put into dataframe
+            self.data = pd.DataFrame(storage, columns=keys)
         return True
 
     def getTime(self) -> float:
@@ -77,6 +82,12 @@ class GprsAsciiReader:
         returns the data read by readTimeStep.
         """
         return self.data
+
+    def getMechData(self) -> pd.DataFrame:
+        """
+        returns the data read by readTimeStep.
+        """
+        return self.mech_data
 
     def getRelativePosition(self) -> float:
         current_pos = self.input_file.tell()
