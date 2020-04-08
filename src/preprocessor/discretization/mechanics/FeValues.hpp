@@ -264,12 +264,12 @@ void FeValues<vtk_id>::update_(const Point & p,
   // compute shape grad in in master element
   const auto ref_grad = compute_ref_gradient_(p);
   angem::Tensor2<3, double> du_dx;
-  double detJ;
   if ( ELEMENT_DIM<vtk_id> == 3 )
-    compute_detJ_and_invert_cell_jacobian_(ref_grad, du_dx, detJ);
-  else
-    compute_detJ_and_invert_face_jacobian_(ref_grad, du_dx, detJ);
-  determinant = detJ;
+    compute_detJ_and_invert_cell_jacobian_(ref_grad, du_dx, determinant);
+  else  // dim == 2
+    compute_detJ_and_invert_face_jacobian_(ref_grad, du_dx, determinant);
+  // must be positive
+  if ( determinant <= 0 ) throw std::runtime_error("Transformation Jacobian is not invertible");
   // compute the true shape function gradients
   update_shape_grads_(ref_grad, du_dx, shape_grads);
 }
@@ -369,11 +369,8 @@ compute_detJ_and_invert_cell_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
   const angem::Tensor2<3, double> dx_du = compute_jacobian_(ref_grad);
   // compute the determinant of transformation jacobian
   detJ = det(dx_du);
-  // must be positive
-  if ( detJ <= 0 )
-    throw std::runtime_error("Transformation Jacobian is not invertible");
   // invert the jacobian to compute shape function gradients
-  invert(dx_du);
+  du_dx = invert(dx_du);
 }
 
 template<VTK_ID vtk_id>
@@ -417,6 +414,4 @@ template<> constexpr size_t ELEMENT_DIM<VTK_ID::TetrahedronID> = 3;
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::HexahedronID> = 8;
 template<> constexpr size_t ELEMENT_DIM<VTK_ID::HexahedronID> = 3;
 
-
 }  // end namespace discretization
-
