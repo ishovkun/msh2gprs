@@ -99,5 +99,4 @@ std::vector<double> FeValues<VTK_ID::HexahedronID>::get_master_integration_weigh
   return {w1, w1, w1, w1, w1, w1};;
 }
 
-
 }  // end namespace discretization

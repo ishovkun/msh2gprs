@@ -12,11 +12,48 @@ StandardFiniteElement::StandardFiniteElement(const mesh::Cell & cell)
   switch (id)
   {
     case VTK_ID::TetrahedronID:
-      build_<VTK_ID::TetrahedronID>();
-      break;
+      {
+        FeValues<VTK_ID::TetrahedronID> fe_values;
+        fe_values.update(_cell);
+        build_<VTK_ID::TetrahedronID>(fe_values, _cell_data);
+        break;
+      }
     case VTK_ID::HexahedronID:
-      build_<VTK_ID::HexahedronID>();
-      break;
+      {
+        FeValues<VTK_ID::HexahedronID> fe_values;
+        fe_values.update(_cell);
+        build_<VTK_ID::HexahedronID>(fe_values, _cell_data);
+        break;
+      }
+    default:
+      throw std::invalid_argument("FEM not implemented for this vtk type");
+  }
+
+  const auto faces = _cell.faces();
+  _face_data.resize( faces.size() );
+  for (size_t i=0; i<faces.size(); ++i)
+  {
+    const mesh::Face* face = faces[i];
+    const VTK_ID id = static_cast<VTK_ID>(face->vtk_id());
+    switch (id)
+    {
+      case VTK_ID::TriangleID:
+        {
+          FeValues<VTK_ID::TriangleID> fe_values;
+          fe_values.update(*face);
+          build_<VTK_ID::TriangleID>(fe_values, _face_data[i]);
+          break;
+        }
+      case VTK_ID::QuadrangleID:
+        {
+          FeValues<VTK_ID::QuadrangleID> fe_values;
+          fe_values.update(*face);
+          build_<VTK_ID::QuadrangleID>(fe_values, _face_data[i]);
+          break;
+        }
+      default:
+        throw std::invalid_argument("FEM not implemented for this vtk type");
+    }
   }
 }
 

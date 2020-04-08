@@ -35,6 +35,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/FeValuesTriangle.cpp
   discretization/mechanics/FeValuesTetrahedron.cpp
   discretization/mechanics/FeValuesHexahedron.cpp
+  discretization/mechanics/FeValuesQuadrangle.cpp
 )
 
 SET_TARGET_PROPERTIES (

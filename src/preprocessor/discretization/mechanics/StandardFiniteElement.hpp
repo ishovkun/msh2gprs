@@ -27,7 +27,7 @@ class StandardFiniteElement {
 
  protected:
   template <angem::VTK_ID vtk_id>
-  void build_();
+  void build_(FeValues<vtk_id> & fe_values, FiniteElementData & entity_data);
 
   const mesh::Cell & _cell;
   FiniteElementData _cell_data;                // FEM values and gradients in cell integration points
@@ -35,11 +35,9 @@ class StandardFiniteElement {
 };
 
 template <angem::VTK_ID vtk_id>
-void StandardFiniteElement::build_()
+void StandardFiniteElement::build_(FeValues<vtk_id> & fe_values, FiniteElementData & entity_data)
 {
-  FeValues<vtk_id> fe_values;
   const size_t nv = ELEMENT_DIM<vtk_id>;
-  fe_values.update(_cell);
   for (size_t q=0; q<fe_values.n_integration_points(); ++q)
   {
     FEPointData data;
@@ -51,7 +49,7 @@ void StandardFiniteElement::build_()
       data.grads[vertex] = fe_values.grad(vertex, q);
     }
     data.weight = fe_values.JxW(q);
-    _cell_data.points.push_back(data);
+    entity_data.points.push_back(data);
 
     // center
     FEPointData c;
@@ -63,7 +61,7 @@ void StandardFiniteElement::build_()
       c.grads[vertex] = fe_values.grad_center(vertex);
     }
     c.weight = fe_values.detJ_center();
-    _cell_data.center = std::move(c);
+    entity_data.center = std::move(c);
   }
  
 }

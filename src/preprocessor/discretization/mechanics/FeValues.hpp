@@ -414,4 +414,7 @@ template<> constexpr size_t ELEMENT_DIM<VTK_ID::TetrahedronID> = 3;
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::HexahedronID> = 8;
 template<> constexpr size_t ELEMENT_DIM<VTK_ID::HexahedronID> = 3;
 
+template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::QuadrangleID> = 4;
+template<> constexpr size_t ELEMENT_DIM<VTK_ID::QuadrangleID> = 2;
+
 }  // end namespace discretization
