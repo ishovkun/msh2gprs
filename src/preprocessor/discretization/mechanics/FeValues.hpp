@@ -61,11 +61,22 @@ class FeValues
    */
   double value(const size_t shape_index, const size_t qpoint) const;
   /**
+   * Return the value of the shape function indexed by shape_index in element center.
+   * NOTE: must call update() before calling this function.
+   */
+  double value_center(const size_t shape_index) const;
+  /**
    * Return the gradient of the shape function indexed by shape_index in the
    * qpoint integration point in the current element.
    * NOTE: must call update() before calling this function.
    */
   Point grad(const size_t shape_index, const size_t qpoint) const;
+  /**
+   * Return the gradient of the shape function indexed by shape_index in the
+   * element center.
+   * NOTE: must call update() before calling this function.
+   */
+  Point grad_center(const size_t shape_index) const;
   /**
    * Return the JxW value at the integration point indexed by qpoint.
    * JxW is a product of the determinant of the transformation jacobian by
@@ -73,6 +84,11 @@ class FeValues
    * NOTE: must call update() before calling this function.
    */
   double JxW(const size_t qpoint) const;
+  /**
+   * Return the detJ value at the element center
+   * NOTE: must call update() before calling this function.
+   */
+  double detJ_center() const;
 
   /**
    * Number of integration points in the quadrature rule.
@@ -289,11 +305,25 @@ double FeValues<vtk_id>::value(const size_t shape_index, const size_t qpoint) co
 }
 
 template<VTK_ID vtk_id>
+double FeValues<vtk_id>::value_center(const size_t shape_index) const
+{
+  assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
+  return _shape_values_center[shape_index];
+}
+
+template<VTK_ID vtk_id>
 Point FeValues<vtk_id>::grad(const size_t shape_index, const size_t qpoint) const
 {
   assert( qpoint < _qpoints.size() && "qpoint too large" );
   assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
   return _shape_grads[qpoint][shape_index];
+}
+
+template<VTK_ID vtk_id>
+Point FeValues<vtk_id>::grad_center(const size_t shape_index) const
+{
+  assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
+  return _shape_grads_center[shape_index];
 }
 
 template<VTK_ID vtk_id>
@@ -303,6 +333,11 @@ double FeValues<vtk_id>::JxW(const size_t qpoint) const
   return _determinants[qpoint] * _weights[qpoint];
 }
 
+template<VTK_ID vtk_id>
+double FeValues<vtk_id>::detJ_center() const
+{
+  return _determinant_center;
+}
 
 template<VTK_ID vtk_id>
 void FeValues<vtk_id>::
