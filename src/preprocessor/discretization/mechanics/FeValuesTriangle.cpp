@@ -3,8 +3,10 @@
 
 namespace discretization {
 
-// template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
-// template<> constexpr size_t ELEMENT_DIM<VTK_ID::TriangleID> = 2;
+template <>
+FeValues<VTK_ID::TriangleID>::FeValues()
+    : _center(0.125, 0.125, 0)
+{}
 
 template <>
 double FeValues<VTK_ID::TriangleID>::eval_(const Point & point, const size_t vertex) const
@@ -41,7 +43,6 @@ Point FeValues<VTK_ID::TriangleID>::eval_derivative_(const Point & point, const 
 template <>
 std::vector<Point> FeValues<VTK_ID::TriangleID>::get_master_integration_points() const
 {
-  // return {Point(0.125, 0.125, 0)};
   return {Point(0.33333, 0.33333, 0)};
 }
 

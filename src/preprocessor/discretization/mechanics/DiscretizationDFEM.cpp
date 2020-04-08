@@ -5,6 +5,8 @@
 #include "DFEMElement.hpp"
 #include "PolyhedralElementDirect.hpp"
 #endif
+#include "StandardFiniteElement.hpp"
+
 
 namespace discretization
 {
@@ -26,20 +28,21 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 
 void DiscretizationDFEM::build()
 {
-  // {
-  //   auto & cell = _grid.cell(20);
+  {
+    auto & cell = _grid.cell(0);
 
-  //   api::initialize_gmsh();
-  //   PolyhedralElementDirect de(cell);
-  //   de.debug_save_shape_functions_("cell20.vtk");
-  //   de.debug_save_boundary_face_solution("cell20_faces.vtk");
-  //   gmsh::write("cell20.msh");
+    api::initialize_gmsh();
+    PolyhedralElementDirect de(cell);
+    StandardFiniteElement fe(cell);
+    // de.debug_save_shape_functions_("cell20.vtk");
+    // de.debug_save_boundary_face_solution("cell20_faces.vtk");
+    // gmsh::write("cell20.msh");
 
-  //   // DFEMElement discr_element(cell, _msrsb_tol);
-  //   // mesh::Mesh _element_grid;
-  //   api::finalize_gmsh();
-  //   exit(0);
-  // }
+    // DFEMElement discr_element(cell, _msrsb_tol);
+    // mesh::Mesh _element_grid;
+    api::finalize_gmsh();
+    exit(0);
+  }
 
   _face_data.resize( _grid.n_faces() );
 

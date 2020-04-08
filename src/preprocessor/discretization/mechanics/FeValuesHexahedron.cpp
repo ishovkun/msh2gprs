@@ -5,6 +5,11 @@
 namespace discretization {
 
 template <>
+FeValues<VTK_ID::HexahedronID>::FeValues()
+    : _center(0.0, 0.0, 0.0)
+{}
+
+template <>
 double FeValues<VTK_ID::HexahedronID>::eval_(const Point & x, const size_t vertex) const
 {
   switch (vertex)  //φ = ⅛ (1 ± Ѯ)·(1 ± η)·(1 ± ζ)

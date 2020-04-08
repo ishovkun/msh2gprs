@@ -88,11 +88,12 @@ class FeValues
   void update_();
 
   /**
-   * Given element vertices and integration points, update shape values,
-   * gradients, and the determinant of the trasformation jacobian.
-   * Same as above but for faces (2d elemenet).
+   * Update data in a single point
    */
-  void update_face_();
+  void update_(const Point & p,
+               std::array<double,N_ELEMENT_VERTICES<vtk_id>> & shape_values,
+               std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & shape_grads,
+               double & determinant) const;
   /**
    * Given a vector of the grid vertex indices, fill out the interal
    * _vertex_coord array.
@@ -122,13 +123,14 @@ class FeValues
    angem::Tensor2<3, double> compute_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad) const;
 
   // compute shape values in q-points in master element
-  void update_shape_values_();
+  void update_shape_values_(const Point                                   & p,
+                            std::array<double,N_ELEMENT_VERTICES<vtk_id>> & values) const;
   // compute shape grads in q-points in master element
   void update_shape_grads_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad,
                            const angem::Tensor2<3, double> & du_dx,
-                           const size_t integration_point);
+                           std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & grads) const;
   // compute the gradients of shape fucntions in qpoint in master element
-  std::array<Point,N_ELEMENT_VERTICES<vtk_id>> compute_ref_gradient_(const size_t qpoint) const;
+  std::array<Point,N_ELEMENT_VERTICES<vtk_id>> compute_ref_gradient_(const Point &p) const;
 
   /**
    * Map from real coordinates xyz to local coordinates in the master element uvw
@@ -136,18 +138,30 @@ class FeValues
   Point map_real_to_local_(const Point & p) const;
 
   /**
+   * Compute cell jacobian, its determinant, and invert it.
+   */
+  void compute_detJ_and_invert_cell_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad,
+                                              angem::Tensor2<3, double> & du_dx,
+                                              double & detJ) const;
+  /**
    * Compute face jacobian, its determinant, and invert it.
    * Need a separate method for it since the jacobian will be 2x2 instead of 3x3.
    */
-  // std::tuple<angem::Tensor2<3, double>>
-  std::pair<angem::Tensor2<3, double>,double>
-  compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad) const;
+  void compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad,
+                                              angem::Tensor2<3, double> & du_dx,
+                                              double & detJ) const;
+
+  /*  ---------------------------------Variables ---------------------------------- */
 
   std::vector<Point> _qpoints;  // gauss point coordinates in master element
+  Point              _center;   // center coordinates in master element
   std::vector<std::array<double,N_ELEMENT_VERTICES<vtk_id>>> _shape_values;
   std::vector<std::array<Point,N_ELEMENT_VERTICES<vtk_id>>> _shape_grads;
+  std::array<double,N_ELEMENT_VERTICES<vtk_id>> _shape_values_center;
+  std::array<Point,N_ELEMENT_VERTICES<vtk_id>>  _shape_grads_center;
   std::vector<double> _weights;
   std::vector<double> _determinants;
+  double              _determinant_center;
   std::array<Point,N_ELEMENT_VERTICES<vtk_id>> _vertex_coord;
 };
 
@@ -182,7 +196,7 @@ void FeValues<vtk_id>::update(const mesh::Face & face, const angem::Point<3,doub
   update_vertex_coord_(face.vertex_coordinates());
   _weights = {1.0};
   _qpoints = {map_real_to_local_(point)};
-  update_face_();
+  update_();
 }
 
 template<VTK_ID vtk_id>
@@ -192,7 +206,7 @@ void FeValues<vtk_id>::update(const mesh::Face & face)
   update_vertex_coord_(face.vertex_coordinates());
   _qpoints = get_master_integration_points();
   _weights = get_master_integration_weights();
-  update_face_();
+  update_();
 }
 
 template<VTK_ID vtk_id>
@@ -213,67 +227,49 @@ angem::Tensor2<3, double> FeValues<vtk_id>::compute_jacobian_(const std::array<P
 template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update_()
 {
-  // compute shape values in q-points in master element
-  update_shape_values_();
-
+  _shape_values.resize( _qpoints.size() );
   _determinants.assign(_qpoints.size(), 0.0);
   _shape_grads.assign(_qpoints.size(), std::array<Point,N_ELEMENT_VERTICES<vtk_id>>());
-  // loop integration points
+  // update data in integration points
   for (std::size_t q=0; q<_qpoints.size(); ++q)
-  {
-    // compute shape grad in in master element
-    const auto ref_grad = compute_ref_gradient_(q);
-    // compute transformation jacobian
-    angem::Tensor2<3, double> dx_du = compute_jacobian_(ref_grad);
-    // compute the determinant of transformation jacobian
-    _determinants[q] = det(dx_du);
-    // must be positive
-    if ( _determinants[q] <= 0 )
-    {
-      std::cout << "error: " << std::endl;
-      std::cout << "vtk_id = " << vtk_id << std::endl;
-      std::cout << dx_du << std::endl;
-      throw std::runtime_error("Transformation Jacobian is not invertible");
-    }
-    // invert the jacobian to compute shape function gradients
-    angem::Tensor2<3, double> du_dx = invert(dx_du);
-
-    // compute the true shape function gradients
-    update_shape_grads_(ref_grad, du_dx, q);
-  }
+    update_(_qpoints[q], _shape_values[q], _shape_grads[q], _determinants[q]);
+  // update values in center
+  update_(_center, _shape_values_center, _shape_grads_center, _determinant_center);
 }
 
 template<VTK_ID vtk_id>
-void FeValues<vtk_id>::update_face_()
+void FeValues<vtk_id>::update_(const Point & p,
+                               std::array<double,N_ELEMENT_VERTICES<vtk_id>> & shape_values,
+                               std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & shape_grads,
+                               double & determinant) const
 {
   // compute shape values in q-points in master element
-  update_shape_values_();
-
-  _determinants.assign(_qpoints.size(), 0.0);
-  _shape_grads.assign(_qpoints.size(), std::array<Point,N_ELEMENT_VERTICES<vtk_id>>());
-
-  // loop integration points
-  for (std::size_t q=0; q<_qpoints.size(); ++q)
-  {
-    // compute shape grad in in master element
-    const auto ref_grad = compute_ref_gradient_(q);
-    const auto [du_dx, detJ] = compute_detJ_and_invert_face_jacobian_(ref_grad);
-    _determinants[q] = detJ;
-    // compute the true shape function gradients
-    update_shape_grads_(ref_grad, du_dx, q);
-  }
+  update_shape_values_(p, shape_values);
+  // compute shape grad in in master element
+  const auto ref_grad = compute_ref_gradient_(p);
+  angem::Tensor2<3, double> du_dx;
+  double detJ;
+  if ( ELEMENT_DIM<vtk_id> == 3 )
+    compute_detJ_and_invert_cell_jacobian_(ref_grad, du_dx, detJ);
+  else
+    compute_detJ_and_invert_face_jacobian_(ref_grad, du_dx, detJ);
+  determinant = detJ;
+  // compute the true shape function gradients
+  update_shape_grads_(ref_grad, du_dx, shape_grads);
 }
+
 
 template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update_shape_grads_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad,
-                                           const angem::Tensor2<3, double> & du_dx, const size_t q)
+                                           const angem::Tensor2<3, double> & du_dx,
+                                           std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & grads) const
 {
     // compute the true shape function gradients
     for (size_t vertex = 0; vertex < N_ELEMENT_VERTICES<vtk_id>; ++vertex)
       for (size_t i=0; i<3; ++i)
         for (size_t j = 0; j < 3; ++j)
           // d phi_vert / dx_i = (d phi_vert / d u_j) * (d u_j / d x_i)
-          _shape_grads[q][vertex][i] += ref_grad[vertex][j] * du_dx(j, i);
+          grads[vertex][i] += ref_grad[vertex][j] * du_dx(j, i);
 }
 
 template<VTK_ID vtk_id>
@@ -309,27 +305,47 @@ double FeValues<vtk_id>::JxW(const size_t qpoint) const
 
 
 template<VTK_ID vtk_id>
-void FeValues<vtk_id>::update_shape_values_()
+void FeValues<vtk_id>::
+update_shape_values_(const Point                                   & p,
+                     std::array<double,N_ELEMENT_VERTICES<vtk_id>> & values) const
 {
-  _shape_values.resize( _qpoints.size() );
-  for (std::size_t q=0; q<_qpoints.size(); ++q)
-    for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
-      _shape_values[q][v] = eval_(_qpoints[q], v);
+  for (size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
+    values[v] = eval_(p, v);
 }
 
 template<VTK_ID vtk_id>
-std::array<Point,N_ELEMENT_VERTICES<vtk_id>> FeValues<vtk_id>::compute_ref_gradient_(const size_t q) const
+std::array<Point,N_ELEMENT_VERTICES<vtk_id>> FeValues<vtk_id>::
+compute_ref_gradient_(const Point & p) const
 {
   std::array<Point,N_ELEMENT_VERTICES<vtk_id>> ref_grad;
-  for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
-    ref_grad[v] = eval_derivative_(_qpoints[q], v);
+  for (size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
+    ref_grad[v] = eval_derivative_(p, v);
   return ref_grad;
 }
 
 template<VTK_ID vtk_id>
-std::pair<angem::Tensor2<3, double>,double>
+void
 FeValues<vtk_id>::
-compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad) const
+compute_detJ_and_invert_cell_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad,
+                                       angem::Tensor2<3, double> & du_dx,
+                                       double & detJ) const
+{
+  // compute transformation jacobian
+  const angem::Tensor2<3, double> dx_du = compute_jacobian_(ref_grad);
+  // compute the determinant of transformation jacobian
+  detJ = det(dx_du);
+  // must be positive
+  if ( detJ <= 0 )
+    throw std::runtime_error("Transformation Jacobian is not invertible");
+  // invert the jacobian to compute shape function gradients
+  invert(dx_du);
+}
+
+template<VTK_ID vtk_id>
+void FeValues<vtk_id>::
+compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad,
+                                       angem::Tensor2<3, double> & J_inv,
+                                       double & detJ) const
 {
   // angem::Tensor2<3,double>
   angem::Plane<double> plane (_vertex_coord[0], _vertex_coord[1], _vertex_coord[2]);
@@ -351,12 +367,10 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
   const angem::Tensor2<2, double> J2_inv = invert(J2);
 
   // cast it back to 3D since that's what the code uses to compute shape gradients
-  const angem::Tensor2<3, double> J_inv = {J2_inv(0,0), J2_inv(0,1), 0.0,
-                                           J2_inv(1,0), J2_inv(1,1), 0.0,
-                                           0.0,         0.0,         0.0};
-  const double detJ = det(J2);
-
-  return {J_inv, detJ};
+  J_inv = {J2_inv(0,0), J2_inv(0,1), 0.0,
+           J2_inv(1,0), J2_inv(1,1), 0.0,
+           0.0,         0.0,         0.0};
+  detJ = det(J2);
 }
 
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
