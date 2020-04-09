@@ -70,8 +70,9 @@ Point FeValues<VTK_ID::TetrahedronID>::map_real_to_local_(const Point & xyz) con
     _vertex_coord[2].z() - _vertex_coord[0].z(),
     _vertex_coord[3].z() - _vertex_coord[0].z()
   };
+  const Point b = xyz - _vertex_coord[0];
   const angem::Tensor2<3,double> mat_inv = invert(mat);
-  return mat_inv * xyz;
+  return mat_inv * b;
 }
 
 }  // end namespace discretization
