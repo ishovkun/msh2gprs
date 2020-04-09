@@ -47,13 +47,21 @@ Point FeValues<VTK_ID::TetrahedronID>::eval_derivative_(const Point & point, con
 template <>
 std::vector<Point> FeValues<VTK_ID::TetrahedronID>::get_master_integration_points() const
 {
-  return {Point(0.25, 0.25, 0.25)};
+  // 4-point rule, taken from gmsh
+  const double a = 0.5854101966249685;
+  const double b = 0.138196601125015;
+  return {Point(a, b, b),
+          Point(b, a, b),
+          Point(b, b, a),
+          Point(b, b, b)};
 }
 
 template <>
 std::vector<double> FeValues<VTK_ID::TetrahedronID>::get_master_integration_weights() const
 {
-  return {1.0};
+  // 4-point rule, taken from gmsh
+  const double w = 0.0416666666666667;
+  return {w, w, w, w};
 }
 
 template <>
