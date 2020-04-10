@@ -49,7 +49,7 @@ std::vector<Point> FeValues<VTK_ID::TriangleID>::get_master_integration_points()
 template <>
 std::vector<double> FeValues<VTK_ID::TriangleID>::get_master_integration_weights() const
 {
-  return {1.0};
+  return {0.5};
 }
 
 template <>
@@ -57,13 +57,8 @@ Point FeValues<VTK_ID::TriangleID>::map_real_to_local_(const Point & xyz) const
 {
   /**
    * This code is copied from gmsh and sligtly modified to adapt to the
-   * angem Point class. */
-  // const Point O = {_vertex_coord[0].x(), _vertex_coord[0].y(), _vertex_coord[0].z()};
-  // const Point d = {xyz[0] - O[0], xyz[1] - O[1], xyz[2] - O[2]};
-  // const Point d1 = {_vertex_coord[1].x() - O[0], _vertex_coord[1].y() - O[1],
-  //                   _vertex_coord[1].z() - O[2]};
-  // const Point d2 = {_vertex_coord[2].x() - O[0], _vertex_coord[2].y() - O[1],
-  //                   _vertex_coord[2].z() - O[2]};
+   * angem Point class.
+   */
   const Point & O = _vertex_coord[0];
   const Point d = xyz - O;
   const Point d1 = _vertex_coord[1] - O;

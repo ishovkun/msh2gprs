@@ -31,6 +31,11 @@ class FeValues
    */
   void update(const mesh::Cell & cell);
   /**
+   * Update the needed internal quantities in the cell (or face) assigned as a vector of vertices.
+   * Use this method before using the fem quantities in the new cell during the loop.
+   */
+  void update(std::vector<Point> & element_vertices);
+  /**
    * Update the needed internal quantities in the cell in the gived integration point.
    * The point coordinate is the real (not reference) coordinates of the integration point.
    */
@@ -44,7 +49,7 @@ class FeValues
    * Update the needed quantities in the face in the gived integration point.
    * The point coordinate is the real (not reference) coordinates of the integration point.
    */
-  void update(const mesh::Face & cell, const angem::Point<3,double> & point);
+  void update(const mesh::Face & face, const angem::Point<3,double> & point);
   /**
    * Computes a vector of integration points in the master element
    */
@@ -216,6 +221,16 @@ void FeValues<vtk_id>::update(const mesh::Face & face, const angem::Point<3,doub
 }
 
 template<VTK_ID vtk_id>
+void FeValues<vtk_id>::update(std::vector<Point> & element_vertices)
+{
+  assert ( element_vertices.size() == N_ELEMENT_VERTICES<vtk_id> );
+  update_vertex_coord_(element_vertices);
+  _qpoints = get_master_integration_points();
+  _weights = get_master_integration_weights();
+  update_();
+}
+
+template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Face & face)
 {
   static_assert(ELEMENT_DIM<vtk_id> == 2, "This function only exists for 2D elements");
@@ -379,30 +394,23 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
                                        angem::Tensor2<3, double> & J_inv,
                                        double & detJ) const
 {
-  // angem::Tensor2<3,double>
   angem::Plane<double> plane (_vertex_coord[0], _vertex_coord[1], _vertex_coord[2]);
-  // const auto & basis = plane.get_basis();
   std::vector<Point> loc_coord(_vertex_coord.size());
   for (size_t i=0; i<_vertex_coord.size(); ++i)
+  {
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
+    assert( std::fabs(loc_coord[i][2]) < 1e-12 );
+  }
 
   angem::Tensor2<3, double> J;
-  for (std::size_t i=0; i<3; ++i)
-    for (std::size_t j=0; j<3; ++j)
+  for (std::size_t i=0; i<2; ++i)
+    for (std::size_t j=0; j<2; ++j)
       for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
         J( j, i ) += ref_grad[v][j] * loc_coord[v][i];
-
-  // since the shape is 2d, we need to cast this down in 2D
-  // since the third row and column of J are zero
-  const angem::Tensor2<2, double> J2 = {J(0, 0), J(0, 1),
-                                        J(1, 0), J(1, 1)};
-  const angem::Tensor2<2, double> J2_inv = invert(J2);
-
-  // cast it back to 3D since that's what the code uses to compute shape gradients
-  J_inv = {J2_inv(0,0), J2_inv(0,1), 0.0,
-           J2_inv(1,0), J2_inv(1,1), 0.0,
-           0.0,         0.0,         0.0};
-  detJ = det(J2);
+  J(2, 2) = 1;
+  J_inv = invert(J);
+  std::cout << "J = "<< J << std::endl;
+  detJ = det(J);
 }
 
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;

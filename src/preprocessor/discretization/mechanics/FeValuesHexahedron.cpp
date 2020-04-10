@@ -81,7 +81,7 @@ template <>
 std::vector<Point> FeValues<VTK_ID::HexahedronID>::get_master_integration_points() const
 {
   // 6-point quadrature
-  // Shamelessly stolen from GMsh
+  // Values taken from GMsh/numeric/GaussQuadratureHex.cpp
   return {
     Point(  0.40824826,  0.70710678, -0.57735027 ),
     Point(  0.40824826, -0.70710678, -0.57735027 ),

@@ -89,7 +89,6 @@ class PolyhedralElementDirect
   angem::Point<3,double>
   create_pyramid_and_compute_center_(const std::vector<size_t> & face,
                                      const std::vector<angem::Point<3,double>>  & vertices) const;
-
   /**
    * Split a polygon into triangles, and compute their centers
    * Parameters:
@@ -99,6 +98,14 @@ class PolyhedralElementDirect
    */
   std::vector<angem::Point<3,double>>
   split_into_triangles_and_compute_center_(const angem::Polygon<double> & poly);
+
+  /**
+   * Compute correspondense between local sorted ordering of parent vertices
+   * and ordering given by cell.vertex() method.
+   * We need this since the global exported values must be in the same order as
+   * in cell.vertex() method.
+   */
+   std::vector<size_t> compute_parent_vertex_ordering_() const;
 
   void debug_print_fe_values() const;
 

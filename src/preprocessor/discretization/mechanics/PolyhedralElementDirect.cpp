@@ -258,20 +258,16 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face
           cell_matrix(i, j) += (fe_values.grad(i, q) * // grad phi_i(x_q)
                                 fe_values.grad(j, q) * // grad phi_j(x_q)
                                 fe_values.JxW(q));     // dV
-      // get vertex dofs
-      const auto & verts = face.vertices();
-      for (size_t iv=0; iv<nv; ++iv)
-        face_dofs[iv] = vertex_dofs.vertex_dof( verts[iv] );
-
-      /* distribute local to global */
-      for (size_t i = 0; i < nv; ++i)
-        for (size_t j = 0; j < nv; ++j)
-        {
-          const size_t idof = face_dofs[i];
-          const size_t jdof = face_dofs[j];
-          face_system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
-        }
     }
+
+    /* distribute local to global */
+    for (size_t i = 0; i < nv; ++i)
+      for (size_t j = 0; j < nv; ++j)
+      {
+        const size_t idof = face_dofs[i];
+        const size_t jdof = face_dofs[j];
+        face_system_matrix.coeffRef(idof, jdof) += cell_matrix(i, j);
+      }
   }
 }
 
@@ -495,38 +491,44 @@ void PolyhedralElementDirect::compute_cell_fe_quantities_()
 {
   // allocate vector of point data
   const size_t n_parents = _basis_functions.size();
-  // const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
-  // gprs_data::FeValues fe_values( element_type );
+  /* NOTE: We need this ordering vector since we currently store basis functions in the
+   * order given by _parent_cell.sorted_vertices() method.
+   * At the same time, we need to export values in the order given by
+   * _parent_cell.vertices() method.
+   */
+  const std::vector<size_t> ordering = compute_parent_vertex_ordering_();
+  // Remember  that we temporarily put cell center into _cell_gauss_points
+  // for simplicity
+  _cell_data.points.resize( _cell_gauss_points.size() - 1 );
+  // loop cells and find those that contain integration points
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
     for (size_t q=0; q<_cell_gauss_points.size(); ++q)  //
       if ( cell->polyhedron()->point_inside(_cell_gauss_points[q]) )
       {
-        std::vector<angem::Point<3,double>> points = {_cell_gauss_points[q]};
-        const std::vector<size_t> & cell_verts = cell->vertices();
-        // fe_values.update(cell->index(), points);
         fe_values.update(*cell, _cell_gauss_points[q]);
-        const size_t nv = cell->vertices().size();
+        const std::vector<size_t> & cell_verts = cell->vertices();
+        const size_t nv = cell_verts.size();
         const size_t q_loc = 0;  // only one integration point
         FEPointData data;
-        data.values.resize( _basis_functions.size() );
+        data.values.resize( _basis_functions.size(), 0 );
         data.grads.resize( _basis_functions.size() );
         for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
         {
-          data.values[parent_vertex] = 0;
-          for (size_t vertex=0; vertex<nv; ++vertex)
+          const size_t idx = ordering[parent_vertex];
+          for (size_t v=0; v<nv; ++v)
           {
-            data.values[parent_vertex] += fe_values.value( vertex, q_loc ) *
-                                          _basis_functions[parent_vertex][cell_verts[vertex]];
-            data.grads[parent_vertex] += fe_values.grad(vertex, q_loc) *
-                                         _basis_functions[parent_vertex][cell_verts[vertex]];
+            data.values[idx] += fe_values.value( v, q_loc ) *
+                                _basis_functions[parent_vertex][cell_verts[v]];
+            data.grads[idx] += fe_values.grad(v, q_loc) *
+                               _basis_functions[parent_vertex][cell_verts[v]];
           }
         }
 
         if ( q < _cell_gauss_points.size() - 1 )
         {
           data.weight = 1.0 / static_cast<double>( _cell_gauss_points.size() - 1 ); // -1 since center is not a gauss point
-          _cell_data.points.push_back( std::move(data) );
+          _cell_data.points[q] = std::move(data);
         }
         else // last point is center
         {
@@ -654,11 +656,24 @@ void PolyhedralElementDirect::compute_face_fe_quantities_(const size_t parent_fa
           _face_data[parent_face].center = std::move(data);
         }
       }
-
   }
-
-
 }
+
+std::vector<size_t> PolyhedralElementDirect::compute_parent_vertex_ordering_() const
+{
+  const std::vector<size_t> sorted = _parent_cell.sorted_vertices();
+  const std::vector<size_t> true_order = _parent_cell.vertices();
+  std::vector<size_t> ordering(true_order.size());
+  // It's a quadratic-time search, but the number of vertices is small so whatever
+  for (size_t v=0; v<true_order.size(); ++v)
+  {
+    const size_t index = std::distance(sorted.begin(),
+        std::find( sorted.begin(), sorted.end(), true_order[v] ));
+    ordering[index] = v;
+  }
+  return ordering;
+}
+
 
 }  // end namespace discretization
 
