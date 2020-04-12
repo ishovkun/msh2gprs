@@ -43,7 +43,7 @@ Point FeValues<VTK_ID::TriangleID>::eval_derivative_(const Point & point, const 
 template <>
 std::vector<Point> FeValues<VTK_ID::TriangleID>::get_master_integration_points() const
 {
-  return {Point(0.33333, 0.33333, 0)};
+  return {Point(1.0/3.0, 1.0/3.0, 0)};
 }
 
 template <>

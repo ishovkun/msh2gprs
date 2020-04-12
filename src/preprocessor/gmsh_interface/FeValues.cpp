@@ -70,8 +70,6 @@ void FeValues::update(const size_t cell_number)
     angem::Tensor2<3, double> dx_du(jac_local);
     // invert jacobian
     angem::Tensor2<3, double> du_dx = invert(dx_du);
-    // angem::Tensor2<3, double> prod = dx_du * du_dx; % I checked that this is an identity matrix
-
     for (size_t vertex = 0; vertex < nv; ++vertex)
       for (size_t i=0; i<dim; ++i)
       {

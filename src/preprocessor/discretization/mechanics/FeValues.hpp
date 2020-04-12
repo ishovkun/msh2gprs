@@ -100,6 +100,8 @@ class FeValues
    */
   size_t n_integration_points() const { return _qpoints.size(); }
 
+  void set_basis(const angem::Basis<3,double> & basis) { _face_basis = basis; _basis_set = true; }
+
  protected:
   /**
    * Given element vertices and integration points, update shape values,
@@ -184,6 +186,9 @@ class FeValues
   std::vector<double> _determinants;
   double              _determinant_center;
   std::array<Point,N_ELEMENT_VERTICES<vtk_id>> _vertex_coord;
+  angem::Basis<3,double> _face_basis;
+  bool                   _basis_set = false;  // true after set_basis()
+  std::array<size_t,N_ELEMENT_VERTICES<vtk_id>>    _vertex_ordering;
 };
 
 template<VTK_ID vtk_id>
@@ -223,7 +228,6 @@ void FeValues<vtk_id>::update(const mesh::Face & face, const angem::Point<3,doub
 template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(std::vector<Point> & element_vertices)
 {
-  assert ( element_vertices.size() == N_ELEMENT_VERTICES<vtk_id> );
   update_vertex_coord_(element_vertices);
   _qpoints = get_master_integration_points();
   _weights = get_master_integration_weights();
@@ -246,12 +250,11 @@ angem::Tensor2<3, double> FeValues<vtk_id>::compute_jacobian_(const std::array<P
   // compute jacobian
   // see Becker E., Carey G., Oden J. Finite elements. An Introduction Volume 1 1981
   // Eq. 5.3.6
-  // NOTE: this is a transposed jacobian matrix
   angem::Tensor2<3, double> J;
   for (std::size_t i=0; i<3; ++i)
     for (std::size_t j=0; j<3; ++j)
       for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
-        J( j, i ) += ref_grad[v][j] * _vertex_coord[v][i];
+        J( i, j ) += ref_grad[v][j] * _vertex_coord[v][i];
   return J;
 }
 
@@ -295,12 +298,12 @@ void FeValues<vtk_id>::update_shape_grads_(const std::array<Point,N_ELEMENT_VERT
                                            const angem::Tensor2<3, double> & du_dx,
                                            std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & grads) const
 {
-    // compute the true shape function gradients
-    for (size_t vertex = 0; vertex < N_ELEMENT_VERTICES<vtk_id>; ++vertex)
-      for (size_t i=0; i<3; ++i)
-        for (size_t j = 0; j < 3; ++j)
-          // d phi_vert / dx_i = (d phi_vert / d u_j) * (d u_j / d x_i)
-          grads[vertex][i] += ref_grad[vertex][j] * du_dx(j, i);
+  // compute the true shape function gradients
+  for (size_t vertex = 0; vertex < N_ELEMENT_VERTICES<vtk_id>; ++vertex)
+    for (size_t i=0; i<3; ++i)
+      for (size_t j = 0; j < 3; ++j)
+        // d phi_vert / dx_i = (d phi_vert / d u_j) * (d u_j / d x_i)
+        grads[vertex][i] += ref_grad[vertex][j] * du_dx(j, i);
 }
 
 template<VTK_ID vtk_id>
@@ -309,6 +312,22 @@ void FeValues<vtk_id>::update_vertex_coord_(const std::vector<Point> & vertex_co
   assert( vertex_coordinates.size() == N_ELEMENT_VERTICES<vtk_id> );
   for (size_t iv=0; iv<N_ELEMENT_VERTICES<vtk_id>; ++iv)
     _vertex_coord[iv] = vertex_coordinates[iv];
+
+  std::iota(_vertex_ordering.begin(), _vertex_ordering.end(), 0);
+  // check if vertex numbering is consistent with the current basis
+  if ( ELEMENT_DIM<vtk_id> == 2 )
+  {
+    if (_basis_set)
+    {
+      angem::Plane<double> plane (_vertex_coord[0], _vertex_coord[1], _vertex_coord[2]);
+      if ( plane.normal() * _face_basis[2] < 0)
+      {
+        // reorder vertices
+        std::reverse(_vertex_coord.begin()    + 1, _vertex_coord.end());
+        std::reverse(_vertex_ordering.begin() + 1, _vertex_ordering.end());
+      }
+    }
+  }
 }
 
 template<VTK_ID vtk_id>
@@ -316,14 +335,15 @@ double FeValues<vtk_id>::value(const size_t shape_index, const size_t qpoint) co
 {
   assert( qpoint < _qpoints.size() && "qpoint too large" );
   assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
-  return _shape_values[qpoint][shape_index];
+  // return _shape_values[qpoint][shape_index];
+  return _shape_values[qpoint][_vertex_ordering[shape_index]];
 }
 
 template<VTK_ID vtk_id>
 double FeValues<vtk_id>::value_center(const size_t shape_index) const
 {
   assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
-  return _shape_values_center[shape_index];
+  return _shape_values_center[_vertex_ordering[shape_index]];
 }
 
 template<VTK_ID vtk_id>
@@ -331,14 +351,14 @@ Point FeValues<vtk_id>::grad(const size_t shape_index, const size_t qpoint) cons
 {
   assert( qpoint < _qpoints.size() && "qpoint too large" );
   assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
-  return _shape_grads[qpoint][shape_index];
+  return _shape_grads[qpoint][_vertex_ordering[shape_index]];
 }
 
 template<VTK_ID vtk_id>
 Point FeValues<vtk_id>::grad_center(const size_t shape_index) const
 {
   assert( shape_index < N_ELEMENT_VERTICES<vtk_id> && "shape_index too large");
-  return _shape_grads_center[shape_index];
+  return _shape_grads_center[_vertex_ordering[shape_index]];
 }
 
 template<VTK_ID vtk_id>
@@ -395,21 +415,22 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
                                        double & detJ) const
 {
   angem::Plane<double> plane (_vertex_coord[0], _vertex_coord[1], _vertex_coord[2]);
-  std::vector<Point> loc_coord(_vertex_coord.size());
-  for (size_t i=0; i<_vertex_coord.size(); ++i)
+  // get vertex coordinates in 2d face basis
+  std::array<Point,N_ELEMENT_VERTICES<vtk_id>> loc_coord;
+  for (size_t i=0; i < N_ELEMENT_VERTICES<vtk_id>; ++i)
   {
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
     assert( std::fabs(loc_coord[i][2]) < 1e-12 );
   }
 
+  // dx_j / du_i = \sum_k (d psi_k / du_j) * x_k_i
   angem::Tensor2<3, double> J;
   for (std::size_t i=0; i<2; ++i)
     for (std::size_t j=0; j<2; ++j)
       for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
-        J( j, i ) += ref_grad[v][j] * loc_coord[v][i];
+        J(i, j) += ref_grad[v][j] * loc_coord[v][i];
   J(2, 2) = 1;
   J_inv = invert(J);
-  std::cout << "J = "<< J << std::endl;
   detJ = det(J);
 }
 
