@@ -6,6 +6,7 @@
 #include "PolyhedralElementDirect.hpp"
 #endif
 #include "StandardFiniteElement.hpp"
+#include "ProgressBar.hpp"  // provides ProgressBar
 
 
 namespace discretization
