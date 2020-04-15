@@ -215,7 +215,14 @@ void CellPropertyManager::map_mechanics_to_control_volumes(const discretization:
   m_data.gmcell_to_flowcells.resize(m_n_unrefined_cells);
   // simdata vector coupled
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    m_data.gmcell_to_flowcells[cell->ultimate_parent().index()].push_back(dofs.cell_dof(cell->index()));
+  {
+    for (const auto & conf : domains)
+      if (conf.label == cell->marker())
+        if (conf.coupled)
+          m_data
+              .gmcell_to_flowcells[cell->ultimate_parent().index()]
+              .push_back(dofs.cell_dof(cell->index()));
+  }
 }
 
 void CellPropertyManager::downscale_properties()
