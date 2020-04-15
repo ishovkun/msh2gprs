@@ -18,19 +18,19 @@ void BoundaryConditionManager::build_boundary_conditions_()
   size_t iface = 0;
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     if (face->marker() > 0)
-  {
-    for (size_t iconf=0; iconf<_face_config.size(); ++iconf)
     {
-      const auto & conf = _face_config[iconf];
-      if ( face->marker() == conf.label )
+      for (size_t iconf=0; iconf<_face_config.size(); ++iconf)
       {
-        if ( conf.type == BoundaryConditionType::dirichlet )
-          process_dirichlet_face_(*face, iconf);
-        else // if ( conf.type == BoundaryConditionType::neumann )
-          process_neumann_face_(conf, iface);
+        const auto & conf = _face_config[iconf];
+        if ( face->marker() == conf.label )
+        {
+          if ( conf.type == BoundaryConditionType::dirichlet )
+            process_dirichlet_face_(*face, iconf);
+          else // if ( conf.type == BoundaryConditionType::neumann )
+            process_neumann_face_(conf, iface);
+        }
       }
-    }
-    iface++;
+      iface++;
   }
   create_dirichlet_data_();
 }
@@ -55,9 +55,9 @@ void BoundaryConditionManager::create_dirichlet_data_()
 void BoundaryConditionManager::process_dirichlet_face_(const mesh::Face & face, const size_t config_index)
 {
   for (const size_t v : face.vertices())
-  {
-    _node_to_config[v].push_back( config_index );
-  }
+    if( std::find( _node_to_config[v].begin(), _node_to_config[v].end(), config_index ) ==
+        _node_to_config[v].end())
+      _node_to_config[v].push_back( config_index );
 }
 
 void BoundaryConditionManager::process_neumann_face_(const BCConfig & conf, const size_t face_index)
