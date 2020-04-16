@@ -95,7 +95,7 @@ std::vector<Point> FeValues<VTK_ID::HexahedronID>::get_master_integration_points
 template <>
 std::vector<double> FeValues<VTK_ID::HexahedronID>::get_master_integration_weights() const
 {
-  const double w1 = 1.3333333333;
+  const double w1 = 8.0 / 6.0;  // volum=8; 6 points
   return {w1, w1, w1, w1, w1, w1};;
 }
 

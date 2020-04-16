@@ -29,7 +29,9 @@ class PolyhedralElementDirect
   const FiniteElementData & get_cell_data() const {return _cell_data;}
   // get FE data for surface integration
   const std::vector<FiniteElementData> & get_face_data() const {return _face_data;}
-  // purely debugging purposes
+  // get vector of cell integration points (where cell_data is defined)
+  const std::vector<angem::Point<3,double>> & get_cell_integration_points() const {return _cell_gauss_points;}
+  //  purely debugging purposes
   void debug_save_boundary_face_solution(const std::string fname) const;
   // purely debugging purposes
   void debug_save_shape_functions_(const std::string fname) const;
@@ -85,8 +87,8 @@ class PolyhedralElementDirect
   // integration points in a given face face
   void compute_face_fe_quantities_(const size_t parent_face);
   // create a pyramid element from a cell face and cell center
-  // and return its center
-  angem::Point<3,double>
+  // and return its center and volume
+  std::pair<angem::Point<3,double>, double>
   create_pyramid_and_compute_center_(const std::vector<size_t> & face,
                                      const std::vector<angem::Point<3,double>>  & vertices) const;
   /**

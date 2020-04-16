@@ -24,6 +24,9 @@ class DiscretizationDFEM
   const std::vector<FiniteElementData> & get_face_data() const { return _face_data; }
 
  protected:
+  // just a debug function
+  void analyze_cell_(const mesh::Cell & cell);
+
   const mesh::Mesh & _grid;
   const double _msrsb_tol;  // msrsb tolerance
   std::vector<FiniteElementData> _cell_data, _face_data;

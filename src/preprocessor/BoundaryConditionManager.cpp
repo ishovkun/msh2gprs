@@ -24,7 +24,7 @@ void BoundaryConditionManager::build_boundary_conditions_()
         const auto & conf = _face_config[iconf];
         if ( face->marker() == conf.label )
         {
-          if ( conf.type == BoundaryConditionType::dirichlet )
+          if (conf.type == BoundaryConditionType::dirichlet)
             process_dirichlet_face_(*face, iconf);
           else // if ( conf.type == BoundaryConditionType::neumann )
             process_neumann_face_(conf, iface);

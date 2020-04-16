@@ -28,7 +28,7 @@ void PolyhedralElementDirect::build_()
   // triangulate the polyhedral element
   api::build_triangulation(_parent_cell, _element_grid);
   // get the relation between gmsh vertex ids and grid vertices
-  // compute_vertex_mapping_();
+  compute_vertex_mapping_();
   // solve problems on faces
   build_face_boundary_conditions_();
   // construct the laplace system matrix for the cell volume laplace equation
@@ -82,6 +82,7 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
     Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix =
         Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
     // fill system matrix
+    // build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
     build_face_system_matrix_(iface, face_system_matrix, _face_domains[iface], vertex_numbering);
     const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
     for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
@@ -200,19 +201,38 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t iface,
   const size_t nv = api::get_n_vertices(element_type);
   Eigen::MatrixXd cell_matrix(nv, nv);
   std::vector<size_t> face_dofs(nv);
+  FeValues<angem::VTK_ID::TriangleID> fe_values1;
+  static int cnt = 0;
   for (size_t ielement=0; ielement<tags.size(); ++ielement)
   {
+    std::vector<Point> coord(nv);
     for (size_t iv=0; iv<nv; ++iv)
     {
       const size_t vertex_tag = element_node_tags[nv * ielement + iv];
       const size_t vertex = _vertex_mapping[vertex_tag];
+      coord[iv]   = _element_grid.vertex(vertex);
       assert (vertex < _element_grid.n_vertices() );
       face_dofs[iv] = vertex_dofs.vertex_dof( vertex );
       assert(vertex_dofs.has_vertex(vertex));
     }
 
     cell_matrix.setZero();
+    // std::cout << std::endl;
     fe_values.update(ielement);
+    // fe_values1.update(coord);
+    // for (size_t iv=0; iv<nv; ++iv)
+    // {
+    //   std::cout << fe_values.grad(iv, 0) << " || "
+    //             << fe_values1.grad(iv, 0) << " || "
+    //             << ( fe_values.grad(iv,0) - fe_values1.grad(iv,0) ).norm()
+    //             << std::endl;
+    //   if (( fe_values.grad(iv,0) - fe_values1.grad(iv,0) ).norm() > 1e-8)
+    //     // exit(0);
+    //     cnt++;
+    // }
+    // if (cnt != 0) cnt++;
+    // if (cnt > 10)
+    //   exit(0);
 
     // assemble local element matrix
     for (size_t q = 0; q < fe_values.n_q_points(); ++q)
@@ -245,11 +265,25 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face
   Eigen::MatrixXd cell_matrix(nv, nv);
   std::vector<size_t> face_dofs(nv);
 
+  // all faces within the parent face must have the same orientation
+  const auto basis = _element_grid
+                     .face(face_indices.front())
+                     .polygon()
+                     .plane()
+                     .get_basis();
+  fe_values.set_basis(basis);
+
   for (const size_t iface : face_indices)
   {
     const mesh::Face & face = _element_grid.face(iface);
     fe_values.update(face);
     cell_matrix.setZero();
+
+    // get vertex dofs
+    const auto & verts = face.vertices();
+    for (size_t iv=0; iv<nv; ++iv)
+      face_dofs[iv] = vertex_dofs.vertex_dof( verts[iv] );
+
     // assemble local element matrix
     for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
     {
@@ -497,20 +531,44 @@ void PolyhedralElementDirect::compute_cell_fe_quantities_()
    * _parent_cell.vertices() method.
    */
   const std::vector<size_t> ordering = compute_parent_vertex_ordering_();
-  // Remember  that we temporarily put cell center into _cell_gauss_points
-  // for simplicity
-  _cell_data.points.resize( _cell_gauss_points.size() - 1 );
   // loop cells and find those that contain integration points
+  std::vector<bool> marked(_cell_gauss_points.size(), false);
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
+  // std::cout << "output grads:" << std::endl;
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
     for (size_t q=0; q<_cell_gauss_points.size(); ++q)  //
+      if (!marked[q])
       if ( cell->polyhedron()->point_inside(_cell_gauss_points[q]) )
       {
+        marked[q] = true;
+        // std::cout << "q = " << q << "->"<<cell->index() << std::endl;
+        // NOTE: I reset the coordinate as center since mapping from
+        // real to master doesn't work
+        // _cell_gauss_points[q] = cell->center();
+        // fe_values.update(*cell);
         fe_values.update(*cell, _cell_gauss_points[q]);
         const std::vector<size_t> & cell_verts = cell->vertices();
         const size_t nv = cell_verts.size();
         const size_t q_loc = 0;  // only one integration point
         FEPointData data;
+        // if (q == 1)
+        // {
+        //   for (size_t v=0; v<nv; ++v)
+        //     std::cout << "grad_" << v << " = " << fe_values.grad(v, q_loc) << std::endl;
+        //   std::cout << "ordering" << std::endl;
+        //   for (auto v : ordering)
+        //     std::cout << v << " ";
+        //   std::cout << std::endl;
+        //   std::cout << "parent values" << std::endl;
+        //   for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
+        //   {
+        //     for (size_t v=0; v<nv; ++v)
+        //       std::cout << _basis_functions[parent_vertex][cell_verts[v]] << " ";
+        //     std::cout << std::endl;
+        //   }
+
+        // }
+
         data.values.resize( _basis_functions.size(), 0 );
         data.grads.resize( _basis_functions.size() );
         for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
@@ -525,14 +583,14 @@ void PolyhedralElementDirect::compute_cell_fe_quantities_()
           }
         }
 
-        if ( q < _cell_gauss_points.size() - 1 )
+        if ( q < _cell_gauss_points.size() - 1 )  // -1 since last point center is not a gauss point
         {
-          data.weight = 1.0 / static_cast<double>( _cell_gauss_points.size() - 1 ); // -1 since center is not a gauss point
+          data.weight = _cell_data.points[q].weight;
           _cell_data.points[q] = std::move(data);
         }
         else // last point is center
         {
-          data.weight = 1.0;
+          data.weight = _parent_cell.volume();
           _cell_data.center = std::move(data);
         }
       }
@@ -542,11 +600,71 @@ void PolyhedralElementDirect::find_integration_points_()
 {
   /* Split a parent cell into pyramids and find their centers */
   const auto polyhedron = _parent_cell.polyhedron();
-  std::vector<Point> parent_vertices = polyhedron->get_points();
-  parent_vertices.push_back(_parent_cell.center());
-  for (const auto & face : polyhedron->get_faces())
-    _cell_gauss_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
-  // add center point to the end of gauss list
+  std::vector<Point> vertices = polyhedron->get_points();
+  vertices.push_back(_parent_cell.center());
+  const auto polyhedron_faces = polyhedron->get_faces();
+  const size_t center_index = vertices.size() - 1;
+
+  _cell_data.points.resize( polyhedron_faces.size() );
+  size_t q = 0;
+  for (const auto & face : polyhedron_faces)
+  {
+    // gauss point coordinate and weigte
+    // NOTE: weight is the volume of the pyramid
+    Point center;
+    double weight;
+    std::tie(center, weight) = create_pyramid_and_compute_center_(face, vertices);
+    _cell_data.points[q++].weight = weight;
+    _cell_gauss_points.push_back(center);
+  }
+  // _cell_gauss_points = {
+  //   {-31.4645,   12.9588, -7.88675},
+  //   {-38.5355,   12.9588,-7.88675},
+  //   {-31.4645,   17.0412,-2.11325},
+  //   {-38.5355,   17.0412,-2.11325},
+  //   {-35, 19.0825, -7.88675},
+  //   {-35, 10.9175, -2.11325}
+  // };
+
+  // _cell_data.points.resize( polyhedron->get_points().size() );
+  // for (size_t v=0; v < polyhedron->get_points().size(); ++v)
+  // {
+  //   std::vector<Point> subdivision_vertices;
+  //   subdivision_vertices.push_back(vertices[v]);
+  //   subdivision_vertices.push_back(_parent_cell.center());
+  //   const size_t idx1 = 0;
+  //   const size_t idx_center = 1;
+  //   std::vector<std::vector<size_t>> subdivision_faces;
+  //   // std::cout << "v = " << v << std::endl;
+
+  //   for( const auto & face : polyhedron->get_faces()  )
+  //   {
+  //     auto it = std::find( face.begin(), face.end(), v );
+  //     if ( it != face.end() )
+  //     {
+  //       size_t v1 = std::distance( face.begin(), it );
+  //       size_t v2, v3;
+  //       if (v1 == 0) v2 = face.size() - 1;
+  //       else         v2 = v1  - 1;
+  //       if (v1 == face.size() - 1) v3 = 0;
+  //       else                       v3 = v1 + 1;
+  //       Point p2 = (vertices[v] + vertices[face[v2]]) / 2;
+  //       Point p3 = (vertices[v] + vertices[face[v3]]) / 2;
+  //       const size_t idx2 = subdivision_vertices.size();
+  //       subdivision_vertices.push_back( p2 );
+  //       const size_t idx3 = subdivision_vertices.size();
+  //       subdivision_vertices.push_back( p3 );
+  //       subdivision_faces.push_back({idx1, idx2, idx3});
+  //       subdivision_faces.push_back({idx2, idx3, idx_center});
+  //     }
+  //   }
+  //   assert( subdivision_faces.size() > 2 );
+  //   angem::Polyhedron<double> element(subdivision_vertices, subdivision_faces);
+  //   _cell_gauss_points.push_back( element.center() );
+  //   _cell_data.points[v].weight = element.volume();
+  // }
+
+  //  add center point to the end of gauss list
   _cell_gauss_points.push_back( _parent_cell.center() );
 
   /* Loop parent faces, split each face into triangles, and find their centers */
@@ -561,10 +679,12 @@ void PolyhedralElementDirect::find_integration_points_()
   }
 }
 
-Point PolyhedralElementDirect::create_pyramid_and_compute_center_(const std::vector<size_t> & face,
-                                                                  const std::vector<Point> & vertices) const
+std::pair<angem::Point<3,double>, double>
+PolyhedralElementDirect::create_pyramid_and_compute_center_(const std::vector<size_t> & face,
+                                                            const std::vector<Point> & vertices) const
 {
-  const size_t vertex_center = vertices.size() - 1;
+  const size_t vertex_center = vertices.size() - 1;  // HACK: I just pushed it to this array
+  const auto c = _parent_cell.center();
   std::vector<std::vector<size_t>> pyramid_faces;
   for (size_t iv=0; iv<face.size(); ++iv)
   {
@@ -576,9 +696,10 @@ Point PolyhedralElementDirect::create_pyramid_and_compute_center_(const std::vec
       v2 = face[0];
     pyramid_faces.push_back( {v1, v2, vertex_center} );
   }
+  pyramid_faces.push_back( face );  // base
 
   angem::Polyhedron<double> pyramid(vertices, pyramid_faces);
-  return pyramid.center();
+  return {pyramid.center(), pyramid.volume()};
 }
 
 std::vector<angem::Point<3,double>>
@@ -627,6 +748,7 @@ void PolyhedralElementDirect::compute_face_fe_quantities_(const size_t parent_fa
     for (size_t q=0; q<nq; ++q)
       if (face_poly.point_inside(_face_gauss_points[parent_face][q]))
       {
+        _face_gauss_points[parent_face][q] = face.center();
         const Point coord = _face_gauss_points[parent_face][q];
         fe_values.update(face, coord);
         FEPointData data;
@@ -667,8 +789,9 @@ std::vector<size_t> PolyhedralElementDirect::compute_parent_vertex_ordering_() c
   // It's a quadratic-time search, but the number of vertices is small so whatever
   for (size_t v=0; v<true_order.size(); ++v)
   {
-    const size_t index = std::distance(sorted.begin(),
-        std::find( sorted.begin(), sorted.end(), true_order[v] ));
+    auto it = std::find( sorted.begin(), sorted.end(), true_order[v] );
+    assert( it != sorted.end() );
+    const size_t index = std::distance(sorted.begin(), it);
     ordering[index] = v;
   }
   return ordering;

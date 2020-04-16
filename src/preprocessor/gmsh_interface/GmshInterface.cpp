@@ -407,6 +407,19 @@ int GmshInterface::get_vtk_id(const int element_type)
 void GmshInterface::build_triangulation(const mesh::Cell & cell)
 {
   const auto poly = cell.polyhedron();
+  // std::vector<angem::Point<3,double>> coord = cell.vertex_coordinates();
+  // const auto verts = cell.vertices();
+  // std::vector<std::vector<size_t>> faces;
+  // for (auto face : cell.faces())
+  // {
+  //   std::vector<size_t> poly_face;
+  //   for (auto v : face->vertices())
+  //   {
+  //     const size_t idx = std::distance(verts.begin(), std::find( verts.begin(), verts.end(), v ));
+  //     poly_face.push_back(idx);
+  //   }
+  //   faces.push_back(std::move(poly_face));
+  // }
   build_triangulation_(*poly);
 }
 
@@ -447,12 +460,11 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   {
     const Point & vertex = vertices[i];
     gmsh::model::geo::addPoint(vertex.x(), vertex.y(), vertex.z(),
-                               element_sizes[i]/2, /*tag = */ i+1);
+                               element_sizes[i]/4, /*tag = */ i+1);
     gmsh::model::addPhysicalGroup(0, {static_cast<int>(i+1)}, i+1);
   }
 
   // build lines (edges)
-  // const auto edges = cell.get_edges();
   for (size_t i=0; i<edges.size(); ++i)
   {
     const std::pair<size_t,size_t> & edge = edges[i];

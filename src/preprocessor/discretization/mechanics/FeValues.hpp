@@ -136,15 +136,6 @@ class FeValues
    * returns the derivative of the given shape function in a given point
    */
    Point eval_derivative_(const Point & point, const size_t vertex) const;
-
-  /**
-   * Compute transformation jacobian matrix dx / dx_ref
-   * Input:
-   * \param[in] ref_grad : shape function grad in current q-point in master element
-   * Returns transposed matrix dx / dx_ref
-   */
-   angem::Tensor2<3, double> compute_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad) const;
-
   // compute shape values in q-points in master element
   void update_shape_values_(const Point                                   & p,
                             std::array<double,N_ELEMENT_VERTICES<vtk_id>> & values) const;
@@ -245,25 +236,11 @@ void FeValues<vtk_id>::update(const mesh::Face & face)
 }
 
 template<VTK_ID vtk_id>
-angem::Tensor2<3, double> FeValues<vtk_id>::compute_jacobian_(const std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & ref_grad) const
-{
-  // compute jacobian
-  // see Becker E., Carey G., Oden J. Finite elements. An Introduction Volume 1 1981
-  // Eq. 5.3.6
-  angem::Tensor2<3, double> J;
-  for (std::size_t i=0; i<3; ++i)
-    for (std::size_t j=0; j<3; ++j)
-      for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
-        J( i, j ) += ref_grad[v][j] * _vertex_coord[v][i];
-  return J;
-}
-
-template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update_()
 {
   _shape_values.resize( _qpoints.size() );
   _determinants.assign(_qpoints.size(), 0.0);
-  _shape_grads.assign(_qpoints.size(), std::array<Point,N_ELEMENT_VERTICES<vtk_id>>());
+  _shape_grads.resize(_qpoints.size());
   // update data in integration points
   for (std::size_t q=0; q<_qpoints.size(); ++q)
     update_(_qpoints[q], _shape_values[q], _shape_grads[q], _determinants[q]);
@@ -298,9 +275,12 @@ void FeValues<vtk_id>::update_shape_grads_(const std::array<Point,N_ELEMENT_VERT
                                            const angem::Tensor2<3, double> & du_dx,
                                            std::array<Point,N_ELEMENT_VERTICES<vtk_id>> & grads) const
 {
+  for (size_t vertex = 0; vertex < N_ELEMENT_VERTICES<vtk_id>; ++vertex)
+    grads[vertex] = {0.0, 0.0, 0.0};
+
   // compute the true shape function gradients
   for (size_t vertex = 0; vertex < N_ELEMENT_VERTICES<vtk_id>; ++vertex)
-    for (size_t i=0; i<3; ++i)
+    for (size_t i = 0; i < 3; ++i)
       for (size_t j = 0; j < 3; ++j)
         // d phi_vert / dx_i = (d phi_vert / d u_j) * (d u_j / d x_i)
         grads[vertex][i] += ref_grad[vertex][j] * du_dx(j, i);
@@ -379,7 +359,7 @@ void FeValues<vtk_id>::
 update_shape_values_(const Point                                   & p,
                      std::array<double,N_ELEMENT_VERTICES<vtk_id>> & values) const
 {
-  for (size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
+  for (size_t v = 0; v < N_ELEMENT_VERTICES<vtk_id>; ++v)
     values[v] = eval_(p, v);
 }
 
@@ -388,7 +368,7 @@ std::array<Point,N_ELEMENT_VERTICES<vtk_id>> FeValues<vtk_id>::
 compute_ref_gradient_(const Point & p) const
 {
   std::array<Point,N_ELEMENT_VERTICES<vtk_id>> ref_grad;
-  for (size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
+  for (size_t v=0; v < N_ELEMENT_VERTICES<vtk_id>; ++v)
     ref_grad[v] = eval_derivative_(p, v);
   return ref_grad;
 }
@@ -401,7 +381,13 @@ compute_detJ_and_invert_cell_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
                                        double & detJ) const
 {
   // compute transformation jacobian
-  const angem::Tensor2<3, double> dx_du = compute_jacobian_(ref_grad);
+  // see Becker E., Carey G., Oden J. Finite elements. An Introduction Volume 1 1981
+  // Eq. 5.3.6
+  angem::Tensor2<3, double> dx_du;
+  for (std::size_t i=0; i<3; ++i)
+    for (std::size_t j=0; j<3; ++j)
+      for (std::size_t v=0; v<N_ELEMENT_VERTICES<vtk_id>; ++v)
+        dx_du( i, j ) += ref_grad[v][j] * _vertex_coord[v][i];
   // compute the determinant of transformation jacobian
   detJ = det(dx_du);
   // invert the jacobian to compute shape function gradients

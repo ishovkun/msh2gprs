@@ -661,9 +661,11 @@ void OutputDataGPRS::save_fem_data_() const
     if (!cell.points.empty())
     {
       for (const auto &point : cell.points)
+      {
         for (const double value : point.values)
           out << value << "\t";
-      out << "\n";
+        out << "\n";
+      }
     }
   out << "/\n\n";
   // center
@@ -682,9 +684,11 @@ void OutputDataGPRS::save_fem_data_() const
     if (!cell.points.empty())
     {
       for (const auto &point : cell.points)
+      {
         for (const angem::Point<3,double> & grad : point.grads)
           out << grad << "\t";
-      out << "\n";
+        out << "\n";
+      }
     }
   out << "/\n\n";
   // center

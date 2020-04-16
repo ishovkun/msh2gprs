@@ -29,36 +29,24 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 
 void DiscretizationDFEM::build()
 {
-  {
-    auto & cell = _grid.cell(0);
-
-    api::initialize_gmsh();
-    PolyhedralElementDirect de(cell);
-    StandardFiniteElement fe(cell);
-    // de.debug_save_shape_functions_("cell20.vtk");
-    // de.debug_save_boundary_face_solution("cell20_faces.vtk");
-    // gmsh::write("cell20.msh");
-
-    // DFEMElement discr_element(cell, _msrsb_tol);
-    // mesh::Mesh _element_grid;
-    api::finalize_gmsh();
-    exit(0);
-  }
+  // analyze_cell_(_grid.cell(31));
 
   _face_data.resize( _grid.n_faces() );
-
+  _cell_data.resize( _grid.n_cells() );
+  utils::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
+  size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
-    std::cout << "cell->index() = " << cell->index() << std::endl;
+    progress.set_progress(item++);
     api::initialize_gmsh();
     /* DFEMElement discr_element(*cell, _msrsb_tol); */
     PolyhedralElementDirect discr_element(*cell);
-    /* mesh::Mesh _element_grid; */
+    // StandardFiniteElement discr_element(*cell);
     api::finalize_gmsh();
 
    FiniteElementData cell_fem_data =  discr_element.get_cell_data();
    cell_fem_data.element_index = cell->index();
-   _cell_data.push_back( cell_fem_data );
+   _cell_data[cell->index()] = std::move(cell_fem_data);
 
    std::vector<FiniteElementData> face_data = discr_element.get_face_data();
    size_t iface = 0;
@@ -70,10 +58,139 @@ void DiscretizationDFEM::build()
        _face_data[face->index()] = face_data[iface++];
      }
    }
-
-    // // exit(0);
-    // if (cnt++ > 2) break;
   }
+  progress.finalize();
+}
+
+void DiscretizationDFEM::analyze_cell_(const mesh::Cell & cell)
+{
+  api::initialize_gmsh();
+  PolyhedralElementDirect de(cell);
+  StandardFiniteElement fe(cell);
+  // DFEMElement discr_element(cell, _msrsb_tol);
+  api::finalize_gmsh();
+  de.debug_save_shape_functions_("output/shape_functions.vtk");
+
+  FiniteElementData an_data =  fe.get_cell_data();
+  auto verts = cell.vertices();
+  std::cout << "+======COORDINATES" << std::endl;
+  std::cout << "analytic" << std::endl;
+  for (size_t q=0; q<an_data.points.size(); ++q)
+  {
+    Point p (0,00,0);
+    for (size_t v=0; v<verts.size(); ++v)
+    {
+      p += _grid.vertex(verts[v]) * an_data.points[q].values[v];
+    }
+    std::cout << "p = " << p << std::endl;
+  }
+
+  auto data =  de.get_cell_data();
+  auto qpoints = de.get_cell_integration_points();
+  std::cout << "============================" << std::endl;
+  std::cout << "Recovery integration points:" << std::endl;
+  for (size_t q=0; q<data.points.size(); ++q)
+  {
+    Point p (0,00,0);
+    for (size_t v=0; v<verts.size(); ++v)
+    {
+      p += _grid.vertex(verts[v]) * data.points[q].values[v];
+    }
+
+    std::cout << "diff = " << (p - qpoints[q]).norm()<< std::endl;
+  }
+
+  std::cout << "============================" << std::endl;
+  std::cout << "Weights:" << std::endl;
+  double wsum = 0;
+  for (size_t q=0; q<data.points.size(); ++q)
+  {
+    std::cout << data.points[q].weight << " ";
+    wsum += data.points[q].weight;
+  }
+  std::cout << std::endl;
+
+  std::cout << "wsum = " << wsum << " " << data.center.weight << std::endl;
+
+
+  std::cout << "============================" << std::endl;
+  std::cout << "Values:" << std::endl;
+  for (size_t q=0; q<data.points.size(); ++q)
+  {
+    std::cout << q << "\n";
+    for (size_t v=0; v<verts.size(); ++v)
+    {
+      std::cout << data.points[q].values[v] << " "
+                << an_data.points[q].values[v] << " "
+                << std::fabs( (data.points[q].values[v] - an_data.points[q].values[v]) / an_data.points[q].values[v]  )
+                << std::endl;
+    }
+  }
+
+  std::cout << "============================" << std::endl;
+  std::cout << "Gradients:" << std::endl;
+  for (size_t q=0; q<data.points.size(); ++q)
+  {
+    std::cout << q << "\n";
+    for (size_t v=0; v<verts.size(); ++v)
+    {
+      std::cout <<  data.points[q].grads[v] << "  |  "
+                <<  an_data.points[q].grads[v] << "  ||  ";
+      auto val = (data.points[q].grads[v] - an_data.points[q].grads[v]);
+      for (size_t i=0; i<3; ++i)
+        val[i] /= std::fabs(an_data.points[q].grads[v][i]);
+      std::cout << val.norm() << std::endl;
+    }
+  }
+
+
+  // std::cout << "======= shape functions ==========" << std::endl;
+  // std::cout << "analytic" << std::endl;
+  // data =  fe.get_cell_data();
+  // for (size_t q=0; q<data.points.size(); ++q)
+  // {
+  //   std::cout << q << ": ";
+  //   for (size_t v=0; v<verts.size(); ++v)
+  //     std::cout << data.points[q].values[v] << " ";
+  //   std::cout << std::endl;
+  // }
+  // std::cout << "numeric" << std::endl;
+  // data =  de.get_cell_data();
+  // for (size_t q=0; q<data.points.size(); ++q)
+  // {
+  //   std::cout << q << ": ";
+  //   for (size_t v=0; v<verts.size(); ++v)
+  //     std::cout << data.points[q].values[v] << " ";
+  //   std::cout << std::endl;
+  // }
+
+  std::cout << "===== quantities===================" << std::endl;
+  double maxsum = 0;
+  for (auto & qp : data.points)
+  {
+    double sum = 0;
+    for (size_t v=0; v<qp.values.size(); ++v)
+    {
+      sum += qp.values[v];
+    }
+    maxsum = std::max(sum, maxsum);
+  }
+  std::cout << "analytic sum = " << std::scientific << std::fabs(maxsum - 1.0) << std::endl << std::defaultfloat;
+
+  data =  de.get_cell_data();
+  maxsum = 0;
+  for (auto & qp : data.points)
+  {
+    double sum = 0;
+    for (size_t v=0; v<qp.values.size(); ++v)
+    {
+      sum += qp.values[v];
+    }
+    maxsum = std::max(sum, maxsum);
+  }
+  std::cout << "numeric sum = " << std::scientific << std::fabs(maxsum - 1.0) << std::endl << std::defaultfloat;
+
+  exit(0);
 }
 
 #else
