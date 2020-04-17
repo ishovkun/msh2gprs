@@ -34,7 +34,6 @@ void PolyhedralElementDirect::build_()
   build_cell_system_matrix_();
   // impose BC's and solve laplace system to get shape functions
   compute_shape_functions_();
-  IntegrationRuleFacesAverage integration_rule(*this);
   // TODO: debugging, delete this
   // debug_save_shape_functions_("shape_functions-final.vtk");
   // identify the locations of the gauss points for the polyhedral element
@@ -42,6 +41,7 @@ void PolyhedralElementDirect::build_()
   // compute shape function values, gradients, and weights in the
   // integration points in cells
   // compute_cell_fe_quantities_();
+  IntegrationRuleFacesAverage integration_rule(*this);
   // compute_cell_fe_quantities2_();
 
   // compute shape function values, gradients, and weights in the

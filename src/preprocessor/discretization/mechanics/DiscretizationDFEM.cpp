@@ -49,16 +49,16 @@ void DiscretizationDFEM::build()
    cell_fem_data.element_index = cell->index();
    _cell_data[cell->index()] = std::move(cell_fem_data);
 
-  //  std::vector<FiniteElementData> face_data = discr_element.get_face_data();
-  //  size_t iface = 0;
-  //  for ( const mesh::Face * face : cell->faces() )
-  //  {
-  //    if ( _face_data[face->index()].points.empty() )
-  //    {
-  //      face_data[iface].element_index = face->index();
-  //      _face_data[face->index()] = face_data[iface++];
-  //    }
-  //  }
+   std::vector<FiniteElementData> face_data = discr_element.get_face_data();
+   size_t iface = 0;
+   for ( const mesh::Face * face : cell->faces() )
+   {
+     if ( _face_data[face->index()].points.empty() )
+     {
+       face_data[iface].element_index = face->index();
+       _face_data[face->index()] = face_data[iface++];
+     }
+   }
   }
   progress.finalize();
 }

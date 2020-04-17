@@ -626,7 +626,7 @@ void OutputDataGPRS::save_face_geometry_(std::ofstream & out, const mesh::Mesh &
 
 void OutputDataGPRS::save_fem_data_() const
 {
-  if (_data.fe_cell_data.empty())
+  if (_data.fe_cell_data.empty() && _data.fe_face_data.empty())
     return;
 
   const std::string file_name = _output_path + "/" + _config.fem_file;
@@ -705,6 +705,9 @@ void OutputDataGPRS::save_fem_data_() const
   // SAVE FACE DATA
   // face gauss weights
   const auto & faces = _data.fe_face_data;  // fe values and gradients for grid faces
+  if (faces.empty())
+    return;
+
   out << "GMFACE_GAUSS_WEIGHTS" << "\n";
   for (const auto & face : faces)
     if (!face.points.empty())

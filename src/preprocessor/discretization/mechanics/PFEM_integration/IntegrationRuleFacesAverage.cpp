@@ -115,6 +115,19 @@ void IntegrationRuleFacesAverage::compute_cell_fe_quantities_()
     }
 
   }
+
+  // normalize values and grads  by region volume
+  for (size_t region=0; region<_pyramids.size(); ++region)  // tributary regions
+  {
+    auto & data = cell_data.points[region];
+    for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
+    {
+      data.values[parent_vertex] /= region_volumes[region];
+      data.grads[parent_vertex] /= region_volumes[region];
+    }
+    data.weight = region_volumes[region];
+  }
+
 }
 
 void IntegrationRuleFacesAverage::setup_storage_()
@@ -192,6 +205,7 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
   const auto & basis_functions = _element._basis_functions;
 
   bool center_found = false;
+  size_t nhits = 0;
   for (const size_t iface : face_indices)
   {
     const mesh::Face & face = grid.face(iface);
@@ -199,6 +213,7 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
     for (size_t region=0; region<regions.size(); ++region)  // tributary regions
       if (regions[region].point_inside(c))
       {
+        nhits++;
         fe_values.update(face);
         const std::vector<size_t> & face_verts = face.vertices();
         const size_t nv = face_verts.size();
@@ -210,36 +225,38 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
             for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
             {
               data.values[parent_vertex] += fe_values.value( v, q ) *
-                  basis_functions[parent_vertices[parent_vertex]][face_verts[v]];
+                  basis_functions[parent_vertices[parent_vertex]][face_verts[v]] *
+                  fe_values.JxW(q);
               data.grads[parent_vertex] += fe_values.grad(v, q) *
                   basis_functions[parent_vertices[parent_vertex]][face_verts[v]];
+                  fe_values.JxW(q);
           }
+
+        if (!center_found)
+        {
+          center_found = true;
+          auto & data = _element._face_data[parent_face].center;
+          const std::vector<size_t> & face_verts = face.vertices();
+          const size_t nv = face_verts.size();
+          for (size_t parent_vertex=0; parent_vertex<n_parent_vertices; ++parent_vertex)
+            for (size_t v=0; v<nv; ++v)
+              for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
+              {
+                data.values[parent_vertex] += fe_values.value_center(v) *
+                    basis_functions[parent_vertices[parent_vertex]][face_verts[v]];
+                data.grads[parent_vertex] += fe_values.grad_center(v) *
+                    basis_functions[parent_vertices[parent_vertex]][face_verts[v]];
+              }
+
+          data.weight =  _element._parent_cell.faces()[parent_face]->area();
+        }
+
+        break;  // stop searching region
 
       }
-
-    if (!center_found)
-    {
-      center_found = true;
-      auto & data = _element._face_data[parent_face].center;
-      const std::vector<size_t> & face_verts = face.vertices();
-      const size_t nv = face_verts.size();
-      for (size_t parent_vertex=0; parent_vertex<n_parent_vertices; ++parent_vertex)
-        for (size_t v=0; v<nv; ++v)
-          for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
-          {
-            data.values[parent_vertex] += fe_values.value_center(v) *
-                basis_functions[parent_vertices[parent_vertex]][face_verts[v]] *
-                fe_values.JxW(q);
-            data.grads[parent_vertex] += fe_values.grad_center(v) *
-                basis_functions[parent_vertices[parent_vertex]][face_verts[v]] *
-                fe_values.JxW(q);
-          }
-
-      data.weight =  _element._parent_cell.faces()[parent_face]->area();
-    }
-
-    break;  // stop searching region
   }
+
+  assert( nhits == face_indices.size() );
 
   // normalize values and grads  by region volume
   for (size_t region=0; region<regions.size(); ++region)  // tributary regions
