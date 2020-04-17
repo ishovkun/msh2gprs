@@ -36,6 +36,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/FeValuesTetrahedron.cpp
   discretization/mechanics/FeValuesHexahedron.cpp
   discretization/mechanics/FeValuesQuadrangle.cpp
+  discretization/mechanics/PFEM_integration/IntegrationRuleFacesAverage.cpp
 )
 
 SET_TARGET_PROPERTIES (

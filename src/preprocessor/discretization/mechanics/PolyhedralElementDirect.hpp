@@ -9,6 +9,8 @@
 
 namespace discretization {
 
+class IntegrationRuleFacesAverage;
+
 /** 
  * This class implements polyhedral element method for a single 
  * cell. It uses Gmsh (linked during compilation) to triangulate an 
@@ -44,16 +46,10 @@ class PolyhedralElementDirect
   // identify child faces that belong to each face parent
   std::vector<std::vector<size_t>> create_face_domains_();
   // build system matrix for the face poisson problem
-  void build_face_system_matrix_(const size_t iface,
-                                 Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
-                                 const DoFNumbering & vertex_dofs);
-  // build system matrix for the face poisson problem
   void build_face_system_matrix_(const size_t parent_face,
                                  Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
                                  const std::vector<size_t> & face_indices,
                                  const DoFNumbering & vertex_dofs);
-  // get the relation between gmsh vertex ids and grid vertices
-  void compute_vertex_mapping_();
   // impose boundary conditions on a poisson system for faces (to get bc's)
   void impose_bc_on_face_system_(const size_t parent_vertex,
                                  const DoFNumbering & vertex_dofs,
@@ -83,14 +79,15 @@ class PolyhedralElementDirect
   // compute shape function values, gradients, and weights in the
   // integration points in cells
   void compute_cell_fe_quantities_();
+  void compute_cell_fe_quantities2_();
   // compute shape function values, gradients, and weights in the
   // integration points in a given face face
   void compute_face_fe_quantities_(const size_t parent_face);
   // create a pyramid element from a cell face and cell center
   // and return its center and volume
-  std::pair<angem::Point<3,double>, double>
-  create_pyramid_and_compute_center_(const std::vector<size_t> & face,
-                                     const std::vector<angem::Point<3,double>>  & vertices) const;
+  angem::Polyhedron<double>
+  create_pyramid_(const std::vector<size_t> & face,
+                  const std::vector<angem::Point<3,double>>  & vertices) const;
   /**
    * Split a polygon into triangles, and compute their centers
    * Parameters:
@@ -101,20 +98,9 @@ class PolyhedralElementDirect
   std::vector<angem::Point<3,double>>
   split_into_triangles_and_compute_center_(const angem::Polygon<double> & poly);
 
-  /**
-   * Compute correspondense between local sorted ordering of parent vertices
-   * and ordering given by cell.vertex() method.
-   * We need this since the global exported values must be in the same order as
-   * in cell.vertex() method.
-   */
-   std::vector<size_t> compute_parent_vertex_ordering_() const;
-
-  void debug_print_fe_values() const;
-
- private:
+ protected:
   const mesh::Cell & _parent_cell;                             // reference to the discretized cell
   mesh::Mesh _element_grid;                                    // triangulation of the discretized cell
-  std::vector<size_t> _vertex_mapping;                         // map gmsh vertex to grid vertex
   std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<std::vector<size_t>> _support_edge_vertices;     // edge vertices for each parent vertex
   std::vector<std::vector<double>> _support_edge_values;       // edge dirichlet values for each parent vertex
@@ -126,6 +112,8 @@ class PolyhedralElementDirect
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
   FiniteElementData _cell_data;                                // FEM values and gradients in cell integration points
   std::vector<FiniteElementData> _face_data;                                // FEM values and gradients in face integration points
+
+  friend class IntegrationRuleFacesAverage;
 };
 
 }  // end namespace discretization

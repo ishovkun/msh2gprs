@@ -406,21 +406,23 @@ int GmshInterface::get_vtk_id(const int element_type)
 
 void GmshInterface::build_triangulation(const mesh::Cell & cell)
 {
-  const auto poly = cell.polyhedron();
-  // std::vector<angem::Point<3,double>> coord = cell.vertex_coordinates();
-  // const auto verts = cell.vertices();
-  // std::vector<std::vector<size_t>> faces;
-  // for (auto face : cell.faces())
-  // {
-  //   std::vector<size_t> poly_face;
-  //   for (auto v : face->vertices())
-  //   {
-  //     const size_t idx = std::distance(verts.begin(), std::find( verts.begin(), verts.end(), v ));
-  //     poly_face.push_back(idx);
-  //   }
-  //   faces.push_back(std::move(poly_face));
-  // }
-  build_triangulation_(*poly);
+  // const auto poly = cell.polyhedron();
+  // build_triangulation_(*poly);
+  std::vector<angem::Point<3,double>> coord = cell.vertex_coordinates();
+  const auto verts = cell.vertices();
+  std::vector<std::vector<size_t>> faces;
+  for (auto face : cell.faces())
+  {
+    std::vector<size_t> poly_face;
+    for (auto v : face->vertices())
+    {
+      const size_t idx = std::distance(verts.begin(), std::find( verts.begin(), verts.end(), v ));
+      poly_face.push_back(idx);
+    }
+    faces.push_back(std::move(poly_face));
+  }
+  const angem::Polyhedron<double> poly(coord, faces);
+  build_triangulation_(poly);
 }
 
 std::vector<double>  compute_vertex_element_sizes(const std::vector<std::pair<size_t,size_t>> &edges,

@@ -372,11 +372,14 @@ void DFEMElement::find_integration_points_()
   std::vector<Point> parent_vertices = polyhedron->get_points();
   parent_vertices.push_back(_cell.center());
   for (const auto & face : polyhedron->get_faces())
-    _cell_gauss_points.push_back(create_pyramid_and_compute_center_(face, parent_vertices));
+  {
+    const auto pyramid =  create_pyramid_(face, parent_vertices);
+    _cell_gauss_points.push_back(pyramid.center());
+  }
 }
 
-Point DFEMElement::create_pyramid_and_compute_center_(const std::vector<size_t> & face,
-                                                      const std::vector<Point> & vertices) const
+angem::Polyhedron<double> DFEMElement::create_pyramid_(const std::vector<size_t> & face,
+                                                       const std::vector<Point> & vertices) const
 {
   const size_t vertex_center = vertices.size() - 1;
   std::vector<std::vector<size_t>> pyramid_faces;
@@ -392,7 +395,7 @@ Point DFEMElement::create_pyramid_and_compute_center_(const std::vector<size_t> 
   }
 
   angem::Polyhedron<double> pyramid(vertices, pyramid_faces);
-  return pyramid.center();
+  return pyramid;
 }
 
 void DFEMElement::compute_fe_quantities_()

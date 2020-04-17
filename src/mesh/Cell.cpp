@@ -29,11 +29,22 @@ Cell::Cell(const std::size_t          cell_index,
 
 std::unique_ptr<Polyhedron> Cell::polyhedron() const
 {
-  std::vector<std::vector<std::size_t>> faces_vertices;
-  for (const Face* face : faces())
-    faces_vertices.push_back(face->vertices());
-  return std::make_unique<angem::Polyhedron<double>>(*pm_grid_vertices,
-                                                     faces_vertices, vtk_id());
+  std::vector<angem::Point<3,double>> coord = vertex_coordinates();
+  const auto verts = vertices();
+  std::vector<std::vector<size_t>> poly_faces;
+  for (auto face : faces())
+  {
+    std::vector<size_t> poly_face;
+    for (auto v : face->vertices())
+    {
+      const size_t idx = std::distance(verts.begin(), std::find( verts.begin(), verts.end(), v ));
+      poly_face.push_back(idx);
+    }
+    poly_faces.push_back(std::move(poly_face));
+  }
+  const angem::Polyhedron<double> poly(coord, poly_faces);
+  return std::make_unique<angem::Polyhedron<double>>(coord,
+                                                     poly_faces, vtk_id());
 }
 
 std::vector<Point> Cell::vertex_coordinates() const

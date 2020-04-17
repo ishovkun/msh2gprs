@@ -29,7 +29,8 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 
 void DiscretizationDFEM::build()
 {
-  // analyze_cell_(_grid.cell(31));
+  // analyze_cell_(_grid.cell(0));
+  // analyze_cell_(_grid.cell(1));
 
   _face_data.resize( _grid.n_faces() );
   _cell_data.resize( _grid.n_cells() );
@@ -48,16 +49,16 @@ void DiscretizationDFEM::build()
    cell_fem_data.element_index = cell->index();
    _cell_data[cell->index()] = std::move(cell_fem_data);
 
-   std::vector<FiniteElementData> face_data = discr_element.get_face_data();
-   size_t iface = 0;
-   for ( const mesh::Face * face : cell->faces() )
-   {
-     if ( _face_data[face->index()].points.empty() )
-     {
-       face_data[iface].element_index = face->index();
-       _face_data[face->index()] = face_data[iface++];
-     }
-   }
+  //  std::vector<FiniteElementData> face_data = discr_element.get_face_data();
+  //  size_t iface = 0;
+  //  for ( const mesh::Face * face : cell->faces() )
+  //  {
+  //    if ( _face_data[face->index()].points.empty() )
+  //    {
+  //      face_data[iface].element_index = face->index();
+  //      _face_data[face->index()] = face_data[iface++];
+  //    }
+  //  }
   }
   progress.finalize();
 }
@@ -69,21 +70,21 @@ void DiscretizationDFEM::analyze_cell_(const mesh::Cell & cell)
   StandardFiniteElement fe(cell);
   // DFEMElement discr_element(cell, _msrsb_tol);
   api::finalize_gmsh();
-  de.debug_save_shape_functions_("output/shape_functions.vtk");
+  de.debug_save_shape_functions_("output/shape_functions" + std::to_string(cell.index())+ ".vtk");
 
   FiniteElementData an_data =  fe.get_cell_data();
   auto verts = cell.vertices();
   std::cout << "+======COORDINATES" << std::endl;
-  std::cout << "analytic" << std::endl;
-  for (size_t q=0; q<an_data.points.size(); ++q)
-  {
-    Point p (0,00,0);
-    for (size_t v=0; v<verts.size(); ++v)
-    {
-      p += _grid.vertex(verts[v]) * an_data.points[q].values[v];
-    }
-    std::cout << "p = " << p << std::endl;
-  }
+  // std::cout << "analytic" << std::endl;
+  // for (size_t q=0; q<an_data.points.size(); ++q)
+  // {
+  //   Point p (0,00,0);
+  //   for (size_t v=0; v<verts.size(); ++v)
+  //   {
+  //     p += _grid.vertex(verts[v]) * an_data.points[q].values[v];
+  //   }
+  //   std::cout << "p = " << p << std::endl;
+  // }
 
   auto data =  de.get_cell_data();
   auto qpoints = de.get_cell_integration_points();
@@ -110,22 +111,22 @@ void DiscretizationDFEM::analyze_cell_(const mesh::Cell & cell)
   }
   std::cout << std::endl;
 
-  std::cout << "wsum = " << wsum << " " << data.center.weight << std::endl;
+  std::cout << "weights sum = " << wsum << "  (should be " << data.center.weight << ")" << std::endl;
 
 
-  std::cout << "============================" << std::endl;
-  std::cout << "Values:" << std::endl;
-  for (size_t q=0; q<data.points.size(); ++q)
-  {
-    std::cout << q << "\n";
-    for (size_t v=0; v<verts.size(); ++v)
-    {
-      std::cout << data.points[q].values[v] << " "
-                << an_data.points[q].values[v] << " "
-                << std::fabs( (data.points[q].values[v] - an_data.points[q].values[v]) / an_data.points[q].values[v]  )
-                << std::endl;
-    }
-  }
+  // std::cout << "============================" << std::endl;
+  // std::cout << "Values:" << std::endl;
+  // for (size_t q=0; q<data.points.size(); ++q)
+  // {
+  //   std::cout << q << "\n";
+  //   for (size_t v=0; v<verts.size(); ++v)
+  //   {
+  //     std::cout << data.points[q].values[v] << " "
+  //               << an_data.points[q].values[v] << " "
+  //               << std::fabs( (data.points[q].values[v] - an_data.points[q].values[v]) / an_data.points[q].values[v]  )
+  //               << std::endl;
+  //   }
+  // }
 
   std::cout << "============================" << std::endl;
   std::cout << "Gradients:" << std::endl;
@@ -134,13 +135,9 @@ void DiscretizationDFEM::analyze_cell_(const mesh::Cell & cell)
     std::cout << q << "\n";
     for (size_t v=0; v<verts.size(); ++v)
     {
-      std::cout <<  data.points[q].grads[v] << "  |  "
-                <<  an_data.points[q].grads[v] << "  ||  ";
-      auto val = (data.points[q].grads[v] - an_data.points[q].grads[v]);
-      for (size_t i=0; i<3; ++i)
-        val[i] /= std::fabs(an_data.points[q].grads[v][i]);
-      std::cout << val.norm() << std::endl;
+      std::cout <<  data.points[q].grads[v] << "\t";
     }
+    std::cout << std::endl;
   }
 
 
@@ -164,34 +161,43 @@ void DiscretizationDFEM::analyze_cell_(const mesh::Cell & cell)
   //   std::cout << std::endl;
   // }
 
-  std::cout << "===== quantities===================" << std::endl;
-  double maxsum = 0;
-  for (auto & qp : data.points)
-  {
-    double sum = 0;
-    for (size_t v=0; v<qp.values.size(); ++v)
-    {
-      sum += qp.values[v];
-    }
-    maxsum = std::max(sum, maxsum);
-  }
-  std::cout << "analytic sum = " << std::scientific << std::fabs(maxsum - 1.0) << std::endl << std::defaultfloat;
-
+  // This proves partition of unity
+  std::cout << "======= partition of unity ===========" << std::endl;
   data =  de.get_cell_data();
-  maxsum = 0;
-  for (auto & qp : data.points)
   {
-    double sum = 0;
-    for (size_t v=0; v<qp.values.size(); ++v)
+    double maxsum = 0;
+    for (auto & qp : data.points)
     {
-      sum += qp.values[v];
+      double sum = 0;
+      for (size_t v=0; v<qp.values.size(); ++v)
+      {
+        sum += qp.values[v];
+      }
+      maxsum = std::max(sum, maxsum);
     }
-    maxsum = std::max(sum, maxsum);
+    std::cout << "numeric sum = " << std::scientific << std::fabs(maxsum - 1.0) << std::endl << std::defaultfloat;
   }
-  std::cout << "numeric sum = " << std::scientific << std::fabs(maxsum - 1.0) << std::endl << std::defaultfloat;
+
+  std::cout << "======= patch test ========" << std::endl;
+  {
+    Point maxsum = {0,0,0};
+    for (auto & qp : data.points)
+    {
+      for (size_t i=0; i<3; ++i)
+      {
+        double sum = 0;
+        for (size_t v=0; v<qp.values.size(); ++v)
+          sum += qp.grads[v][i];
+        maxsum[i] = std::max(maxsum[i], std::fabs(sum));
+      }
+
+    }
+    std::cout << "grad maxsum = " << maxsum << std::endl;
+  }
 
   exit(0);
 }
+
 
 #else
 void DiscretizationDFEM::build() {}

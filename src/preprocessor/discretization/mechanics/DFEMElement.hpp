@@ -67,9 +67,9 @@ class DFEMElement
   void compute_fe_quantities_();
   // create a pyramid element from a cell face and cell center
   // and return its center
-  angem::Point<3,double>
-  create_pyramid_and_compute_center_(const std::vector<size_t> & face,
-                                     const std::vector<angem::Point<3,double>>  & vertices) const;
+  angem::Polyhedron<double>
+  create_pyramid_(const std::vector<size_t> & face,
+                  const std::vector<angem::Point<3,double>>  & vertices) const;
 
  private:
   const mesh::Cell & _cell;
