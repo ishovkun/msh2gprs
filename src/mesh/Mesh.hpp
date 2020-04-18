@@ -21,6 +21,17 @@ using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 using FaceiVertices = std::vector<std::size_t>;
 
+class Subdivision;  // gon be a friend
+
+struct FaceTmpData
+{
+  std::vector<size_t> vertices;
+  size_t parent = constants::invalid_index;
+  int marker = constants::default_face_marker;
+  int vtk_id = angem::VTK_ID::GeneralPolyhedronID;
+};
+
+
 /* This class implements a structure for unstructure grid storage
  * It features constant lookup and insertion times
  * for faces, cells, and their neighbors.
@@ -69,6 +80,13 @@ class Mesh
                           const int                        vtk_id,
                           const int                        marker = constants::default_face_marker,
                           const std::size_t                face_parent = constants::invalid_index);
+
+  /**
+   * Insert a new vertex into the grid.
+   * Returns the index of the new vertex.
+   * There is no checks performed whether there are duplicates.
+   */
+  std::size_t insert_vertex(const angem::Point<3,double> & coord);
 
   // ITERATORS
   //  create cell iterator for the first active cell
@@ -190,14 +208,6 @@ class Mesh
   group_cells_based_on_split_faces(const std::vector<std::size_t> & affected_cells,
                                    const std::vector<std::size_t> & splitted_face_indices) const;
 
-  struct FaceTmpData
-  {
-    std::vector<size_t> vertices;
-    size_t parent = constants::invalid_index;
-    int marker = constants::default_face_marker;
-    int vtk_id = angem::VTK_ID::GeneralPolyhedronID;
-  };
-
   /* private insert cell class that does all the cell insertion work */
   std::size_t insert_cell_(const std::vector<std::size_t> & ivertices,
                            const std::vector<size_t> take_faces,
@@ -270,6 +280,8 @@ class Mesh
   angem::PointSet<3, double> m_vertices_from_cell_splitting;
   // for keeping track of cell vertices during cell splitting
   std::vector<size_t> m_vertices_from_cell_splitting_indices;
+
+  friend class Subdivision;
 };
 
 

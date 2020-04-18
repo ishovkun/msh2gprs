@@ -1,4 +1,4 @@
-#include "DiscretizationDFEM.hpp"
+#include "DiscretizationFEM.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
 #include <stdexcept>
 #ifdef WITH_EIGEN
@@ -14,8 +14,8 @@ namespace discretization
 using Point = angem::Point<3,double>;
 using api = gprs_data::GmshInterface;
 
-DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msrsb_tol)
-    : _grid(grid), _msrsb_tol( msrsb_tol )
+DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElementConfig & config)
+    : _grid(grid), _config( config )
 {
   #ifndef WITH_GMSH
   throw std::runtime_error("Cannot use DFEM method without linking to GMsh");
@@ -27,7 +27,7 @@ DiscretizationDFEM::DiscretizationDFEM(const mesh::Mesh & grid, const double msr
 
 #ifdef WITH_GMSH
 
-void DiscretizationDFEM::build()
+void DiscretizationFEM::build()
 {
   // analyze_cell_(_grid.cell(0));
   // analyze_cell_(_grid.cell(1));
@@ -40,16 +40,14 @@ void DiscretizationDFEM::build()
   {
     progress.set_progress(item++);
     api::initialize_gmsh();
-    /* DFEMElement discr_element(*cell, _msrsb_tol); */
-    PolyhedralElementDirect discr_element(*cell);
-    // StandardFiniteElement discr_element(*cell);
+    const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
     api::finalize_gmsh();
 
-   FiniteElementData cell_fem_data =  discr_element.get_cell_data();
+   FiniteElementData cell_fem_data = p_discr->get_cell_data();
    cell_fem_data.element_index = cell->index();
    _cell_data[cell->index()] = std::move(cell_fem_data);
 
-   std::vector<FiniteElementData> face_data = discr_element.get_face_data();
+   std::vector<FiniteElementData> face_data = p_discr->get_face_data();
    size_t iface = 0;
    for ( const mesh::Face * face : cell->faces() )
    {
@@ -63,10 +61,10 @@ void DiscretizationDFEM::build()
   progress.finalize();
 }
 
-void DiscretizationDFEM::analyze_cell_(const mesh::Cell & cell)
+void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 {
   api::initialize_gmsh();
-  PolyhedralElementDirect de(cell);
+  PolyhedralElementDirect de(cell, _config);
   StandardFiniteElement fe(cell);
   // DFEMElement discr_element(cell, _msrsb_tol);
   api::finalize_gmsh();
@@ -198,9 +196,43 @@ void DiscretizationDFEM::analyze_cell_(const mesh::Cell & cell)
   exit(0);
 }
 
+std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::Cell & cell)
+{
+  std::unique_ptr<FiniteElementBase> p_discr;
+  if (_config.method == FEMMethod::polyhedral_finite_element)
+  {
+    if (_config.solver == direct || _config.solver == cg)
+      p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config);
+    else if (_config.solver == msrsb)
+    {
+      throw std::invalid_argument("regression");
+      /* p_discr = std::make_unique<DFEMElement>(*cell, _msrsb_tol); */
+    }
+  }
+  else if (_config.method == strong_discontinuity)
+    p_discr = std::make_unique<StandardFiniteElement>(cell);
+  else if (_config.method == mixed)
+  {
+    if (cell.vtk_id() == angem::GeneralPolygonID)
+    {
+      if (_config.solver == direct || _config.solver == cg)
+        p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config);
+      else if (_config.solver == msrsb)
+      {
+        throw std::invalid_argument("regression");
+        /* p_discr = std::make_unique<DFEMElement>(*cell, _msrsb_tol); */
+      }
+    }
+    else
+      p_discr = std::make_unique<StandardFiniteElement>(cell);
+  }
+
+  return p_discr;
+}
+
 
 #else
-void DiscretizationDFEM::build() {}
+void DiscretizationFEM::build() {}
 #endif
 
 }  // end namepsace discretization

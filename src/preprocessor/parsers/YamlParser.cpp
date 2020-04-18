@@ -72,10 +72,22 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     {
       const std::string str_method = it->second.as<std::string>();
       if (str_method == "strong discontinuity")
-        config.mech_edfm_method = MechEDFMMethod::strong_discontinuity;
+        config.fem.method = FEMMethod::strong_discontinuity;
       else if (str_method == "discrete")
-        config.mech_edfm_method = MechEDFMMethod::discrete_finite_element;
+        config.fem.method = FEMMethod::polyhedral_finite_element;
+      else if (str_method == "mixed")
+        config.fem.method = FEMMethod::mixed;
       else throw std::invalid_argument("Unknown EDFM mechanics method " + str_method);
+    }
+    else if (key == "subdivision")
+    {
+      const auto values = it->second.as<std::pair<std::string,size_t>>();
+      if (values.first == "gmsh")
+        config.fem.subdivision_method = PolyhedralFEMSubdivision::gmsh_generate;
+      else if (values.first == "refinement")
+        config.fem.subdivision_method = PolyhedralFEMSubdivision::refinement;
+      else throw std::invalid_argument("Subdivision method unknown" + values.first);
+      config.fem.order = values.second;
     }
     else if (key == "fracture")
     {
@@ -86,9 +98,16 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     {
       config.edfm_min_dist_to_node = it->second.as<double>();
     }
-    else if (key == "dfem-msrsb-tol")
+    else if (key == "solver")
     {
-      config.dfem_msrsb_tolerance = it->second.as<double>();
+      const auto values = it->second.as<std::pair<std::string,size_t>>();
+      if (values.first == "direct")
+        config.fem.solver = SolverType::direct;
+      else if (values.first == "cg")
+        config.fem.solver = SolverType::cg;
+      else if (values.first == "msrsb")
+        config.fem.solver = SolverType::msrsb;
+      config.fem.solver_tolerance = values.second;
     }
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;

@@ -12,6 +12,7 @@ ADD_LIBRARY(mesh
   active_cell_iterator.cpp
   active_cell_const_iterator.cpp
   active_face_const_iterator.cpp
+  Subdivision.cpp
 )
 
 SET_TARGET_PROPERTIES (

@@ -2,7 +2,7 @@
 #include "parsers/YamlParser.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
 #include "BoundaryConditionManager.hpp"
-#include "discretization/mechanics/DiscretizationDFEM.hpp"
+#include "discretization/mechanics/DiscretizationFEM.hpp"
 #include "discretization/flow/DiscretizationTPFA.hpp"
 #include "discretization/flow/DiscretizationEDFM.hpp"
 #include "discretization/flow/DiscretizationDFM.hpp"
@@ -232,13 +232,14 @@ void Preprocessor::build_geomechanics_discretization_()
     ms_handler.fill_output_model(data.ms_mech_data);
   }
 
-  if (config.mech_edfm_method == MechEDFMMethod::discrete_finite_element)
+  if (config.fem.method == FEMMethod::polyhedral_finite_element ||
+      config.fem.method == FEMMethod::mixed)
   {
-    std::cout << "build DFEM discretization" << std::endl;
-    discretization::DiscretizationDFEM dfem_discr(data.grid, config.dfem_msrsb_tolerance);
-    dfem_discr.build();
-    data.fe_cell_data = dfem_discr.get_cell_data();
-    data.fe_face_data = dfem_discr.get_face_data();
+    std::cout << "build FEM discretization" << std::endl;
+    discretization::DiscretizationFEM fem_discr(data.grid, config.fem);
+    fem_discr.build();
+    data.fe_cell_data = fem_discr.get_cell_data();
+    data.fe_face_data = fem_discr.get_face_data();
     data.geomechanics_grid = data.grid;
   }
 

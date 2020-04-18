@@ -2,7 +2,7 @@
 #include "PolyhedralElementDirect.hpp"
 #include "EdgeComparison.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
-#include "gmsh_interface/FeValues.hpp"
+#include "mesh/Subdivision.hpp"
 #include "FeValues.hpp"
 #include "EdgeComparison.hpp"
 #include "PFEM_integration/IntegrationRuleFacesAverage.hpp"
@@ -18,8 +18,9 @@ using Point = angem::Point<3,double>;
 const size_t UNMARKED = std::numeric_limits<size_t>::max();
 
 
-PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell)
-    : _parent_cell(cell)
+PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
+                                                 const FiniteElementConfig & config)
+    : _parent_cell(cell), _config(config)
 {
   build_();
 }
@@ -27,7 +28,12 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell)
 void PolyhedralElementDirect::build_()
 {
   // triangulate the polyhedral element
-  api::build_triangulation(_parent_cell, _element_grid);
+  if (_config.subdivision_method == PolyhedralFEMSubdivision::gmsh_generate)
+    api::build_triangulation(_parent_cell, _element_grid, double(_config.order));
+  else if (_config.subdivision_method == PolyhedralFEMSubdivision::refinement)
+    mesh::Subdivision subdivision(_parent_cell, _element_grid, _config.order);
+  else throw std::invalid_argument("unknown subdivision method");
+
   // solve problems on faces
   build_face_boundary_conditions_();
   // construct the laplace system matrix for the cell volume laplace equation
@@ -135,10 +141,8 @@ void PolyhedralElementDirect::build_cell_system_matrix_()
                                                                _element_grid.n_vertices());
 
   // since we only build tetrahedral element mesh
-  const int element_type = api::get_gmsh_element_id(angem::VTK_ID::TetrahedronID);
   const size_t nv = 4;
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
-
   Eigen::MatrixXd cell_matrix(nv, nv);
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
   {

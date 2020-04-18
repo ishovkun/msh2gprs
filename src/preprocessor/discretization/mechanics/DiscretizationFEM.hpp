@@ -2,20 +2,19 @@
 
 #include "mesh/Mesh.hpp"
 #include "FiniteElementData.hpp"
+#include "FiniteElementBase.hpp"
+#include "config/FiniteElementConfig.hpp"
 
 namespace discretization
 {
 
-/* This class implements the Discrete Finite Element method (DFEM)
- * The Idea is to discretiza grid cells into simple shapes and compute
- * the shape functions with MSRSB method
- * (so that the simulator can use them as regular Finite Element
- * shape funcitons). */
-class DiscretizationDFEM
+/* This class implements Finite Element discretization
+ * The Idea is to compute shape functions and feed them to the simulator
+ */
+class DiscretizationFEM
 {
  public:
-  DiscretizationDFEM(const mesh::Mesh & grid,
-                     const double       msrsb_tol);
+  DiscretizationFEM(const mesh::Mesh & grid, const FiniteElementConfig & config);
   void build();
 
   // get vector of finite element data that corresponds to 3D cells
@@ -26,9 +25,11 @@ class DiscretizationDFEM
  protected:
   // just a debug function
   void analyze_cell_(const mesh::Cell & cell);
+  // choose an element discretization based on config and cell vtk id
+  std::unique_ptr<FiniteElementBase> build_element(const mesh::Cell & cell);
 
   const mesh::Mesh & _grid;
-  const double _msrsb_tol;  // msrsb tolerance
+  const FiniteElementConfig & _config;
   std::vector<FiniteElementData> _cell_data, _face_data;
 };
 

@@ -404,7 +404,7 @@ int GmshInterface::get_vtk_id(const int element_type)
 
 #ifdef WITH_GMSH
 
-void GmshInterface::build_triangulation(const mesh::Cell & cell)
+void GmshInterface::build_triangulation(const mesh::Cell & cell, const double n_vertices_on_edge)
 {
   // const auto poly = cell.polyhedron();
   // build_triangulation_(*poly);
@@ -422,7 +422,7 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell)
     faces.push_back(std::move(poly_face));
   }
   const angem::Polyhedron<double> poly(coord, faces);
-  build_triangulation_(poly);
+  build_triangulation_(poly, n_vertices_on_edge);
 }
 
 std::vector<double>  compute_vertex_element_sizes(const std::vector<std::pair<size_t,size_t>> &edges,
@@ -438,7 +438,8 @@ std::vector<double>  compute_vertex_element_sizes(const std::vector<std::pair<si
   return result;
 }
 
-void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
+void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell,
+                                         const double n_vertices_on_edge)
 {
   // gmsh::option::setNumber("General.Terminal", 1);
   gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
@@ -462,7 +463,8 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell)
   {
     const Point & vertex = vertices[i];
     gmsh::model::geo::addPoint(vertex.x(), vertex.y(), vertex.z(),
-                               element_sizes[i]/4, /*tag = */ i+1);
+                               element_sizes[i] / n_vertices_on_edge,
+                               /*tag = */ i+1);
     gmsh::model::addPhysicalGroup(0, {static_cast<int>(i+1)}, i+1);
   }
 
@@ -578,9 +580,10 @@ void GmshInterface::get_elements(std::vector<int> & element_types,
   gmsh::model::mesh::getElements(element_types, element_tags, node_tags, dim, tag);
 }
 
-void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & grid)
+void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & grid,
+                                        const double n_vertices_on_edge)
 {
-  build_triangulation(cell);
+  build_triangulation(cell, n_vertices_on_edge);
 
   if (!grid.empty())
     throw std::invalid_argument("refuse to add gmsh elements to a non-empty grid");

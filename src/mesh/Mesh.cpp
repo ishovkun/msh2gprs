@@ -802,4 +802,10 @@ void Mesh::split_face_in_cell_(const Cell parent, const vertex_pair new_edge)
   }
 }
 
+size_t Mesh::insert_vertex(const angem::Point<3,double> & coord)
+{
+  m_vertices.push_back(coord);
+  return m_vertices.size() - 1;
+}
+
 }  // end namespace mesh

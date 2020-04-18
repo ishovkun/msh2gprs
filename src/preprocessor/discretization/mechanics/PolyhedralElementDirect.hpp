@@ -3,7 +3,9 @@
 #include "mesh/Cell.hpp"                    // provices mesh::Cell
 #include "gmsh_interface/GmshInterface.hpp" // provides GmshInterface
 #include "../flow/DoFNumbering.hpp"         // provides DoFNumbering
-#include "FiniteElementData.hpp"            // provides FiniteElementData
+#include "FiniteElementBase.hpp"            // provides FiniteElementBase
+#include "config/FiniteElementConfig.hpp"
+#include "config/SolverType.hpp"
 #include <Eigen/Sparse>                     // provides SparseMatrix
 #include <Eigen/Dense>                      // provides MatrixXd, VectorXd
 
@@ -17,7 +19,7 @@ class IntegrationRuleFacesAverage;
  * polyhdedral element and a custom FeValues class to build a system matrix 
  * for Poisson equation to compute FE shape functions.
  **/
-class PolyhedralElementDirect
+class PolyhedralElementDirect : public FiniteElementBase
 {
  public:
   /**
@@ -26,11 +28,7 @@ class PolyhedralElementDirect
    * Input:
    * @param[in] cell : grid cell to be discretized
    */
-  PolyhedralElementDirect(const mesh::Cell & cell);
-  // get FE data for volume integration
-  const FiniteElementData & get_cell_data() const {return _cell_data;}
-  // get FE data for surface integration
-  const std::vector<FiniteElementData> & get_face_data() const {return _face_data;}
+  PolyhedralElementDirect(const mesh::Cell & cell, const FiniteElementConfig & config);
   // get vector of cell integration points (where cell_data is defined)
   const std::vector<angem::Point<3,double>> & get_cell_integration_points() const {return _cell_gauss_points;}
   //  purely debugging purposes
@@ -100,6 +98,7 @@ class PolyhedralElementDirect
 
  protected:
   const mesh::Cell & _parent_cell;                             // reference to the discretized cell
+  const FiniteElementConfig & _config;
   mesh::Mesh _element_grid;                                    // triangulation of the discretized cell
   std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<std::vector<size_t>> _support_edge_vertices;     // edge vertices for each parent vertex
@@ -110,8 +109,8 @@ class PolyhedralElementDirect
   std::vector<Eigen::VectorXd> _basis_functions;               // numerical shape function values
   std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
-  FiniteElementData _cell_data;                                // FEM values and gradients in cell integration points
-  std::vector<FiniteElementData> _face_data;                                // FEM values and gradients in face integration points
+  // FiniteElementData _cell_data;                                // FEM values and gradients in cell integration points
+  // std::vector<FiniteElementData> _face_data;                                // FEM values and gradients in face integration points
 
   friend class IntegrationRuleFacesAverage;
 };
