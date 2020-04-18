@@ -105,6 +105,7 @@ class Cell
   friend class Mesh;
   friend class active_cell_iterator;
   friend class active_cell_const_iterator;
+  friend class Subdivision;
 };
 
 }  // end namespace
