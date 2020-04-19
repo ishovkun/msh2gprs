@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mesh/Cell.hpp"
-#include "mesh/Mesh.hpp"
+#include "Cell.hpp"
+#include "Mesh.hpp"
 
 namespace mesh {
 
@@ -28,15 +28,20 @@ class Subdivision {
    *                             subdivisions of cell.
    * \param[in] order : a number of recursive subdivisions for the triangulation
    */
-  Subdivision(const mesh::Cell & cell, mesh::Mesh & triangulation, const size_t order = 0);
+  Subdivision(const Cell & cell, Mesh & triangulation, const size_t order = 0);
 
  private:
   void create_master_cell_();
-  void perform_subdivision_(mesh::Cell & cell);
+  void perform_subdivision_r0_(Cell & cell);
+  void perform_subdivision_tetra_(Cell & cell);
+  void insert_tetra_(const std::vector<size_t> & local_vertex_indices,
+                       const std::vector<size_t> & global_vertex_indices,
+                       const std::vector<std::vector<size_t>> & faces,
+                       const size_t parent_cell_index);
 
   // *********************** Veriables ****************************** //
-  const mesh::Cell & _parent_cell;
-  mesh::Mesh & _grid;
+  const Cell & _parent_cell;
+  Mesh & _grid;
   const size_t _order;
   angem::PointSet<3, double> _created_vertices;
   std::vector<size_t> _created_vertex_indices;

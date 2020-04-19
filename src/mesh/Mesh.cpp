@@ -34,7 +34,6 @@ std::size_t Mesh::insert_cell(const std::vector<std::size_t> & ivertices,
   std::vector<size_t> take_faces(face_vector.size());
   std::iota(take_faces.begin(), take_faces.end(), 0);
   return insert_cell_(ivertices, take_faces, face_vector,vtk_id, marker);
-  // return insert_cell_(ivertices, poly_faces, vtk_id, marker);
 }
 
 std::size_t Mesh::

@@ -31,7 +31,15 @@ void PolyhedralElementDirect::build_()
   if (_config.subdivision_method == PolyhedralFEMSubdivision::gmsh_generate)
     api::build_triangulation(_parent_cell, _element_grid, double(_config.order));
   else if (_config.subdivision_method == PolyhedralFEMSubdivision::refinement)
+  {
     mesh::Subdivision subdivision(_parent_cell, _element_grid, _config.order);
+    // std::string fname = "custom_subdivision.vtk";
+    // std::cout << "saving " << fname << std::endl;
+    // std::ofstream out;
+    // out.open(fname.c_str());
+    // IO::VTKWriter::write_geometry(_element_grid, out);
+    // exit(0);
+  }
   else throw std::invalid_argument("unknown subdivision method");
 
   // solve problems on faces

@@ -31,20 +31,25 @@ std::unique_ptr<Polyhedron> Cell::polyhedron() const
 {
   std::vector<angem::Point<3,double>> coord = vertex_coordinates();
   const auto verts = vertices();
+  std::map<size_t, size_t> old_to_new;
+  size_t i = 0;
+  for (auto v : verts)
+    old_to_new[v] = i++;
+
   std::vector<std::vector<size_t>> poly_faces;
   for (auto face : faces())
   {
-    std::vector<size_t> poly_face;
+    std::vector<size_t> face_vertices;
     for (auto v : face->vertices())
     {
-      const size_t idx = std::distance(verts.begin(), std::find( verts.begin(), verts.end(), v ));
-      poly_face.push_back(idx);
+      // const size_t idx = std::distance(verts.begin(), std::find( verts.begin(), verts.end(), v ));
+      const size_t idx = old_to_new[v];
+      face_vertices.push_back(idx);
     }
-    poly_faces.push_back(std::move(poly_face));
+    poly_faces.push_back(std::move(face_vertices));
   }
   const angem::Polyhedron<double> poly(coord, poly_faces);
-  return std::make_unique<angem::Polyhedron<double>>(coord,
-                                                     poly_faces, vtk_id());
+  return std::make_unique<angem::Polyhedron<double>>(coord, poly_faces, vtk_id());
 }
 
 std::vector<Point> Cell::vertex_coordinates() const

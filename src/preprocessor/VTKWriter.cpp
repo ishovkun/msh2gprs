@@ -169,8 +169,7 @@ void VTKWriter::write_geometry_face_based_(const Mesh & grid,
 
   out << "CELL_TYPES" << "\t" << grid.n_active_cells() << std::endl;
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    out << 42 << endl;
-    // out << cell->vtk_id() << std::endl;
+    out << angem::GeneralPolyhedronID << endl;
 }
 
 size_t VTKWriter::count_number_of_cell_entries_(const Mesh & grid)
