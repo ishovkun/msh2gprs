@@ -35,9 +35,12 @@ class Subdivision {
   void perform_subdivision_r0_(Cell & cell);
   void perform_subdivision_tetra_(Cell & cell);
   void insert_tetra_(const std::vector<size_t> & local_vertex_indices,
-                       const std::vector<size_t> & global_vertex_indices,
-                       const std::vector<std::vector<size_t>> & faces,
-                       const size_t parent_cell_index);
+                     const std::vector<size_t> & global_vertex_indices,
+                     const std::vector<std::vector<size_t>> & faces,
+                     const std::vector<size_t> & face_parents,
+                     const size_t parent_cell_index);
+  std::vector<size_t> get_face_order_(const Cell & cell,
+                                      const std::vector<size_t> &cell_vertices) const;
 
   // *********************** Veriables ****************************** //
   const Cell & _parent_cell;

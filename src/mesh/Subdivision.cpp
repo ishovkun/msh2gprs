@@ -162,45 +162,71 @@ void Subdivision::perform_subdivision_tetra_(Cell & cell)
       vertices.push_back(_created_vertex_indices[idx]);
   }
 
+  // todo: order faces in the same order as master tetra
+  std::vector<size_t> face_order = get_face_order_(cell, vertices);
+  const std::vector<Face*> cell_faces = cell.faces();
+  std::transform(face_order.begin(), face_order.end(), face_order.begin(),
+                 [cell_faces](size_t f) {return cell_faces[f]->index();});
+
   // Tetra 1
   const size_t parent_cell_index = cell.index();
   insert_tetra_({0, 4, 6, 7}, vertices,
                 {{0, 4, 6}, {0, 4, 7},
-                 {0, 6, 7}, {4, 6, 7}}, parent_cell_index);
+                 {0, 6, 7}, {4, 6, 7}},
+                {face_order[0], face_order[1], face_order[2], constants::invalid_index},
+                parent_cell_index);
   // Tetra 2
   insert_tetra_({2, 5, 6, 8}, vertices,
                 {{2, 6, 8}, {2, 5, 8},
-                 {2, 5, 6}, {5, 6, 8}}, parent_cell_index);
+                 {2, 5, 6}, {5, 6, 8}},
+                {face_order[2], face_order[3], face_order[0], constants::invalid_index},
+                parent_cell_index);
   // Tetra 3
   insert_tetra_({4, 6, 7, 8}, vertices,
                 {{4, 6, 7}, {4, 7, 8},
-                 {4, 6, 8}, {6, 7, 8}}, parent_cell_index);
+                 {4, 6, 8}, {6, 7, 8}},
+                {constants::invalid_index, constants::invalid_index,
+                 constants::invalid_index, face_order[2]},
+                parent_cell_index);
   // Tetra 4
   insert_tetra_({4, 5, 6, 8}, vertices,
                 {{4, 5, 6}, {4, 5, 8},
-                 {4, 6, 8}, {5, 6, 8}}, parent_cell_index);
+                 {4, 6, 8}, {5, 6, 8}},
+                {face_order[0], constants::invalid_index,
+                 constants::invalid_index, constants::invalid_index},
+                parent_cell_index);
   // tetra 5
   insert_tetra_({3, 7, 8, 9}, vertices,
                 {{3, 7, 8}, {3, 8, 9},
-                 {3, 7, 9}, {7, 8, 9}}, parent_cell_index);
+                 {3, 7, 9}, {7, 8, 9}},
+                {face_order[2], face_order[3], face_order[1], constants::invalid_index},
+                parent_cell_index);
   // Tetra 6
   insert_tetra_({4, 7, 8, 9}, vertices,
                 {{4, 7, 8}, {4, 7, 9},
-                 {4, 8, 9}, {7, 8, 9}}, parent_cell_index);
+                 {4, 8, 9}, {7, 8, 9}},
+                {constants::invalid_index, face_order[1],
+                 constants::invalid_index, constants::invalid_index},
+                parent_cell_index);
   // Tetra 7
   insert_tetra_({4, 5, 8, 9}, vertices,
                 {{4, 5, 8}, {4, 5, 9},
-                 {4, 8, 9}, {5, 8, 9}}, parent_cell_index);
+                 {4, 8, 9}, {5, 8, 9}},
+                {constants::invalid_index, constants::invalid_index,
+                 constants::invalid_index, face_order[3]}, parent_cell_index);
   // Tetra 8
   insert_tetra_({1, 4, 5, 9}, vertices,
                 {{1, 4, 5}, {1, 4, 9},
-                 {1, 5, 9}, {4, 5, 9}}, parent_cell_index);
+                 {1, 5, 9}, {4, 5, 9}},
+                {face_order[0], face_order[1], face_order[3], constants::invalid_index},
+                parent_cell_index);
   _grid.m_n_cells_with_hanging_nodes++;
 }
 
 void Subdivision::insert_tetra_(const std::vector<size_t> & local_vertex_indices,
                                 const std::vector<size_t> & global_vertex_indices,
                                 const std::vector<std::vector<size_t>> & faces,
+                                const std::vector<size_t> & face_parents,
                                 const size_t parent_cell_index)
 {
   std::vector<size_t> cell_vertices(local_vertex_indices.size());
@@ -213,6 +239,9 @@ void Subdivision::insert_tetra_(const std::vector<size_t> & local_vertex_indices
     auto & face = cell_faces[f];
     face.vertices.resize(3);
     face.vtk_id = angem::TriangleID;
+    face.parent = face_parents[f];
+    face.marker = (face.parent == constants::invalid_index) ?
+        constants::default_face_marker : _grid.face(face.parent).marker();
     std::transform(faces[f].begin(), faces[f].end(), face.vertices.begin(),
                    [global_vertex_indices](size_t v) {return global_vertex_indices[v];});
   }
@@ -224,6 +253,36 @@ void Subdivision::insert_tetra_(const std::vector<size_t> & local_vertex_indices
 
   _grid.m_cells[parent_cell_index].m_children.push_back(new_cell_index);
   _grid.m_cells[new_cell_index].m_parent = parent_cell_index;
+}
+
+std::vector<size_t> Subdivision::get_face_order_(const Cell & cell,
+                                                 const std::vector<size_t> &vertices) const
+{
+  const auto faces = cell.faces();
+  std::vector<std::vector<size_t>> master_faces = {{vertices[0], vertices[1], vertices[2]},
+                                                   {vertices[0], vertices[1], vertices[3]},
+                                                   {vertices[0], vertices[2], vertices[3]},
+                                                   {vertices[1], vertices[2], vertices[3]}};
+  for (auto & face : master_faces)
+    std::sort( face.begin(), face.end() );
+
+  std::vector<size_t> order(faces.size());
+  for (size_t f=0; f<faces.size(); ++f)
+  {
+    const Face & face = *faces[f];
+    auto face_vertices = face.vertices();
+    std::sort( face_vertices.begin(), face_vertices.end() );
+    for (size_t mf=0; mf<master_faces.size(); ++mf)
+    {
+      if ( face_vertices == master_faces[mf] )
+      {
+        order[mf] = f;
+        break;
+      }
+    }
+
+  }
+  return order;
 }
 
 
