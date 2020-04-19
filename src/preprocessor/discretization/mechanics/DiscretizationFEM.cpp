@@ -30,7 +30,6 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
 void DiscretizationFEM::build()
 {
   // analyze_cell_(_grid.cell(0));
-  // analyze_cell_(_grid.cell(1));
 
   _face_data.resize( _grid.n_faces() );
   _cell_data.resize( _grid.n_cells() );
@@ -61,11 +60,9 @@ void DiscretizationFEM::build()
 
 void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 {
-  api::initialize_gmsh();
   PolyhedralElementDirect de(cell, _config);
   StandardFiniteElement fe(cell);
   // DFEMElement discr_element(cell, _msrsb_tol);
-  api::finalize_gmsh();
   de.debug_save_shape_functions_("output/shape_functions" + std::to_string(cell.index())+ ".vtk");
 
   FiniteElementData an_data =  fe.get_cell_data();
