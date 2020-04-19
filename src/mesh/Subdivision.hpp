@@ -41,6 +41,7 @@ class Subdivision {
                      const size_t parent_cell_index);
   std::vector<size_t> get_face_order_(const Cell & cell,
                                       const std::vector<size_t> &cell_vertices) const;
+  std::vector<size_t> sort_to_form_left_basis_(const std::vector<size_t> & tetra_vertices) const;
 
   // *********************** Veriables ****************************** //
   const Cell & _parent_cell;

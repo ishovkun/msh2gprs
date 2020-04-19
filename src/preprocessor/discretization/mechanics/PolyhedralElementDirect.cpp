@@ -29,15 +29,30 @@ void PolyhedralElementDirect::build_()
 {
   // triangulate the polyhedral element
   if (_config.subdivision_method == PolyhedralFEMSubdivision::gmsh_generate)
+  {
+    api::initialize_gmsh();
     api::build_triangulation(_parent_cell, _element_grid, double(_config.order));
+    api::finalize_gmsh();
+  }
   else if (_config.subdivision_method == PolyhedralFEMSubdivision::refinement)
   {
     mesh::Subdivision subdivision(_parent_cell, _element_grid, _config.order);
-    // std::string fname = "custom_subdivision.vtk";
-    // std::cout << "saving " << fname << std::endl;
-    // std::ofstream out;
-    // out.open(fname.c_str());
-    // IO::VTKWriter::write_geometry(_element_grid, out);
+  //   std::string fname = "custom_subdivision.vtk";
+  //   std::cout << "saving " << fname << std::endl;
+  //   std::ofstream out;
+  //   out.open(fname.c_str());
+  //   IO::VTKWriter::write_geometry(_element_grid, out);
+  // IO::VTKWriter::enter_section_point_data(_element_grid.n_vertices(), out);
+  // std::vector<double> output(_element_grid.n_vertices(), 0);
+  // for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  // {
+  //   if (face->marker() > 0 && face->neighbors().size() == 1)
+  //   {
+  //     for ( const size_t v : face->vertices() )
+  //       output[v] = face->marker();
+  //   }
+  // }
+  // IO::VTKWriter::add_data(output, "bnd-marker", out);
     // exit(0);
   }
   else throw std::invalid_argument("unknown subdivision method");
@@ -147,7 +162,6 @@ void PolyhedralElementDirect::build_cell_system_matrix_()
   // build element jacobian for the homogeneous laplace equation
   _system_matrix = Eigen::SparseMatrix<double,Eigen::ColMajor>(_element_grid.n_vertices(),
                                                                _element_grid.n_vertices());
-
   // since we only build tetrahedral element mesh
   const size_t nv = 4;
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
@@ -155,7 +169,6 @@ void PolyhedralElementDirect::build_cell_system_matrix_()
   for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
   {
     cell_matrix.setZero();
-    // fe_values.update(cell->index());
     fe_values.update(*cell);
 
     const std::vector<size_t> & cell_vertices = cell->vertices();

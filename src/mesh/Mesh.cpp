@@ -110,6 +110,7 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
                          m_cells, m_faces, m_vertices, m_vertex_cells, f.parent);
     if (f.parent != constants::invalid_index)
     {
+      assert( f.parent < n_faces() );
       m_faces[f.parent].m_children.push_back(face_index);
     }
 

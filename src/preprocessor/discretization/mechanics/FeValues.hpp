@@ -264,7 +264,7 @@ void FeValues<vtk_id>::update_(const Point & p,
   else  // dim == 2
     compute_detJ_and_invert_face_jacobian_(ref_grad, du_dx, determinant);
   // must be positive
-  if ( determinant <= 0 ) throw std::runtime_error("Transformation Jacobian is not invertible");
+  if ( determinant <= 0 ) throw std::runtime_error("Transformation det(J) is negative " + std::to_string(determinant));
   // compute the true shape function gradients
   update_shape_grads_(ref_grad, du_dx, shape_grads);
 }

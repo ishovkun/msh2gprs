@@ -39,9 +39,7 @@ void DiscretizationFEM::build()
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
     progress.set_progress(item++);
-    api::initialize_gmsh();
     const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
-    api::finalize_gmsh();
 
    FiniteElementData cell_fem_data = p_discr->get_cell_data();
    cell_fem_data.element_index = cell->index();

@@ -52,7 +52,6 @@ void Subdivision::create_master_cell_()
   std::iota( use_faces.begin(), use_faces.end(), 0 );
   std::vector<size_t> ivertices(_grid.n_vertices());
   std::iota( ivertices.begin(), ivertices.end(), 0 );
-  // std::cout << std::flush << std::endl;
   _grid.insert_cell_(ivertices, use_faces, new_faces,
                      _parent_cell.vtk_id(), _parent_cell.marker());
 }
@@ -87,6 +86,8 @@ void Subdivision::perform_subdivision_r0_(mesh::Cell & cell)
                              f.parent = parent;
                              f.marker = marker;
                            };
+    const size_t face_index = face->index();
+    const int face_marker = face->marker();
 
     // refine face and build tetras
     const auto face_vertices = face->vertices();
@@ -96,7 +97,7 @@ void Subdivision::perform_subdivision_r0_(mesh::Cell & cell)
       if (i == face_vertices.size() - 1) i2 = face_vertices[0];
       std::vector<FaceTmpData> tetra_faces(4);
       // // base of the tetra resides on the parent face
-      build_trgl_face({i1, i2, face_center_index}, face->index(), face->marker(), tetra_faces[0]);
+      build_trgl_face({i1, i2, face_center_index}, face_index, face_marker, tetra_faces[0]);
       // add three more faces to build the tetrahedron
       build_trgl_face({i1, i2, cell_center_index}, constants::invalid_index,
                       constants::default_face_marker, tetra_faces[1]);
@@ -106,10 +107,11 @@ void Subdivision::perform_subdivision_r0_(mesh::Cell & cell)
                       constants::default_face_marker, tetra_faces[3]);
       std::vector<size_t> take_faces(4);
       std::iota(take_faces.begin(), take_faces.end(), 0);
+      const std::vector<size_t> tetra_vertices = sort_to_form_left_basis_({i1, i2, face_center_index,
+                                                                           cell_center_index});
       const size_t child_cell_index =
-          _grid.insert_cell_({i1, i2, face_center_index, cell_center_index},
-                             take_faces, tetra_faces, angem::TetrahedronID,
-                             cell.marker());
+          _grid.insert_cell_(tetra_vertices, take_faces, tetra_faces,
+                             angem::TetrahedronID, cell.marker());
       // const size_t child_cell_index =
       // _grid.insert_cell( {i1, i2, face_center_index, cell_center_index},
       //                    angem::TetrahedronID, cell.marker());
@@ -176,7 +178,7 @@ void Subdivision::perform_subdivision_tetra_(Cell & cell)
                 {face_order[0], face_order[1], face_order[2], constants::invalid_index},
                 parent_cell_index);
   // Tetra 2
-  insert_tetra_({2, 5, 6, 8}, vertices,
+  insert_tetra_({6, 5, 2, 8}, vertices,
                 {{2, 6, 8}, {2, 5, 8},
                  {2, 5, 6}, {5, 6, 8}},
                 {face_order[2], face_order[3], face_order[0], constants::invalid_index},
@@ -196,13 +198,13 @@ void Subdivision::perform_subdivision_tetra_(Cell & cell)
                  constants::invalid_index, constants::invalid_index},
                 parent_cell_index);
   // tetra 5
-  insert_tetra_({3, 7, 8, 9}, vertices,
+  insert_tetra_({7, 9, 8, 3}, vertices,
                 {{3, 7, 8}, {3, 8, 9},
                  {3, 7, 9}, {7, 8, 9}},
                 {face_order[2], face_order[3], face_order[1], constants::invalid_index},
                 parent_cell_index);
   // Tetra 6
-  insert_tetra_({4, 7, 8, 9}, vertices,
+  insert_tetra_({7, 4, 8, 9}, vertices,
                 {{4, 7, 8}, {4, 7, 9},
                  {4, 8, 9}, {7, 8, 9}},
                 {constants::invalid_index, face_order[1],
@@ -215,7 +217,7 @@ void Subdivision::perform_subdivision_tetra_(Cell & cell)
                 {constants::invalid_index, constants::invalid_index,
                  constants::invalid_index, face_order[3]}, parent_cell_index);
   // Tetra 8
-  insert_tetra_({1, 4, 5, 9}, vertices,
+  insert_tetra_({4, 1, 5, 9}, vertices,
                 {{1, 4, 5}, {1, 4, 9},
                  {1, 5, 9}, {4, 5, 9}},
                 {face_order[0], face_order[1], face_order[3], constants::invalid_index},
@@ -283,6 +285,22 @@ std::vector<size_t> Subdivision::get_face_order_(const Cell & cell,
 
   }
   return order;
+}
+
+std::vector<size_t> Subdivision::sort_to_form_left_basis_(const std::vector<size_t> & vertices) const
+{
+  /**
+   * (v1 × v2) ·  v3 > 0 then poistive
+   */
+  const Point v1 = _grid.vertex(vertices[1]) - _grid.vertex(vertices[0]);
+  const Point v2 = _grid.vertex(vertices[2]) - _grid.vertex(vertices[0]);
+  const Point v3 = _grid.vertex(vertices[3]) - _grid.vertex(vertices[0]);
+  if (v1.cross(v2).dot(v3) > 0)
+    return vertices;
+  else
+  {
+    return {vertices[0], vertices[2], vertices[1], vertices[3]};
+  }
 }
 
 
