@@ -1,28 +1,35 @@
 #pragma once
 
-#include "mesh/Cell.hpp"
-#include "JacobiPreconditioner.hpp"
-#include "gmsh_interface/GmshInterface.hpp"
-#include "FiniteElementData.hpp"
-#include <Eigen/Sparse>  // provides SparseMatrix
-#include <Eigen/Dense>  // provides MatrixXd, VectorXd
+#include "PolyhedralElementBase.hpp" // provides PolyhedralElementBase
+#include "JacobiPreconditioner.hpp"  // provides JacobiPreconditioner
+#include <Eigen/Sparse>              // provides SparseMatrix
 
 namespace discretization {
 
-class DFEMElement
+/**
+ * This class implements polyhedral element method for a single
+ * cell.
+ * It uses Gmsh (linked during compilation) or a custom refinement class to triangulate an
+ * polyhdedral element and a custom FeValues class to build a system matrix
+ * for Poisson equation to compute FE shape functions.
+ * Instead of a linear solver it uses MSRSB with the Jacobi-smoothing strategy
+ */
+class PolyhedralElementMSRSB : public PolyhedralElementBase
 {
  public:
   /* Constructor */
-  DFEMElement(const mesh::Cell & cell, const double msrsb_tol);
+  PolyhedralElementMSRSB(const mesh::Cell & cell, const FiniteElementConfig & config);
   // get FE data for volume integration
   const FiniteElementData & get_cell_data() const;
   // get FE data for surface integration
   const FiniteElementData & get_face_data() const;
+  // just for debugging
+  void debug_save_shape_functions_(const std::string fname = "shape_functions.vtk");
+  // get vector of cell integration points (where cell_data is defined)
+  const std::vector<angem::Point<3,double>> & get_cell_integration_points() const {return _cell_gauss_points;}
 
  protected:
   void build_();
-  // get geometric data from gmsh
-  void build_triangulation_();
   // build system matrix for the FEM laplace equation
   void build_jacobian_();
   void compute_shape_functions_();
@@ -38,8 +45,6 @@ class DFEMElement
   void initial_guess_();
   // different guess
   void initial_guess2_();
-  // just for debugging
-  void debug_save_shape_functions_(const std::string fname = "shape_functions.vtk");
   // run iterative msrsb process to compute shape functions
   void run_msrsb_();
   // jacobi iteration over a single fine vertex
@@ -72,20 +77,11 @@ class DFEMElement
                   const std::vector<angem::Point<3,double>>  & vertices) const;
 
  private:
-  const mesh::Cell & _cell;
-  const double _msrsb_tol;
-  mesh::Mesh _element_grid;
   Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;
-  // msrsb basis function
-  std::vector<Eigen::VectorXd> _basis_functions;
   // mrsrb support boundaries
   std::vector<std::unordered_set<size_t>> _support_boundaries;
   std::vector<std::vector<size_t>> _support_edge_vertices;
   std::vector<std::vector<double>> _support_edge_values;
-  // dfem gauss points
-  std::vector<angem::Point<3,double>> _cell_gauss_points;
-  FiniteElementData _cell_data;
-  FiniteElementData _face_data;
 };
 
 }  // end namespace discretization

@@ -27,7 +27,8 @@ ADD_LIBRARY(preprocessor
   GridEntityNumberingManager.cpp
   UnionFind.cpp
   discretization/mechanics/DiscretizationFEM.cpp
-  discretization/mechanics/DFEMElement.cpp
+  discretization/mechanics/PolyhedralElementBase.cpp
+  discretization/mechanics/PolyhedralElementMSRSB.cpp
   discretization/mechanics/JacobiPreconditioner.cpp
   discretization/mechanics/PolyhedralElementDirect.cpp
   discretization/mechanics/StandardFiniteElement.cpp

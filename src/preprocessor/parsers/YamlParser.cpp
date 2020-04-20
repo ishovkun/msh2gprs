@@ -100,7 +100,7 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     }
     else if (key == "solver")
     {
-      const auto values = it->second.as<std::pair<std::string,size_t>>();
+      const auto values = it->second.as<std::pair<std::string,double>>();
       if (values.first == "direct")
         config.fem.solver = SolverType::direct;
       else if (values.first == "cg")

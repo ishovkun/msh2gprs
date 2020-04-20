@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mesh/Mesh.hpp"  // provides mesh::Mesh
-#include "../PolyhedralElementDirect.hpp"
+#include "../PolyhedralElementBase.hpp"
 #include <vector>
 
 namespace discretization {
@@ -21,7 +21,7 @@ class IntegrationRuleFacesAverage
    * Computes the locations of integration points at a target as well as
    * the values of shape functions, gradients, and weights.
    */
-  IntegrationRuleFacesAverage(PolyhedralElementDirect & element);
+  IntegrationRuleFacesAverage(PolyhedralElementBase & element);
 
  protected:
   void build_tributary_shapes_cells_();
@@ -36,7 +36,7 @@ class IntegrationRuleFacesAverage
   void setup_storage_();
   void build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & face_poly);
 
-  PolyhedralElementDirect & _element;
+  PolyhedralElementBase & _element;
   std::vector<angem::Polyhedron<double>> _pyramids;                         // tributary regions
   std::vector<std::vector<angem::Polygon<double>>> _face_triangles;
 };

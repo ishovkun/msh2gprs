@@ -2,10 +2,11 @@
 #include "gmsh_interface/GmshInterface.hpp"
 #include <stdexcept>
 #ifdef WITH_EIGEN
-#include "DFEMElement.hpp"
 #include "PolyhedralElementDirect.hpp"
+#include "PolyhedralElementMSRSB.hpp"
 #endif
 #include "StandardFiniteElement.hpp"
+#include "MeshStatsComputer.hpp"
 #include "ProgressBar.hpp"  // provides ProgressBar
 
 
@@ -30,6 +31,13 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
 void DiscretizationFEM::build()
 {
   // analyze_cell_(_grid.cell(0));
+  if (_config.method != strong_discontinuity)
+  {
+    auto cell = _grid.begin_active_cells();
+    PolyhedralElementDirect de(*cell, _config);
+    mesh::MeshStatsComputer stats(de.get_grid());
+    std::cout << "Average edge length = " << stats.get_average_edge_length() << std::endl;
+  }
 
   _face_data.resize( _grid.n_faces() );
   _cell_data.resize( _grid.n_cells() );
@@ -38,6 +46,7 @@ void DiscretizationFEM::build()
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
     progress.set_progress(item++);
+
     const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
 
    FiniteElementData cell_fem_data = p_discr->get_cell_data();
@@ -60,7 +69,8 @@ void DiscretizationFEM::build()
 
 void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 {
-  PolyhedralElementDirect de(cell, _config);
+  // PolyhedralElementDirect de(cell, _config);
+  PolyhedralElementMSRSB de(cell, _config);
   StandardFiniteElement fe(cell);
   // DFEMElement discr_element(cell, _msrsb_tol);
   de.debug_save_shape_functions_("output/shape_functions" + std::to_string(cell.index())+ ".vtk");
@@ -88,6 +98,7 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
     Point p (0,00,0);
     for (size_t v=0; v<verts.size(); ++v)
     {
+      assert( data.points[q].values.size() == verts.size() );
       p += _grid.vertex(verts[v]) * data.points[q].values[v];
     }
 
@@ -199,10 +210,7 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
     if (_config.solver == direct || _config.solver == cg)
       p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config);
     else if (_config.solver == msrsb)
-    {
-      throw std::invalid_argument("regression");
-      /* p_discr = std::make_unique<DFEMElement>(*cell, _msrsb_tol); */
-    }
+      p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
   }
   else if (_config.method == strong_discontinuity)
     p_discr = std::make_unique<StandardFiniteElement>(cell);
@@ -213,10 +221,7 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
       if (_config.solver == direct || _config.solver == cg)
         p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config);
       else if (_config.solver == msrsb)
-      {
-        throw std::invalid_argument("regression");
-        /* p_discr = std::make_unique<DFEMElement>(*cell, _msrsb_tol); */
-      }
+        p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
     }
     else
       p_discr = std::make_unique<StandardFiniteElement>(cell);

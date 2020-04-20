@@ -5,7 +5,7 @@
 #include "mesh/Subdivision.hpp"
 #include "FeValues.hpp"
 #include "EdgeComparison.hpp"
-#include "PFEM_integration/IntegrationRuleFacesAverage.hpp"
+#include "PFEM_integration/IntegrationRuleFacesAverage.hpp"  // provides IntegrationRuleFacesAverage
 #include "VTKWriter.hpp"
 #include "FEMFaceDoFManager.hpp"
 #include <Eigen/IterativeLinearSolvers>
@@ -20,7 +20,7 @@ const size_t UNMARKED = std::numeric_limits<size_t>::max();
 
 PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
                                                  const FiniteElementConfig & config)
-    : _parent_cell(cell), _config(config)
+    : PolyhedralElementBase(cell, config)
 {
   build_();
 }
@@ -245,18 +245,6 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face
   }
 }
 
-std::vector<std::vector<size_t>> PolyhedralElementDirect::create_face_domains_()
-{
-  std::vector<std::vector<size_t>> parent_face_children(_parent_cell.faces().size());
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
-    if (face->marker() > 0 && face->neighbors().size() == 1)
-    {
-      const size_t parent_face_index = face->marker() - 1;
-      parent_face_children[ parent_face_index ].push_back( face->index() );
-    }
-
-  return parent_face_children;
-}
 
 void PolyhedralElementDirect::build_edge_boundary_conditions_()
 {

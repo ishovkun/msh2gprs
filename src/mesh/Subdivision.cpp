@@ -60,6 +60,7 @@ void Subdivision::perform_subdivision_r0_(mesh::Cell & cell)
 {
   const size_t parent_cell_index = cell.index();
   const size_t cell_center_index = _grid.n_vertices();
+  const int cell_marker = cell.marker();
   assert( cell.is_active() );
   _grid.vertices().push_back( cell.center() );
   // save face indices since inserting new cells invalidates pointsers
@@ -93,8 +94,8 @@ void Subdivision::perform_subdivision_r0_(mesh::Cell & cell)
     const auto face_vertices = face->vertices();
     for (size_t i=0; i<face_vertices.size(); ++i)
     {
-      size_t i1 = face_vertices[i], i2 = face_vertices[i+1];
-      if (i == face_vertices.size() - 1) i2 = face_vertices[0];
+      size_t i1 = face_vertices[i], i2 = face_vertices[0];
+      if (i < face_vertices.size() - 1) i2 = face_vertices[i+1];
       std::vector<FaceTmpData> tetra_faces(4);
       // // base of the tetra resides on the parent face
       build_trgl_face({i1, i2, face_center_index}, face_index, face_marker, tetra_faces[0]);
@@ -111,12 +112,12 @@ void Subdivision::perform_subdivision_r0_(mesh::Cell & cell)
                                                                            cell_center_index});
       const size_t child_cell_index =
           _grid.insert_cell_(tetra_vertices, take_faces, tetra_faces,
-                             angem::TetrahedronID, cell.marker());
+                             angem::TetrahedronID, cell_marker);
       // const size_t child_cell_index =
       // _grid.insert_cell( {i1, i2, face_center_index, cell_center_index},
       //                    angem::TetrahedronID, cell.marker());
       _grid.m_cells[parent_cell_index].m_children.push_back(child_cell_index);
-      _grid.m_cells[child_cell_index].m_parent = cell.index();
+      _grid.m_cells[child_cell_index].m_parent = parent_cell_index;
     }
   }
   _grid.m_n_cells_with_hanging_nodes++;

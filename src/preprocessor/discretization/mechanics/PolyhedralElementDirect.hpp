@@ -1,25 +1,18 @@
 #pragma once
 
-#include "mesh/Cell.hpp"                    // provices mesh::Cell
-#include "gmsh_interface/GmshInterface.hpp" // provides GmshInterface
+#include "PolyhedralElementBase.hpp" // provides PolyhedralElementBase
 #include "../flow/DoFNumbering.hpp"         // provides DoFNumbering
-#include "FiniteElementBase.hpp"            // provides FiniteElementBase
-#include "config/FiniteElementConfig.hpp"
-#include "config/SolverType.hpp"
 #include <Eigen/Sparse>                     // provides SparseMatrix
-#include <Eigen/Dense>                      // provides MatrixXd, VectorXd
 
 namespace discretization {
 
-class IntegrationRuleFacesAverage;
-
-/** 
+/**
  * This class implements polyhedral element method for a single 
  * cell. It uses Gmsh (linked during compilation) to triangulate an 
  * polyhdedral element and a custom FeValues class to build a system matrix 
  * for Poisson equation to compute FE shape functions.
- **/
-class PolyhedralElementDirect : public FiniteElementBase
+ */
+class PolyhedralElementDirect : public PolyhedralElementBase
 {
  public:
   /**
@@ -41,8 +34,6 @@ class PolyhedralElementDirect : public FiniteElementBase
   void build_();
   // solve problems on faces
   void build_face_boundary_conditions_();
-  // identify child faces that belong to each face parent
-  std::vector<std::vector<size_t>> create_face_domains_();
   // build system matrix for the face poisson problem
   void build_face_system_matrix_(const size_t parent_face,
                                  Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
@@ -97,22 +88,11 @@ class PolyhedralElementDirect : public FiniteElementBase
   split_into_triangles_and_compute_center_(const angem::Polygon<double> & poly);
 
  protected:
-  const mesh::Cell & _parent_cell;                             // reference to the discretized cell
-  const FiniteElementConfig & _config;
-  mesh::Mesh _element_grid;                                    // triangulation of the discretized cell
-  std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<std::vector<size_t>> _support_edge_vertices;     // edge vertices for each parent vertex
   std::vector<std::vector<double>> _support_edge_values;       // edge dirichlet values for each parent vertex
   std::vector<std::vector<size_t>> _support_boundary_vertices; // face vertices for each parent vertex
   std::vector<std::vector<double>> _support_boundary_values;   // face dirichlet values for each parent vertex
   Eigen::SparseMatrix<double,Eigen::ColMajor> _system_matrix;  // 3d cell system matrix with no BC's
-  std::vector<Eigen::VectorXd> _basis_functions;               // numerical shape function values
-  std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
-  std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
-  // FiniteElementData _cell_data;                                // FEM values and gradients in cell integration points
-  // std::vector<FiniteElementData> _face_data;                                // FEM values and gradients in face integration points
-
-  friend class IntegrationRuleFacesAverage;
 };
 
 }  // end namespace discretization

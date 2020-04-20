@@ -5,9 +5,12 @@ namespace discretization {
 
 using Point = angem::Point<3,double>;
 
-IntegrationRuleFacesAverage::IntegrationRuleFacesAverage(PolyhedralElementDirect & element)
+IntegrationRuleFacesAverage::IntegrationRuleFacesAverage(PolyhedralElementBase & element)
     : _element(element)
 {
+  if (_element._face_domains.empty())
+    _element._face_domains = _element.create_face_domains_();
+
   build_tributary_shapes_cells_();
 
   const auto face_polygons = _element._parent_cell.polyhedron()->get_face_polygons();
@@ -94,26 +97,39 @@ void IntegrationRuleFacesAverage::compute_cell_fe_quantities_()
                   fe_values.JxW(q);
           }
 
-        if (!center_found)
-          if (cell->polyhedron()->point_inside( parent_center ))
-          {
-            center_found = true;
-            for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
-              for (size_t v=0; v<nv; ++v)
-              {
-                cell_data.center.values[parent_vertex] += fe_values.value_center(v) *
-                    _element._basis_functions[parent_vertex][cell_verts[v]];
-                cell_data.center.grads[parent_vertex] += fe_values.grad_center(v) *
-                               _element._basis_functions[parent_vertex][cell_verts[v]];
-              }
-            cell_data.center.weight = _element._parent_cell.volume();
-          }
+        // if (!center_found)
+        //   if (cell->polyhedron()->point_inside( parent_center ))
+        //   {
+        //     center_found = true;
+        //     for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
+        //       for (size_t v=0; v<nv; ++v)
+        //       {
+                // cell_data.center.values[parent_vertex] += fe_values.value_center(v) *
+                //     _element._basis_functions[parent_vertex][cell_verts[v]];
+                // cell_data.center.grads[parent_vertex] += fe_values.grad_center(v) *
+                //                _element._basis_functions[parent_vertex][cell_verts[v]];
+        //       }
+        //     cell_data.center.weight = _element._parent_cell.volume();
+        //   }
 
         break;  // stop searching region
       }
-
     }
-
+      fe_values.update(*cell);
+        const std::vector<size_t> & cell_verts = cell->vertices();
+        const size_t nv = cell_verts.size();
+        for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
+          for (size_t v=0; v<nv; ++v)
+            for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
+            {
+              cell_data.center.values[parent_vertex] += fe_values.value(v, q) *
+                  _element._basis_functions[parent_vertex][cell_verts[v]] *
+                  fe_values.JxW(q);
+              cell_data.center.grads[parent_vertex] += fe_values.grad(v, q) *
+                  _element._basis_functions[parent_vertex][cell_verts[v]] *
+                  fe_values.JxW(q);
+            }
+        cell_data.center.weight = _element._parent_cell.volume();
   }
 
   // normalize values and grads  by region volume
@@ -128,6 +144,14 @@ void IntegrationRuleFacesAverage::compute_cell_fe_quantities_()
     data.weight = region_volumes[region];
   }
 
+  const double vol = _element._parent_cell.volume();
+  auto & data = cell_data.center;
+  for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
+  {
+    data.values[parent_vertex] /= vol;
+    data.grads[parent_vertex] /= vol;
+  }
+  data.weight = vol;
 }
 
 void IntegrationRuleFacesAverage::setup_storage_()
