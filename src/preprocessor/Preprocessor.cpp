@@ -1,7 +1,7 @@
 #include "Preprocessor.hpp"
 #include "parsers/YamlParser.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
-#include "VTKReader.hpp"
+#include "mesh/io/VTKReader.hpp"
 #include "BoundaryConditionManager.hpp"
 #include "discretization/mechanics/DiscretizationFEM.hpp"
 #include "discretization/flow/DiscretizationTPFA.hpp"
@@ -165,11 +165,9 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
   if (extension == "msh")
     GmshInterface::read_msh(filesystem::absolute(mesh_file_path), data.grid);
   else if (extension == "vtk")
-    io::VTKReader reader(filesystem::absolute(mesh_file_path), data.grid);
+    mesh::io::VTKReader reader(filesystem::absolute(mesh_file_path), data.grid);
   else
     throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
-
-  GmshInterface::read_msh(filesystem::absolute(mesh_file_path), data.grid);
 }
 
 void Preprocessor::build_flow_discretization_()

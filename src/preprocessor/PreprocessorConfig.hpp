@@ -39,13 +39,6 @@ struct DomainConfig
 };
 
 
-struct BCNodeConfig
-{
-  static const int type = 1;
-  angem::Point<3,double> value;
-  angem::Point<3,double> coord;
-};
-
 enum BoundaryConditionType : int
 {
   dirichlet = 1, neumann = 2
@@ -57,6 +50,7 @@ struct BCConfig
   int label;
   BoundaryConditionType type;
   angem::Point<3,double> value;
+  std::string expression;
   // undefined boundary value (do not impose)
   static constexpr double nan = std::numeric_limits<double>::max();
 };
@@ -148,7 +142,7 @@ struct PreprocessorConfig
   std::vector<EmbeddedFractureConfig>  embedded_fractures;  //  embedded  fractures
   std::vector<DiscreteFractureConfig>  discrete_fractures;
   std::vector<BCConfig>                bc_faces;
-  std::vector<BCNodeConfig>            bc_nodes;
+  std::vector<BCConfig>                bc_nodes;
   std::vector<WellConfig>              wells;
 
   EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
@@ -158,7 +152,7 @@ struct PreprocessorConfig
   CellPropertyConfig cell_properties;
   // vector of cell properties for each subdomain
   std::vector<DomainConfig>            domains;
-  double node_search_tolerance = 1e-10;
+  double geometry_search_tolerance = 1e-10;
   double frac_cell_elinination_factor = 0.2;
 
   // multiscale

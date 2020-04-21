@@ -21,7 +21,9 @@ using Polyhedron = angem::Polyhedron<double>;
 using Polygon = angem::Polygon<double>;
 using FaceiVertices = std::vector<std::size_t>;
 
-class Subdivision;  // gon be a friend
+// buddies
+class Subdivision;
+namespace io { class VTKReader;}
 
 struct FaceTmpData
 {
@@ -198,7 +200,7 @@ class Mesh
   // coarsen cells split built by split_cell method and restore active cells
   void coarsen_cells();
 
- private:
+ protected:
   // find edge neighboring cells
   std::vector<size_t> neighbors_indices_(const vertex_pair & edge) const;
 
@@ -282,6 +284,7 @@ class Mesh
   std::vector<size_t> m_vertices_from_cell_splitting_indices;
 
   friend class Subdivision;
+  friend class io::VTKReader;
 };
 
 

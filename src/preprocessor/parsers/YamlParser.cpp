@@ -414,6 +414,8 @@ void YamlParser::bc_face(const YAML::Node & node,
     }
     else if (key == "label")
       conf.label = it->second.as<int>();
+    else if (key == "location")
+      conf.expression = it->second.as<std::string>();
     else if (key == "value")
     {
       const std::vector<std::string> str_values =
@@ -439,12 +441,7 @@ void YamlParser::boundary_conditions_nodes(const YAML::Node & node)
     const std::string key = it->first.as<std::string>();
     std::cout << "\t\t\treading entry " << key << std::endl;
 
-    if (key == "search tolerance")
-    {
-      config.node_search_tolerance = it->second.as<double>();
-      continue;
-    }
-    else if (key == "node")
+    if (key == "node")
     {
       config.bc_nodes.emplace_back();
       auto & conf = config.bc_nodes.back();
@@ -455,18 +452,15 @@ void YamlParser::boundary_conditions_nodes(const YAML::Node & node)
   }
 }
 
-void YamlParser::bc_node(const YAML::Node & node, BCNodeConfig & conf)
+void YamlParser::bc_node(const YAML::Node & node, BCConfig & conf)
 {
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
     std::cout << "\t\t\treading entry " << key << std::endl;
 
-    if (key == "coord")
-    {
-      const std::vector<double> v_coord = it->second.as<std::vector<double>>();
-      conf.coord = v_coord;
-    }
+    if (key == "location")
+      conf.expression = it->second.as<std::string>();
     else if (key == "value")
     {
       const std::vector<std::string> str_values =

@@ -40,7 +40,7 @@ class YamlParser
                  WellConfig & conf);
   // subsubsection
   void bc_face(const YAML::Node & node, BCConfig & conf);
-  void bc_node(const YAML::Node & node, BCNodeConfig & conf);
+  void bc_node(const YAML::Node & node, BCConfig & conf);
 
   DomainConfig & get_domain_config(const int label);
 

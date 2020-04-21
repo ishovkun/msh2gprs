@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>  // fstream
 
+namespace mesh {
+
 namespace io {
 
 /**
@@ -19,12 +21,17 @@ class VTKReader
   void read_file_(const std::string & file_name);
   void read_header_(std::fstream & in) const;
   void read_vertices_(std::fstream & in);
+  void read_cells_(std::fstream & in);
+  void read_cell_types_(std::fstream & in);
   void create_grid_();
+  void create_general_polyhedron_cell_(size_t & entry_idx);
+  void create_regular_polyhedron_cell_(const int vtk_id, size_t & entry_idx);
 
   mesh::Mesh & _grid;
-  std::vector<angem::Point<3,double>> _vertex_coordinates;
-  std::vector<std::vector<size_t>> _cell_entries;
+  std::vector<size_t> _cell_entries;
   std::vector<int> _vtk_ids;
 };
 
-}  // end namespace gprs_data
+}  // end namespace io
+
+}  // end namespace msh
