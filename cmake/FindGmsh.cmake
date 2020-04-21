@@ -7,14 +7,16 @@
 #  Gmsh_VERSION: The found version of Gmsh
 
 if (DEFINED GMSH_INSTALL_PATH)
-  # message ("searching ${GMSH_INSTALL_PATH}/include")
-  find_path(Gmsh_INCLUDE_DIR NAMES Gmsh.h gmsh.h
+  unset(Gmsh_INCLUDE_DIR CACHE)
+  find_path(Gmsh_INCLUDE_DIR names gmsh.h Gmsh.h
     PATHS
-    ${GMSH_INSTALL_PATH}/include
+    "${GMSH_INSTALL_PATH}/include"
     PATH_SUFFIXES gmsh
     NO_DEFAULT_PATH
     )
-  # message("Gmsh include dir: ${Gmsh_INCLUDE_DIR}")
+  if (NOT Gmsh_INCLUDE_DIR)
+    message(FATAL_ERROR "Gmsh not found in ${GMSH_INSTALL_PATH}")
+  endif()
 else()
   find_path(Gmsh_INCLUDE_DIR NAMES gmsh.h
   PATHS

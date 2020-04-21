@@ -46,10 +46,15 @@ class ProgressBar
     size_t width = get_window_width_();
     if (_max_width != 0)
       width = std::min( _max_width, width );
+    if (width == 0)
+      return;
 
     // write prefix
     const std::string prefix = "\r"  + _prefix + " [";
     std::cout << prefix;
+    if (prefix.size() > width)
+      return;
+
     width -= prefix.size();
 
     // make and remember suffix
