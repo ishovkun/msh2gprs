@@ -17,6 +17,8 @@ class PolyhedralElementBase : public FiniteElementBase
 {
  public:
   const mesh::Mesh & get_grid() const { return _element_grid; }
+  // Save a vtk file with shape function values
+  void save_shape_functions(const std::string fname) const;
 
  protected:
   PolyhedralElementBase(const mesh::Cell & cell, const FiniteElementConfig & config);

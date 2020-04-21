@@ -1,6 +1,8 @@
 #include "PolyhedralElementBase.hpp"
 #include "gmsh_interface/GmshInterface.hpp"  // provides gprs_data::GmshInterface
 #include "mesh/Subdivision.hpp"              // provides mesh::Subdivision
+#include "VTKWriter.hpp"                     // provides VTKWriter
+
 
 namespace discretization {
 
@@ -56,5 +58,27 @@ std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
 
   return parent_face_children;
 }
+
+void PolyhedralElementBase::save_shape_functions(const std::string fname) const
+{
+  std::cout << "saving " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+
+  IO::VTKWriter::write_geometry(_element_grid, out);
+  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::enter_section_point_data(nv, out);
+
+  const size_t n_parent_vertices = _parent_cell.vertices().size();
+  for (std::size_t j=0; j<n_parent_vertices; ++j)
+  {
+    std::vector<double> output(nv, 0.0);
+    for (size_t i = 0; i < nv; ++i)
+      output[i] = _basis_functions[j][i];
+    IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
+  }
+  out.close();
+}
+
 
 }  // end namespace discretization

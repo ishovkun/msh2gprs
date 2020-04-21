@@ -134,7 +134,7 @@ void Preprocessor::read_config_file_(const Path config_file_path)
   if (fname.substr(str_len - 4, str_len) == "yaml")
   {
     Parsers::YamlParser parser;
-    parser.parse_file(fname);
+    parser.parse_file(filesystem::absolute(config_file_path));
     config = parser.get_config();
   }
   else

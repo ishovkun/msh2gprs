@@ -26,8 +26,6 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   const std::vector<angem::Point<3,double>> & get_cell_integration_points() const {return _cell_gauss_points;}
   //  purely debugging purposes
   void debug_save_boundary_face_solution(const std::string fname) const;
-  // purely debugging purposes
-  void debug_save_shape_functions_(const std::string fname) const;
 
  protected:
   // main method to compute shape functions
@@ -63,29 +61,6 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   // impose BC's on the cell laplace system
   void impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
                                    Eigen::VectorXd & rhs, const size_t ipv);
-  // identify the locations of the gauss points for the polyhedral element
-  void find_integration_points_();
-  // compute shape function values, gradients, and weights in the
-  // integration points in cells
-  void compute_cell_fe_quantities_();
-  void compute_cell_fe_quantities2_();
-  // compute shape function values, gradients, and weights in the
-  // integration points in a given face face
-  void compute_face_fe_quantities_(const size_t parent_face);
-  // create a pyramid element from a cell face and cell center
-  // and return its center and volume
-  angem::Polyhedron<double>
-  create_pyramid_(const std::vector<size_t> & face,
-                  const std::vector<angem::Point<3,double>>  & vertices) const;
-  /**
-   * Split a polygon into triangles, and compute their centers
-   * Parameters:
-   * \param[in] poly : a polyhedron(represents a face)
-   * Returns:
-   * vector of triangle center coordinates
-   */
-  std::vector<angem::Point<3,double>>
-  split_into_triangles_and_compute_center_(const angem::Polygon<double> & poly);
 
  protected:
   std::vector<std::vector<size_t>> _support_edge_vertices;     // edge vertices for each parent vertex

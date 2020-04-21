@@ -1,8 +1,9 @@
 # msh2gprs_root/tests/CMakeLists.txt
 # enable_testing()
 
-# dfm vertex splitting test
-set(test_dir "${CMAKE_PROJECT_DIR}/examples/mech/dfm-shear")
-# add_test( dfm_shear_mech "${PROJECT_BINARY_DIR}/msh2gprs" ${test_dir}/conf.yaml)
-# add_test( dfm_shear_mech_compare ${CMAKE_COMMAND} -E compare_files
-#             ${test_dir}/dfm.vtk ${test_dir}/dfm1.vtk)
+# shape function test polyhedral element direct with r0 subdivision
+set(test_dir "${CMAKE_SOURCE_DIR}/examples/mech/pfem-direct-r0-hex")
+message("${CMAKE_PROJECT_DIR}")
+add_test( pfem_direct_r0 "${PROJECT_BINARY_DIR}/msh2gprs" ${test_dir}/config.yaml)
+add_test( pfem_direct_r0_compare ${CMAKE_COMMAND} -E compare_files
+            ${test_dir}/output/gm_fem.txt ${test_dir}/gm_fem_test.txt)

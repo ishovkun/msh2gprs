@@ -1,0 +1,61 @@
+Mesh file: grid.msh
+
+Embedded Fractures :
+#   method: compartmental
+  mech-method: discrete
+  subdivision : [refinement, 0]
+  solver : [direct, 0]
+#   dfem-msrsb-tol: 1e-8
+#   fracture:
+#     center: [-10, 0, 0]
+#     length: 80
+#     width: 10
+#     strike: -20
+#     aperture: 1e-2
+#     conductivity: 200
+
+
+Domain Flow Properties:
+  # domain id is matched with the physical volume id in gmsh
+  domain:
+    label: 1
+    Coupled: false                  # true/false on by default
+    PORO: 0.2
+    PERM: 1
+    SWAT: 0.0
+    PRESSURE: 0
+
+Domain Mechanical Properties:
+  domain:
+    label: 1
+    GMCELL_MODEL: 0               # elastic
+    GMCELL_YOUNG: 1               # young's modulus
+    GMCELL_POISSON: 0.25          # poisson's ratio
+
+Boundary Conditions:            # geomechanical bc's
+  Faces:
+    face: # left
+      label: 1111111
+      type: dirichlet
+      value: [0, nan, nan]
+    face: # right
+      label: 1111112
+      type: neumann
+      value: [-100, 0, 0]
+    # face: # right
+    #   label: 1111112
+    #   type: dirichlet
+    #   value: [-0.001, nan, nan]
+    face: # front
+      label: 2222221
+      type: dirichlet
+      value: [nan, 0, nan]
+    face: # back
+      label: 2222222
+      type: dirichlet
+      value: [nan, -0.02, nan]
+    face: # bottom
+      label: 3333331
+      type: dirichlet
+      value: [nan, nan, 0]
+
