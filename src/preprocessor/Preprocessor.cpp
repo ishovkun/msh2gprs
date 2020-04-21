@@ -1,6 +1,7 @@
 #include "Preprocessor.hpp"
 #include "parsers/YamlParser.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
+#include "VTKReader.hpp"
 #include "BoundaryConditionManager.hpp"
 #include "discretization/mechanics/DiscretizationFEM.hpp"
 #include "discretization/flow/DiscretizationTPFA.hpp"
@@ -153,14 +154,19 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
     throw std::invalid_argument(msg);
   }
 
-  std::cout << "reading ";
-  std::cout << filesystem::absolute(mesh_file_path) << std::endl;
+  std::cout << "reading " << filesystem::absolute(mesh_file_path) << std::endl;
 
   // check filetype
   const std::string fname = mesh_file_path.filename();
   const std::size_t str_len = fname.size();
+  const std::string extension = fname.substr(str_len - 3, str_len);
 
-  if (fname.substr(str_len - 3, str_len) != "msh")
+  std::cout << "extension:" << extension << std::endl;
+  if (extension == "msh")
+    GmshInterface::read_msh(filesystem::absolute(mesh_file_path), data.grid);
+  else if (extension == "vtk")
+    io::VTKReader reader(filesystem::absolute(mesh_file_path), data.grid);
+  else
     throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
 
   GmshInterface::read_msh(filesystem::absolute(mesh_file_path), data.grid);

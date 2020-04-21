@@ -22,6 +22,7 @@ ADD_LIBRARY(preprocessor
   OutputDataVTK.cpp
   OutputDataPostprocessor.cpp
   VTKWriter.cpp
+  VTKReader.cpp
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
   GridEntityNumberingManager.cpp

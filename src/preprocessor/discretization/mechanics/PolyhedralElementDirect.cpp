@@ -85,23 +85,27 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
     Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix =
         Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
     // fill system matrix
-    // build_face_system_matrix_(iface, face_system_matrix, vertex_numbering);
     build_face_system_matrix_(iface, face_system_matrix, _face_domains[iface], vertex_numbering);
     const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
+    face_system_matrix.makeCompressed();
+    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(face_system_matrix);
+    Eigen::VectorXd rhs = Eigen::VectorXd::Zero( vertex_numbering.n_dofs() );
     for (size_t ipv=0; ipv<parent_face_vertices.size(); ++ipv)
     {
-      // copy matrix, create rhs vector, and impose bc's on them
-      Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix_with_bc = face_system_matrix;
-      Eigen::VectorXd rhs = Eigen::VectorXd::Zero( vertex_numbering.n_dofs() );
+      rhs.setZero();
       const size_t pv = std::distance(parent_vertices.begin(),
                                       std::find( parent_vertices.begin(), parent_vertices.end(),
                                                  parent_face_vertices[ipv] ));
-      impose_bc_on_face_system_( pv, vertex_numbering, face_system_matrix_with_bc, rhs );
-      face_system_matrix_with_bc.makeCompressed();
+      if (ipv == 0)
+        impose_bc_on_face_system_( pv, vertex_numbering, face_system_matrix, rhs );
+      else
+        impose_bc_face_rhs_(pv, vertex_numbering, rhs);
 
-      Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(face_system_matrix_with_bc);
-      solver.analyzePattern(face_system_matrix_with_bc);
-      solver.factorize(face_system_matrix_with_bc);
+      if (ipv == 0)  // factorize only once since matrix doesn't change, only rhs
+      {
+        solver.analyzePattern(face_system_matrix);
+        solver.factorize(face_system_matrix);
+      }
       const Eigen::VectorXd solution = solver.solve(rhs);
       // add the solution to the face BC container
       append_face_solution_(pv, solution, vertex_numbering);
@@ -142,6 +146,22 @@ void PolyhedralElementDirect::impose_bc_on_face_system_(const size_t parent_vert
     }
 
   }
+}
+
+void PolyhedralElementDirect::impose_bc_face_rhs_(const size_t parent_vertex,
+                                                  const DoFNumbering & vertex_dofs,
+                                                  Eigen::VectorXd & rhs)
+{
+  for (size_t iv=0; iv<_support_edge_vertices[parent_vertex].size(); ++iv)
+  {
+    const size_t vertex = _support_edge_vertices[parent_vertex][iv];
+    if (vertex_dofs.has_vertex(vertex))
+    {
+      const size_t dof = vertex_dofs.vertex_dof(vertex);
+      rhs[dof] = _support_edge_values[parent_vertex][iv];
+    }
+  }
+
 }
 
 void PolyhedralElementDirect::build_cell_system_matrix_()
@@ -364,16 +384,22 @@ void PolyhedralElementDirect::compute_shape_functions_()
   // allocate shape functions
   for (std::size_t i=0; i<n_parent_vertices; ++i)
     _basis_functions.push_back(Eigen::VectorXd::Zero(_element_grid.n_vertices()));
+  Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _element_grid.n_vertices() );
+
+  // can compress it since imposing bc's operates on row iterators
+  _system_matrix.makeCompressed();
+  Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(_system_matrix);
+
 
   for (size_t pv=0; pv<n_parent_vertices; ++pv)
   {
-    // assemble problem with BC's for the parent vertex
-    // copy system matrix and create a rhs vector
-    Eigen::SparseMatrix<double,Eigen::RowMajor> mat = _system_matrix;
-    Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _element_grid.n_vertices() );
-    // impose boundary conditions
-    impose_boundary_conditions_(mat, rhs, pv);
-    mat.makeCompressed();
+    rhs.setZero();
+    //  impose boundary conditions
+    //  NOTE: no need to copy the matrix since BC's locations don't change
+    if (pv == 0)
+      impose_boundary_conditions_(_system_matrix, rhs, pv);
+    else
+      impose_boundary_conditions_(rhs, pv);
 
     // TODO: I cannot currently use conjugate gradient since the matrix is non-symmetric
     // due to dirichlet conditions. I need to symmetrize the matrix by modifying the
@@ -385,12 +411,11 @@ void PolyhedralElementDirect::compute_shape_functions_()
     // solver.setTolerance(1e-10);
     // solver.compute(mat);
 
-    // Eigen::SparseLU<Eigen::SparseMatrix<double,Eigen::RowMajor>> solver;
-    // Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> solver(mat);
-    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(mat);
-    // solver.factorize(mat);
-    solver.analyzePattern(mat);
-    solver.factorize(mat);
+    if ( pv == 0 )  // need to factorize only once since only rhs changes
+    {
+      solver.analyzePattern(_system_matrix);
+      solver.factorize(_system_matrix);
+    }
 
     _basis_functions[pv] = solver.solve(rhs);
     // if ( solver.info() ==  Eigen::ComputationInfo::NumericalIssue)
@@ -412,6 +437,15 @@ void PolyhedralElementDirect::impose_boundary_conditions_(Eigen::SparseMatrix<do
     const size_t i = _support_boundary_vertices[ipv][iv];
     for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, i); it; ++it)
       it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
+    rhs[i] = _support_boundary_values[ipv][iv];
+  }
+}
+
+void PolyhedralElementDirect::impose_boundary_conditions_(Eigen::VectorXd & rhs, const size_t ipv)
+{
+  for (size_t iv=0; iv<_support_boundary_vertices[ipv].size(); ++iv)
+  {
+    const size_t i = _support_boundary_vertices[ipv][iv];
     rhs[i] = _support_boundary_values[ipv][iv];
   }
 }

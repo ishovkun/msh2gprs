@@ -15,7 +15,7 @@ void GmshInterface::read_msh(const std::string & filename, mesh::Mesh & mesh)
   if (!mesh_file)
     throw std::out_of_range(filename + " does not exist");
 
-    std::string line;
+  std::string line;
   // read mesh format
   std::getline(mesh_file, line);
   float version;

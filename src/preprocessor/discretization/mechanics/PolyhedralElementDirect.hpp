@@ -42,6 +42,10 @@ class PolyhedralElementDirect : public PolyhedralElementBase
                                  const DoFNumbering & vertex_dofs,
                                  Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
                                  Eigen::VectorXd & rhs);
+  // impose bc only on rhs vector but not matrix (face system)
+  void impose_bc_face_rhs_(const size_t parent_vertex,
+                           const DoFNumbering & vertex_dofs,
+                           Eigen::VectorXd & rhs);
   void build_edge_boundary_conditions_(const std::vector<size_t> & parent_face_vertices,
                                        const std::vector<size_t> & faces);
   // find out which vertices reside on parent edges and compute the dirichlet values for them
@@ -61,13 +65,16 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   // impose BC's on the cell laplace system
   void impose_boundary_conditions_(Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
                                    Eigen::VectorXd & rhs, const size_t ipv);
+  // impose BC's on the cell laplace system (only rhs)
+  void impose_boundary_conditions_(Eigen::VectorXd & rhs, const size_t ipv);
 
  protected:
   std::vector<std::vector<size_t>> _support_edge_vertices;     // edge vertices for each parent vertex
   std::vector<std::vector<double>> _support_edge_values;       // edge dirichlet values for each parent vertex
   std::vector<std::vector<size_t>> _support_boundary_vertices; // face vertices for each parent vertex
   std::vector<std::vector<double>> _support_boundary_values;   // face dirichlet values for each parent vertex
-  Eigen::SparseMatrix<double,Eigen::ColMajor> _system_matrix;  // 3d cell system matrix with no BC's
+  // Eigen::SparseMatrix<double,Eigen::ColMajor> _system_matrix;  // 3d cell system matrix with no BC's
+  Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;  // 3d cell system matrix with no BC's
 };
 
 }  // end namespace discretization
