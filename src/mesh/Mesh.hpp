@@ -30,7 +30,7 @@ struct FaceTmpData
   std::vector<size_t> vertices;
   size_t parent = constants::invalid_index;
   int marker = constants::default_face_marker;
-  int vtk_id = angem::VTK_ID::GeneralPolyhedronID;
+  int vtk_id = angem::VTK_ID::GeneralPolygonID;
 };
 
 
@@ -250,11 +250,11 @@ class Mesh
     switch (n_vertices)
     {
       case 3:
-        return 5;  //  triangle
+        return TriangleID;  //  triangle
       case 4:
-        return 9;  //  vtk_quad
+        return QuadrangleID;  //  vtk_quad
       default:
-        return 7;  //  vtk_polygon
+        return GeneralPolygonID;  //  vtk_polygon
     }
   }
 

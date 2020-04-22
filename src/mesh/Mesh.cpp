@@ -556,7 +556,7 @@ Mesh::build_global_face_indices_(const std::vector<size_t> & polygon_local_indic
 active_face_const_iterator Mesh::begin_active_faces() const
 {
   for (auto face = begin_faces(); face != end_faces(); ++face)
-    if (!face->is_active()) face++;
+    if (!face->is_active()) continue;
     else return active_face_const_iterator(&*face, m_faces);
   return active_face_const_iterator(nullptr, m_faces);  // end iterator
 }
