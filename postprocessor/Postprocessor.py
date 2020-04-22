@@ -6,6 +6,9 @@ import vtk
 import os, shutil
 from vtk.util import numpy_support
 from printProgressBar import printProgressBar
+import numpy as np
+import pandas as pd
+
 # import pyvtk
 
 class Postprocessor:
@@ -15,15 +18,17 @@ class Postprocessor:
     def __init__(self, case_path):
         self.case_path = case_path
         self.config_file_name = "postprocessor_config.yaml"
-        self.config = self.readConfig_()
         self.matrix_flow_grid_reader = vtk.vtkDataSetReader()
         self.edfm_flow_grid_reader = vtk.vtkDataSetReader()
         self.dfm_flow_grid_reader = vtk.vtkDataSetReader()
         self.matrix_mech_grid_reader = vtk.vtkDataSetReader()
+        self.matrix_mech_vtk_ouput_reader = vtk.vtkDataSetReader()
         self.writer = vtk.vtkDataSetWriter()
-        self.readGeometry_()
         self.output_file_number = 0
+        self.config = self.readConfig_()
         self.output_dir = self.case_path + self.config["output_directory"]
+        self.readGeometry_()
+        self.has_mechanics = self.checkMechanicsVTKOutput()
 
     def run(self):
         gprs_reader = self.makeReader_()
@@ -33,8 +38,15 @@ class Postprocessor:
         while gprs_reader.advanceTimeStep():
            t = gprs_reader.getTime()
            data = gprs_reader.getData()
-           mech_data = gprs_reader.getMechData()
-           self.saveReservoirData_(t, data, mech_data=mech_data)
+
+           if (self.has_mechanics):
+               mech_data = gprs_reader.getMechData()
+               vtk_mech_matrix_vtk_data = self.readMechVTKData()
+               self.saveReservoirData_(t, data, mech_data=mech_data,
+                                       mech_vtk_data=vtk_mech_matrix_vtk_data)
+           else:
+               self.saveReservoirData_(t, data)
+
            printProgressBar(gprs_reader.getRelativePosition(), 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
         printProgressBar(1, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
 
@@ -74,7 +86,7 @@ class Postprocessor:
         reader.Update()
         self.n_mech_vertices = reader.GetOutput().GetNumberOfPoints()
 
-    def saveReservoirData_(self, t, data, mech_data=None):
+    def saveReservoirData_(self, t, data, mech_data=None, mech_vtk_data=None):
         assert data.shape[0] == (len(self.config["matrix_cell_to_flow_dof"]) +
                                  len(self.config["dfm_cell_to_flow_dof"]) +
                                  len(self.config["edfm_cell_to_flow_dof"])), "Data size " + \
@@ -89,7 +101,9 @@ class Postprocessor:
             self.addDataToReader_(self.edfm_flow_grid_reader, data, self.config["edfm_cell_to_flow_dof"])
         if len(self.config["dfm_cell_to_flow_dof"]) > 0:
             self.addDataToReader_(self.dfm_flow_grid_reader, data, self.config["dfm_cell_to_flow_dof"])
-        self.addMechDataToReader(self.matrix_flow_grid_reader, mech_data)
+        if (mech_data is not None):
+            self.addMechDataToReader(self.matrix_flow_grid_reader, mech_data, "point")
+            self.addMechDataToReader(self.matrix_flow_grid_reader, mech_vtk_data, "cell")
 
         # save output
         self.writeFile_(self.matrix_flow_grid_reader, "matrix-%d"%self.output_file_number)
@@ -106,13 +120,15 @@ class Postprocessor:
             x.SetName(key)
             output.GetCellData().AddArray(x)
 
-    def addMechDataToReader(self, reader, data):
+    def addMechDataToReader(self, reader, data, data_type="point"):
         output = reader.GetOutput()
         for key in data.keys():
             x = numpy_support.numpy_to_vtk(data[key].values)
             x.SetName(key)
-            output.GetPointData().AddArray(x)
-
+            if (data_type=="point"):
+                output.GetPointData().AddArray(x)
+            else:
+                output.GetCellData().AddArray(x)
 
     def writeFile_(self, reader, file_name):
         self.writer.SetFileName(self.output_dir + "/" + file_name + ".vtk")
@@ -132,6 +148,39 @@ class Postprocessor:
         else:
            raise FileExistsError("Could not find GPRS output file")
 
+    def checkMechanicsVTKOutput(self):
+        '''
+        Checks if mech vtk output directory exists
+        '''
+        # if (not os.path.isdir(self.case_path)):
+        if os.path.isdir( self.case_path + "/OUTPUT.vtk_output" ):
+            print("Mechanics vtk file found")
+            return True
+        else:
+            print("No mechanics since vtk file found")
+            return False
+
+    def readMechVTKData(self):
+        reader = self.matrix_mech_vtk_ouput_reader
+        fnum_str = "%09d"%(self.output_file_number)
+        if (self.output_file_number == 0):
+            fnum_str = "%09d"%(self.output_file_number + 1)
+
+        vtk_file_path = self.case_path + "/OUTPUT.vtk_output/block_scalars." + \
+                        fnum_str + ".vtk"
+        reader.SetFileName(vtk_file_path)
+        reader.ReadAllScalarsOn()       # without this vtk reads only one array
+        reader.Update()
+        data = reader.GetOutput().GetCellData()
+        n_vtk_arrays = data.GetNumberOfArrays()
+        n_cells = reader.GetOutput().GetNumberOfCells()
+        storage = np.zeros([n_cells, n_vtk_arrays])
+        keys = []
+        for i in range(n_vtk_arrays):
+            keys.append(data.GetArrayName(i))
+            storage[:, i] = numpy_support.vtk_to_numpy(data.GetArray(i))
+
+        return pd.DataFrame(storage, columns=keys)
 
 
 if __name__ == "__main__":
