@@ -68,6 +68,8 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   // impose BC's on the cell laplace system (only rhs)
   void impose_boundary_conditions_(Eigen::VectorXd & rhs, const size_t ipv);
 
+  void save_face_domains_(std::string fname);
+
  protected:
   std::vector<std::vector<size_t>> _support_edge_vertices;     // edge vertices for each parent vertex
   std::vector<std::vector<double>> _support_edge_values;       // edge dirichlet values for each parent vertex

@@ -42,7 +42,6 @@ std::unique_ptr<Polyhedron> Cell::polyhedron() const
     std::vector<size_t> face_vertices;
     for (auto v : face->vertices())
     {
-      // const size_t idx = std::distance(verts.begin(), std::find( verts.begin(), verts.end(), v ));
       const size_t idx = old_to_new[v];
       face_vertices.push_back(idx);
     }

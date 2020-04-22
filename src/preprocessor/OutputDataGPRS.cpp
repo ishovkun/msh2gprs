@@ -342,7 +342,7 @@ void OutputDataGPRS::save_geomechanics_boundary_conditions_() const
 
     for (std::size_t i=0; i<_data.neumann_face_indices.size(); ++i)
     {
-      out << _data.neumann_face_indices[i] + 1 << "\t";
+      out << _data.mech_cell_numbering->face_dof(_data.neumann_face_indices[i]) + 1 << "\t";
       out << _data.neumann_face_traction[i] << "\n";
     }
     out << "/\n\n";

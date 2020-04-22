@@ -74,11 +74,12 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
   // identify child faces that belong to each face parent
   _face_domains = create_face_domains_();
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
-  // const std::vector<size_t> parent_vertices = _parent_cell.sorted_vertices();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
   FEMFaceDoFManager dof_manager;
   for (size_t iface=0; iface<_face_domains.size(); ++iface)
   {
+    assert(_face_domains[iface].size() > 2);
+
     // identify vertices the will constitute the linear system and create dof mapping
     const DoFNumbering vertex_numbering = dof_manager.build(_element_grid, _face_domains[iface]);
     // initialize system matrix
@@ -318,7 +319,6 @@ std::vector<std::list<size_t>> PolyhedralElementDirect::map_parent_vertices_to_p
 {
   // map parent vertex to parent faces
   std::vector<std::list<size_t>> parent_vertex_markers( _parent_cell.n_vertices() );
-  // const std::vector<size_t> parent_vertices = _parent_cell.sorted_vertices();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
   for (size_t ipf=0; ipf<parent_faces.size(); ++ipf)
@@ -449,6 +449,28 @@ void PolyhedralElementDirect::impose_boundary_conditions_(Eigen::VectorXd & rhs,
     rhs[i] = _support_boundary_values[ipv][iv];
   }
 }
+
+void PolyhedralElementDirect::save_face_domains_(std::string fname)
+{
+  std::cout << "saving " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+
+  IO::VTKWriter::write_geometry(_element_grid, out);
+  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::enter_section_point_data(nv, out);
+
+  std::vector<double> output(nv, 0);
+  for (auto face = _element_grid.begin_faces(); face != _element_grid.end_faces(); ++face)
+    if (face->marker() != 0)
+    {
+      for (auto v : face->vertices())
+        output[v] = face->marker();
+    }
+  IO::VTKWriter::add_data(output, "marker", out);
+
+}
+
 
 }  // end namespace discretization
 

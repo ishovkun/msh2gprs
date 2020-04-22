@@ -16,8 +16,7 @@ void BoundaryConditionManager::build_boundary_conditions_()
 {
   const auto & grid = _data.geomechanics_grid;
   _node_to_config.resize(grid.n_vertices());
-  size_t iface = 0;
-  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face, ++iface)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     if (face->marker() > 0)
     {
       for (size_t iconf=0; iconf<_face_config.size(); ++iconf)
@@ -28,7 +27,7 @@ void BoundaryConditionManager::build_boundary_conditions_()
           if (conf.type == BoundaryConditionType::dirichlet)
             process_dirichlet_face_(*face, iconf);
           else // if ( conf.type == BoundaryConditionType::neumann )
-            process_neumann_face_(conf, iface);
+            process_neumann_face_(conf, face->index());
         }
       }
     }
@@ -77,8 +76,7 @@ void BoundaryConditionManager::find_faces_from_expressions_()
   std::vector<mu::Parser> parsers = create_parsers_(configs_with_expressions);
 
   const auto & grid = _data.geomechanics_grid;
-  size_t iface = 0;
-  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face, ++iface)
+  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
   {
     const auto c = face->center();
     _variables[0] = c[0];
@@ -89,7 +87,7 @@ void BoundaryConditionManager::find_faces_from_expressions_()
       {
         const auto & conf = _face_config[configs_with_expressions[i]];
         if (conf.type == BoundaryConditionType::neumann)
-          process_neumann_face_(conf, iface);
+          process_neumann_face_(conf, face->index());
         else
           process_dirichlet_face_(*face, configs_with_expressions[i]);
       }

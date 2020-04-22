@@ -91,10 +91,46 @@ void VTKWriter::write_geometry(const Mesh        & grid,
 void VTKWriter::write_geometry(const Mesh               & grid,
                                std::ofstream            & out)
 {
-  if (grid.n_cells() == grid.n_active_cells())
-    write_geometry_classic_(grid, out);
-  else
-    write_geometry_face_based_(grid,out);
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Grid\n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  const std::size_t n_points = grid.n_vertices();
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+  for (const auto & p : grid.vertices()) out << p << std::endl;
+
+  const size_t n_entries_total = count_number_of_cell_entries_(grid);
+
+  out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << endl;
+
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+  {
+    if ( cell->vtk_id() != angem::VTK_ID::GeneralPolyhedronID )
+    {
+      out << cell->n_vertices() << "\t";
+      for (std::size_t i : cell->vertices())
+        out << i << "\t";
+      out << std::endl;
+    }
+    else
+    {
+      out << count_number_of_cell_entries_(*cell) << endl;
+      const auto & faces = cell->faces();
+      out << faces.size() << endl;
+      for (const auto & face : faces)
+      {
+        const auto & vertices = face->vertices();
+        out << vertices.size() << " ";
+        for (const size_t v : vertices)
+          out << v << " ";
+        out << endl;
+      }
+    }
+  }
+  out << "CELL_TYPES" << "\t" << grid.n_active_cells() << std::endl;
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+    out << cell->vtk_id() << endl;
 }
 
 void VTKWriter::write_geometry_classic_(const Mesh               & grid,
@@ -135,43 +171,6 @@ void VTKWriter::write_geometry_classic_(const Mesh               & grid,
     out << cell->vtk_id() << std::endl;
 }
 
-void VTKWriter::write_geometry_face_based_(const Mesh & grid,
-                                           std::ofstream            & out)
-{
-  out << "# vtk DataFile Version 2.0" << endl;
-  out << "3D Fractures \n";
-  out << "ASCII" << endl;
-  out << "DATASET UNSTRUCTURED_GRID \n";
-
-  // points
-  const std::size_t n_points = grid.n_vertices();
-  out << "POINTS" << "\t" << n_points << " float" << std::endl;
-  for (const auto & p : grid.vertices()) out << p << std::endl;
-
-  const size_t n_entries_total = count_number_of_cell_entries_(grid);
-
-  out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << endl;
-
-  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-  {
-    out << count_number_of_cell_entries_(*cell) << endl;
-    const auto & faces = cell->faces();
-    out << faces.size() << endl;
-    for (const auto & face : faces)
-    {
-      const auto & vertices = face->vertices();
-      out << vertices.size() << " ";
-      for (const size_t v : vertices)
-        out << v << " ";
-      out << endl;
-    }
-  }
-
-  out << "CELL_TYPES" << "\t" << grid.n_active_cells() << std::endl;
-  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    out << angem::GeneralPolyhedronID << endl;
-}
-
 size_t VTKWriter::count_number_of_cell_entries_(const Mesh & grid)
 {
   size_t n = 0;
@@ -186,12 +185,19 @@ size_t VTKWriter::count_number_of_cell_entries_(const Mesh & grid)
 size_t VTKWriter::count_number_of_cell_entries_(const Cell & cell)
 {
   size_t n = 0;
-  const auto & faces = cell.faces();
-  n++; // n_faces
-  for (const auto & face : faces)
+  if ( cell.vtk_id() != angem::VTK_ID::GeneralPolyhedronID )
   {
-    n++;  // face.vertices.size()
-    n += face->vertices().size();
+    n += cell.n_vertices();
+  }
+  else
+  {
+    const auto & faces = cell.faces();
+    n++; // n_faces
+    for (const auto & face : faces)
+    {
+      n++;  // face.vertices.size()
+      n += face->vertices().size();
+    }
   }
   return n;
 }

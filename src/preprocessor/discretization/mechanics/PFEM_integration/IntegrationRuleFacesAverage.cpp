@@ -224,7 +224,9 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
         nhits++;
         const std::vector<size_t> & face_verts = face.vertices();
         const size_t nv = face_verts.size();
-        region_areas[region] += face.area();
+        for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
+          region_areas[region] += fe_values.JxW(q);
+
         auto & data = _element._face_data[parent_face].points[region];
 
         for (size_t parent_vertex=0; parent_vertex<n_parent_vertices; ++parent_vertex)
@@ -251,28 +253,52 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
         for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
         {
           data.values[parent_vertex] += fe_values.value(v, q) *
-              _element._basis_functions[parent_vertex][face_verts[v]] *
-              fe_values.JxW(q);
+                      basis_functions[parent_vertices[parent_vertex]][face_verts[v]] *
+                      fe_values.JxW(q);
           data.grads[parent_vertex] += fe_values.grad(v, q) *
-              _element._basis_functions[parent_vertex][face_verts[v]] *
-              fe_values.JxW(q);
+                      basis_functions[parent_vertices[parent_vertex]][face_verts[v]] *
+                      fe_values.JxW(q);
         }
     data.weight += face.area();
   }
 
-  assert( nhits == face_indices.size() );
+  if (nhits != face_indices.size())
+    throw std::runtime_error("small nhits");
 
   // normalize values and grads  by region volume
+  double sum_weights = 0;
   for (size_t region=0; region<regions.size(); ++region)  // tributary regions
   {
     auto & data = _element._face_data[parent_face].points[region];
     for (size_t parent_vertex=0; parent_vertex<n_parent_vertices; ++parent_vertex)
     {
+      if (std::isnan(data.weight) || std::fabs(region_areas[region]) < 1e-10)
+      {
+        std::cout << "\n" << std::endl << std::flush;
+        auto f = _element._parent_cell.faces()[parent_face];
+        {
+          for (auto v : f->vertices())
+            std::cout << v << " ";
+          std::cout << std::endl;
+        }
+        std::cout << "region = " << region << std::endl;
+        std::cout << "regions.size() = " << regions.size() << std::endl;
+        for (size_t r=0; r<regions.size(); ++r)
+          std::cout << "area = " << region_areas[r] << std::endl << std::flush;
+
+        _element.save_shape_functions("output/mess-" + std::to_string(_element._parent_cell.index()) + ".vtk");
+        std::cout << "_element_parent_cell.index() = " << _element._parent_cell.index() << std::endl;
+        std::cout << "region area = " << region_areas[region] << std::endl << std::flush;
+        throw std::runtime_error("bad face integration weight");
+      }
       data.values[parent_vertex] /= region_areas[region];
       data.grads[parent_vertex] /= region_areas[region];
     }
     data.weight = region_areas[region];
+    sum_weights += region_areas[region];
   }
+  if (std::fabs(sum_weights - _element._parent_cell.faces()[parent_face]->area()) > 1e-10)
+    throw std::runtime_error("weights and face area don't add up");
 
   auto & data = _element._face_data[parent_face].center;
   for (size_t parent_vertex=0; parent_vertex<n_parent_vertices; ++parent_vertex)
@@ -280,8 +306,6 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
     data.values[parent_vertex] /= data.weight;
     data.grads[parent_vertex] /= data.weight;
   }
-  data.weight = data.weight;
-  
 }
 
 }  // end namespace discretization

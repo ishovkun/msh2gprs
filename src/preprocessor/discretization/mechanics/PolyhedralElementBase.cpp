@@ -52,10 +52,9 @@ std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
   for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
     if (face->marker() > 0 && face->neighbors().size() == 1)
     {
-      const size_t parent_face_index = face->marker() - 1;
+      const size_t parent_face_index = static_cast<size_t>(face->marker() - 1);
       parent_face_children[ parent_face_index ].push_back( face->index() );
     }
-
   return parent_face_children;
 }
 

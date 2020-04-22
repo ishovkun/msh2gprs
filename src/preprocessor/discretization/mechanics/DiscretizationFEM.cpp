@@ -30,14 +30,14 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
 
 void DiscretizationFEM::build()
 {
-  // analyze_cell_(_grid.cell(0));
-  if (_config.method != strong_discontinuity)
-  {
-    auto cell = _grid.begin_active_cells();
-    PolyhedralElementDirect de(*cell, _config);
-    mesh::MeshStatsComputer stats(de.get_grid());
-    std::cout << "Average edge length = " << stats.get_average_edge_length() << std::endl;
-  }
+  // analyze_cell_(_grid.cell(19));
+  // if (_config.method != strong_discontinuity)
+  // {
+  //   auto cell = _grid.begin_active_cells();
+  //   PolyhedralElementDirect de(*cell, _config);
+  //   mesh::MeshStatsComputer stats(de.get_grid());
+  //   std::cout << "Average edge length = " << stats.get_average_edge_length() << std::endl;
+  // }
 
   _face_data.resize( _grid.n_faces() );
   _cell_data.resize( _grid.n_cells() );
@@ -57,11 +57,13 @@ void DiscretizationFEM::build()
    size_t iface = 0;
    for ( const mesh::Face * face : cell->faces() )
    {
+     const size_t face_index = face->index();
      if ( _face_data[face->index()].points.empty() )
      {
-       face_data[iface].element_index = face->index();
-       _face_data[face->index()] = face_data[iface++];
+       face_data[iface].element_index = face_index;
+       _face_data[face_index] = face_data[iface];
      }
+     iface++;
    }
   }
   progress.finalize();
@@ -69,12 +71,12 @@ void DiscretizationFEM::build()
 
 void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 {
-  // PolyhedralElementDirect de(cell, _config);
-  PolyhedralElementMSRSB de(cell, _config);
-  StandardFiniteElement fe(cell);
-  // DFEMElement discr_element(cell, _msrsb_tol);
-  de.debug_save_shape_functions_("output/shape_functions" + std::to_string(cell.index())+ ".vtk");
+  PolyhedralElementDirect de(cell, _config);
+  // PolyhedralElementMSRSB de(cell, _config);
+  de.save_shape_functions("output/shape_functions" + std::to_string(cell.index())+ ".vtk");
+  exit(0);
 
+  StandardFiniteElement fe(cell);
   FiniteElementData an_data =  fe.get_cell_data();
   auto verts = cell.vertices();
   std::cout << "+======COORDINATES" << std::endl;
