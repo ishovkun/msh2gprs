@@ -10,5 +10,5 @@ struct FiniteElementConfig
   PolyhedralFEMSubdivision subdivision_method = PolyhedralFEMSubdivision::refinement;
   double solver_tolerance = 1e-5;                 // tolerance for msrsb convergence
   SolverType solver = direct;
-  size_t order;  // refinement order (the more the finer)
+  size_t order = 0;  // refinement order (the more the finer)
 };
