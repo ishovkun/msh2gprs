@@ -11,6 +11,8 @@ ADD_LIBRARY(preprocessor
   EmbeddedFractureManager.cpp
   DiscreteFractureManager.cpp
   BoundaryConditionManager.cpp
+  bc_expressions/location_functions.cpp
+  bc_expressions/value_functions.cpp
   WellManager.cpp
   Well.cpp
   discretization/flow/DiscretizationBase.cpp

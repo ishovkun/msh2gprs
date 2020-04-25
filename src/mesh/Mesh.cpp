@@ -126,7 +126,7 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
       m_faces[face_index].m_marker = f.marker;
     }
 
-    assert(m_faces[face_index].m_vtk_id == f.vtk_id);
+    // assert(m_faces[face_index].m_vtk_id == f.vtk_id);
   }
   for (const size_t vertex : f.vertices)
     if (!std::count( m_vertex_faces[vertex].begin(), m_vertex_faces[vertex].end(), face_index))

@@ -415,22 +415,20 @@ void YamlParser::bc_face(const YAML::Node & node,
     else if (key == "label")
       conf.label = it->second.as<int>();
     else if (key == "location")
-      conf.expression = it->second.as<std::string>();
+      conf.location_expression = it->second.as<std::string>();
     else if (key == "value")
     {
-      const std::vector<std::string> str_values =
-          it->second.as<std::vector<std::string>>();
+      const std::vector<std::string> str_values = it->second.as<std::vector<std::string>>();
+      if (str_values.size() != 3)
+        throw std::invalid_argument("value should have exactly 3 entries");
 
       for (std::size_t i=0; i<3; ++i)
       {
-        if (str_values[i] == "nan")
-          conf.value[i] = BCConfig::nan;
-        else
-          conf.value[i] = std::atof(str_values[i].c_str());
+        conf.values_expressions[i] = str_values[i];
       }
     }
     else
-      std::cout << "attribute " << key << " unknown: skipping" << std::endl;
+      throw std::invalid_argument("attribute " + key + " is unknown");
   }
 }
 
@@ -460,18 +458,19 @@ void YamlParser::bc_node(const YAML::Node & node, BCConfig & conf)
     std::cout << "\t\t\treading entry " << key << std::endl;
 
     if (key == "location")
-      conf.expression = it->second.as<std::string>();
+      conf.location_expression = it->second.as<std::string>();
     else if (key == "value")
     {
-      const std::vector<std::string> str_values =
-          it->second.as<std::vector<std::string>>();
-      for (std::size_t i=0; i<3; ++i)
-      {
-        if (str_values[i] == "nan")
-          conf.value[i] = BCConfig::nan;
-        else
-          conf.value[i] = std::atof(str_values[i].c_str());
-      }
+      conf.values_expressions = it->second.as<std::array<std::string,3>>();
+      // const std::vector<std::string> str_values =
+      //     it->second.as<std::vector<std::string>>();
+      // for (std::size_t i=0; i<3; ++i)
+      // {
+      //   if (str_values[i] == "nan")
+      //     conf.value[i] = BCConfig::nan;
+      //   else
+      //     conf.value[i] = std::atof(str_values[i].c_str());
+      // }
     }
     else
       std::cout << "attribute " << key << " unknown: skipping" << std::endl;

@@ -49,8 +49,9 @@ struct BCConfig
 {
   int label;
   BoundaryConditionType type;
-  angem::Point<3,double> value;
-  std::string expression;
+  // angem::Point<3,double> value;
+  std::string location_expression;
+  std::array<std::string,3> values_expressions;
   // undefined boundary value (do not impose)
   static constexpr double nan = std::numeric_limits<double>::max();
 };
