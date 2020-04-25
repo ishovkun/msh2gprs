@@ -73,8 +73,7 @@ endif()
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/angem)
 ADD_SUBDIRECTORY(external/angem)
 INCLUDE_DIRECTORIES(${angem_include_dirs})
-
-# angem
+# mesh
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
 ADD_SUBDIRECTORY(src/mesh)
 # muparser
@@ -83,6 +82,10 @@ ADD_SUBDIRECTORY(external/muparser)
 # yaml parser
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/yaml)
 ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/external/yaml)
+# progressbar
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/progressbar)
+ADD_SUBDIRECTORY(src/progressbar)
+INCLUDE_DIRECTORIES(${progressbar_include_dirs})
 
 # preprocessor
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/preprocessor)

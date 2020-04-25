@@ -7,7 +7,7 @@
 #endif
 #include "StandardFiniteElement.hpp"
 #include "MeshStatsComputer.hpp"
-#include "ProgressBar.hpp"  // provides ProgressBar
+#include "progressbar/ProgressBar.hpp"  // provides ProgressBar
 
 
 namespace discretization
@@ -45,26 +45,27 @@ void DiscretizationFEM::build()
   size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
+    // std::cout << "cell->index() = " << cell->index() << std::endl;
     progress.set_progress(item++);
 
     const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
 
-   FiniteElementData cell_fem_data = p_discr->get_cell_data();
-   cell_fem_data.element_index = cell->index();
-   _cell_data[cell->index()] = std::move(cell_fem_data);
+    FiniteElementData cell_fem_data = p_discr->get_cell_data();
+    cell_fem_data.element_index = cell->index();
+    _cell_data[cell->index()] = std::move(cell_fem_data);
 
-   std::vector<FiniteElementData> face_data = p_discr->get_face_data();
-   size_t iface = 0;
-   for ( const mesh::Face * face : cell->faces() )
-   {
-     const size_t face_index = face->index();
-     if ( _face_data[face->index()].points.empty() )
-     {
-       face_data[iface].element_index = face_index;
+    std::vector<FiniteElementData> face_data = p_discr->get_face_data();
+    size_t iface = 0;
+    for ( const mesh::Face * face : cell->faces() )
+    {
+      const size_t face_index = face->index();
+      if ( _face_data[face->index()].points.empty() )
+      {
+        face_data[iface].element_index = face_index;
        _face_data[face_index] = face_data[iface];
-     }
-     iface++;
-   }
+      }
+      iface++;
+    }
   }
   progress.finalize();
 }

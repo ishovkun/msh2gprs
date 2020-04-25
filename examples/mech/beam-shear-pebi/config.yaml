@@ -1,0 +1,56 @@
+Mesh file: grid.vtk
+
+Embedded Fractures :
+#   method: compartmental
+  # mech-method: strong-discontinuity
+  mech-method: discrete
+  # subdivision : [gmsh, 2]
+  solver : [direct, 0]
+#   dfem-msrsb-tol: 1e-8
+#   fracture:
+#     center: [-10, 0, 0]
+#     length: 80
+#     width: 10
+#     strike: -20
+#     aperture: 1e-2
+#     conductivity: 200
+
+
+Domain Flow Properties:
+  # domain id is matched with the physical volume id in gmsh
+  domain:
+    label: -1
+    Coupled: false                  # true/false on by default
+    PORO: 0.2
+    PERM: 1
+    SWAT: 0.0
+    PRESSURE: 0
+
+Domain Mechanical Properties:
+  domain:
+    label: -1
+    GMCELL_MODEL: 0               # elastic
+    GMCELL_YOUNG: 1               # young's modulus
+    GMCELL_POISSON: 0.3          # poisson's ratio
+    GMCELL_BIOT_FLOW: -1
+    GMCELL_DENSITY: 1e-6
+
+Boundary Conditions:            # geomechanical bc's
+  Faces:
+    face: # bottom z = 0
+      # label: 3333331
+      location: almost_equal(Z, 0, 1e-5)
+      type: neumann
+      value: [0, +1, 0]
+    face: # top z = 5
+      # label: 3333332
+      location: almost_equal(Z, 5, 1e-5)
+      type: dirichlet
+      # value: ["0", "0", "0"]
+      value: ["cantilever_beam_end_shear_ux(X, Y, Z, 1e5, 1e10, 0.3, 0.5, 0.5)",
+              "cantilever_beam_end_shear_uy(X, Y, Z, 1e5, 1e10, 0.3, 0.5, 0.5)",
+              "cantilever_beam_end_shear_uz(X, Y, Z, 1e5, 1e10, 0.3, 0.5, 0.5)"]
+
+# double cantilever_beam_end_shear_ux(const double x, const double y, const double z,
+#                                     const double F, const double E, const double nu,
+#                                     const double a, const double b)
