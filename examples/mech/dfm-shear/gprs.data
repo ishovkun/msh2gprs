@@ -23,37 +23,31 @@ TUNING
 0.01 30 0 2.0 10.0 1* 0.2 0.1 /
 
 OUTPUT
--- ASCII REPORT OUTPUT /
-ASCII TIME OUTPUT /
+HDF5 TIME OUTPUT /
 
 -------------------------------------------  FLOW DATA ----------+
 -- description on volume data (pressure, volume, saturation, etc)
 INCLUDE
-./fl_cell_data.txt /
+./output/fl_cell_data.txt /
 
 -- description of face data (transes)
 INCLUDE
-./fl_face_data.txt /
+./output/fl_face_data.txt /
 
 -------------------------------------------  GEOMECH DESCRIPTION  --+
 
 -- FEM geometry
 INCLUDE
-gm_geometry.txt
+./output/gm_geometry.txt
 /
-
--- geomechanics depth
--- INCLUDE
--- ./gm_depth.txt /
-
 
 -- GM (mechanics keywords)
 INCLUDE
-./domain.txt /
+output/gm_keywords.txt /
 
 -- Boundary conditions
 INCLUDE
-./gm_bcond.txt /
+output/gm_bcond.txt /
 
 
 GMCELL_BIOT_FLOW
@@ -61,7 +55,7 @@ GMCELL_BIOT_FLOW
 
 INCLUDE
 -- gm_fractures.txt
-gm_DFM.txt
+output/gm_DFM.txt
 /
 
 INCLUDE

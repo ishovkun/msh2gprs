@@ -1,0 +1,10 @@
+GMCONTACT_THERMAL_EXPANSION
+0
+/
+
+GMCONTACT_NORMAL_PROPS
+-- gN tN    tT      C f C f
+-- this corresponds to 30 degres friction angle
+0.0	  0.00	0	      1	1	1
+0.0	  1000	577.35	1	1	1
+/

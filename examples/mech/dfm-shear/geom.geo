@@ -8,8 +8,8 @@ inner_size = 4*lfrac;
 thickness = -10;
 nz = 1;
 
-nf = 8;
-h = lfrac / nf;  // outer boundary element size
+nf = 2;
+h = lfrac;  // outer boundary element size
 hf = lfrac / nf;   // fracture element size - width
 
 left  = - domain_size / 2;
@@ -172,12 +172,12 @@ Top = 3333332;
 
 Frac1 = 1;
 
-// Physical Surface(Bottom) = {1, 2, 3, 4, 5, 6, 7};
-// Physical Surface(Top) = {163, 251, 185, 207, 229, 295, 273, 251};
-// Physical Surface(Left) = {54};
-// Physical Surface(Right) = {62};
-// Physical Surface(Front) = {58};
-// Physical Surface(Back) = {66};
+Physical Surface(Bottom) = {1, 2, 3, 4, 5, 6, 7};
+Physical Surface(Top) = {163, 251, 185, 207, 229, 295, 273, 251};
+Physical Surface(Left) = {54};
+Physical Surface(Right) = {62};
+Physical Surface(Front) = {58};
+Physical Surface(Back) = {66};
 
 Physical Surface(Frac1) = {94};
 
