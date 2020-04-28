@@ -3,6 +3,7 @@
 #include "PreprocessorConfig.hpp"
 #include "SimData.hpp"
 #include "discretization/flow/DoFNumbering.hpp"
+#include "mesh/FaceSplitter.hpp"
 #include <set>
 
 namespace gprs_data {
@@ -48,6 +49,9 @@ class DiscreteFractureManager
   // map dfm surface grid to flow dofs
   std::vector<size_t> map_dfm_grid_to_flow_dofs(const mesh::Mesh & grid,
                                                 const discretization::DoFNumbering & dofs) const;
+
+  // returns the number of dfm fracture faces markers
+  size_t n_fractures() const { return m_dfm_markers.size();}
 
  protected:
   void build_dfm_markers_set_();

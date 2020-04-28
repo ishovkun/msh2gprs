@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>    // provides cout
 
-namespace utils {
+namespace logging {
 
 class ProgressBar
 {
@@ -12,7 +12,7 @@ class ProgressBar
   int set_progress(const size_t item_index);
 
   void finalize();
- 
+
   int get_percentage(const size_t item_index) const;
 
  private:

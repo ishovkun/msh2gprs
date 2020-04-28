@@ -4,7 +4,7 @@
 #include <sys/ioctl.h> //ioctl() and TIOCGWINSZ
 #include <unistd.h> // for STDOUT_FILENO
 
-namespace utils {
+namespace logging {
 
 ProgressBar::ProgressBar(std::string prefix, const size_t n_items, const size_t width)
       : _prefix(prefix), _nitems(n_items), _max_width(width)
@@ -78,4 +78,4 @@ int ProgressBar::get_window_width_() const
   return win_size.ws_col;
 }
 
-}  // end namespace utils
+}  // end namespace logger

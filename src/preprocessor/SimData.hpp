@@ -52,6 +52,8 @@ struct SimData
   // grid comprised of dfm faces
   mesh::SurfaceMesh<double> dfm_flow_grid, dfm_mech_grid;
   std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> dof
+  std::vector<angem::Point<3,double>> grid_vertices_after_face_split;
+  std::vector<std::vector<size_t>> grid_cells_after_face_split;
   // ---------------------- EDFM ------------------------ //
   std::vector<EmbeddedFractureMechanicalProperties> sda_data;
   // std::unordered_map<size_t,size_t> face_to_fracture;
@@ -67,7 +69,8 @@ struct SimData
   // vector of well segments: indices of well coordinate points. used for vtk output.
   std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
   // =========================== GEOMECHANICS ================= //
-  std::shared_ptr<discretization::DoFNumbering> mech_cell_numbering;
+  std::shared_ptr<discretization::DoFNumbering> mech_numbering;  // mech cell and face numbering
+  std::shared_ptr<discretization::DoFNumbering> flow_numbering;  // flow dof numbering
   // ----------------------- FEM data  ---------------------- //
   std::vector<discretization::FiniteElementData> fe_cell_data;  // fe values and gradients for grid cells
   std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces

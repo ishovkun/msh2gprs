@@ -46,7 +46,7 @@ public:
   void save_geomechanics_boundary_conditions_() const;
   void save_dirichlet_component_vertices(const size_t comp, const std::string comp_name,
                                          std::ofstream & out) const;
-  void saveDiscreteFractureProperties(const std::string file_name);
+  void save_discrete_fracture_properties_(const std::string file_name) const;
   void saveWells(const std::string file_name) const;
   void saveFlowMultiScaleData(const std::string file_name);
   void saveMechMultiScaleData(const std::string file_name);

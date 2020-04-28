@@ -40,11 +40,8 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   //           << std::endl;
   // saveBoundaryConditions(output_path + data.config.bcond_file);
 
-  // if (data.dfm_faces.size() > 0)
-  // {
-  //   std::cout << "save discrete fractures" << std::endl;
-  //   saveDiscreteFractureProperties(output_path + data.config.discrete_frac_file);
-  // }
+  if (_data.dfm_faces.size() > 0)
+    save_discrete_fracture_properties_(output_path + "/" + _config.discrete_frac_file);
 
   if (!_data.wells.empty())
   {
@@ -151,23 +148,35 @@ void OutputDataGPRS::save_geometry_() const
   out << "GMDIMS" << "\n";
 
   const auto & grid = _data.geomechanics_grid;
+
+  // number of vertices: either take from grid or from split constainer
+  size_t nv = grid.n_vertices();
+  if (!_data.grid_vertices_after_face_split.empty())
+    nv = _data.grid_vertices_after_face_split.size();
+
   size_t n_active_faces = 0;
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     n_active_faces++;
 
-  out << grid.n_vertices() << "\t"
-              << grid.n_active_cells() << "\t"
-              << n_active_faces;
+  out << nv << "\t"
+      << grid.n_active_cells() << "\t"
+      << n_active_faces;
   out << "/" << "\n\n";
 
   // write vertex coordinates
   out.precision(6);
   // std::cout << "write all coordinates\n";
   out << "GMNODE_COORDS" << "\n";
-  for (const auto & vertex : grid.vertices())
-      out << vertex[0] << "\t"
-                  << vertex[1] << "\t"
-                  << vertex[2] << "\n";
+  if (_data.grid_vertices_after_face_split.empty())
+  {
+    for (const auto & vertex : grid.vertices())
+      out << vertex[0] << "\t" << vertex[1] << "\t" << vertex[2] << "\n";
+  }
+  else
+  {
+    for (const auto &vertex : _data.grid_vertices_after_face_split)
+      out << vertex[0] << "\t" << vertex[1] << "\t" << vertex[2] << "\n";
+  }
   out << "/" << std::endl << std::endl;
 
   // Elemenent data
@@ -219,7 +228,7 @@ void OutputDataGPRS::save_geometry_() const
       const std::vector<const mesh::Cell*> neighbors = face->neighbors();
       out << neighbors.size() << "\t";
       for (const mesh::Cell* neighbor : neighbors)
-        out << _data.mech_cell_numbering->cell_dof(neighbor->index()) + 1 << "\t";
+        out << _data.mech_numbering->cell_dof(neighbor->index()) + 1 << "\t";
       out << "\n";
   //   }
   }
@@ -342,7 +351,7 @@ void OutputDataGPRS::save_geomechanics_boundary_conditions_() const
 
     for (std::size_t i=0; i<_data.neumann_face_indices.size(); ++i)
     {
-      out << _data.mech_cell_numbering->face_dof(_data.neumann_face_indices[i]) + 1 << "\t";
+      out << _data.mech_numbering->face_dof(_data.neumann_face_indices[i]) + 1 << "\t";
       out << _data.neumann_face_traction[i] << "\n";
     }
     out << "/\n\n";
@@ -364,72 +373,43 @@ void OutputDataGPRS::save_dirichlet_component_vertices(const size_t comp,
   out << "/\n\n";
 }
 
-void OutputDataGPRS::saveDiscreteFractureProperties(const std::string file_name)
+void OutputDataGPRS::save_discrete_fracture_properties_(const std::string file_name) const
 {
   // std::cout << "write discrete fracs" << std::endl;
 
-  // std::ofstream geomechfile;
-  // geomechfile.open(file_name.c_str());
+  std::ofstream out;
+  out.open(file_name.c_str());
+  std::cout << "saving " << file_name << std::endl;
   // set<int>::iterator itsetint;
 
-  // cout << "write all fractured faces\n";
-  // geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
-  // for (const auto & face_it : data.dfm_faces)
-  // {
-  //   // geomechfile << face_it.second.ifracture + 1 << "\t";
-  //   geomechfile << face_it.second.nface + 1 << "\t";
-  //   if (face_it.second.coupled)
-  //     geomechfile << face_it.second.nfluid + 1 << std::endl;
-  //   else
-  //     geomechfile << -1 << std::endl;
-  // }
-  // geomechfile << "/" << std::endl << std::endl;
+  std::cout << "write all fractured faces\n";
+  out << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
+  for (const auto & it : _data.dfm_faces)
+  {
+    out << it.first + 1 << "\t";
+    if (it.second.coupled)
+      out << _data.flow_numbering->face_dof(it.first) + 1 << std::endl;
+    else
+      out << -1 << std::endl;
+  }
+  out << "/\n\n";
 
-  // // geomechfile << "GMFACE_FRACTURE_TO_FLOWCELL\n";
-  // // for (const auto facet_it : data.dfm_faces)
-  // // {
-  // //   geomechfile << facet_it.second.nface + 1 << "\t";
-  // //   geomechfile << facet_it.second.nfluid + 1 << endl;
-  // // }
-  // // for(itsetint = pSim->setIdenticalInternalMarker.begin();
-  // //     itsetint != pSim->setIdenticalInternalMarker.end();
-  // //     itsetint++, nFractures_++)
-  // // {
-  // //   for (int i = 0; i < pSim->nPhysicalFacets; i++)
-  // //   {
-  // //     if( pSim->vsPhysicalFacet[i].nmark == *itsetint )
-  // //     {
-  // //       geomechfile << pSim->vsPhysicalFacet[i].nface + 1 << "\t";
-  // //       geomechfile << pSim->vsPhysicalFacet[i].nfluid + 1 << endl;
-  // //       if( pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors !=2 )
-  // //       {
-  // //         cout << "Fracture interface # " << nFractures_ << endl;
-  // //         cout << "Global interface   # " << pSim->vsPhysicalFacet[i].nface << endl;
-  // //         cout << "Number od neighbors  " << pSim->vsFaceCustom[ pSim->vsPhysicalFacet[i].nface ].nNeighbors << endl;
-  // //         cout << "Wrong msh file. Mesh verticies are not connected on fracture interface" << endl;
-  // //         exit(0);
-  // //       }
-  // //     }
-  // //   }
-  // // }
-  // // geomechfile << "/" << std::endl << std::endl;
+  out << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
+  for (const auto facet_it : _data.dfm_faces)
+    out << facet_it.second.conductivity << std::endl;
+  out << "/\n\n";
 
-  // geomechfile << "GMFACE_FRACTURE_CONDUCTIVITY" << std::endl;
-  // for (const auto facet_it : data.dfm_faces)
-  //   geomechfile << facet_it.second.conductivity << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GMFACE_FRACTURE_REGION" << std::endl;
+  for (const auto & it : _data.dfm_faces)
+    out << 1 << "\n";
+  out << "/\n\n";
 
-  // geomechfile << "GMFACE_FRACTURE_REGION" << std::endl;
-  // for (const auto facet_it : data.dfm_faces)
-  //   geomechfile << 1 << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GMFACE_FRACTURE_GROUP" << std::endl;
+  for (const auto & it : _data.dfm_faces)
+    out << 1 << "\n";
+  out << "/\n\n";
 
-  // geomechfile << "GMFACE_FRACTURE_GROUP" << std::endl;
-  // for (const auto facet_it : data.dfm_faces)
-  //   geomechfile << 1 << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
-
-  // geomechfile.close();
+  out.close();
 }
 
 
@@ -537,64 +517,68 @@ void OutputDataGPRS::save_geomechanics_data_() const
   save_geomechanics_boundary_conditions_();
 }
 
+void save_cell_vertices(std::ofstream & out, const std::vector<size_t> &vertices, const int vtk_id)
+{
+  out << vertices.size() << "\t";
+  switch (vtk_id)
+  {
+    case 25: // super wierd element 25
+      {
+        for (int j = 0; j < 8; j++)
+          out << vertices[j] + 1 << "\t";
+        out << vertices[8] + 1 << "\t";
+        out << vertices[11] + 1 << "\t";
+        out << vertices[13] + 1 << "\t";
+        out << vertices[9] + 1 << "\t";
+
+        out << vertices[16] + 1 << "\t";
+        out << vertices[18] + 1 << "\t";
+        out << vertices[19] + 1 << "\t";
+        out << vertices[17] + 1 << "\t";
+
+        out << vertices[10] + 1 << "\t";
+        out << vertices[12] + 1 << "\t";
+        out << vertices[14] + 1 << "\t";
+        out << vertices[15] + 1 << "\t";
+        break;
+      }
+    case 26:
+      {
+        for (int j = 0; j < 6; j++)
+          out << vertices[j] + 1 << "\t";
+
+        out << vertices[6] + 1 << "\t";
+        out << vertices[9] + 1 << "\t";
+        out << vertices[7] + 1 << "\t";
+
+        out << vertices[12] + 1 << "\t";
+        out << vertices[14] + 1 << "\t";
+        out << vertices[13] + 1 << "\t";
+
+        out << vertices[8] + 1 << "\t";
+        out << vertices[10] + 1 << "\t";
+        out << vertices[11] + 1 << "\t";
+        break;
+      }
+    default:
+      {
+        for (const auto vertex : vertices)
+          out << vertex + 1 << "\t";
+        break;
+      }
+  }
+  out << "\n";
+}
+
 void OutputDataGPRS::save_cell_geometry_(std::ofstream & out, const mesh::Mesh & grid) const
 {
   out << "GMCELL_NODES" << "\n";
-  for (auto cell=grid.begin_active_cells(); cell!=grid.end_active_cells(); ++cell)
-  {
-    const auto & vertices = cell->vertices();
-    out << vertices.size() << "\t";
-
-    switch (cell->vtk_id())
-    {
-      case 25: // super wierd element 25
-        {
-          for (int j = 0; j < 8; j++)
-            out << vertices[j] + 1 << "\t";
-          out << vertices[8] + 1 << "\t";
-          out << vertices[11] + 1 << "\t";
-          out << vertices[13] + 1 << "\t";
-          out << vertices[9] + 1 << "\t";
-
-          out << vertices[16] + 1 << "\t";
-          out << vertices[18] + 1 << "\t";
-          out << vertices[19] + 1 << "\t";
-          out << vertices[17] + 1 << "\t";
-
-          out << vertices[10] + 1 << "\t";
-          out << vertices[12] + 1 << "\t";
-          out << vertices[14] + 1 << "\t";
-          out << vertices[15] + 1 << "\t";
-          break;
-        }
-      case 26:
-        {
-          for (int j = 0; j < 6; j++)
-            out << vertices[j] + 1 << "\t";
-
-          out << vertices[6] + 1 << "\t";
-          out << vertices[9] + 1 << "\t";
-          out << vertices[7] + 1 << "\t";
-
-          out << vertices[12] + 1 << "\t";
-          out << vertices[14] + 1 << "\t";
-          out << vertices[13] + 1 << "\t";
-
-          out << vertices[8] + 1 << "\t";
-          out << vertices[10] + 1 << "\t";
-          out << vertices[11] + 1 << "\t";
-          break;
-        }
-      default:
-        {
-          for (const auto vertex : vertices)
-            out << vertex + 1 << "\t";
-          break;
-        }
-    }
-
-    out << "\n";
-  }
+  if (_data.grid_cells_after_face_split.empty())
+    for (auto cell=grid.begin_active_cells(); cell!=grid.end_active_cells(); ++cell)
+      save_cell_vertices(out, cell->vertices(), cell->vtk_id());
+  else
+    for (auto cell=grid.begin_active_cells(); cell!=grid.end_active_cells(); ++cell)
+      save_cell_vertices(out, _data.grid_cells_after_face_split[cell->index()], cell->vtk_id());
 
   out << "/" << "\n\n";
 
@@ -639,7 +623,7 @@ void OutputDataGPRS::save_fem_data_() const
   for (const auto & cell : cells)
     if (!cell.points.empty())
   {
-    out << _data.mech_cell_numbering->cell_dof(cell.element_index) + 1 << "\t";
+    out << _data.mech_numbering->cell_dof(cell.element_index) + 1 << "\t";
     out << cell.points.size() << "\t";
     for (const auto & point : cell.points)
       out << point.weight << "\t";
@@ -712,7 +696,7 @@ void OutputDataGPRS::save_fem_data_() const
   for (const auto & face : faces)
     if (!face.points.empty())
     {
-      out << _data.mech_cell_numbering->face_dof(face.element_index) + 1 << "\t";
+      out << _data.mech_numbering->face_dof(face.element_index) + 1 << "\t";
       out << face.points.size() << "\t";
       for (const auto & point : face.points)
         out << point.weight << "\t";

@@ -82,10 +82,10 @@ ADD_SUBDIRECTORY(external/muparser)
 # yaml parser
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/yaml)
 ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/external/yaml)
-# progressbar
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/progressbar)
-ADD_SUBDIRECTORY(src/progressbar)
-INCLUDE_DIRECTORIES(${progressbar_include_dirs})
+# logger
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/logger)
+ADD_SUBDIRECTORY(src/logger)
+INCLUDE_DIRECTORIES(${logger_include_dirs})
 
 # preprocessor
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/preprocessor)

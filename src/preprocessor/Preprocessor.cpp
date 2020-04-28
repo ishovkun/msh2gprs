@@ -49,16 +49,19 @@ void Preprocessor::run()
   build_flow_discretization_();
 
   // build edfm grid for vtk output
-  pm_edfm_mgr->build_edfm_grid(*pm_flow_dof_numbering);
+  pm_edfm_mgr->build_edfm_grid(*data.flow_numbering);
 
   // build dfm flow and mechanics grids (for vtk output)
   data.dfm_flow_grid = pm_dfm_mgr->build_dfm_grid(data.grid);
   data.dfm_mech_grid = pm_dfm_mgr->build_dfm_grid(data.geomechanics_grid);
 
-  // map dfm flow grid to flow dofs
-  data.dfm_cell_mapping = pm_dfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *pm_flow_dof_numbering);
-
   build_geomechanics_discretization_();
+
+  // Coupling
+  // map mechanics cells to control volumes
+  pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
+  // map dfm flow grid to flow dofs
+  data.dfm_cell_mapping = pm_dfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
   // remove fine cells
   if (config.edfm_method != EDFMMethod::compartmental)
@@ -109,7 +112,7 @@ void Preprocessor::write_output_()
           {
             std::cout << "Output postprocessor format" << std::endl;
             gprs_data::OutputDataPostprocessor output_data(data, config,
-                                                           *pm_flow_dof_numbering,
+                                                           *data.flow_numbering,
                                                            m_output_dir);
             output_data.write_output(config.postprocessor_file);
           }
@@ -202,9 +205,9 @@ void Preprocessor::build_flow_discretization_()
   // if we do cedfm use the split matrix dof numbering
   // else use unsplit matrix dofs
   if ( config.edfm_method == EDFMMethod::compartmental )
-    pm_flow_dof_numbering = p_split_dofs;
+    data.flow_numbering = p_split_dofs;
   else
-    pm_flow_dof_numbering = p_unsplit_dofs;
+    data.flow_numbering = p_unsplit_dofs;
 
   std::cout << "build discr" << std::endl;
   discr_edfm.build();
@@ -213,7 +216,7 @@ void Preprocessor::build_flow_discretization_()
   if (!config.wells.empty())
   {
     std::cout << "setup wells" << std::endl;
-    WellManager well_mgr(config.wells, data, *pm_flow_dof_numbering);
+    WellManager well_mgr(config.wells, data, *data.flow_numbering);
     well_mgr.setup();
   }
   std::cout << "done flow discretization" << std::endl;
@@ -223,16 +226,15 @@ void Preprocessor::build_geomechanics_discretization_()
 {
   // generate geomechanics sda properties
   pm_edfm_mgr->distribute_mechanical_properties();
-  // map mechanics cells to control volumes
-  pm_property_mgr->map_mechanics_to_control_volumes(*pm_flow_dof_numbering);
   // map sda cells to flow dofs
-  pm_edfm_mgr->map_mechanics_to_control_volumes(*pm_flow_dof_numbering);
+  pm_edfm_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
 
   if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
   {
     multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid,
                                               config.n_multiscale_blocks);
     ms_handler.build_data();
+
     ms_handler.fill_output_model(data.ms_mech_data);
   }
 
@@ -248,8 +250,12 @@ void Preprocessor::build_geomechanics_discretization_()
   }
 
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
-  data.mech_cell_numbering = std::shared_ptr<discretization::DoFNumbering>
+  data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>
       (mech_numbering_mgr.get_numbering());
+
+  // split geomechanics DFM faces
+  std::cout << "splitting faces of DFM fractures" << std::endl;
+  pm_dfm_mgr->split_faces(data.geomechanics_grid);
 }
 
 

@@ -55,8 +55,6 @@ void DiscreteFractureManager::distribute_properties()
         const auto cells = face->neighbors();
         const auto cell1 = *cells[0];
         const auto cell2 = *cells[1];
-        // const double v1 = cell1.volume();
-        // const double v2 = cell2.volume();
         double v1;
         try {
           v1 = cell1.volume();
@@ -99,29 +97,43 @@ void DiscreteFractureManager::distribute_properties()
 
 void DiscreteFractureManager::split_faces(mesh::Mesh & grid)
 {
+  if (n_fractures() == 0) return;
+
+  mesh::FaceSplitter splitter(grid);
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     if (is_fracture(face->marker()))
-      grid.mark_for_split(face->index());
+    {
+      std::cout << "mark face " << face->index() <<" (" << face->marker() << ")"  << std::endl;
+      splitter.mark_for_split(face->index());
+    }
 
   const size_t n_faces_old = grid.n_faces();
   const size_t n_vertices_old = grid.n_vertices();
 
-  grid.split_faces();
+  splitter.split_faces();
 
-  if (grid.n_vertices() != n_faces_old)
-    std::cout << "Split " << grid.n_vertices() - n_vertices_old
-              << " vertices for dfm fractures"
-              << std::endl;
-  if (grid.n_faces() != n_faces_old)
+  const auto & new_vertices = splitter.get_all_vertices();
+  if (new_vertices.size() != grid.n_vertices())
   {
-    std::cout << "Split " << grid.n_faces() - n_faces_old
-              << " for DFM fractures." << std::endl;
-    std::cout << "There was " << n_faces_old << " faces before and "
-              << "now there is " << grid.n_faces() << " faces."
-              << std::endl;
+    m_data.grid_vertices_after_face_split = new_vertices;
+    m_data.grid_cells_after_face_split = splitter.get_cell_vertices();
   }
-  else
-    std::cout << "No DFM faces have been split" << std::endl;
+
+
+  // if (grid.n_vertices() != n_faces_old)
+  //   std::cout << "Split " << grid.n_vertices() - n_vertices_old
+  //             << " vertices for dfm fractures"
+  //             << std::endl;
+  // if (grid.n_faces() != n_faces_old)
+  // {
+  //   std::cout << "Split " << grid.n_faces() - n_faces_old
+  //             << " for DFM fractures." << std::endl;
+  //   std::cout << "There was " << n_faces_old << " faces before and "
+  //             << "now there is " << grid.n_faces() << " faces."
+  //             << std::endl;
+  // }
+  // else
+  //   std::cout << "No DFM faces have been split" << std::endl;
 }
 
 std::vector<DiscreteFractureConfig>
@@ -167,10 +179,23 @@ std::vector<size_t> DiscreteFractureManager::map_dfm_grid_to_flow_dofs(const mes
                                                                        const discretization::DoFNumbering & dofs) const
 {
   std::vector<size_t> result;
-  for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
-    if (face->neighbors().size() == 2)
-      if (is_fracture(face->marker()))
-        result.push_back( dofs.face_dof(face->index()) );
+
+  for (auto & it : m_data.dfm_faces)
+  {
+    const mesh::Face & face = grid.face(it.first);
+    // infer if it is coupled based on neighbors
+    const auto neighbors = face.neighbors();
+    if (!m_data.gmcell_to_flowcells[m_data.mech_numbering->cell_dof(neighbors[0]->index())].empty())
+    {
+      it.second.coupled = true;
+      result.push_back( dofs.face_dof(face.index()) );
+    }
+    else
+    {
+      it.second.coupled = false;
+      result.push_back( dofs.face_dof(face.index()) );
+    }
+  }
   return result;
 }
 

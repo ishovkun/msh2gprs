@@ -47,7 +47,7 @@ SET_TARGET_PROPERTIES (
     PROPERTIES LINKER_LANGUAGE CXX
 )
 
-set(preprocessor_libs ${preprocessor_libs} angem muparser mesh yaml-cpp progressbar)
+set(preprocessor_libs ${preprocessor_libs} angem muparser mesh yaml-cpp logger)
 
 if(USE_GMSH)
   TARGET_INCLUDE_DIRECTORIES(preprocessor PRIVATE ${GMSH_INCLUDE_DIRS})

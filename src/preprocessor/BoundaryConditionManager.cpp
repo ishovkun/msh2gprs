@@ -62,7 +62,6 @@ void BoundaryConditionManager::create_dirichlet_data_()
                 "\nwhen setting evaluating boundary condition";
             throw std::runtime_error(error_msg);
           }
-          std::cout << i << " " << _variables[i] << " "<< value << std::endl;
           if (value != nan_value)
           {
             _data.dirichlet_indices[i].push_back(v);
@@ -168,7 +167,6 @@ void BoundaryConditionManager::create_value_parsers_(const std::vector<BCConfig>
                                 bc_functions::cantilever_beam_end_shear_uy);
         parsers[i][j].DefineFun("cantilever_beam_end_shear_uz",
                                 bc_functions::cantilever_beam_end_shear_uz);
-        std::cout << "set bc value expression = " << config[i].values_expressions[j] << std::endl;
         if (config[i].values_expressions[j].empty())
         {
           throw std::invalid_argument("expression " + std::to_string(i) + " is empty");

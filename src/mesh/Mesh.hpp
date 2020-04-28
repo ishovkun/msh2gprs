@@ -23,6 +23,7 @@ using FaceiVertices = std::vector<std::size_t>;
 
 // buddies
 class Subdivision;
+class FaceSplitter;
 namespace io { class VTKReader;}
 
 struct FaceTmpData
@@ -284,6 +285,7 @@ class Mesh
   std::vector<size_t> m_vertices_from_cell_splitting_indices;
 
   friend class Subdivision;
+  friend class FaceSplitter;
   friend class io::VTKReader;
 };
 

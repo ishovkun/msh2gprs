@@ -1,6 +1,7 @@
 #include "preprocessor/Preprocessor.hpp"
 #include <iostream>
 #include <string>
+#include "logger/Logger.hpp"
 #include <experimental/filesystem>
 
 namespace filesystem = std::experimental::filesystem;
@@ -29,15 +30,21 @@ int main(int argc, char *argv[])
   // config file
   const std::string fname_config = argv[1];
   const Path path_config(fname_config);
+
+  // auto & logger = logging::Logger::ref();
+  // const Path log_file_path = path_config.parent_path() / "log.txt";
+  // logger.set_file(log_file_path.filename());
+  // logger.set_verbosity(logging::Debug);
+
   try {
     // read stuff
     gprs_data::Preprocessor preprocessor(path_config);
     // let the fun begin
     preprocessor.run();
   }
-  catch (const std::exception& error)
+  catch (const std::exception& e)
   {
-    std::cout << "Error: " << error.what() << std::endl;
+    std::cout << "Error: " << e.what() << std::endl;
     return 1;
   }
 

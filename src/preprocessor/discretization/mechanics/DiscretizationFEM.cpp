@@ -7,7 +7,7 @@
 #endif
 #include "StandardFiniteElement.hpp"
 #include "MeshStatsComputer.hpp"
-#include "progressbar/ProgressBar.hpp"  // provides ProgressBar
+#include "logger/ProgressBar.hpp"  // provides ProgressBar
 
 
 namespace discretization
@@ -41,7 +41,7 @@ void DiscretizationFEM::build()
 
   _face_data.resize( _grid.n_faces() );
   _cell_data.resize( _grid.n_cells() );
-  utils::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
+  logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
   size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
