@@ -24,6 +24,10 @@ class BoundaryConditionManager
   void create_dirichlet_data_();
   // parse location muparser expressions and find boundary labels
   void find_faces_from_expressions_();
+  // parse location muparser expressions and find dirichlet nodes
+  void find_nodes_from_expressions_();
+  // create parsers to find dirichlet nodes
+  void create_node_location_parsers_();
   //
   std::vector<mu::Parser> create_location_parsers_(const std::vector<size_t> & configs);
   void create_value_parsers_(const std::vector<BCConfig> & config,
@@ -40,6 +44,7 @@ class BoundaryConditionManager
   std::array<double,4> _variables;  // variables for muparser (X,Y,Z,nan)
   std::vector<std::array<mu::Parser,3>> _face_value_parsers;
   std::vector<std::array<mu::Parser,3>> _node_value_parsers;
+  std::vector<mu::Parser> _node_location_parsers;
 };
 
 }  // end namespace gprs_data

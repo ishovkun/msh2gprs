@@ -280,7 +280,9 @@ void YamlParser::section_domain_props(const YAML::Node &         node,
       domain(it->second, var_type, conf);
     }
     else
-      std::cout << "attribute " << key << " unknown: skipping" << std::endl;
+    {
+      throw std::invalid_argument("attribute " + key + " is unknown");
+    }
   }
 }
 
@@ -371,7 +373,9 @@ void YamlParser::boundary_conditions(const YAML::Node & node)
     else if (key == "Dirichlet nodes")
       boundary_conditions_nodes(it->second);
     else
-      std::cout << "skipping entry " << key << std::endl;
+    {
+      throw std::invalid_argument("Attribute " + key + " is unknown");
+    }
   }
 
 }
@@ -390,7 +394,9 @@ void YamlParser::boundary_conditions_faces(const YAML::Node & node)
       bc_face(it->second, conf);
     }
     else
-      std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
+    {
+      throw std::invalid_argument("\t\tAttribute " + key + " is unknown");
+    }
   }
 }
 
@@ -446,7 +452,9 @@ void YamlParser::boundary_conditions_nodes(const YAML::Node & node)
       bc_node(it->second, conf);
     }
     else
-      std::cout << "attribute " << key << " unknown: skipping" << std::endl;
+    {
+      throw std::invalid_argument("Attribute " + key + " is unknown");
+    }
   }
 }
 
@@ -462,18 +470,9 @@ void YamlParser::bc_node(const YAML::Node & node, BCConfig & conf)
     else if (key == "value")
     {
       conf.values_expressions = it->second.as<std::array<std::string,3>>();
-      // const std::vector<std::string> str_values =
-      //     it->second.as<std::vector<std::string>>();
-      // for (std::size_t i=0; i<3; ++i)
-      // {
-      //   if (str_values[i] == "nan")
-      //     conf.value[i] = BCConfig::nan;
-      //   else
-      //     conf.value[i] = std::atof(str_values[i].c_str());
-      // }
     }
     else
-      std::cout << "attribute " << key << " unknown: skipping" << std::endl;
+      throw std::invalid_argument("\t\tAttribute " + key + " is unknown");
   }
 }
 
