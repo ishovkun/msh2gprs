@@ -21,3 +21,5 @@ gm_SDA.txt
 gm_geometry.txt
 gm_depth.txt
 gm_fractures.txt
+output/
+postprocessor_config.yaml
