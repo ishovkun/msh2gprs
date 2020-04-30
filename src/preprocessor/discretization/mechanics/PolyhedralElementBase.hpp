@@ -34,8 +34,8 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
 
-
   friend class IntegrationRuleFacesAverage;
+  friend class IntegrationRuleFacesFractures;
 };
 
 }  // end namespace discretization

@@ -36,10 +36,10 @@ class FeValues
    */
   void update(std::vector<Point> & element_vertices);
   /**
-   * Update the needed internal quantities in the cell in the gived integration point.
+   * Update the needed internal quantities in the cell in the gived integration points.
    * The point coordinate is the real (not reference) coordinates of the integration point.
    */
-  void update(const mesh::Cell & cell, const angem::Point<3,double> & point);
+  void update(const mesh::Cell & cell, const std::vector<angem::Point<3,double>> & points);
   /**
    * Update the needed internal quantities in the face element.
    * Use this method before using the fem quantities in the new face during the loop.
@@ -197,12 +197,14 @@ void FeValues<vtk_id>::update(const mesh::Cell & cell)
 }
 
 template<VTK_ID vtk_id>
-void FeValues<vtk_id>::update(const mesh::Cell & cell, const angem::Point<3,double> & point)
+void FeValues<vtk_id>::update(const mesh::Cell & cell, const std::vector<angem::Point<3,double>> & points)
 {
   static_assert(ELEMENT_DIM<vtk_id> == 3, "This function only exists for 3D elements");
   update_vertex_coord_(cell.vertex_coordinates());
   _weights = {1.0};
-  _qpoints = {map_real_to_local_(point)};
+  _qpoints.resize( points.size() );
+  for (size_t q=0; q<points.size(); ++q)
+    _qpoints[q] = map_real_to_local_(points[q]);
   update_();
 }
 
@@ -420,6 +422,65 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,N_ELEMENT_VERTICES
   detJ = det(J);
 }
 
+template<VTK_ID vtk_id>
+Point  FeValues<vtk_id>::map_real_to_local_(const Point & x) const
+{
+  /* This is a generic implementation of the mapping for non-linear shape functions.
+   * Certain linear elements (e.g. triangles and tetras) use faster custom method.
+   *
+   * Algorithm:
+   * Knowing the coordinate x in the real element and the
+   * coordinates of the element vertices x_v, we want to
+   * find the coordinate \xi in the master element by solving:
+   * x = ⅀ᵥ xᵥ * φᵥ(ξ)
+   * [Eq. 5.3.2 Becker E., Carey G., Oden J. Finite elements. An Introduction Volume 1 1981]
+   *
+   * We do this by linearizing this equation as follows:
+   * residual R = ⅀ᵥ xᵥ φᵥ(ξ) - x
+   * jacobian Jᵢⱼ = ∂Rᵢ / ∂ξⱼ = ⅀ᵥ xᵥᵢ * ∂φᵥ(ξ) / ∂ξⱼ
+   * which is a 3x3 linear system.
+   *
+   * We wrap this system into a Newton-Rapson loop.
+   */
+
+  Point xi = {0,0,0};  // initial guess
+  Point R;
+  angem::Tensor2<3, double> J;
+  double error = 1;
+  std::cout << std::endl;
+  std::cout << "vtk_id = " << vtk_id << std::endl;
+  std::cout << "x = " << x << std::endl;
+  for (size_t iter = 0; iter < 10; ++iter)
+  {
+    R.set_zero();
+    J.set_zero();
+    // assemble residual
+    for (size_t v = 0; v < N_ELEMENT_VERTICES<vtk_id>; ++v)
+      R += _vertex_coord[v] * eval_(xi, v);
+    R -= x;
+    std::cout << "R.norm() = " << R.norm() << " xi = " << xi  << std::endl;
+
+    if (R.norm() < 1e-8)  // converged
+      return xi;
+
+    // assemble Jacobian
+    for (size_t v = 0; v < N_ELEMENT_VERTICES<vtk_id>; ++v)
+    {
+      for (size_t i = 0; i < ELEMENT_DIM<vtk_id>; ++i)
+      {
+        const auto dphi_dxi = eval_derivative_(xi, v);
+        for (size_t j = 0; j < ELEMENT_DIM<vtk_id>; ++j)
+          J(i, j) += _vertex_coord[v][i] * dphi_dxi[j];
+      }
+    }
+
+    // solve system
+    xi += invert(J) * (-R);
+  }
+
+  throw std::runtime_error("real-to-master mapping did not converge");
+}
+
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::TriangleID> = 3;
 template<> constexpr size_t ELEMENT_DIM<VTK_ID::TriangleID> = 2;
 
@@ -431,5 +492,8 @@ template<> constexpr size_t ELEMENT_DIM<VTK_ID::HexahedronID> = 3;
 
 template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::QuadrangleID> = 4;
 template<> constexpr size_t ELEMENT_DIM<VTK_ID::QuadrangleID> = 2;
+
+template<> constexpr size_t N_ELEMENT_VERTICES<VTK_ID::WedgeID> = 6;
+template<> constexpr size_t ELEMENT_DIM<VTK_ID::WedgeID> = 3;
 
 }  // end namespace discretization

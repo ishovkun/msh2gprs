@@ -96,7 +96,7 @@ template <>
 std::vector<double> FeValues<VTK_ID::HexahedronID>::get_master_integration_weights() const
 {
   const double w1 = 8.0 / 6.0;  // volum=8; 6 points
-  return {w1, w1, w1, w1, w1, w1};;
+  return {w1, w1, w1, w1, w1, w1};
 }
 
 }  // end namespace discretization

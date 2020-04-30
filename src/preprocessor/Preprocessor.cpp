@@ -45,6 +45,11 @@ void Preprocessor::run()
   // copy geomechanics grid since base grid will be split
   data.geomechanics_grid = data.grid;
 
+  /* Split cells due to edfm intersection */
+  std::cout << "Splitting cells..." << std::flush;
+  pm_edfm_mgr->split_cells();
+  std::cout << "OK" << std::endl << std::flush;
+
   std::cout << "building flow discretization" << std::endl;
   build_flow_discretization_();
 
@@ -175,11 +180,6 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
 
 void Preprocessor::build_flow_discretization_()
 {
-  /* Split cells due to edfm intersection */
-  std::cout << "Splitting cells..." << std::flush;
-  pm_edfm_mgr->split_cells();
-  std::cout << "OK" << std::endl << std::flush;
-
   // add properties for refined cells
   pm_property_mgr->downscale_properties();
   /* Since we split edfm faces, we pretend that they are dfm fractures
@@ -238,16 +238,28 @@ void Preprocessor::build_geomechanics_discretization_()
     ms_handler.fill_output_model(data.ms_mech_data);
   }
 
+  std::vector<int> dfm_markers;
   if (config.fem.method == FEMMethod::polyhedral_finite_element ||
       config.fem.method == FEMMethod::mixed)
   {
-    std::cout << "build FEM discretization" << std::endl;
-    discretization::DiscretizationFEM fem_discr(data.grid, config.fem);
-    fem_discr.build();
-    data.fe_cell_data = fem_discr.get_cell_data();
-    data.fe_face_data = fem_discr.get_face_data();
     data.geomechanics_grid = data.grid;
+
+    /* Since we split edfm faces, we pretend that they are dfm fractures
+     * to reuse the discretization code. */
+    const std::vector<DiscreteFractureConfig> edfm_faces_conf = pm_edfm_mgr->generate_dfm_config();
+    // combine dfm and edfm configs
+    const std::vector<DiscreteFractureConfig> combined_fracture_config =
+        DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
+    // manages properties of dfm and edfm after splitting
+    DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
+    dfm_markers = fracture_flow_mgr.get_face_markers();
   }
+  else dfm_markers = pm_dfm_mgr->get_face_markers();
+
+  std::cout << "build FEM discretization" << std::endl;
+  discretization::DiscretizationFEM fem_discr(data.grid, config.fem, dfm_markers);
+  data.fe_cell_data = fem_discr.get_cell_data();
+  data.fe_face_data = fem_discr.get_face_data();
 
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
   data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>

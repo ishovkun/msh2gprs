@@ -31,14 +31,14 @@ class IntegrationRuleFacesAverage
   // integration points in cells
   void compute_cell_fe_quantities_();
   // compute shape function values, gradients, and weights in the
-  // integration points in a given face face
+  // integration points in a given face
   void compute_face_fe_quantities_(const size_t parent_face);
   void setup_storage_();
   void build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & face_poly);
 
   PolyhedralElementBase & _element;
-  std::vector<angem::Polyhedron<double>> _pyramids;                         // tributary regions
-  std::vector<std::vector<angem::Polygon<double>>> _face_triangles;
+  std::vector<angem::Polyhedron<double>> _pyramids;                 // tributary regions
+  std::vector<std::vector<angem::Polygon<double>>> _face_triangles; // face tributary regions
 };
 
 }  // end namespace discretization

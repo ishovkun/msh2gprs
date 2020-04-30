@@ -18,18 +18,39 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   /**
    * Constructor.
    * Build FEM discretization of the cell.
+   * This function has four major control parameters.
+   *
+   * The parameter PolyhedralFEMSubdivision in FiniteElementConfig structure
+   * controls whether to use GMsh or a custom refinement.
+   *
+   * The parameter "order" in FiniteElemenConfig controls the
+   * level of refinement for the polyhedral element.
+   * If gmsh is used, then the order is the number of verties in each edge in the underlying grid.
+   * If custom refinement is used, the order is the number of times we perform the
+   * refinement.
+   *
+   * The parameter update_face_values should be used if the user needs data for
+   * face integration, e.g. Neumann boundary conditions.
+   *
+   * The parameter udpate_fracture_values dictates whether the user needs
+   * to additionally compute cell shape function data at face integration points.
+   * These data is used in ADGPRS for DFM fractures, in order to solve the contact problem.
+   *
    * Input:
-   * @param[in] cell : grid cell to be discretized
+   * \param[in] cell : grid cell to be discretized
+   * \param[in] config : constains information about the type and order of refinement
+   * \param[in] update_face_values : update face shape functions within face quadrature points
+   * \param[in] update_fracture_values : update cell shape function in face quadrature points
    */
-  PolyhedralElementDirect(const mesh::Cell & cell, const FiniteElementConfig & config);
+  PolyhedralElementDirect(const mesh::Cell & cell, const FiniteElementConfig & config,
+                          const bool update_face_values = true,
+                          const bool update_fracture_values = true);
   // get vector of cell integration points (where cell_data is defined)
   const std::vector<angem::Point<3,double>> & get_cell_integration_points() const {return _cell_gauss_points;}
   //  purely debugging purposes
   void debug_save_boundary_face_solution(const std::string fname) const;
 
  protected:
-  // main method to compute shape functions
-  void build_();
   // solve problems on faces
   void build_face_boundary_conditions_();
   // build system matrix for the face poisson problem

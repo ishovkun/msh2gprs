@@ -16,20 +16,35 @@ class StandardFiniteElement : public FiniteElementBase {
   /**
    * Constructor.
    * Build FEM discretization of the cell.
+   *
+   * The parameter update_face_values should be used if the user needs data for
+   * face integration, e.g. Neumann boundary conditions.
+   *
+   * The parameter udpate_fracture_values dictates whether the user needs
+   * to additionally compute cell shape function data at face integration points.
+   * These data is used in ADGPRS for DFM fractures, in order to solve the contact problem.
    * Input:
    * @param[in] cell : grid cell to be discretized
    */
-  StandardFiniteElement(const mesh::Cell & cell);
+  StandardFiniteElement(const mesh::Cell & cell,
+                        const bool update_face_values = true,
+                        const bool update_fracture_values = true);
 
  protected:
   template <angem::VTK_ID vtk_id>
-  void build_(FeValues<vtk_id> & fe_values, FiniteElementData & entity_data);
+  void build_(FeValues<vtk_id> & fe_values, FiniteElementData & entity_data,
+              const bool update_center = true);
+
+  void update_face_values_();
+  void update_cell_values_in_faces_();
 
   const mesh::Cell & _cell;
+  const bool _update_frac_values;
 };
 
 template <angem::VTK_ID vtk_id>
-void StandardFiniteElement::build_(FeValues<vtk_id> & fe_values, FiniteElementData & entity_data)
+void StandardFiniteElement::build_(FeValues<vtk_id> & fe_values, FiniteElementData & entity_data,
+                                   const bool update_center)
 {
   const size_t nv = N_ELEMENT_VERTICES<vtk_id>;
   for (size_t q=0; q<fe_values.n_integration_points(); ++q)
@@ -45,17 +60,19 @@ void StandardFiniteElement::build_(FeValues<vtk_id> & fe_values, FiniteElementDa
     data.weight = fe_values.JxW(q);
     entity_data.points.push_back(data);
 
-    // center
-    FEPointData c;
-    c.values.resize( nv, 0.0 );
-    c.grads.resize( nv, {0,0,0} );
-    for (size_t vertex=0; vertex<nv; ++vertex)
+    if (update_center)
     {
-      c.values[vertex] = fe_values.value_center(vertex);
-      c.grads[vertex] = fe_values.grad_center(vertex);
+      FEPointData c;
+      c.values.resize( nv, 0.0 );
+      c.grads.resize( nv, {0,0,0} );
+      for (size_t vertex=0; vertex<nv; ++vertex)
+      {
+        c.values[vertex] = fe_values.value_center(vertex);
+        c.grads[vertex] = fe_values.grad_center(vertex);
+      }
+      c.weight = fe_values.detJ_center();
+      entity_data.center = std::move(c);
     }
-    c.weight = fe_values.detJ_center();
-    entity_data.center = std::move(c);
   }
  
 }

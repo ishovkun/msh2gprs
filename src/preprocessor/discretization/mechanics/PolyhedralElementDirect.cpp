@@ -1,13 +1,13 @@
 #ifdef WITH_EIGEN
 #include "PolyhedralElementDirect.hpp"
-#include "EdgeComparison.hpp"
-#include "gmsh_interface/GmshInterface.hpp"
-#include "mesh/Subdivision.hpp"
-#include "FeValues.hpp"
+#include "EdgeComparison.hpp"  // provides Edge and EdgeComparison
+#include "mesh/Subdivision.hpp"  // provides mesh::Subdivision
+#include "FeValues.hpp"          // provides discretization::FeValues
 #include "EdgeComparison.hpp"
 #include "PFEM_integration/IntegrationRuleFacesAverage.hpp"  // provides IntegrationRuleFacesAverage
-#include "VTKWriter.hpp"
-#include "FEMFaceDoFManager.hpp"
+#include "PFEM_integration/IntegrationRuleFacesFractures.hpp"  // provides IntegrationRuleFacesFractures
+#include "VTKWriter.hpp"                                       // debugging, provides io::VTKWriter
+#include "FEMFaceDoFManager.hpp"                               // provides discretization::FEMFaceDoFManager
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
 
@@ -19,13 +19,10 @@ const size_t UNMARKED = std::numeric_limits<size_t>::max();
 
 
 PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
-                                                 const FiniteElementConfig & config)
+                                                 const FiniteElementConfig & config,
+                                                 const bool update_face_values,
+                                                 const bool update_fracture_values)
     : PolyhedralElementBase(cell, config)
-{
-  build_();
-}
-
-void PolyhedralElementDirect::build_()
 {
   // build grid for the element
   build_triangulation_();
@@ -38,6 +35,9 @@ void PolyhedralElementDirect::build_()
   // compute shape function values, gradients, and weights in the
   // integration points in cells and faces
   IntegrationRuleFacesAverage integration_rule(*this);
+
+  if (update_fracture_values)
+    IntegrationRuleFacesFractures rule_fractures(*this);
 }
 
 void PolyhedralElementDirect::build_face_boundary_conditions_()
