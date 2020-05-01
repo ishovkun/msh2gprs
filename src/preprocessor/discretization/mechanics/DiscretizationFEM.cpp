@@ -37,15 +37,13 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
 
   _face_data.resize( _grid.n_faces() );
   _cell_data.resize( _grid.n_cells() );
+  _frac_data.resize( _grid.n_faces() );
   logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
   size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
     std::cout << "cell->index() = " << cell->index() << std::endl;
     std::cout << "cell->vtk_id() = " << cell->vtk_id() << std::endl;
-    for (auto v : cell->vertices())
-      std::cout << v << " ";
-    std::cout << std::endl;
     // progress.set_progress(item++);
 
     const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
@@ -55,6 +53,7 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
     _cell_data[cell->index()] = std::move(cell_fem_data);
 
     std::vector<FiniteElementData> face_data = p_discr->get_face_data();
+    std::vector<FiniteElementData> frac_data = p_discr->get_fracture_data();
     size_t iface = 0;
     for ( const mesh::Face * face : cell->faces() )
     {
@@ -64,6 +63,13 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
         face_data[iface].element_index = face_index;
        _face_data[face_index] = face_data[iface];
       }
+
+      if ( _fracture_face_markers.find( face->marker() ) != _fracture_face_markers.end() )
+        {
+          frac_data[iface].element_index = cell->index();
+          _frac_data[face_index].push_back(frac_data[iface]);
+        }
+
       iface++;
     }
   }

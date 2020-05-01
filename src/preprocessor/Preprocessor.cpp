@@ -260,6 +260,7 @@ void Preprocessor::build_geomechanics_discretization_()
   discretization::DiscretizationFEM fem_discr(data.grid, config.fem, dfm_markers);
   data.fe_cell_data = fem_discr.get_cell_data();
   data.fe_face_data = fem_discr.get_face_data();
+  data.fe_frac_data = fem_discr.get_fracture_data();
 
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
   data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>

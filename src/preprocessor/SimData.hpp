@@ -48,7 +48,8 @@ struct SimData
   std::vector<size_t> output_flow_properties;                      // indices of flow property keywords
   std::vector<size_t> output_mech_properties;                      // indices of mech property keywords
   // ----------------------- DFM ------------------------ //
-  std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
+  // std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
+  std::map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces
   mesh::SurfaceMesh<double> dfm_flow_grid, dfm_mech_grid;
   std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> dof
@@ -72,8 +73,10 @@ struct SimData
   std::shared_ptr<discretization::DoFNumbering> mech_numbering;  // mech cell and face numbering
   std::shared_ptr<discretization::DoFNumbering> flow_numbering;  // flow dof numbering
   // ----------------------- FEM data  ---------------------- //
-  std::vector<discretization::FiniteElementData> fe_cell_data;  // fe values and gradients for grid cells
-  std::vector<discretization::FiniteElementData> fe_face_data;  // fe values and gradients for grid faces
+  using FEMData = discretization::FiniteElementData;
+  std::vector<FEMData> fe_cell_data;  // fe values and gradients for grid cells
+  std::vector<FEMData> fe_face_data;  // fe values and gradients for grid faces
+  std::vector<std::vector<FEMData>> fe_frac_data;  // fe values and gradients of cells in face qpoints
   // ----------------------- Boundary conditions ------------ //
   std::vector<size_t> neumann_face_indices;  // indices of neumann faces
   std::vector<angem::Point<3,double>> neumann_face_traction;  // values of neuman bc's

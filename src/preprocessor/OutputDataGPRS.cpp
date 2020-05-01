@@ -589,6 +589,17 @@ void OutputDataGPRS::save_cell_geometry_(std::ofstream & out, const mesh::Mesh &
   out << "/" << "\n\n";
 }
 
+void export_point_grads(std::ofstream & out, const discretization::FiniteElementData & data)
+{
+  for (const auto & point_data : data.points)
+  {
+    for (const auto & grad : point_data.grads)
+      out << grad << "\t";
+    out << "\n";
+  }
+ 
+}
+
 void OutputDataGPRS::save_face_geometry_(std::ofstream & out, const mesh::Mesh & grid) const
 {
   out << "GMFACE_NODES\n";
@@ -690,7 +701,10 @@ void OutputDataGPRS::save_fem_data_() const
   // face gauss weights
   const auto & faces = _data.fe_face_data;  // fe values and gradients for grid faces
   if (faces.empty())
+  {
+    out.close();
     return;
+  }
 
   out << "GMFACE_GAUSS_WEIGHTS" << "\n";
   for (const auto & face : faces)
@@ -752,6 +766,27 @@ void OutputDataGPRS::save_fem_data_() const
         out << grad << "\t";
       out << "\n";
     }
+  out << "/\n\n";
+
+  out << "GMFRACTURE_SHAPE_GRADS" << "\n";
+  for (size_t iface = 0; iface < _data.fe_frac_data.size(); ++iface)
+    if ( !_data.fe_frac_data[iface].empty() )
+    {
+      const auto face = _data.geomechanics_grid.face(iface);
+      const auto neighbors = face.neighbors();
+      auto & data = _data.fe_frac_data[iface];
+      if (data[0].element_index == neighbors[0]->index())
+      {
+        export_point_grads(out, data[0]);
+        export_point_grads(out, data[1]);
+      }
+      else
+      {
+        export_point_grads(out, data[1]);
+        export_point_grads(out, data[0]);
+      }
+    }
+
   out << "/\n\n";
 
   out.close();
