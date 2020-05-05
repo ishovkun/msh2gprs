@@ -44,11 +44,11 @@ class VTKWriter
                                       std::ofstream & out);
   static void enter_section_point_data(const std::size_t n_vertices,
                                        std::ofstream & out);
+  static size_t count_number_of_cell_entries_(const Mesh & grid);
+  static size_t count_number_of_cell_entries_(const Cell & cell);
  protected:
   static void write_geometry_classic_(const Mesh & grid, std::ofstream & out);
   static void write_geometry_face_based_(const Mesh & grid, std::ofstream & out);
-  static size_t count_number_of_cell_entries_(const Mesh & grid);
-  static size_t count_number_of_cell_entries_(const Cell & cell);
 
  private:
   VTKWriter();

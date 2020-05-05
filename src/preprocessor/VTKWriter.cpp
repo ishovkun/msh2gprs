@@ -97,12 +97,12 @@ void VTKWriter::write_geometry(const Mesh               & grid,
   out << "DATASET UNSTRUCTURED_GRID \n";
 
   const std::size_t n_points = grid.n_vertices();
-  out << "POINTS" << "\t" << n_points << " float" << std::endl;
-  for (const auto & p : grid.vertices()) out << p << std::endl;
+  out << "POINTS" << "\t" << n_points << " float" << "\n";
+  for (const auto & p : grid.vertices()) out << p << "\n";
 
   const size_t n_entries_total = count_number_of_cell_entries_(grid);
 
-  out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << endl;
+  out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << "\n";
 
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
@@ -115,22 +115,22 @@ void VTKWriter::write_geometry(const Mesh               & grid,
     }
     else
     {
-      out << count_number_of_cell_entries_(*cell) << endl;
+      out << count_number_of_cell_entries_(*cell) << "\n";
       const auto & faces = cell->faces();
-      out << faces.size() << endl;
+      out << faces.size() << "\n";
       for (const auto & face : faces)
       {
         const auto & vertices = face->vertices();
         out << vertices.size() << " ";
         for (const size_t v : vertices)
           out << v << " ";
-        out << endl;
+        out << "\n";
       }
     }
   }
-  out << "CELL_TYPES" << "\t" << grid.n_active_cells() << std::endl;
+  out << "CELL_TYPES" << "\t" << grid.n_active_cells() << "\n";
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    out << cell->vtk_id() << endl;
+    out << cell->vtk_id() << "\n";
 }
 
 void VTKWriter::write_geometry_classic_(const Mesh               & grid,

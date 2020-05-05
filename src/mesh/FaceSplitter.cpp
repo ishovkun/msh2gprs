@@ -102,6 +102,7 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
   int new_group = 0;
   std::unordered_set<std::size_t> processed_cells;
   for (const std::size_t icell : affected_cells)
+    if (_grid.cell(icell).is_active())
   {
     auto group_it = map_cell_group.find(icell);
     if (group_it != map_cell_group.end())
@@ -115,7 +116,7 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
 
     processed_cells.insert(icell);
     // std::cout << "\nicell = " << icell << std::endl;
-
+    assert( _grid.cell(icell).is_active() );
     // find neighboring cell from affected cells group
     for (const Cell* jcell : _grid.cell(icell).neighbors())
     {

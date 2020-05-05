@@ -119,7 +119,10 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
     if (f.parent != constants::invalid_index)
     {
       if (f.parent != face_index)  //  this sometimes happens when splitting cell through hanging nodes edge
+      {
         m_faces[f.parent].m_children.push_back(face_index);
+        m_faces[face_index].m_parent = f.parent;
+      }
     }
     if (f.marker != constants::default_face_marker)
     {

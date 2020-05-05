@@ -37,7 +37,7 @@ class OutputDataVTK
   //                            const std::string                      & prefix,
   //                            std::ofstream                          & out);
 
-  const SimData & m_data;
+  const SimData & _data;
   const mesh::Mesh & m_flow_grid;
   const mesh::Mesh & m_mech_grid;
   VTKOutputConfig m_config;
