@@ -30,6 +30,19 @@ class CellSplitter {
   /* if any of the cell faces contain the vertices in edge, split that face in two */
   void split_face_in_cell_(const Cell parent, const vertex_pair new_edge);
 
+  void track_new_vertices_(std::vector<size_t> & global_vertex_indices,
+                           angem::PolyGroup<double> & split,
+                           std::vector<size_t> & new_vertices);
+
+  void create_face_groups_(angem::PolyGroup<double> & split,
+                           const std::vector<std::vector<size_t>> & face_vertex_global_numbering,
+                           const std::vector<size_t> & polygroup_polygon_parents,
+                           const std::vector<Face*> & cell_faces,
+                           const int splitting_face_marker,
+                           const size_t split_face_local_index,
+                           std::vector<size_t> & cell_above_faces,
+                           std::vector<size_t> & cell_below_faces,
+                           std::vector<FaceTmpData> & tmp_faces);
 
   Mesh & _grid;
   angem::PointSet<3, double> _new_vertex_coord;

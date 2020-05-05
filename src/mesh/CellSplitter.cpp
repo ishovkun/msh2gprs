@@ -47,24 +47,10 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
                /* tol = */ 1e-4);
 
   const std::vector<Face*> & cell_faces = cell.faces();
+
   // insert new vertices (those that occured due to splitting)
   std::vector<size_t> new_vertices;
-  for (size_t i = global_vertex_indices.size(); i < split.vertices.size(); ++i)
-  {
-    size_t new_vertex_index = _grid.n_vertices();
-    // first check that the vertex isn't already present because it's been split
-    const size_t split_v_index = _new_vertex_coord.find(split.vertices[i]);
-    if (split_v_index == _new_vertices.size())
-    {
-      _new_vertex_coord.insert( split.vertices[i] );
-      _new_vertices.push_back(new_vertex_index);
-      new_vertices.push_back(new_vertex_index);
-      _grid.insert_vertex(split.vertices[i]);
-    }
-    else
-      new_vertex_index = _new_vertices[split_v_index];
-    global_vertex_indices.push_back(new_vertex_index);
-  }
+  track_new_vertices_(global_vertex_indices, split, new_vertices);
 
   // map local indices to global
   std::vector<std::vector<size_t>> face_vertex_global_numbering;
@@ -81,29 +67,9 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
   // make two groups of faces (polygons that constitute polyhedra) that will form the new cells
   std::vector<FaceTmpData> tmp_faces(split.polygons.size());
   std::vector<size_t> cell_above_faces, cell_below_faces;
-  for (size_t i = 0; i < split.polygons.size(); i++)
-  {
-    FaceTmpData & f = tmp_faces[i];
-    f.vertices = face_vertex_global_numbering[i];
-    f.vtk_id = _grid.face_vtk_id_(f.vertices.size());
-    // determine the global index of the parent of the split face
-    f.parent = (polygroup_polygon_parents[i] < polygroup_polygon_parents.size()) ?
-               cell_faces[ polygroup_polygon_parents[i] ]->index() :
-               constants::invalid_index;
-
-    if ( i == split_face_local_index )
-      f.marker = splitting_face_marker;
-    else
-      f.marker = _grid.face(f.parent).marker();
-
-    if ( split.markers[i] == constants::marker_below_splitting_plane ||
-         split.markers[i] == constants::marker_splitting_plane )
-      cell_below_faces.push_back(i);
-
-    if (split.markers[i] == constants::marker_above_splitting_plane ||
-        split.markers[i] == constants::marker_splitting_plane)
-      cell_above_faces.push_back(i);
-  }
+  create_face_groups_(split, face_vertex_global_numbering, polygroup_polygon_parents,
+                      cell_faces, splitting_face_marker, split_face_local_index,
+                      cell_above_faces, cell_below_faces, tmp_faces);
 
   // insert new cells
   const size_t child_cell_index1 = _grid.insert_cell_(cell_above_faces, tmp_faces, cell.marker());
@@ -274,6 +240,65 @@ void CellSplitter::split_face_in_cell_(const Cell parent, const vertex_pair new_
     _grid.cell(child_cell_index).m_parent = parent.index();
     _grid.cell(parent.index()).m_children = {child_cell_index};
     _grid._n_inactive_cells++;
+  }
+}
+
+
+void CellSplitter::track_new_vertices_(std::vector<size_t> & global_vertex_indices,
+                                       angem::PolyGroup<double> & split,
+                                       std::vector<size_t> & new_vertices)
+{
+  for (size_t i = global_vertex_indices.size(); i < split.vertices.size(); ++i)
+  {
+    size_t new_vertex_index = _grid.n_vertices();
+    // first check that the vertex isn't already present because it's been split
+    const size_t split_v_index = _new_vertex_coord.find(split.vertices[i]);
+    if (split_v_index == _new_vertices.size())
+    {
+      _new_vertex_coord.insert( split.vertices[i] );
+      _new_vertices.push_back(new_vertex_index);
+      new_vertices.push_back(new_vertex_index);
+      _grid.insert_vertex(split.vertices[i]);
+    }
+    else
+      new_vertex_index = _new_vertices[split_v_index];
+    global_vertex_indices.push_back(new_vertex_index);
+  }
+}
+
+void CellSplitter::create_face_groups_(angem::PolyGroup<double> & split,
+                                       const std::vector<std::vector<size_t>> & face_vertex_global_numbering,
+                                       const std::vector<size_t> & polygroup_polygon_parents,
+                                       const std::vector<Face*> & cell_faces,
+                                       const int splitting_face_marker,
+                                       const size_t split_face_local_index,
+                                       std::vector<size_t> & cell_above_faces,
+                                       std::vector<size_t> & cell_below_faces,
+                                       std::vector<FaceTmpData> & tmp_faces)
+{
+  tmp_faces.resize(split.polygons.size());
+  for (size_t i = 0; i < split.polygons.size(); i++)
+  {
+    FaceTmpData & f = tmp_faces[i];
+    f.vertices = face_vertex_global_numbering[i];
+    f.vtk_id = _grid.face_vtk_id_(f.vertices.size());
+    // determine the global index of the parent of the split face
+    f.parent = (polygroup_polygon_parents[i] < polygroup_polygon_parents.size()) ?
+               cell_faces[ polygroup_polygon_parents[i] ]->index() :
+               constants::invalid_index;
+
+    if ( i == split_face_local_index )
+      f.marker = splitting_face_marker;
+    else
+      f.marker = _grid.face(f.parent).marker();
+
+    if ( split.markers[i] == constants::marker_below_splitting_plane ||
+         split.markers[i] == constants::marker_splitting_plane )
+      cell_below_faces.push_back(i);
+
+    if (split.markers[i] == constants::marker_above_splitting_plane ||
+        split.markers[i] == constants::marker_splitting_plane)
+      cell_above_faces.push_back(i);
   }
 }
 
