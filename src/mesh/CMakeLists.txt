@@ -14,6 +14,7 @@ ADD_LIBRARY(mesh
   active_face_const_iterator.cpp
   Subdivision.cpp
   FaceSplitter.cpp
+  CellSplitter.cpp
   MeshStatsComputer.cpp
   io/VTKReader.cpp
 )

@@ -106,6 +106,7 @@ class Cell
   friend class active_cell_iterator;
   friend class active_cell_const_iterator;
   friend class Subdivision;
+  friend class CellSplitter;
 };
 
 }  // end namespace

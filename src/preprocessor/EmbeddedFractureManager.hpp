@@ -2,6 +2,7 @@
 
 #include "PreprocessorConfig.hpp" // provides EmbeddedFractureConfig, EDFMMethod
 #include "discretization/flow/DoFNumbering.hpp" // provides DoFNumbering
+#include "mesh/CellSplitter.hpp"
 #include "SimData.hpp"  // provides SimData
 
 namespace gprs_data {
@@ -97,6 +98,7 @@ class EmbeddedFractureManager
   SimData & m_data;                     // container for output data
   mesh::Mesh & m_grid;                  // reference to grid object
   std::map<int,size_t> m_marker_config; // marker to config index
+  mesh::CellSplitter _splitter;
 };
 
 }  // end namespace gprs_data

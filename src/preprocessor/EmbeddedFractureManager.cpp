@@ -17,7 +17,8 @@ EmbeddedFractureManager::EmbeddedFractureManager(
     std::vector<EmbeddedFractureConfig> &config, const EDFMMethod edfm_method,
     const double min_dist_to_node, SimData &data)
     : config(config), m_method(edfm_method),
-      _min_dist_to_node(min_dist_to_node), m_data(data), m_grid(data.grid)
+      _min_dist_to_node(min_dist_to_node), m_data(data), m_grid(data.grid),
+      _splitter(m_grid)
 {
   if (_min_dist_to_node < 1e-10)
     throw std::invalid_argument("EDFM min distance to node is too small");
@@ -55,7 +56,7 @@ void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
   for (const size_t icell : cells)
   {
     mesh::Cell & old_cell = m_grid.cell(icell);
-    m_grid.split_cell(old_cell, plane, face_marker);
+    _splitter.split_cell(old_cell, plane, face_marker);
   }
 }
 

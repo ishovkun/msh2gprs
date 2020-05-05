@@ -120,7 +120,7 @@ void Subdivision::perform_subdivision_r0_(mesh::Cell & cell)
       _grid.m_cells[child_cell_index].m_parent = parent_cell_index;
     }
   }
-  _grid.m_n_cells_with_hanging_nodes++;
+  _grid._n_inactive_cells++;
 }
 
 void Subdivision::perform_subdivision_tetra_(Cell & cell)
@@ -223,7 +223,7 @@ void Subdivision::perform_subdivision_tetra_(Cell & cell)
                  {1, 5, 9}, {4, 5, 9}},
                 {face_order[0], face_order[1], face_order[3], constants::invalid_index},
                 parent_cell_index);
-  _grid.m_n_cells_with_hanging_nodes++;
+  _grid._n_inactive_cells++;
 }
 
 void Subdivision::insert_tetra_(const std::vector<size_t> & local_vertex_indices,

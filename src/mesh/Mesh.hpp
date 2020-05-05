@@ -171,7 +171,7 @@ class Mesh
   // get number of cells
   inline std::size_t n_cells() const {return m_cells.size();}
   // get number of active cells
-  inline std::size_t n_active_cells() const { return n_cells() - m_n_split_cells - m_n_cells_with_hanging_nodes; }
+  inline std::size_t n_active_cells() const { return n_cells() - _n_inactive_cells; }
   // get number of vertices
   inline std::size_t n_vertices() const {return m_vertices.size();}
   // get number of faces
@@ -182,22 +182,6 @@ class Mesh
   size_t find_face(const std::vector<size_t> & face_vertices) const;
 
   // MANIPULATION //
-  // tell grid which faces to split before calling split_faces method
-  void mark_for_split(const std::size_t face_index);
-  // split faces marked for splitting with mark_for_split
-  // returns SurfaceMesh of master DFM faces
-  // cleans marked_for_split array upon completion
-  SurfaceMesh<double> split_faces();
-
-  /* Split a cell by cutting it with a plane. New cell indices are appended
-   * at the back, so it is safe to split multiple cells in a row.
-   * Note: cell is copied since inserting new cells invalidates the pointers. */
-  void split_cell(Cell cell, const angem::Plane<double> & plane,
-                  const int splitting_face_marker = constants::marker_splitting_plane);
-  /* split a vertex
-   * retults in adding new vertices (pushed to the back of vertices set) */
-  void split_vertex(const std::size_t               vertex_index,
-                    const std::vector<std::size_t> &splitted_face_indices);
   // coarsen cells split built by split_cell method and restore active cells
   void coarsen_cells();
 
@@ -224,17 +208,6 @@ class Mesh
                            const std::vector<FaceTmpData> &big_face_vector,
                            const int                        marker = constants::default_cell_marker);
   std::size_t insert_face_(const FaceTmpData & f);
-
-  void insert_hanging_node_(const Cell parent,
-                            const vertex_pair edge,
-                            const size_t inserted_vertex);
-  /* if any of the cell faces contain the vertices in edge, split that face in two */
-  void split_face_in_cell_(const Cell parent, const vertex_pair new_edge);
-  /* get a vector of polygon global vertex indices given a vector with
-   * local polygon vertex indices and a mapping vector. */
-  std::vector<std::size_t>
-  build_global_face_indices_(const std::vector<size_t> & polygon_local_indices,
-                             const std::vector<size_t> & local_to_global) const;
   /* find out whether the face is a parent or child cell based on the
    * split information. returns pair
    * 1) true if the face and parent match identically (or new face)
@@ -242,9 +215,6 @@ class Mesh
   std::pair<bool,std::size_t> determine_face_parent_(const std::vector<size_t> & face_vertices,
                                                      const Cell                & parent_cell,
                                                      const std::vector<size_t> & splitting_face_vertices) const;
-
-  std::map<vertex_pair,size_t> find_affected_edges_(const std::vector<size_t> &new_vertices,
-                                                    const Cell & cell) const;
 
   int face_vtk_id_(const size_t n_vertices) const
   {
@@ -278,7 +248,7 @@ class Mesh
   // Used as a tmp container when splitting faces for dfm
   std::vector<std::size_t> m_faces_marked_for_split;
   // to count active cells
-  size_t m_n_split_cells, m_n_cells_with_hanging_nodes;
+  size_t _n_inactive_cells;
   // for keeping track of cell vertices during cell splitting
   angem::PointSet<3, double> m_vertices_from_cell_splitting;
   // for keeping track of cell vertices during cell splitting
@@ -286,6 +256,7 @@ class Mesh
 
   friend class Subdivision;
   friend class FaceSplitter;
+  friend class CellSplitter;
   friend class io::VTKReader;
 };
 
