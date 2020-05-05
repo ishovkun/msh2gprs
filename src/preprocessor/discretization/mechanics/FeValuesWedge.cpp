@@ -28,7 +28,8 @@ double FeValues<VTK_ID::WedgeID>::eval_(const Point & point, const size_t vertex
       return 1.0 / 6.0 * (1 - point[0] + sqrt3*point[1]) * (1 + point[2]);
     default:
       throw std::invalid_argument( "vertex cannot be larger than 5" );
-  }}
+  }
+}
 
 template <>
 Point FeValues<VTK_ID::WedgeID>::eval_derivative_(const Point & point, const size_t vertex) const

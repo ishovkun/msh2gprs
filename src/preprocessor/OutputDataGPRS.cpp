@@ -230,7 +230,6 @@ void OutputDataGPRS::save_geometry_() const
       for (const mesh::Cell* neighbor : neighbors)
         out << _data.mech_numbering->cell_dof(neighbor->index()) + 1 << "\t";
       out << "\n";
-  //   }
   }
   out << "/\n\n";
 
