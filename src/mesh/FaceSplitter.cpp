@@ -120,27 +120,31 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
     // find neighboring cell from affected cells group
     for (const Cell* jcell : _grid.cell(icell).neighbors())
     {
-      if (std::find(affected_cells.begin(), affected_cells.end(),
-                    jcell->index()) != affected_cells.end())
+      const size_t jind = jcell->index();
+      if (std::find(affected_cells.begin(), affected_cells.end(), jind) != affected_cells.end())
       {
+        // std::cout << "\t" << jind << std::endl;
         // take index explicitly since minmax takes a reference
-        const size_t jind = jcell->index();
         // what face neighbors should be
-        const auto pair_cells = std::minmax(icell, jind);
+        const std::pair<size_t,size_t> pair_cells = std::minmax(icell, jind);
 
         // find out if cell i and cell j neighbor by a marked face
         bool neighbor_by_marked_face = false;
         for (const size_t iface : split_faces)
         {
           const Face f = _grid.face(iface);
-          const auto f_neighbors = f.neighbors();
+          const std::vector<const Cell*> f_neighbors = f.neighbors();
 
           assert( f_neighbors.size() == 2 );
-          auto pair_cells2 = std::minmax(f_neighbors[0]->index(),
-                                         f_neighbors[1]->index());
-
+          size_t n1 = f_neighbors[0]->index(), n2 = f_neighbors[1]->index();
+          const std::pair<size_t,size_t> pair_cells2 = std::minmax(n1, n2);
           if (pair_cells == pair_cells2)
           {
+            // std::cout << "match "
+            //           << pair_cells.first << " " << pair_cells.second << " "
+            //           << pair_cells2.first << " " << pair_cells2.second << " "
+            //           << std::endl;
+
             neighbor_by_marked_face = true;
             break;
           }
@@ -148,9 +152,9 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
 
         if (!neighbor_by_marked_face)
         {
-          auto group_it = map_cell_group.find(jcell->index());
+          auto group_it = map_cell_group.find(jind);
           if (group_it == map_cell_group.end())
-            map_cell_group.insert({jcell->index(), igroup});
+            map_cell_group.insert({jind, igroup});
           else
           {
             if (group_it->second < igroup)
@@ -160,7 +164,9 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
               new_group--;
             }
             else
-              map_cell_group[jcell->index()] = igroup;
+            {
+              map_cell_group[jind] = igroup;
+            }
           }
         }
       }
@@ -169,7 +175,10 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
 
   std::vector<std::vector<std::size_t>> groups(n_groups);
   for (auto it : map_cell_group)
+  {
+    assert( it.second < n_groups );
     groups[it.second].push_back(it.first);
+  }
 
   return groups;
 }

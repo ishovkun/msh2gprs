@@ -88,7 +88,7 @@ std::vector<Cell*> Face::neighbors()
   return result;
 }
 
-std::vector<const Cell*> Face::raw_neighbors()const
+std::vector<const Cell*> Face::raw_neighbors() const
 {
   // find how many times each vertex neighboring cell is encountered
   std::unordered_map<size_t, size_t> cell_time;

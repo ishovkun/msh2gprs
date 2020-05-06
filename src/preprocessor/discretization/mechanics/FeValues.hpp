@@ -201,7 +201,12 @@ void FeValues<vtk_id>::update(const mesh::Cell & cell, const std::vector<angem::
 {
   static_assert(ELEMENT_DIM<vtk_id> == 3, "This function only exists for 3D elements");
   update_vertex_coord_(cell.vertex_coordinates());
-  _weights = {1.0};
+  // weight = measure / n_points
+  _weights = get_master_integration_weights();
+  const double measure = std::accumulate(_weights.begin(), _weights.end(), 0.0);
+  _weights.resize(points.size(), 0);
+  for (size_t i = 0; i < _weights.size(); ++i)
+    _weights[i] = measure / _weights.size();
   _qpoints.resize( points.size() );
   for (size_t q=0; q<points.size(); ++q)
     _qpoints[q] = map_real_to_local_(points[q]);
