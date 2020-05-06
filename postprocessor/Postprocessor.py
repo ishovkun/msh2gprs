@@ -19,7 +19,6 @@ class Postprocessor:
         self.case_path = case_path
         self.config_file_name = "postprocessor_config.yaml"
         self.matrix_flow_grid_reader = vtk.vtkDataSetReader()
-        self.edfm_flow_grid_reader = vtk.vtkDataSetReader()
         self.dfm_flow_grid_reader = vtk.vtkDataSetReader()
         self.matrix_mech_grid_reader = vtk.vtkDataSetReader()
         self.matrix_mech_vtk_ouput_reader = vtk.vtkDataSetReader()
@@ -34,16 +33,20 @@ class Postprocessor:
         gprs_reader = self.makeReader_()
         self.prepareOutputDirectory_()
 
-        printProgressBar(0, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
+        # printProgressBar(0, 1, prefix = 'Progress:', suffix = 'Complete', length = 20)
         while gprs_reader.advanceTimeStep():
            t = gprs_reader.getTime()
            data = gprs_reader.getData()
 
            if (self.has_mechanics):
                mech_data = gprs_reader.getMechData()
-               vtk_mech_matrix_vtk_data = self.readMechVTKData()
+               vtk_mech_matrix_vtk_data = self.readMechVTKData("block_scalars")
+               vtk_mech_fracture_data = None
+               if (self.config["dfm_cell_to_flow_dof"]):
+                   vtk_mech_fracture_data = self.readMechVTKData("frac_scalars")
                self.saveReservoirData_(t, data, mech_data=mech_data,
-                                       mech_vtk_data=vtk_mech_matrix_vtk_data)
+                                       mech_vtk_data=vtk_mech_matrix_vtk_data,
+                                       mech_vtk_frac_data=vtk_mech_fracture_data)
            else:
                self.saveReservoirData_(t, data)
 
@@ -65,48 +68,61 @@ class Postprocessor:
         reader.SetFileName(vtk_file_path)
         reader.Update()
         assert reader.GetOutput().GetNumberOfCells() == len(self.config["matrix_cell_to_flow_dof"])
+        n_cells_flow_grid = reader.GetOutput().GetNumberOfCells()
         # dfm grid
         if len(self.config["dfm_cell_to_flow_dof"]) > 0:
             reader = self.dfm_flow_grid_reader
-            vtk_file_path = self.case_path + self.config["dfm_flow_grid_file"]
+            vtk_file_path = self.case_path + self.config["fracture_grid_file"]
             reader.SetFileName(vtk_file_path)
             reader.Update()
             assert reader.GetOutput().GetNumberOfCells() == len(self.config["dfm_cell_to_flow_dof"])
-        # edfm grid
-        if len(self.config["edfm_cell_to_flow_dof"]) > 0:
-            reader = self.edfm_flow_grid_reader
-            vtk_file_path = self.case_path + self.config["edfm_grid_file"]
-            reader.SetFileName(vtk_file_path)
-            reader.Update()
-            assert reader.GetOutput().GetNumberOfCells() == len(self.config["edfm_cell_to_flow_dof"])
         # geomechanics
         reader = self.matrix_mech_grid_reader
-        vtk_file_path = self.case_path + self.config['flow_reservoir_grid_file']
+        vtk_file_path = self.case_path + self.config['mech_reservoir_grid_file']
         reader.SetFileName(vtk_file_path)
         reader.Update()
+        self.separate_mech_file = False
         self.n_mech_vertices = reader.GetOutput().GetNumberOfPoints()
+        n_cells_mech_grid = reader.GetOutput().GetNumberOfCells()
+        if (n_cells_flow_grid != n_cells_mech_grid):
+            self.separate_mech_file = True
 
-    def saveReservoirData_(self, t, data, mech_data=None, mech_vtk_data=None):
+    def saveReservoirData_(self, t, data, mech_data=None, mech_vtk_data=None,
+                           mech_vtk_frac_data=None):
         assert data.shape[0] == (len(self.config["matrix_cell_to_flow_dof"]) +
-                                 len(self.config["dfm_cell_to_flow_dof"]) +
-                                 len(self.config["edfm_cell_to_flow_dof"])), "Data size " + \
+                                 len(self.config["dfm_cell_to_flow_dof"])), \
+                                 "Data size " + \
                                  str(data.shape[0]) + " != " +\
                         str(len( self.config["matrix_cell_to_flow_dof"] ) )+ " " + \
                         str(len( self.config["dfm_cell_to_flow_dof"] )) + " " +\
                         str(len(self.config["edfm_cell_to_flow_dof"]))
 
         # Extract flor, edfm, and dfm data
-        self.addDataToReader_(self.matrix_flow_grid_reader, data, self.config["matrix_cell_to_flow_dof"])
-        if len(self.config["edfm_cell_to_flow_dof"]) > 0:
-            self.addDataToReader_(self.edfm_flow_grid_reader, data, self.config["edfm_cell_to_flow_dof"])
+        if (not self.separate_mech_file):
+            flow_reader = self.matrix_mech_grid_reader
+        else:
+            flow_reader = self.matrix_flow_grid_reader
+
+        self.addDataToReader_(flow_reader, data, self.config["matrix_cell_to_flow_dof"])
         if len(self.config["dfm_cell_to_flow_dof"]) > 0:
             self.addDataToReader_(self.dfm_flow_grid_reader, data, self.config["dfm_cell_to_flow_dof"])
         if (mech_data is not None):
-            self.addMechDataToReader(self.matrix_flow_grid_reader, mech_data, "point")
-            self.addMechDataToReader(self.matrix_flow_grid_reader, mech_vtk_data, "cell")
+            self.addMechDataToReader(self.matrix_mech_grid_reader, mech_vtk_data, "cell")
+            self.addMechDataToReader(self.matrix_mech_grid_reader, mech_data, "point")
+            if ( mech_vtk_frac_data is not None ):
+                # print( len(mech_vtk_frac_data) )
+                # print(np.r_[0: len(mech_vtk_frac_data)])
+                # exit(0)
+                self.addDataToReader_(self.dfm_flow_grid_reader, mech_vtk_frac_data,
+                                      np.r_[0:len(mech_vtk_frac_data)])
 
         # save output
-        self.writeFile_(self.matrix_flow_grid_reader, "matrix-%d"%self.output_file_number)
+        if (not self.separate_mech_file):
+            self.writeFile_(self.matrix_mech_grid_reader, "matrix-%d"%self.output_file_number)
+        else:
+            self.writeFile_(self.matrix_mech_grid_reader, "matrix-mech-%d"%self.output_file_number)
+            self.writeFile_(self.matrix_flow_grid_reader, "matrix-%d"%self.output_file_number)
+
         if len(self.config["edfm_cell_to_flow_dof"]) > 0:
             self.writeFile_(self.edfm_flow_grid_reader, "edfm-%d"%self.output_file_number)
         if len(self.config["dfm_cell_to_flow_dof"]) > 0:
@@ -160,14 +176,15 @@ class Postprocessor:
             print("No mechanics since vtk file found")
             return False
 
-    def readMechVTKData(self):
+    def readMechVTKData(self, fname):
         reader = self.matrix_mech_vtk_ouput_reader
         fnum_str = "%09d"%(self.output_file_number)
         if (self.output_file_number == 0):
             fnum_str = "%09d"%(self.output_file_number + 1)
 
-        vtk_file_path = self.case_path + "/OUTPUT.vtk_output/block_scalars." + \
-                        fnum_str + ".vtk"
+        vtk_file_path = self.case_path + "/OUTPUT.vtk_output/" + fname + \
+                        "." + fnum_str + ".vtk"
+        # print("reading ", vtk_file_path)
         reader.SetFileName(vtk_file_path)
         reader.ReadAllScalarsOn()       # without this vtk reads only one array
         reader.Update()

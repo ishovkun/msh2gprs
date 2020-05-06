@@ -46,6 +46,8 @@ class GprsAsciiReader:
         keys = line.split()
         # if we got geomechanics, it goes first
         if (keys[0] == "node"):
+            print("\n", "node")
+            print(self.n_nodes)
             assert self.n_nodes > 0, "Cannot yet inferm n geomech nodes"
             storage = np.zeros([self.n_nodes, len(keys)])
             for i in range(self.n_nodes):

@@ -54,8 +54,8 @@ private:
   Path m_output_dir; // path to output directory
   std:: shared_ptr<CellPropertyManager> pm_property_mgr;  // pointer to cell property manager
   std:: shared_ptr<DiscreteFractureManager> pm_dfm_mgr;   // pointer to discrete fracture manager
+  std:: shared_ptr<DiscreteFractureManager> pm_cedfm_mgr;   // pointer to discrete fracture manager
   std:: shared_ptr<EmbeddedFractureManager> pm_edfm_mgr;  // pointer to embedded fracture manager
-  // std:: shared_ptr<DoFNumbering> pm_flow_dof_numbering;   // pointer to flow dof numbering
 };
 
 }  // end namespace gprs_data

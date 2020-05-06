@@ -54,11 +54,10 @@ void Preprocessor::run()
   build_flow_discretization_();
 
   // build edfm grid for vtk output
-  pm_edfm_mgr->build_edfm_grid(*data.flow_numbering);
+  // pm_edfm_mgr->build_edfm_grid(*data.flow_numbering);
 
   // build dfm flow and mechanics grids (for vtk output)
-  data.dfm_flow_grid = pm_dfm_mgr->build_dfm_grid(data.grid);
-  data.dfm_mech_grid = pm_dfm_mgr->build_dfm_grid(data.geomechanics_grid);
+  data.fracture_grid = pm_cedfm_mgr->build_dfm_grid(data.grid);
 
   build_geomechanics_discretization_();
 
@@ -66,7 +65,7 @@ void Preprocessor::run()
   // map mechanics cells to control volumes
   pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
   // map dfm flow grid to flow dofs
-  data.dfm_cell_mapping = pm_dfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
+  data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
   // remove fine cells
   if (config.edfm_method != EDFMMethod::compartmental)
@@ -189,8 +188,8 @@ void Preprocessor::build_flow_discretization_()
   const std::vector<DiscreteFractureConfig> combined_fracture_config =
       DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
   // manages properties of dfm and edfm after splitting
-  DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
-  fracture_flow_mgr.distribute_properties();
+  pm_cedfm_mgr = std::make_shared<DiscreteFractureManager>(combined_fracture_config, data);
+  pm_cedfm_mgr->distribute_properties();
 
   // flow dof numbering
   const std::vector<int> edfm_markers = pm_edfm_mgr->get_face_markers();
@@ -238,23 +237,17 @@ void Preprocessor::build_geomechanics_discretization_()
     ms_handler.fill_output_model(data.ms_mech_data);
   }
 
+  auto p_frac_mgr = pm_dfm_mgr;
+
   std::vector<int> dfm_markers;
   if (config.fem.method == FEMMethod::polyhedral_finite_element ||
       config.fem.method == FEMMethod::mixed)
   {
     data.geomechanics_grid = data.grid;
-
-    /* Since we split edfm faces, we pretend that they are dfm fractures
-     * to reuse the discretization code. */
-    const std::vector<DiscreteFractureConfig> edfm_faces_conf = pm_edfm_mgr->generate_dfm_config();
-    // combine dfm and edfm configs
-    const std::vector<DiscreteFractureConfig> combined_fracture_config =
-        DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
-    // manages properties of dfm and edfm after splitting
-    DiscreteFractureManager fracture_flow_mgr(combined_fracture_config, data);
-    dfm_markers = fracture_flow_mgr.get_face_markers();
+    p_frac_mgr = pm_cedfm_mgr;
   }
-  else dfm_markers = pm_dfm_mgr->get_face_markers();
+
+  dfm_markers = p_frac_mgr->get_face_markers();
 
   std::cout << "build FEM discretization" << std::endl;
   discretization::DiscretizationFEM fem_discr(data.grid, config.fem, dfm_markers);
@@ -268,7 +261,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
   // split geomechanics DFM faces
   std::cout << "splitting faces of DFM fractures" << std::endl;
-  pm_dfm_mgr->split_faces(data.geomechanics_grid);
+  p_frac_mgr->split_faces(data.geomechanics_grid);
 }
 
 

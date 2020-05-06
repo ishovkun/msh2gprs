@@ -447,9 +447,6 @@ Point  FeValues<vtk_id>::map_real_to_local_(const Point & x) const
   Point R;
   angem::Tensor2<3, double> J;
   double error = 1;
-  std::cout << std::endl;
-  std::cout << "vtk_id = " << vtk_id << std::endl;
-  std::cout << "x = " << x << std::endl;
   for (size_t iter = 0; iter < 10; ++iter)
   {
     R.set_zero();
@@ -458,7 +455,7 @@ Point  FeValues<vtk_id>::map_real_to_local_(const Point & x) const
     for (size_t v = 0; v < N_ELEMENT_VERTICES<vtk_id>; ++v)
       R += _vertex_coord[v] * eval_(xi, v);
     R -= x;
-    std::cout << "R.norm() = " << R.norm() << " xi = " << xi  << std::endl;
+    // std::cout << "R.norm() = " << R.norm() << " xi = " << xi  << std::endl;
 
     if (R.norm() < 1e-8)  // converged
       return xi;

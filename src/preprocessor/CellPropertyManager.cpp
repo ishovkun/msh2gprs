@@ -33,6 +33,7 @@ void CellPropertyManager::generate_properties()
   // loop various domain configs:
   // they may have different number of variables and expressions
   size_t n_matched_cells = 0;
+  m_data.coupling.resize( m_data.grid.n_cells(), false );
   for (const auto & domain: domains)
   {
     const std::size_t n_expressions = domain.expressions.size();
@@ -68,6 +69,7 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
     if (cell->marker() == domain.label) // cells
     {
       count++;
+      m_data.coupling[cell->index()] = domain.coupled;
       std::fill(vars.begin(), vars.end(), 0);
       const angem::Point center = cell->center();
       vars[0] = center[0]; // x
@@ -220,8 +222,12 @@ void CellPropertyManager::map_mechanics_to_control_volumes(const discretization:
     for (const auto & conf : domains)
       if (conf.label == cell->marker())
         if (conf.coupled)
+        {
           m_data.gmcell_to_flowcells[m_data.mech_numbering->cell_dof(cell->index())]
-                .push_back(dofs.cell_dof(cell->index()));
+              .push_back(dofs.cell_dof(cell->index()));
+          std::cout << "fuck" << std::endl;
+          exit(0);
+        }
   }
 }
 
@@ -232,9 +238,13 @@ void CellPropertyManager::downscale_properties()
   for (std::size_t i = 0; i < m_data.property_names.size(); i++)
     m_data.cell_properties[i].resize( n_raw_cells );
 
+  m_data.coupling.resize( n_raw_cells );
   for (auto raw = grid.begin_cells() + m_n_unrefined_cells; raw != grid.end_cells(); ++raw )
+  {
     for (std::size_t i = 0; i < m_data.property_names.size(); i++)
       m_data.cell_properties[i][raw->index()] = m_data.cell_properties[i][raw->ultimate_parent().index()];
+    m_data.coupling[raw->index()] = m_data.coupling[raw->ultimate_parent().index()];
+  }
 }
 
 void CellPropertyManager::coarsen_cells()

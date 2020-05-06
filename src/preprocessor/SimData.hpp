@@ -51,16 +51,17 @@ struct SimData
   // std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   std::map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces
-  mesh::SurfaceMesh<double> dfm_flow_grid, dfm_mech_grid;
-  std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> dof
+  // mesh::SurfaceMesh<double> dfm_flow_grid, dfm_mech_grid;
+  mesh::SurfaceMesh<double> fracture_grid;
+  std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> flow dof
   std::vector<angem::Point<3,double>> grid_vertices_after_face_split;
   std::vector<std::vector<size_t>> grid_cells_after_face_split;
   // ---------------------- EDFM ------------------------ //
   std::vector<EmbeddedFractureMechanicalProperties> sda_data;
   // std::unordered_map<size_t,size_t> face_to_fracture;
-  mesh:: SurfaceMesh<double> edfm_grid;     // for vtk output
+  // mesh:: SurfaceMesh<double> edfm_grid;     // for vtk output
   std::vector<size_t> edfm_cell_mapping;    // for postprocessor output  vtk_cell -> dof
-  std::unordered_set<int> edfm_grid_labels;
+  // std::unordered_set<int> edfm_grid_labels;
   // ----------------------- Flow data ---------------------- //
   std::vector<discretization::ControlVolumeData> cv_data;
   std::vector<discretization::ConnectionData> flow_connection_data;
@@ -72,6 +73,7 @@ struct SimData
   // =========================== GEOMECHANICS ================= //
   std::shared_ptr<discretization::DoFNumbering> mech_numbering;  // mech cell and face numbering
   std::shared_ptr<discretization::DoFNumbering> flow_numbering;  // flow dof numbering
+  std::vector<bool> coupling;                                    // if grid cells are coupled
   // ----------------------- FEM data  ---------------------- //
   using FEMData = discretization::FiniteElementData;
   std::vector<FEMData> fe_cell_data;  // fe values and gradients for grid cells

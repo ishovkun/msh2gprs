@@ -199,21 +199,21 @@ std::vector<int> EmbeddedFractureManager::get_face_markers() const
   return result;
 }
 
-void EmbeddedFractureManager::build_edfm_grid(const discretization::DoFNumbering & dofs)
-{
-  mesh::SurfaceMesh<double> edfm_grid(1e-6);
-  for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
-  {
-    const auto it = m_marker_config.find(face->marker());
-    if (it != m_marker_config.end())
-    {
-      edfm_grid.insert(face->polygon(), it->second);
-      m_data.edfm_cell_mapping.push_back(dofs.face_dof(face->index()));
-    }
-  }
+// void EmbeddedFractureManager::build_edfm_grid(const discretization::DoFNumbering & dofs)
+// {
+//   mesh::SurfaceMesh<double> edfm_grid(1e-6);
+//   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
+//   {
+//     const auto it = m_marker_config.find(face->marker());
+//     if (it != m_marker_config.end())
+//     {
+//       edfm_grid.insert(face->polygon(), it->second);
+//       m_data.edfm_cell_mapping.push_back(dofs.face_dof(face->index()));
+//     }
+//   }
 
-  m_data.edfm_grid = std::move(edfm_grid);
-}
+//   m_data.edfm_grid = std::move(edfm_grid);
+// }
 
 size_t EmbeddedFractureManager::fracture_index_(const int face_marker) const
 {

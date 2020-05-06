@@ -227,6 +227,11 @@ void OutputDataGPRS::save_geometry_() const
   //   {
       const std::vector<const mesh::Cell*> neighbors = face->neighbors();
       out << neighbors.size() << "\t";
+      if (_data.dfm_faces.find(face->index()) != _data.dfm_faces.end())
+      {
+        assert( neighbors.size() == 2 );
+      }
+
       for (const mesh::Cell* neighbor : neighbors)
         out << _data.mech_numbering->cell_dof(neighbor->index()) + 1 << "\t";
       out << "\n";
@@ -379,13 +384,12 @@ void OutputDataGPRS::save_discrete_fracture_properties_(const std::string file_n
   std::ofstream out;
   out.open(file_name.c_str());
   std::cout << "saving " << file_name << std::endl;
-  // set<int>::iterator itsetint;
 
   std::cout << "write all fractured faces\n";
   out << "GMFACE_FRACTURE_TO_FLOWCELL" << std::endl;
   for (const auto & it : _data.dfm_faces)
   {
-    out << it.first + 1 << "\t";
+    out << _data.mech_numbering->face_dof(it.first) + 1 << "\t";
     if (it.second.coupled)
       out << _data.flow_numbering->face_dof(it.first) + 1 << std::endl;
     else

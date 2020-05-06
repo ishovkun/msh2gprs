@@ -74,7 +74,7 @@ class EmbeddedFractureManager
    * This fills SimData::edfm_grid and SimData::edfm_cell_mapping
    * @param  {discretization::DoFNumbering} dofs : flow degrees of freedom of edfm cells
    */
-  void build_edfm_grid(const discretization::DoFNumbering & dofs);
+  // void build_edfm_grid(const discretization::DoFNumbering & dofs);
   // map SDA cells to edfm control volumes
   // do it only after coarsening the grid
   // and distribute mechanical properties

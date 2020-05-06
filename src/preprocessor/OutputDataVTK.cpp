@@ -17,10 +17,10 @@ void OutputDataVTK::write_output(const std::string & output_path) const
 {
   save_reservoir_flow_data_(output_path + "/" + m_config.flow_reservoir_grid_file);
   save_reservoir_mechanics_data_(output_path + "/" + m_config.mechanics_reservoir_grid_file);
-  if (!_data.dfm_flow_grid.empty())
-    save_dfm_data(output_path + "/"+ m_config.dfm_flow_grid_file);
-  if (!_data.edfm_grid.empty())
-    save_edfm_data(output_path + "/" + m_config.edfm_grid_file);
+  if (!_data.fracture_grid.empty())
+    save_dfm_data(output_path + "/"+ m_config.fracture_grid_file);
+  // if (!_data.edfm_grid.empty())
+  //   save_edfm_data(output_path + "/" + m_config.edfm_grid_file);
   if (!_data.wells.empty())
     save_wells_(output_path + "/"+ m_config.wells_file);
 }
@@ -229,7 +229,7 @@ void OutputDataVTK::save_dfm_data(const std::string & fname) const
   std::cout << "Saving DFM mesh file: " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
-  const auto & grid = _data.dfm_flow_grid;
+  const auto & grid = _data.fracture_grid;
   IO::VTKWriter::write_surface_geometry(grid.get_vertices(), grid.get_polygons(), out);
 
   // save face markers
@@ -248,9 +248,9 @@ void OutputDataVTK::save_dfm_data(const std::string & fname) const
 
 void OutputDataVTK::save_edfm_data(const std::string & fname) const
 {
-  std::cout << "Saving EDFM mesh file: " << fname << std::endl;
-  std::ofstream out;
-  out.open(fname.c_str());
+  // std::cout << "Saving EDFM mesh file: " << fname << std::endl;
+  // std::ofstream out;
+  // out.open(fname.c_str());
 
   // // write vtk data
   // std::size_t n_efrac_vertices = 0;
@@ -293,21 +293,21 @@ void OutputDataVTK::save_edfm_data(const std::string & fname) const
   // }
 
   // IO::VTKWriter::write_surface_geometry(efrac_verts, efrac_cells, out);
-  IO::VTKWriter::write_surface_geometry(_data.edfm_grid.get_vertices(),
-                                        _data.edfm_grid.get_polygons(), out);
+  // IO::VTKWriter::write_surface_geometry(_data.edfm_grid.get_vertices(),
+  //                                       _data.edfm_grid.get_polygons(), out);
 
-  // save face markers
-  const auto & grid = _data.edfm_grid;
-  IO::VTKWriter::enter_section_cell_data(grid.n_polygons(), out);
-  {
-    std::vector<double> property(grid.n_polygons());
-    const std::string keyword = "Marker";
-    for (auto face = grid.begin_polygons(); face != grid.end_polygons(); ++face)
-      property[face.index()] = face.marker();
-    IO::VTKWriter::add_data(property, keyword, out);
-  }
+  // // save face markers
+  // const auto & grid = _data.edfm_grid;
+  // IO::VTKWriter::enter_section_cell_data(grid.n_polygons(), out);
+  // {
+  //   std::vector<double> property(grid.n_polygons());
+  //   const std::string keyword = "Marker";
+  //   for (auto face = grid.begin_polygons(); face != grid.end_polygons(); ++face)
+  //     property[face.index()] = face.marker();
+  //   IO::VTKWriter::add_data(property, keyword, out);
+  // }
 
-  out.close();
+  // out.close();
 }
 
 

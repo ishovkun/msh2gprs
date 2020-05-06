@@ -283,6 +283,7 @@ void CellSplitter::create_face_groups_(angem::PolyGroup<double> & split,
     f.vertices = face_vertex_global_numbering[i];
     f.vtk_id = _grid.face_vtk_id_(f.vertices.size());
     // determine the global index of the parent of the split face
+    // splitting face is marked with polygroup_polygon_parents.size()
     f.parent = (polygroup_polygon_parents[i] < polygroup_polygon_parents.size()) ?
                cell_faces[ polygroup_polygon_parents[i] ]->index() :
                constants::invalid_index;

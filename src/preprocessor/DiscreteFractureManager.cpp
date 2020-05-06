@@ -119,7 +119,6 @@ void DiscreteFractureManager::split_faces(mesh::Mesh & grid)
     m_data.grid_cells_after_face_split = splitter.get_cell_vertices();
   }
 
-
   // if (grid.n_vertices() != n_faces_old)
   //   std::cout << "Split " << grid.n_vertices() - n_vertices_old
   //             << " vertices for dfm fractures"
@@ -185,7 +184,7 @@ std::vector<size_t> DiscreteFractureManager::map_dfm_grid_to_flow_dofs(const mes
     const mesh::Face & face = grid.face(it.first);
     // infer if it is coupled based on neighbors
     const auto neighbors = face.neighbors();
-    if (!m_data.gmcell_to_flowcells[m_data.mech_numbering->cell_dof(neighbors[0]->index())].empty())
+    if (m_data.coupling[neighbors[0]->index()])
     {
       it.second.coupled = true;
       result.push_back( dofs.face_dof(face.index()) );
