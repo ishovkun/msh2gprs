@@ -13,6 +13,8 @@ class FiniteElementBase
   // get FE data of cell shape functions at face integration points.
   // This is needed for modeling discrete fractures
   const std::vector<FiniteElementData> & get_fracture_data() const {return _face_fracture_data;}
+  // default destructor
+  virtual ~FiniteElementBase() = default;
 
  protected:
   FiniteElementData _cell_data;                // FEM values and gradients in cell integration points

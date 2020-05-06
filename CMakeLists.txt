@@ -107,13 +107,13 @@ if (CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 # # memory leak debugging
-# # set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-# # set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+# set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+# set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 # for profiling memory leaks
-# TARGET_LINK_LIBRARIES(msh2gprs gprs_data parsers mesh uint256 -lstdc++fs -lasan)
+TARGET_LINK_LIBRARIES(msh2gprs preprocessor yaml-cpp mesh -lstdc++fs -lasan)
 
 # last flag for std::filesystem
-TARGET_LINK_LIBRARIES(msh2gprs preprocessor yaml-cpp mesh -lstdc++fs)
+# TARGET_LINK_LIBRARIES(msh2gprs preprocessor yaml-cpp mesh -lstdc++fs)
 
 enable_testing()
 add_subdirectory(tests)
