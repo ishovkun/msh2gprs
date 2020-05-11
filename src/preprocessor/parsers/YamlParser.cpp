@@ -433,6 +433,10 @@ void YamlParser::bc_face(const YAML::Node & node,
         conf.values_expressions[i] = str_values[i];
       }
     }
+    else if (key == "constraint")
+      conf.constraint = it->second.as<int>();
+    else if (key == "penalty")
+      conf.penalty = it->second.as<double>();
     else
       throw std::invalid_argument("attribute " + key + " is unknown");
   }
