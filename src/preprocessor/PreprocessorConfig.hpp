@@ -54,6 +54,8 @@ struct BCConfig
   std::array<std::string,3> values_expressions;
   // undefined boundary value (do not impose)
   static constexpr double nan = std::numeric_limits<double>::max();
+  int constraint = -1;  // constrain displacement with penalization (e.g. mandel)
+  double penalty = 1e10;  // value of penalty penalization constraint
 };
 
 
