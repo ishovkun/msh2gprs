@@ -13,10 +13,12 @@ BoundaryConditionManager::BoundaryConditionManager(const std::vector<BCConfig> &
   create_value_parsers_(_face_config, _face_value_parsers);
   create_value_parsers_(_node_config, _node_value_parsers);
   create_node_location_parsers_();
+  find_constraint_configs_();
 
   build_boundary_conditions_();
   find_faces_from_expressions_();
   create_dirichlet_data_();
+  create_constraint_groups_();
   find_nodes_from_expressions_();
 }
 
@@ -34,9 +36,11 @@ void BoundaryConditionManager::build_boundary_conditions_()
         {
           if (conf.type == BoundaryConditionType::dirichlet)
             process_dirichlet_face_(*face, iconf);
-          else // if ( conf.type == BoundaryConditionType::neumann )
+          else if ( conf.type == BoundaryConditionType::neumann )
             process_neumann_face_(*face, iconf);
-
+          else if ( conf.type == BoundaryConditionType::constraint )
+            process_constraint_face_(*face, iconf);
+          else std::invalid_argument("unknodwn boundary type");
         }
       }
     }
@@ -94,6 +98,14 @@ void BoundaryConditionManager::process_neumann_face_(const mesh::Face & face, co
   for (size_t i=0; i<3; ++i)
     value[i] = _face_value_parsers[config_index][i].Eval();
   _data.neumann_face_traction.push_back( value );
+}
+
+void BoundaryConditionManager::process_constraint_face_(const mesh::Face & face, const size_t config_index)
+{
+
+  const size_t iconstraint = _face_config_to_constraint[config_index];
+  for (const size_t v : face.vertices())
+    _constrained_node_groups[iconstraint].insert(v);
 }
 
 void BoundaryConditionManager::find_nodes_from_expressions_()
@@ -255,5 +267,50 @@ void BoundaryConditionManager::create_node_location_parsers_()
 
 }
 
+void BoundaryConditionManager::find_constraint_configs_()
+{
+  _face_config_to_constraint.resize( _face_config.size(), std::numeric_limits<size_t>::max() );
+  size_t iconstraint = 0;
+  for (size_t iconf = 0; iconf < _face_config.size(); ++iconf)
+    if (_face_config[iconf].type == BoundaryConditionType::constraint)
+      _face_config_to_constraint[iconf] = iconstraint++;
+  _constrained_node_groups.resize(iconstraint);
+}
+
+void BoundaryConditionManager::create_constraint_groups_()
+{
+  _data.boundary_constraints.resize(_constrained_node_groups.size());
+  for (size_t igroup = 0; igroup < _constrained_node_groups.size(); ++igroup)
+  {
+    // copy into simdata
+    _data.boundary_constraints[igroup].nodes.resize( _constrained_node_groups[igroup].size() );
+    std::copy( _constrained_node_groups[igroup].begin(), _constrained_node_groups[igroup].end(),
+               _data.boundary_constraints[igroup].nodes.begin());
+
+    // find config to evaluate
+    const size_t iconf = std::distance(_face_config_to_constraint.begin(),
+        std::find( _face_config_to_constraint.begin(), _face_config_to_constraint.end(), igroup ));
+
+    // find component
+    mu::Parser parser;
+    _variables[3] = BCConfig::nan;
+    parser.DefineVar("nan", &_variables[3]);
+    int comp = -1;
+    double penalty = 0;
+    for (size_t i = 0; i < 3; ++i)
+    {
+      parser.SetExpr(_face_config[iconf].values_expressions[i]);
+      const double value = parser.Eval();
+      if ( value != BCConfig::nan )
+      {
+        comp = i;
+        penalty = value;
+      }
+    }
+    _data.boundary_constraints[igroup].components.assign( _constrained_node_groups[igroup].size(), comp );
+    _data.boundary_constraints[igroup].penalty = penalty;
+  }
+
+}
 
 }  // end namespace gprs_data

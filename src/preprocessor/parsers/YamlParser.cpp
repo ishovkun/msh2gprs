@@ -416,6 +416,8 @@ void YamlParser::bc_face(const YAML::Node & node,
         conf.type = BoundaryConditionType::dirichlet;
       else if ( strkey == "2" || strkey == "neumann" )
         conf.type = BoundaryConditionType::neumann;
+      else if ( strkey == "3" || strkey == "constraint" )
+        conf.type = BoundaryConditionType::constraint;
       else throw std::invalid_argument("Wrong BC type");
     }
     else if (key == "label")
@@ -433,10 +435,6 @@ void YamlParser::bc_face(const YAML::Node & node,
         conf.values_expressions[i] = str_values[i];
       }
     }
-    else if (key == "constraint")
-      conf.constraint = it->second.as<int>();
-    else if (key == "penalty")
-      conf.penalty = it->second.as<double>();
     else
       throw std::invalid_argument("attribute " + key + " is unknown");
   }

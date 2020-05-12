@@ -35,6 +35,13 @@ struct EmbeddedFractureMechanicalProperties
   mesh::SurfaceMesh<double> mesh;             // combined grid discretization of all embedded fractures
 };
 
+struct BoundaryConstraintData
+{
+  std::vector<size_t> nodes;
+  std::vector<size_t> components;
+  double penalty;
+};
+
 struct SimData
 {
   mesh::Mesh grid;  // active grid that has all the manipulations on
@@ -84,6 +91,7 @@ struct SimData
   std::vector<angem::Point<3,double>> neumann_face_traction;  // values of neuman bc's
   std::array<std::vector<size_t>, 3> dirichlet_indices;       // indices of dirichlet vertices
   std::array<std::vector<double>, 3> dirichlet_values;        // dirichlet values in vertices
+  std::vector<BoundaryConstraintData> boundary_constraints;   // penalized constrained vertex groups
   // ----------------------- Multiscale ------------ //
   multiscale::MultiScaleOutputData ms_mech_data;
   // ----------------------- Other ---------------------- //

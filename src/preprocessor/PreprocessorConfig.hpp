@@ -41,7 +41,7 @@ struct DomainConfig
 
 enum BoundaryConditionType : int
 {
-  dirichlet = 1, neumann = 2
+  dirichlet = 1, neumann = 2, constraint = 3  // penalty type forces all disp to be the same
 };
 
 // Structure that holds info on mechanical user-defined boundary conditions
@@ -49,13 +49,10 @@ struct BCConfig
 {
   int label;
   BoundaryConditionType type;
-  // angem::Point<3,double> value;
   std::string location_expression;
   std::array<std::string,3> values_expressions;
   // undefined boundary value (do not impose)
   static constexpr double nan = std::numeric_limits<double>::max();
-  int constraint = -1;  // constrain displacement with penalization (e.g. mandel)
-  double penalty = 1e10;  // value of penalty penalization constraint
 };
 
 

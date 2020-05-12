@@ -225,8 +225,6 @@ void CellPropertyManager::map_mechanics_to_control_volumes(const discretization:
         {
           m_data.gmcell_to_flowcells[m_data.mech_numbering->cell_dof(cell->index())]
               .push_back(dofs.cell_dof(cell->index()));
-          std::cout << "fuck" << std::endl;
-          exit(0);
         }
   }
 }
