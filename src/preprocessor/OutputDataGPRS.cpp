@@ -349,6 +349,26 @@ void OutputDataGPRS::save_geomechanics_boundary_conditions_() const
   if ( !_data.dirichlet_indices[2].empty() )
     save_dirichlet_component_vertices(2, "Z", out);
 
+  // save dirichlet constraints
+  if (!_data.boundary_constraints.empty())
+  {
+    out << "GMEQCONSTRAINT" << "\n";
+    for (size_t igroup = 0; igroup < _data.boundary_constraints.size(); ++igroup)
+    {
+      for (size_t i = 1; i < _data.boundary_constraints[igroup].nodes.size(); ++i)
+      {
+        out << "2 ";
+        out << _data.boundary_constraints[igroup].nodes[i-1] + 1 << " "
+            << _data.boundary_constraints[igroup].nodes[i]   + 1 << " ";
+        out << _data.boundary_constraints[igroup].components[i-1] + 1 << " "
+            << _data.boundary_constraints[igroup].components[i] + 1  << " ";
+        out << 1 << " " << -1 << " ";
+      out << _data.boundary_constraints[igroup].penalty << "\n";
+      }
+    }
+    out << "/\n\n";
+  }
+
   if ( !_data.neumann_face_indices.empty() )
   {
     out << "GMFACE_TRACTION_TXYZ" << "\n";
