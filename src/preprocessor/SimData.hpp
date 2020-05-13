@@ -50,10 +50,11 @@ struct SimData
   // ----------------------- Reservoir cells ------------------------ //
   std::vector<std::string> property_names;
   std::vector<std::vector<double>> cell_properties;
-  std::array<int,6> permeability_keys = {-1, -1, -1, -1, -1, -1};  // permeability key indices in cell_properties
-  size_t porosity_key_index = std::numeric_limits<size_t>::max();  // porosity key index in cell_properties
-  std::vector<size_t> output_flow_properties;                      // indices of flow property keywords
-  std::vector<size_t> output_mech_properties;                      // indices of mech property keywords
+  std::array<int,6> permeability_keys = {-1, -1, -1, -1, -1, -1}; // permeability key indices in cell_properties
+  size_t porosity_key_index = std::numeric_limits<size_t>::max(); // porosity key index in cell_properties
+  size_t vol_mult_index = std::numeric_limits<size_t>::max();     // volume mult index in cell_properties
+  std::vector<size_t> output_flow_properties;                     // indices of flow property keywords
+  std::vector<size_t> output_mech_properties;                     // indices of mech property keywords
   // ----------------------- DFM ------------------------ //
   // std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   std::map<size_t,DiscreteFractureFace> dfm_faces;
@@ -112,6 +113,13 @@ struct SimData
     assert(porosity_key_index < property_names.size());
     assert ( cell < cell_properties[porosity_key_index].size() );
     return cell_properties[porosity_key_index][cell];
+  }
+
+  double get_volume_mult(const size_t cell) const
+  {
+    if (vol_mult_index == std::numeric_limits<size_t>::max())
+      return 1;
+    else return cell_properties[vol_mult_index][cell];
   }
 
   size_t n_dfm_faces() const { return dfm_faces.size(); }

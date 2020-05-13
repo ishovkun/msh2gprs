@@ -46,6 +46,7 @@ class CellPropertyManager
   void build_permeability_function_();
   void build_porosity_function_();
   void build_flow_output_property_keys_();
+  void build_volume_mult_function_();
 
   const CellPropertyConfig        & config;
   const std::vector<DomainConfig> & domains;

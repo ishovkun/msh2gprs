@@ -53,6 +53,7 @@ void CellPropertyManager::generate_properties()
   std::cout << "Searching for Porosity and Permeability keys" << std::endl;
   build_permeability_function_();
   build_porosity_function_();
+  build_volume_mult_function_();
   build_flow_output_property_keys_();
 }
 
@@ -198,6 +199,19 @@ void CellPropertyManager::build_porosity_function_()
     }
   }
   throw std::runtime_error("Porosity not provided (Keyword POP)");
+}
+
+void CellPropertyManager::build_volume_mult_function_()
+{
+  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
+  {
+    const auto & key = m_data.property_names[i];
+    if (key == "VFACTOR")
+    {
+      m_data.vol_mult_index = i;
+      return;
+    }
+  }
 }
 
 void CellPropertyManager::build_flow_output_property_keys_()
