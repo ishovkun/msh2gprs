@@ -83,6 +83,8 @@ class Cell
   std::vector<const Cell*> all_level_children() const;
   // check if cell polyhedron has edge specified by vertex indices
   bool has_edge(const vertex_pair edge) const;
+  // set cell marker
+  void set_marker(const int marker) {m_marker = marker;}
 
  protected:
   // recursive part of the public ultimate_children() method

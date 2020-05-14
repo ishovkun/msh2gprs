@@ -20,8 +20,9 @@ void VTKReader::read_file_(const std::string & file_name)
   read_vertices_(in);
   read_cells_(in);
   read_cell_types_(in);
-  in.close();
   create_grid_();
+  read_data_arrays_(in);
+  in.close();
 }
 
 void VTKReader::read_header_(std::fstream & in) const
@@ -142,6 +143,78 @@ void VTKReader::create_regular_polyhedron_cell_(const int id, size_t & idx)
   for (size_t i=0; i<n_cell_entries; ++i)
     cell_vertices[i] = _cell_entries[idx++];
   _grid.insert_cell(cell_vertices, id);
+}
+
+enum ArrayType
+{
+  undefined, cell_data, point_data
+};
+
+void VTKReader::read_data_arrays_(std::fstream & in)
+{
+  ArrayType current_section = undefined;
+  while (!in.eof())
+  {
+    std::string array_type;
+    in >> array_type;
+    if (array_type == "CELL_DATA")
+    {
+      std::string tmp;
+      in >> tmp;
+      if (std::atoi(tmp.c_str()) != _grid.n_active_cells())
+        throw std::runtime_error("Wrong size in CELL_DATA");
+      in >> tmp;  // FIELD
+      in >> tmp;  // FieldData
+      size_t n_arrays;
+      in >> n_arrays;
+      for (size_t i = 0; i < n_arrays; ++i)
+      {
+        _cell_data.emplace_back();
+        _cell_data_names.emplace_back();
+        read_array_(in, _cell_data.back(), _cell_data_names.back(),_grid.n_active_cells());
+      }
+    }
+    else if (array_type == "POINT_DATA")
+    {
+      std::string tmp;
+      in >> tmp;
+      if (std::atoi(tmp.c_str()) != _grid.n_vertices())
+        throw std::runtime_error("Wrong size in CELL_DATA");
+      in >> tmp;  // FIELD
+      in >> tmp;  // FieldData
+      _point_data_names.emplace_back();
+      _point_data.emplace_back();
+      read_array_(in, _point_data.back(), _point_data_names.back(), _grid.n_vertices());
+    }
+    else
+    {
+      if (array_type.empty())
+        break;
+    }
+  }
+}
+
+void VTKReader::read_array_(std::fstream & in, std::vector<double> & data,
+                            std::string & name, const size_t array_size) const
+{
+  if (data.size() != array_size)
+    data.resize(array_size);
+  in >> name;
+  size_t n_comp; in >> n_comp;
+  assert( n_comp == 1 );
+  size_t n_entries; in >> n_entries;
+  if (array_size != n_entries)
+    throw std::runtime_error("invalid vtk file");
+  std::string datatype; in >> datatype;
+  size_t i = 0;
+  while (!in.eof())
+  {
+    in >> data[i++];
+    if (i == array_size)
+      break;
+  }
+  if (i != array_size)
+    throw std::runtime_error("invalid vtk file");
 }
 
 }  // end namespace io

@@ -172,7 +172,20 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
   if (extension == "msh")
     GmshInterface::read_msh(filesystem::absolute(mesh_file_path), data.grid);
   else if (extension == "vtk")
+  {
     mesh::io::VTKReader reader(filesystem::absolute(mesh_file_path), data.grid);
+    const auto & keys = reader.get_cell_data_keys();
+    if (!keys.empty())
+    {
+      assert( keys.size() == 1 );
+      assert( keys[0] == "marker" );
+      auto & grid = data.grid;
+      size_t icell = 0;
+      auto & data = reader.get_cell_data();
+      for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+        cell->set_marker(static_cast<int>(data[0][icell++]));
+    }
+  }
   else
     throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
 }
