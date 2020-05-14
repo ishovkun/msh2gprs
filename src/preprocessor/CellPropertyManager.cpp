@@ -221,7 +221,10 @@ void CellPropertyManager::build_flow_output_property_keys_()
     if (config.expression_type[j] == ExpressionDomainType::flow)
       m_data.output_flow_properties.push_back(j);
     else if (config.expression_type[j] == ExpressionDomainType::mechanics)
+    {
       m_data.output_mech_properties.push_back(j);
+      m_data.has_mechanics = true;
+    }
   }
 }
 

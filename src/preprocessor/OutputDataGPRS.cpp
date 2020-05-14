@@ -24,7 +24,8 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   save_flow_data_(_output_path + "/" + _config.flow_cv_file,
                   _output_path + "/" + _config.flow_connection_file);
 
-  save_geomechanics_data_();
+  if (_data.has_mechanics)
+    save_geomechanics_data_();
 
   // std::cout << "save custom keyswords" << std::endl;
   // saveGeomechDataNewKeywords(output_path + data.config.domain_file);

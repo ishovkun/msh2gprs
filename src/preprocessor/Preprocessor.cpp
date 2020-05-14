@@ -59,11 +59,13 @@ void Preprocessor::run()
   // build dfm flow and mechanics grids (for vtk output)
   data.fracture_grid = pm_cedfm_mgr->build_dfm_grid(data.grid);
 
-  build_geomechanics_discretization_();
+  if (data.has_mechanics)
+    build_geomechanics_discretization_();
 
   // Coupling
   // map mechanics cells to control volumes
-  pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
+  if (data.has_mechanics)
+    pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
   // map dfm flow grid to flow dofs
   data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
@@ -73,9 +75,6 @@ void Preprocessor::run()
     data.grid.coarsen_cells();
     // pm_property_mgr->coarsen_cells();
   }
-
-  // build mechanics boundary conditions
-  BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
 
   write_output_();
 }
@@ -275,6 +274,9 @@ void Preprocessor::build_geomechanics_discretization_()
   // split geomechanics DFM faces
   std::cout << "splitting faces of DFM fractures" << std::endl;
   p_frac_mgr->split_faces(data.geomechanics_grid);
+
+  // build mechanics boundary conditions
+  BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
 }
 
 

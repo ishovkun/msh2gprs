@@ -79,6 +79,7 @@ struct SimData
   // vector of well segments: indices of well coordinate points. used for vtk output.
   std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
   // =========================== GEOMECHANICS ================= //
+  bool has_mechanics = false;
   std::shared_ptr<discretization::DoFNumbering> mech_numbering;  // mech cell and face numbering
   std::shared_ptr<discretization::DoFNumbering> flow_numbering;  // flow dof numbering
   std::vector<bool> coupling;                                    // if grid cells are coupled
