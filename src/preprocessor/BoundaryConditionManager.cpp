@@ -176,8 +176,11 @@ void BoundaryConditionManager::find_faces_from_expressions_()
         const auto & conf = _face_config[configs_with_expressions[i]];
         if (conf.type == BoundaryConditionType::neumann)
           process_neumann_face_(*face, configs_with_expressions[i]);
-        else
+        else if ( conf.type == BoundaryConditionType::dirichlet )
           process_dirichlet_face_(*face, configs_with_expressions[i]);
+        else if ( conf.type == BoundaryConditionType::constraint )
+          process_constraint_face_(*face, configs_with_expressions[i]);
+        else std::invalid_argument("unknodwn boundary type");
       }
   }
 }
@@ -289,7 +292,8 @@ void BoundaryConditionManager::create_constraint_groups_()
 
     // find config to evaluate
     const size_t iconf = std::distance(_face_config_to_constraint.begin(),
-        std::find( _face_config_to_constraint.begin(), _face_config_to_constraint.end(), igroup ));
+                                       std::find( _face_config_to_constraint.begin(),
+                                                  _face_config_to_constraint.end(), igroup ));
 
     // find component
     mu::Parser parser;

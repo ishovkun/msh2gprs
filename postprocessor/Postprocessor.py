@@ -103,18 +103,17 @@ class Postprocessor:
         else:
             flow_reader = self.matrix_flow_grid_reader
 
-        self.addDataToReader_(flow_reader, data, self.config["matrix_cell_to_flow_dof"])
+        self.addDataToReader_(flow_reader, data, self.config["matrix_cell_to_flow_dof"], t)
+        # flow_reader
         if len(self.config["dfm_cell_to_flow_dof"]) > 0:
-            self.addDataToReader_(self.dfm_flow_grid_reader, data, self.config["dfm_cell_to_flow_dof"])
+            self.addDataToReader_(self.dfm_flow_grid_reader, data,
+                                  self.config["dfm_cell_to_flow_dof"], t)
         if (mech_data is not None):
             self.addMechDataToReader(self.matrix_mech_grid_reader, mech_vtk_data, "cell")
             self.addMechDataToReader(self.matrix_mech_grid_reader, mech_data, "point")
             if ( mech_vtk_frac_data is not None ):
-                # print( len(mech_vtk_frac_data) )
-                # print(np.r_[0: len(mech_vtk_frac_data)])
-                # exit(0)
                 self.addDataToReader_(self.dfm_flow_grid_reader, mech_vtk_frac_data,
-                                      np.r_[0:len(mech_vtk_frac_data)])
+                                      np.r_[0:len(mech_vtk_frac_data)], t)
 
         # save output
         if (not self.separate_mech_file):
@@ -129,12 +128,16 @@ class Postprocessor:
             self.writeFile_(self.dfm_flow_grid_reader, "dfm-%d"%self.output_file_number)
         self.output_file_number += 1
 
-    def addDataToReader_(self, reader, data, mapping):
+    def addDataToReader_(self, reader, data, mapping, time):
         output = reader.GetOutput()
         for key in data.keys():
             x = numpy_support.numpy_to_vtk(data[key].values[mapping])
             x.SetName(key)
             output.GetCellData().AddArray(x)
+        time = numpy_support.numpy_to_vtk([time])
+        time.SetName("TIME")
+        output.GetFieldData().AddArray(time)
+
 
     def addMechDataToReader(self, reader, data, data_type="point"):
         output = reader.GetOutput()
