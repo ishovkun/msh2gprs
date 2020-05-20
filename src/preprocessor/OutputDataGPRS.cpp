@@ -41,7 +41,7 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   //           << std::endl;
   // saveBoundaryConditions(output_path + data.config.bcond_file);
 
-  if (_data.dfm_faces.size() > 0)
+  if (_data.dfm_faces.size() > 0 && _data.has_mechanics)
     save_discrete_fracture_properties_(output_path + "/" + _config.discrete_frac_file);
 
   if (!_data.wells.empty())
@@ -49,10 +49,6 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
     std::cout << "save wells" << std::endl;
     saveWells(output_path + "/" + _config.wells_file);
   }
-
-  // // flow discretization
-  // std::cout << "save flow discretization" << std::endl;
-  // flow::CalcTranses::save_output(data.flow_data, output_path);
 
   // // multiscale
   // if (data.ms_flow_data.partitioning.size() > 0)
