@@ -122,8 +122,7 @@ void DiscretizationDFM::build_matrix_fracture(ConnectionData & con,
   con.coefficients = {-T, T};
 
   //  formula for geomechanics-induced permeability update
-  const double volume_factor = 1.0;
-  con.update_formula = { T_cell, 2 * con.area, volume_factor, K_frac };
+  con.update_formula = { T_cell, 2 * con.area, cv_frac.aperture, K_frac };
 }
 
 void DiscretizationDFM::build_matrix_fracture_(ConnectionData & con)
@@ -229,16 +228,18 @@ void DiscretizationDFM::build_fracture_fracture_connections()
           // save update formula for geomechnics output
           const double Ki = m_cv_data[face_cvs[i]].permeability(0, 0);
           const double Kj = m_cv_data[face_cvs[j]].permeability(0, 0);
-          const double volume_factor = 1.0;
+          const double wi = m_cv_data[face_cvs[i]].aperture;
+          const double wj = m_cv_data[face_cvs[j]].aperture;
           con.update_formula = {
-            transmissibility_part[i] / Ki / volume_factor, volume_factor, Ki,
-            transmissibility_part[j] / Kj / volume_factor, volume_factor, Kj,
+            transmissibility_part[i] / Ki / wi, wi, Ki,
+            transmissibility_part[j] / Kj / wj, wj, Kj,
           };
           for (size_t k = 0; k < face_cvs.size(); ++k)
           {
             const double Kk = m_cv_data[face_cvs[k]].permeability(0, 0);
-            con.update_formula.push_back(transmissibility_part[k] / Kk);
-            con.update_formula.push_back(volume_factor);
+            const double wk = m_cv_data[face_cvs[k]].aperture;
+            con.update_formula.push_back(transmissibility_part[k] / Kk/ wk);
+            con.update_formula.push_back(wk);
             con.update_formula.push_back(Kk);
           }
         }

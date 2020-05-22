@@ -155,21 +155,22 @@ void OutputDataGPRS::save_trans_update_formulas_(std::ofstream & out) const
     {
       case discretization::ConnectionType::matrix_matrix:
         out << con.type << "\t"
-            << con.elements[0] << "\t" << con.update_formula[0]
+            << con.elements[0] << "\t" << con.update_formula[0] << "\t"
             << con.elements[1] << "\t" << con.update_formula[1] << "\n";
         break;
       case discretization::ConnectionType::matrix_fracture:
         out << con.type << "\t"
-            << con.elements[0] << "\t" << con.update_formula[0]
+            << con.elements[0] << "\t" << con.update_formula[0] << "\t"
             << con.elements[1] << "\t" << con.update_formula[1]
             << "\t" << con.update_formula[2]
             << "\t" << con.update_formula[3] << "\n";
         break;
       case discretization::ConnectionType::fracture_fracture:
         out << con.type <<"\t"
-            << con.elements[0] << "\t" << con.update_formula[0]
-            << "\t" << con.update_formula[1]
-            << "\t" << con.update_formula[2]
+            << con.elements[0] << "\t"
+            << con.update_formula[0] <<"\t"
+            << con.update_formula[1] << "\t"
+            << con.update_formula[2] << "\t"
             << con.elements[1] << "\t" << con.update_formula[3]
             << "\t" << con.update_formula[4]
             << "\t" << con.update_formula[5] << "\t";
