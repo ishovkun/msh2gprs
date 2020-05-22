@@ -184,10 +184,11 @@ void OutputDataGPRS::save_trans_update_formulas_(std::ofstream & out) const
           out << con.update_formula[shift++] << " ";  // volume factor
           out << con.update_formula[shift++] << "\t";  // K_j
         }
-        out << "n";
+        out << "\n";
         break;
     }
   }
+  out << "/\n";
 }
 
 void OutputDataGPRS::save_geometry_() const
@@ -491,7 +492,7 @@ void OutputDataGPRS::save_discrete_fracture_properties_(const std::string file_n
 
 void OutputDataGPRS::saveWells(const std::string file_name) const
 {
-  std::ofstream out;
+  std::ofstream out;
   out.open(file_name.c_str());
 
   out << "WELSPECS" << std::endl;
