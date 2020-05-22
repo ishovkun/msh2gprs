@@ -138,6 +138,7 @@ void DiscretizationTPFA::build_mo(ConnectionData & con,
   // face transmissibility
   const double T = T1*T2 / ( T1 + T2 );
   con.coefficients = {-T, T};
+  con.update_formula = { T1, T2 };
 }
 
 }

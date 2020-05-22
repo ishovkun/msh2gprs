@@ -24,6 +24,7 @@ struct ConnectionData
   // for fractures only
   angem::Point<3,double> edge_direction; // unit vector from one vertex to another
   std::vector<size_t> all_elements;      // star delta participants
+  std::vector<double> update_formula;  // coeffecinets for trans update in geomechanics
 };
 
 }  // end namespace discretization

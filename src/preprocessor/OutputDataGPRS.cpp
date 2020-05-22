@@ -63,74 +63,129 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     std::ofstream out;
     out.open(cv_file.c_str());
     std::cout << "saving " << cv_file << std::endl;
-
-    const auto & cvs = _data.cv_data;
-    ///// OUTPUT Dimensions /////
-    out << "DIMENS" << std::endl;
-    out << cvs.size() << "\t" << 1 << "\t" << 1 << "\t" << std::endl;
-    out << "/" << std::endl << std::endl;
-
-    ///// OUTPUT Volumes /////
-    out << "VOLUME" << std::endl;
-    for (const auto & cv : cvs)
-      out << cv.volume << std::endl;
-    out << "/" << std::endl << std::endl;
-
-    ///// OUTPUT Porosity /////
-    out << "PORO" << std::endl;
-    for (const auto & cv : cvs)
-      out << cv.porosity << std::endl;
-    out << "/" << std::endl << std::endl;
-
-    ///// OUTPUT Depth  /////
-    out << "DEPTH" << std::endl;
-    for (const auto & cv : cvs)
-      out << -cv.center(2) << std::endl;
-    out << "/" << std::endl << std::endl;
-
-    // additional data (if any)
-    for (std::size_t ivar=0; ivar<_data.output_flow_properties.size(); ++ivar)
-    {
-      const size_t prop_key = _data.output_flow_properties[ivar];
-      const std::string keyword = _data.property_names[prop_key];
-      out << keyword << std::endl;
-      for (const auto & cv : cvs)
-        out << cv.custom[ivar] << std::endl;
-      out << "/" << std::endl << std::endl;
-    }
-
+    save_control_volume_data_(out);
     out.close();
   }
   {  // write face data
     std::ofstream out;
     out.open(con_file.c_str());
     std::cout << "saving " << con_file << std::endl;
-
-    const auto & cons = _data.flow_connection_data;
-
-    /* OUTPUT Transmissibility */
-    out << "TPFACONNS" << std::endl;
-    // n nonzero connection
-    std::size_t n_connections = 0;
-    for (const auto & con : cons)
-    {
-      const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
-      if (transissibility > 1e-10) n_connections++;
-    }
-    out << n_connections << std::endl;
-    for (const auto & con : cons)
-    {
-      assert( con.elements.size() == 2 );
-      assert( con.coefficients.size() == 2 );
-
-      const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
-      if (transissibility > 1e-10)
-        out << con.elements[0] << "\t" << con.elements[1] << "\t"
-            << std::scientific << transissibility << std::defaultfloat << std::endl;
-    }
-    out << "/" << std::endl;
-
+    save_trans_data_(out);
+    save_trans_update_formulas_(out);
+    // write transmissibility update formulas
     out.close();
+  }
+}
+
+void OutputDataGPRS::save_control_volume_data_(std::ofstream & out) const
+{
+  const auto & cvs = _data.cv_data;
+  ///// OUTPUT Dimensions /////
+  out << "DIMENS" << std::endl;
+  out << cvs.size() << "\t" << 1 << "\t" << 1 << "\t" << std::endl;
+  out << "/" << std::endl << std::endl;
+
+  ///// OUTPUT Volumes /////
+  out << "VOLUME" << std::endl;
+  for (const auto & cv : cvs)
+    out << cv.volume << std::endl;
+  out << "/" << std::endl << std::endl;
+
+  ///// OUTPUT Porosity /////
+  out << "PORO" << std::endl;
+  for (const auto & cv : cvs)
+    out << cv.porosity << std::endl;
+  out << "/" << std::endl << std::endl;
+
+  ///// OUTPUT Depth  /////
+  out << "DEPTH" << std::endl;
+  for (const auto & cv : cvs)
+    out << -cv.center(2) << std::endl;
+  out << "/" << std::endl << std::endl;
+
+  // additional data (if any)
+  for (std::size_t ivar=0; ivar<_data.output_flow_properties.size(); ++ivar)
+  {
+    const size_t prop_key = _data.output_flow_properties[ivar];
+    const std::string keyword = _data.property_names[prop_key];
+    out << keyword << std::endl;
+    for (const auto & cv : cvs)
+        out << cv.custom[ivar] << std::endl;
+    out << "/" << std::endl << std::endl;
+  }
+}
+
+void OutputDataGPRS::save_trans_data_(std::ofstream & out) const
+{
+  const auto & cons = _data.flow_connection_data;
+
+  /* OUTPUT Transmissibility */
+  out << "TPFACONNS" << std::endl;
+  // n nonzero connection
+  std::size_t n_connections = 0;
+  for (const auto & con : cons)
+  {
+    const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
+    if (transissibility > 1e-10) n_connections++;
+  }
+  out << n_connections << std::endl;
+  for (const auto & con : cons)
+  {
+    assert( con.elements.size() == 2 );
+    assert( con.coefficients.size() == 2 );
+
+    const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
+    if (transissibility > 1e-10)
+      out << con.elements[0] << "\t" << con.elements[1] << "\t"
+          << std::scientific << transissibility << std::defaultfloat << std::endl;
+  }
+  out << "/" << std::endl;
+}
+
+void OutputDataGPRS::save_trans_update_formulas_(std::ofstream & out) const
+{
+  out << "GMUPDATETRANS\n";
+  const auto & cons = _data.flow_connection_data;
+
+  for (size_t icon = 0; icon < cons.size(); ++icon)
+  {
+    const auto & con = cons[icon];
+    out << icon << "\t";
+    switch (con.type)
+    {
+      case discretization::ConnectionType::matrix_matrix:
+        out << con.type << "\t"
+            << con.elements[0] << "\t" << con.update_formula[0]
+            << con.elements[1] << "\t" << con.update_formula[1] << "\n";
+        break;
+      case discretization::ConnectionType::matrix_fracture:
+        out << con.type << "\t"
+            << con.elements[0] << "\t" << con.update_formula[0]
+            << con.elements[1] << "\t" << con.update_formula[1]
+            << "\t" << con.update_formula[2]
+            << "\t" << con.update_formula[3] << "\n";
+        break;
+      case discretization::ConnectionType::fracture_fracture:
+        out << con.type <<"\t"
+            << con.elements[0] << "\t" << con.update_formula[0]
+            << "\t" << con.update_formula[1]
+            << "\t" << con.update_formula[2]
+            << con.elements[1] << "\t" << con.update_formula[3]
+            << "\t" << con.update_formula[4]
+            << "\t" << con.update_formula[5] << "\t";
+        // remaining elements in the connection
+        out << con.all_elements.size() << "\t";
+        size_t shift = 6;
+        for (size_t j = 0; j < con.all_elements.size(); ++j)
+        {
+          out << con.all_elements[j] << "\t";
+          out << con.update_formula[shift++] << " ";  // T_j / K_j
+          out << con.update_formula[shift++] << " ";  // volume factor
+          out << con.update_formula[shift++] << "\t";  // K_j
+        }
+        out << "n";
+        break;
+    }
   }
 }
 

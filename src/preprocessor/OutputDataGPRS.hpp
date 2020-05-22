@@ -29,6 +29,13 @@ public:
  private:
   // save data related to flow in the reservoir (but not wells)
   void save_flow_data_(const std::string cv_file, const std::string con_file) const;
+  // save flow CV data
+  void save_control_volume_data_(std::ofstream & out) const;
+  // dave transmissibilities
+  void save_trans_data_(std::ofstream & out) const;
+  // dave transmissibility formulas for geomechanics update
+  void save_trans_update_formulas_(std::ofstream & out) const;
+
   // save everything related to geomechancis discretization
   void save_geomechanics_data_() const;
   // save geometry data for geomechanics discretization
