@@ -209,11 +209,11 @@ void DiscretizationDFM::build_fracture_fracture_connections()
 
       const double t_sum = std::accumulate(transmissibility_part.begin(), transmissibility_part.end(), 0.0);
 
-      if (t_sum < 1e-8)  // connection of impermeable fault elements
+      if (t_sum < 1e-8)  // kill connections for impermeable fault elements
         continue;
 
-      for (std::size_t i = 0; i < face_cvs.size(); ++i)
-        for (std::size_t j = i+1; j < face_cvs.size(); ++j)
+      for (size_t i = 0; i < face_cvs.size(); ++i)
+        for (size_t j = i+1; j < face_cvs.size(); ++j)
         {
           auto & con = m_con_data.emplace_back();
           con.type = ConnectionType::fracture_fracture;
