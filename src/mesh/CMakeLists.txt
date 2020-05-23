@@ -15,6 +15,7 @@ ADD_LIBRARY(mesh
   Subdivision.cpp
   FaceSplitter.cpp
   CellSplitter.cpp
+  FractureTip.cpp
   MeshStatsComputer.cpp
   io/VTKReader.cpp
 )

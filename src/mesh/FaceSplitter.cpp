@@ -1,4 +1,7 @@
 #include "FaceSplitter.hpp"
+#include "FractureTip.hpp"
+#include "Groups.hpp"
+
 
 namespace mesh {
 
@@ -22,24 +25,18 @@ SurfaceMesh<double> FaceSplitter::split_faces()
 {
   // create surfacemesh and map vertices
   SurfaceMesh<double> mesh_faces(1e-6);
-  // map 2d-element -> 3d face hash
-  std::unordered_map<std::size_t, std::size_t> map_face_surface_element;
-  // map surfacemesh vertex -> 3d mesh vertex
-  std::unordered_map<std::size_t, std::size_t> map_frac_vertex_vertex;
 
   /* Algorithm:
   * create SurfaceMesh from marked faces in order to identify
   * vertices to split those whose edge have >1 neighbors)
   * cross-match vertices in 3d Mesh and Surface mesh. */
-  create_fracture_face_grid_(mesh_faces, map_face_surface_element, map_frac_vertex_vertex);
+  create_fracture_face_grid_(mesh_faces, _surface_to_face, _surface_vertex_to_global);
 
   // Identify the vertices that require splitting
-  std::unordered_map<size_t, std::vector<size_t>> vertices_to_split;
-  find_vertices_to_split_(mesh_faces, map_face_surface_element,
-                          map_frac_vertex_vertex, vertices_to_split);
+  find_vertices_to_split_(mesh_faces);
 
   // split 'em
-  for (const auto & it : vertices_to_split)
+  for (const auto & it : _vertices_to_split)
   {
     const size_t vertex = it.first;
     const auto & faces = it.second;
@@ -54,7 +51,8 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
                                  const std::vector<std::size_t> &splitted_face_indices)
 {
   std::vector<std::vector<std::size_t>> groups =
-      group_cells_based_on_split_faces_(_grid.m_vertex_cells[vertex_index], splitted_face_indices);
+      group_cells_based_on_split_faces_2(_grid.m_vertex_cells[vertex_index], splitted_face_indices);
+  assert( groups.size() > 1 );
 
   // create new vertices
   std::vector<std::size_t> new_vertex_indices(groups.size());
@@ -110,6 +108,7 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
     else
     {
       igroup = new_group;
+      assert(igroup >= 0);
       map_cell_group.insert({icell, igroup});
       new_group++;
     }
@@ -140,11 +139,6 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
           const std::pair<size_t,size_t> pair_cells2 = std::minmax(n1, n2);
           if (pair_cells == pair_cells2)
           {
-            // std::cout << "match "
-            //           << pair_cells.first << " " << pair_cells.second << " "
-            //           << pair_cells2.first << " " << pair_cells2.second << " "
-            //           << std::endl;
-
             neighbor_by_marked_face = true;
             break;
           }
@@ -165,6 +159,7 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
             }
             else
             {
+              assert(igroup >= 0);
               map_cell_group[jind] = igroup;
             }
           }
@@ -176,6 +171,11 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
   std::vector<std::vector<std::size_t>> groups(n_groups);
   for (auto it : map_cell_group)
   {
+    if ( it.second >= n_groups )
+    {
+      std::cout << "it.second = " << it.second << std::endl;
+      std::cout << "n_groups = " << n_groups << std::endl;
+    }
     assert( it.second < n_groups );
     groups[it.second].push_back(it.first);
   }
@@ -183,22 +183,52 @@ group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
   return groups;
 }
 
-void FaceSplitter::
-find_vertices_to_split_(const SurfaceMesh<double> & mesh_faces,
-                        const std::unordered_map<std::size_t, std::size_t> & map_face_surface_element,
-                        std::unordered_map<std::size_t,std::size_t> & map_frac_vertex_vertex,
-                        std::unordered_map<size_t, std::vector<size_t>> & vertices_to_split) const
+std::vector<std::vector<std::size_t>>
+FaceSplitter::
+group_cells_based_on_split_faces_2(const std::vector<size_t> & affected_cells,
+                                   const std::vector<size_t> & split_faces) const
 {
+  const size_t n_groups = std::max(split_faces.size(), size_t(2));
+  utils::Groups groups(affected_cells);
+  int new_group = 0;
+  for (const std::size_t icell : affected_cells)
+    if (_grid.cell(icell).is_active())
+    {
+      for (auto face : _grid.cell(icell).faces() )
+        if (std::find(split_faces.begin(), split_faces.end(), face->index()) == split_faces.end())
+        {
+          const auto face_neighbors = face->neighbors();
+
+          if (face_neighbors.size() == 1)
+            continue;
+
+          size_t jcell = face_neighbors[0]->index();
+          if (jcell == icell)
+            jcell = face_neighbors[1]->index();
+
+          if (std::find(affected_cells.begin(), affected_cells.end(), jcell) != affected_cells.end())
+            groups.merge(icell, jcell);
+        }
+    }
+
+  return groups.get();
+}
+
+void FaceSplitter::
+find_vertices_to_split_(const SurfaceMesh<double> & mesh_faces)
+{
+  mesh::FractureTip tip(mesh_faces, _grid, _surface_vertex_to_global);
   for (auto edge = mesh_faces.begin_edges(); edge !=mesh_faces.end_edges(); ++edge)
   {
     const std::vector<size_t> & edge_neighbors = edge.neighbors();
     std::vector<size_t> grid_face_indices;
     grid_face_indices.reserve(edge_neighbors.size());
+
     // if edge is a neighbor of a split face, then consider it
     for (size_t ielement: edge_neighbors)
     {
-      const auto it = map_face_surface_element.find(ielement);
-      if (it == map_face_surface_element.end())
+      const auto it = _surface_to_face.find(ielement);
+      if (it == _surface_to_face.end())
         throw std::runtime_error("error during splitting faces");
 
       grid_face_indices.push_back(it->second);
@@ -208,24 +238,29 @@ find_vertices_to_split_(const SurfaceMesh<double> & mesh_faces,
     if (edge_neighbors.size() > 1)  // internal edge vertex
     {
       const auto edge_vertices = edge.vertex_indices();
-      const size_t v1 = map_frac_vertex_vertex[edge_vertices.first];
-      const size_t v2 = map_frac_vertex_vertex[edge_vertices.second];
-      auto it1 = vertices_to_split.find(v1);
-      if (it1 == vertices_to_split.end())
-        vertices_to_split.insert({v1, grid_face_indices});
-      else
-        for (const size_t face : grid_face_indices)
-          if ( std::find(it1->second.begin(), it1->second.end(), face) == it1->second.end())
-            it1->second.push_back(face);
+      const size_t v1 = _surface_vertex_to_global[edge_vertices.first];
+      const size_t v2 = _surface_vertex_to_global[edge_vertices.second];
+      if (!tip.contains(v1))
+      {
+        auto it1 = _vertices_to_split.find(v1);
+        if (it1 == _vertices_to_split.end())
+          _vertices_to_split.insert({v1, grid_face_indices});
+        else
+          for (const size_t face : grid_face_indices)
+            if ( std::find(it1->second.begin(), it1->second.end(), face) == it1->second.end())
+              it1->second.push_back(face);
+      }
 
-      auto it2 = vertices_to_split.find(v2);
-      if (it2 == vertices_to_split.end())
-        vertices_to_split.insert({v2, grid_face_indices});
-      else
-        for (const size_t face : grid_face_indices)
-          if ( std::find(it2->second.begin(), it2->second.end(), face) ==
-               it2->second.end())
-            it2->second.push_back(face);
+      if (!tip.contains(v2))
+      {
+        auto it2 = _vertices_to_split.find(v2);
+        if (it2 == _vertices_to_split.end())
+          _vertices_to_split.insert({v2, grid_face_indices});
+        else
+          for (const size_t face : grid_face_indices)
+            if ( std::find(it2->second.begin(), it2->second.end(), face) == it2->second.end())
+              it2->second.push_back(face);
+      }
     }
   }
 }

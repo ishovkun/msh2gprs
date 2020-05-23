@@ -30,14 +30,19 @@ class FaceSplitter {
   std::vector<std::vector<std::size_t>>
   group_cells_based_on_split_faces_(const std::vector<std::size_t> & affected_cells,
                                     const std::vector<std::size_t> & splitted_face_indices) const;
+  std::vector<std::vector<std::size_t>>
+  group_cells_based_on_split_faces_2(const std::vector<std::size_t> & affected_cells,
+                                     const std::vector<std::size_t> & splitted_face_indices) const;
 
   void create_fracture_face_grid_(SurfaceMesh<double> & face_mesh,
                                   std::unordered_map<size_t,size_t> & map_face_surface_element,
                                   std::unordered_map<size_t,size_t> & map_frac_vertex_vertex) const;
-  void find_vertices_to_split_(const SurfaceMesh<double> & face_mesh,
-                               const std::unordered_map<std::size_t,std::size_t> & map_face_surface_element,
-                               std::unordered_map<std::size_t,std::size_t> & map_frac_vertex_vertex,
-                               std::unordered_map<size_t, std::vector<size_t>> & vertices_to_split) const;
+  void find_vertices_to_split_(const SurfaceMesh<double> & face_mesh);
+  void find_vertices_to_split_2(const SurfaceMesh<double> & face_mesh);
+
+  std::unordered_set<size_t> find_fracture_tip_vertices_(const SurfaceMesh<double> & face_mesh);
+  std::unordered_set<size_t> find_global_boundary_();
+
   // ----------------------- Variables ----------------------- //
   const Mesh & _grid;
   // vector of grid vertex coordinates + those that happened after split
@@ -45,6 +50,12 @@ class FaceSplitter {
   // vector of grid cell vertex coordinates after splitting
   std::vector<std::vector<size_t>> _cell_vertices;
   std::vector<size_t> _marked_for_split;
+  // map surfacemesh vertex -> 3d mesh vertex
+  std::unordered_map<size_t,size_t> _surface_vertex_to_global;
+  // map 2d-element -> 3d face index
+  std::unordered_map<size_t,size_t> _surface_to_face;
+  std::unordered_map<size_t, std::vector<size_t>> _vertices_to_split;
+
 };
 
 }  // end namespace mesh
