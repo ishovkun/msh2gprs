@@ -33,10 +33,7 @@ std::unordered_set<size_t> FractureTip::find_global_boundary_()
 bool FractureTip::contains(const size_t vertex)
 {
   if (vertex >= _tip_verts.size())
-  {
-    std::cout << "_tip_verts.size() = " << _tip_verts.size() << std::endl;
     throw std::invalid_argument("vertex " + std::to_string(vertex) + " does not exist");
-  }
 
   if (_tip_verts[vertex].empty())
     return false;
@@ -46,11 +43,9 @@ bool FractureTip::contains(const size_t vertex)
       return true;
     else
     {
-      for (const size_t jvertex : _tip_verts[vertex])
-      {
-        if ( _global_boundary.find(jvertex) != _global_boundary.end() )
-          return true;
-      }
+      // for (const size_t jvertex : _tip_verts[vertex])
+      //   if ( _global_boundary.find(jvertex) != _global_boundary.end() )
+      //     return true;
       return false;
     }
   }

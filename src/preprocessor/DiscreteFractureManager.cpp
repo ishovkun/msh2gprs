@@ -103,7 +103,7 @@ void DiscreteFractureManager::split_faces(mesh::Mesh & grid)
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
     if (is_fracture(face->marker()))
     {
-      std::cout << "mark face " << face->index() <<" (" << face->marker() << ")"  << std::endl;
+      // std::cout << "mark face " << face->index() <<" (" << face->marker() << ")"  << std::endl;
       splitter.mark_for_split(face->index());
     }
 

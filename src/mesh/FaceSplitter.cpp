@@ -52,7 +52,9 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
 {
   std::vector<std::vector<std::size_t>> groups =
       group_cells_based_on_split_faces_2(_grid.m_vertex_cells[vertex_index], splitted_face_indices);
-  assert( groups.size() > 1 );
+  // assert( groups.size() > 1 );
+  if ( groups.size() == 1 )
+    return;
 
   // create new vertices
   std::vector<std::size_t> new_vertex_indices(groups.size());
@@ -247,7 +249,7 @@ find_vertices_to_split_(const SurfaceMesh<double> & mesh_faces)
           _vertices_to_split.insert({v1, grid_face_indices});
         else
           for (const size_t face : grid_face_indices)
-            if ( std::find(it1->second.begin(), it1->second.end(), face) == it1->second.end())
+            if (std::find(it1->second.begin(), it1->second.end(), face) == it1->second.end())
               it1->second.push_back(face);
       }
 
