@@ -122,7 +122,8 @@ void DiscretizationDFM::build_matrix_fracture(ConnectionData & con,
   con.coefficients = {-T, T};
 
   //  formula for geomechanics-induced permeability update
-  con.update_formula = { T_cell, 2 * con.area, cv_frac.aperture, K_frac };
+  // con.update_formula = { T_cell, 2 * con.area, cv_frac.aperture, K_frac };
+  con.update_formula = { 2 * con.area, cv_frac.aperture, K_frac, T_cell };
 }
 
 void DiscretizationDFM::build_matrix_fracture_(ConnectionData & con)
