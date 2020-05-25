@@ -22,6 +22,9 @@ class FaceSplitter {
   const std::vector<angem::Point<3,double>> & get_all_vertices() const {return _vertex_coord;}
   const std::vector<std::vector<size_t>> & get_cell_vertices() const {return _cell_vertices;}
 
+  const std::unordered_map<size_t, std::vector<size_t>> & get_child_vertices() const
+  { return _parent_to_child_vertices;}
+
  private:
   void split_vertex_(const std::size_t               vertex_index,
                      const std::vector<std::size_t> &splitted_face_indices);
@@ -55,7 +58,7 @@ class FaceSplitter {
   // map 2d-element -> 3d face index
   std::unordered_map<size_t,size_t> _surface_to_face;
   std::unordered_map<size_t, std::vector<size_t>> _vertices_to_split;
-
+  std::unordered_map<size_t, std::vector<size_t>> _parent_to_child_vertices;
 };
 
 }  // end namespace mesh

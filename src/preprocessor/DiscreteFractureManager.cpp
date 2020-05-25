@@ -119,6 +119,8 @@ void DiscreteFractureManager::split_faces(mesh::Mesh & grid)
     m_data.grid_cells_after_face_split = splitter.get_cell_vertices();
   }
 
+  m_data.parent_to_child_vertices = splitter.get_child_vertices();
+
   // if (grid.n_vertices() != n_faces_old)
   //   std::cout << "Split " << grid.n_vertices() - n_vertices_old
   //             << " vertices for dfm fractures"

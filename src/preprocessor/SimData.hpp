@@ -64,6 +64,8 @@ struct SimData
   std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> flow dof
   std::vector<angem::Point<3,double>> grid_vertices_after_face_split;
   std::vector<std::vector<size_t>> grid_cells_after_face_split;
+  // map parent vertex -> vector of child vertices after face splitting for mech DFM
+  std::unordered_map<size_t, std::vector<size_t>> parent_to_child_vertices;
   // ---------------------- EDFM ------------------------ //
   std::vector<EmbeddedFractureMechanicalProperties> sda_data;
   // std::unordered_map<size_t,size_t> face_to_fracture;

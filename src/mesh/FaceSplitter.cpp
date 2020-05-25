@@ -23,13 +23,11 @@ void FaceSplitter::mark_for_split(const size_t face_index)
 
 SurfaceMesh<double> FaceSplitter::split_faces()
 {
-  // create surfacemesh and map vertices
-  SurfaceMesh<double> mesh_faces(1e-6);
-
   /* Algorithm:
   * create SurfaceMesh from marked faces in order to identify
   * vertices to split those whose edge have >1 neighbors)
   * cross-match vertices in 3d Mesh and Surface mesh. */
+  SurfaceMesh<double> mesh_faces(1e-6);
   create_fracture_face_grid_(mesh_faces, _surface_to_face, _surface_vertex_to_global);
 
   // Identify the vertices that require splitting
@@ -58,6 +56,7 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
 
   // create new vertices
   std::vector<std::size_t> new_vertex_indices(groups.size());
+  auto & child_vertices = _parent_to_child_vertices[vertex_index];
   const angem::Point<3,double> vertex_coord = _vertex_coord[vertex_index];
   for (std::size_t group = 0; group < groups.size(); group++)
   {
@@ -68,6 +67,7 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
       const std::size_t new_vertex_index = _vertex_coord.size();
       new_vertex_indices[group] = new_vertex_index;
       _vertex_coord.push_back(vertex_coord);
+      child_vertices.push_back(new_vertex_index);
     }
   }
 
@@ -86,103 +86,6 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
         }
     }
   }
-}
-
-std::vector<std::vector<std::size_t>>
-FaceSplitter::
-group_cells_based_on_split_faces_(const std::vector<size_t> & affected_cells,
-                                  const std::vector<size_t> & split_faces) const
-{
-  // group affected elements
-  // two elements are in the same group if they are neighbors and
-  // the neighboring face is not in vertex_faces array
-  const size_t n_groups = std::max(split_faces.size(), size_t(2));
-  std::unordered_map<std::size_t, size_t> map_cell_group;
-  int igroup = 0;
-  int new_group = 0;
-  std::unordered_set<std::size_t> processed_cells;
-  for (const std::size_t icell : affected_cells)
-    if (_grid.cell(icell).is_active())
-  {
-    auto group_it = map_cell_group.find(icell);
-    if (group_it != map_cell_group.end())
-      igroup = group_it->second;
-    else
-    {
-      igroup = new_group;
-      assert(igroup >= 0);
-      map_cell_group.insert({icell, igroup});
-      new_group++;
-    }
-
-    processed_cells.insert(icell);
-    // std::cout << "\nicell = " << icell << std::endl;
-    assert( _grid.cell(icell).is_active() );
-    // find neighboring cell from affected cells group
-    for (const Cell* jcell : _grid.cell(icell).neighbors())
-    {
-      const size_t jind = jcell->index();
-      if (std::find(affected_cells.begin(), affected_cells.end(), jind) != affected_cells.end())
-      {
-        // std::cout << "\t" << jind << std::endl;
-        // take index explicitly since minmax takes a reference
-        // what face neighbors should be
-        const std::pair<size_t,size_t> pair_cells = std::minmax(icell, jind);
-
-        // find out if cell i and cell j neighbor by a marked face
-        bool neighbor_by_marked_face = false;
-        for (const size_t iface : split_faces)
-        {
-          const Face f = _grid.face(iface);
-          const std::vector<const Cell*> f_neighbors = f.neighbors();
-
-          assert( f_neighbors.size() == 2 );
-          size_t n1 = f_neighbors[0]->index(), n2 = f_neighbors[1]->index();
-          const std::pair<size_t,size_t> pair_cells2 = std::minmax(n1, n2);
-          if (pair_cells == pair_cells2)
-          {
-            neighbor_by_marked_face = true;
-            break;
-          }
-        }
-
-        if (!neighbor_by_marked_face)
-        {
-          auto group_it = map_cell_group.find(jind);
-          if (group_it == map_cell_group.end())
-            map_cell_group.insert({jind, igroup});
-          else
-          {
-            if (group_it->second < igroup)
-            {
-              map_cell_group[icell] = group_it->second;
-              igroup = group_it->second;
-              new_group--;
-            }
-            else
-            {
-              assert(igroup >= 0);
-              map_cell_group[jind] = igroup;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  std::vector<std::vector<std::size_t>> groups(n_groups);
-  for (auto it : map_cell_group)
-  {
-    if ( it.second >= n_groups )
-    {
-      std::cout << "it.second = " << it.second << std::endl;
-      std::cout << "n_groups = " << n_groups << std::endl;
-    }
-    assert( it.second < n_groups );
-    groups[it.second].push_back(it.first);
-  }
-
-  return groups;
 }
 
 std::vector<std::vector<std::size_t>>
