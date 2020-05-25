@@ -72,6 +72,16 @@ void BoundaryConditionManager::create_dirichlet_data_()
           {
             _data.dirichlet_indices[i].push_back(v);
             _data.dirichlet_values[i].push_back(value);
+
+            // find out if has child vertices (after DFM split) and add those
+            // as dirichlet nodes as well
+            const auto it = _data.parent_to_child_vertices.find(v);
+            if (it != _data.parent_to_child_vertices.end())
+              for (const size_t v_child : it->second)
+            {
+              _data.dirichlet_indices[i].push_back(v_child);
+              _data.dirichlet_values[i].push_back(value);
+            }
           }
         }
       }
