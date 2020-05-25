@@ -133,6 +133,58 @@ void VTKWriter::write_geometry(const Mesh               & grid,
     out << cell->vtk_id() << "\n";
 }
 
+void VTKWriter::write_geometry(const Mesh             & grid,
+                               const Cell             & cell,
+                               std::string            fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Cell\n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  const std::size_t n_points = cell.vertices().size();
+  out << "POINTS" << "\t" << n_points << " float" << "\n";
+  for (const size_t v : cell.vertices())
+    out << grid.vertex(v) << "\n";
+
+  const size_t n_entries = count_number_of_cell_entries_(cell);
+  out << "CELLS " << 1 << " " << n_entries + 1 << "\n";
+
+  if ( cell.vtk_id() != angem::VTK_ID::GeneralPolyhedronID )
+  {
+    out << cell.n_vertices() << "\t";
+    for (size_t i = 0; i < cell.vertices().size(); ++i)
+      out << i << "\t";
+    out << std::endl;
+  }
+  else
+  {
+    out << n_entries << "\n";
+    const auto & faces = cell.faces();
+    out << faces.size() << "\n";
+    for (const auto & face : faces)
+    {
+      const auto & vertices = face->vertices();
+      out << vertices.size() << " ";
+      for (const size_t v : vertices)
+      {
+        const size_t iv = std::distance(cell.vertices().begin(),
+          std::find(cell.vertices().begin(), cell.vertices().end(), v));
+        out << iv << " ";
+      }
+      out << "\n";
+    }
+  }
+
+  out << "CELL_TYPES" << "\t" << 1 << "\n";
+  out << cell.vtk_id() << "\n";
+
+  out.close();
+}
+
+
 void VTKWriter::write_geometry_classic_(const Mesh               & grid,
                                         std::ofstream            & out)
 {

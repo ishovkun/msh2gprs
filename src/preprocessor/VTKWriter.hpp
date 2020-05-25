@@ -31,6 +31,11 @@ class VTKWriter
   static void write_geometry(const Mesh & grid, const std::string & fname);
   static void write_geometry(const Mesh & grid, std::ofstream & out);
 
+  // save geometry of a single cell
+  static void write_geometry(const Mesh             & grid,
+                             const Cell             & cell,
+                             std::string            file_name);
+
   static void write_well_trajectory(const std::vector<Point>                              & vertices,
                                     const std::vector<std::pair<std::size_t,std::size_t>> & indices,
                                     const std::string                                     & fname);
