@@ -225,7 +225,8 @@ std::size_t ConnectionMap<DataType>::index(const std::size_t ielement,
   const std::size_t hash = hash_value(ielement, jelement);
   auto it = connections.find(hash);
   if (it == connections.end())
-    throw std::runtime_error("connection does not exist");
+    throw std::runtime_error("connection " + std::to_string(ielement) + "-"
+                             + std::to_string(jelement) + " does not exist");
   return it->second;
 }
 
