@@ -14,8 +14,8 @@ struct FEPointData
 
 struct FiniteElementData
 {
-  std::vector<FEPointData> points;
-  FEPointData              center;
+  std::vector<FEPointData> points;  // gauss integration points
+  FEPointData              center;  // values in cell center
   size_t                   element_index;
 };
 

@@ -27,7 +27,15 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
   // build grid for the element
   build_triangulation_();
   // solve problems on faces
-  build_face_boundary_conditions_();
+  try {
+    build_face_boundary_conditions_();
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "Error: " << e.what() << std::endl;
+    save_face_domains_(std::to_string(cell.index()) + ".vtk");
+    throw e;
+  }
   // construct the laplace system matrix for the cell volume laplace equation
   build_cell_system_matrix_();
   // impose BC's and solve laplace system to get shape functions
@@ -245,27 +253,34 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
         {
           const size_t m1 = markers[mi];
           const size_t m2 = markers[mj];
-          assert( pair_markers_to_edge.contains(m1, m2) );
-          const auto & parent_edge = pair_markers_to_edge.get_data(m1, m2);
-          const size_t vp1 = parent_edge.either();
-          const size_t vp2 = parent_edge.other(vp1);
-          const Point p1 = parent_nodes[vp1];
-          const Point p2 = parent_nodes[vp2];
-          const double dp = p1.distance(p2);
-          const double d1 = _element_grid.vertex(v).distance(p1);
-          const double d2 = _element_grid.vertex(v).distance(p2);
-          _support_edge_vertices[vp1].push_back(v);
-          _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
-          _support_edge_vertices[vp2].push_back(v);
-          _support_edge_values[vp2].push_back( (dp - d2) / dp );
+          if ( !pair_markers_to_edge.contains(m1, m2) )  // happend in some patrially split cells
+          {
+            std::cout << v << " " << m1 << " " << m2 << " does not exist" << std::endl;
+            continue;
+          }
+          const auto & edges = pair_markers_to_edge.get_data(m1, m2);
+          for (const auto & parent_edge : edges)
+          {
+            const size_t vp1 = parent_edge.either();
+            const size_t vp2 = parent_edge.other(vp1);
+            const Point p1 = parent_nodes[vp1];
+            const Point p2 = parent_nodes[vp2];
+            const double dp = p1.distance(p2);
+            const double d1 = _element_grid.vertex(v).distance(p1);
+            const double d2 = _element_grid.vertex(v).distance(p2);
+            _support_edge_vertices[vp1].push_back(v);
+            _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
+            _support_edge_vertices[vp2].push_back(v);
+            _support_edge_values[vp2].push_back( (dp - d2) / dp );
 
-          // also set zero on edges that do not have either parent
-          for (size_t vp=0; vp<parent_nodes.size(); ++vp)
-            if (vp != vp1 && vp != vp2)
-            {
-              _support_edge_vertices[vp].push_back(v);
-              _support_edge_values[vp].push_back(0.0);
-            }
+            // also set zero on edges that do not have either parent
+            for (size_t vp=0; vp<parent_nodes.size(); ++vp)
+              if (vp != vp1 && vp != vp2)
+              {
+                _support_edge_vertices[vp].push_back(v);
+                _support_edge_values[vp].push_back(0.0);
+              }
+          }
         }
     }
   }
@@ -278,7 +293,7 @@ std::vector<std::vector<size_t>> PolyhedralElementDirect::map_vertices_to_parent
   for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
     if (face->neighbors().size() == 1 && face->marker() > 0)
     {
-      const size_t ipf = face->marker();  // i parent face
+      const size_t ipf = face->marker();  // index parent face
       for (size_t v : face->vertices())
         if (std::find( vertex_markers[v].begin(), vertex_markers[v].end(), ipf ) ==
             vertex_markers[v].end())

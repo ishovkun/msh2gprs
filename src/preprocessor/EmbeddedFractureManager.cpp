@@ -46,6 +46,14 @@ void EmbeddedFractureManager::split_cells()
     m_marker_config.insert({ face_marker, i });
     face_marker++;
   }
+  // std::cout << "active cells: ";
+  // int cnt = 0;
+  // for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
+  // {
+  //   std::cout << cell->index() << "("<<cnt<<") ";
+  //   if ((++cnt) % 10 == 0)
+  //     std::cout << std::endl;
+  // }
 }
 
 void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,

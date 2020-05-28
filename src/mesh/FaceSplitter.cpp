@@ -48,16 +48,32 @@ SurfaceMesh<double> FaceSplitter::split_faces()
 void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
                                  const std::vector<std::size_t> &splitted_face_indices)
 {
+  std::vector<size_t> affected_active_cells;
+  std::back_insert_iterator< std::vector<size_t> > back_it (affected_active_cells);
+  std::copy_if( _grid.m_vertex_cells[vertex_index].begin(), _grid.m_vertex_cells[vertex_index].end(),
+                back_it, [this](const size_t icell){ return _grid.cell(icell).is_active();});
   std::vector<std::vector<std::size_t>> groups =
-      group_cells_based_on_split_faces_2(_grid.m_vertex_cells[vertex_index], splitted_face_indices);
+      group_cells_based_on_split_faces_2(affected_active_cells, splitted_face_indices);
+  // std::vector<std::vector<std::size_t>> groups =
+  //     group_cells_based_on_split_faces_2(_grid.m_vertex_cells[vertex_index], splitted_face_indices);
   // assert( groups.size() > 1 );
   if ( groups.size() == 1 )
     return;
+  for (auto g : groups)
+  {
+    for (auto c : g)
+    {
+      std::cout << c << "\t";
+      assert( _grid.cell(c).has_vertex(vertex_index) );
+    }
+    std::cout << std::endl;
+  }
 
   // create new vertices
   std::vector<std::size_t> new_vertex_indices(groups.size());
   auto & child_vertices = _parent_to_child_vertices[vertex_index];
   const angem::Point<3,double> vertex_coord = _vertex_coord[vertex_index];
+  std::cout << "n_groups = " << groups.size() << std::endl;
   for (std::size_t group = 0; group < groups.size(); group++)
   {
     if (group == 0)  // group 0 retains old vertex
@@ -65,6 +81,7 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
     else  // add new vertices
     {
       const std::size_t new_vertex_index = _vertex_coord.size();
+      std::cout << "adding vertex " << new_vertex_index << std::endl;
       new_vertex_indices[group] = new_vertex_index;
       _vertex_coord.push_back(vertex_coord);
       child_vertices.push_back(new_vertex_index);
@@ -112,7 +129,10 @@ group_cells_based_on_split_faces_2(const std::vector<size_t> & affected_cells,
             jcell = face_neighbors[1]->index();
 
           if (std::find(affected_cells.begin(), affected_cells.end(), jcell) != affected_cells.end())
+          {
+            assert( _grid.cell(jcell).is_active() );
             groups.merge(icell, jcell);
+          }
         }
     }
 

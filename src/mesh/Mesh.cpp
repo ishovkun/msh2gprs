@@ -301,8 +301,8 @@ std::vector<size_t> Mesh::neighbors_indices_(const vertex_pair & edge) const
 {
   std::vector<size_t> ncs;
   for (const size_t v1_cell : m_vertex_cells[edge.first])
-    if (std::count(m_vertex_cells[edge.second].begin(), m_vertex_cells[edge.second].end(), v1_cell))
-      if (cell(v1_cell).is_active())
+    if (cell(v1_cell).is_active())
+      if (std::count(m_vertex_cells[edge.second].begin(), m_vertex_cells[edge.second].end(), v1_cell))
         ncs.push_back( v1_cell );
   return ncs;
 }

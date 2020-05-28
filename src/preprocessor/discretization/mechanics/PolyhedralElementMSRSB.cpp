@@ -482,27 +482,31 @@ void PolyhedralElementMSRSB::build_support_edges_()
           const size_t m1 = markers[mi];
           const size_t m2 = markers[mj];
           assert( pair_markers_to_edge.contains(m1, m2) );
-          const auto & parent_edge = pair_markers_to_edge.get_data(m1, m2);
-          const size_t vp1 = parent_edge.either();
-          const size_t vp2 = parent_edge.other(vp1);
-          const Point p1 = parent_nodes[vp1];
-          const Point p2 = parent_nodes[vp2];
-          const double dp = p1.distance(p2);
-          const double d1 = _element_grid.vertex(v).distance(p1);
-          const double d2 = _element_grid.vertex(v).distance(p2);
-          _support_edge_vertices[vp1].push_back(v);
-          _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
-          _support_edge_vertices[vp2].push_back(v);
-          _support_edge_values[vp2].push_back( (dp - d2) / dp );
+          // const auto & parent_edge = pair_markers_to_edge.get_data(m1, m2);
+          const auto & edges = pair_markers_to_edge.get_data(m1, m2);
+          for (const auto & parent_edge : edges)
+          {
+            const size_t vp1 = parent_edge.either();
+            const size_t vp2 = parent_edge.other(vp1);
+            const Point p1 = parent_nodes[vp1];
+            const Point p2 = parent_nodes[vp2];
+            const double dp = p1.distance(p2);
+            const double d1 = _element_grid.vertex(v).distance(p1);
+            const double d2 = _element_grid.vertex(v).distance(p2);
+            _support_edge_vertices[vp1].push_back(v);
+            _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
+            _support_edge_vertices[vp2].push_back(v);
+            _support_edge_values[vp2].push_back( (dp - d2) / dp );
 
-          // also set zero on edges that are not either parent
-          for (size_t vp=0; vp<parent_vertices.size(); ++vp)
-            if (vp != vp1 && vp != vp2)
-            {
-              _support_edge_vertices[vp].push_back(v);
-              _support_edge_values[vp].push_back(0.0);
-            }
+            // also set zero on edges that are not either parent
+            for (size_t vp=0; vp<parent_vertices.size(); ++vp)
+              if (vp != vp1 && vp != vp2)
+              {
+                _support_edge_vertices[vp].push_back(v);
+                _support_edge_values[vp].push_back(0.0);
+              }
 
+          }
         }
     }
     else if (vertex_markers[v].size() == 1)

@@ -232,7 +232,7 @@ void CellPropertyManager::map_mechanics_to_control_volumes(const discretization:
 {
   const auto & grid = m_data.grid;
   m_data.gmcell_to_flowcells.clear();
-  m_data.gmcell_to_flowcells.resize(m_n_unrefined_cells);
+  m_data.gmcell_to_flowcells.resize(grid.n_active_cells());
   // simdata vector coupled
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {

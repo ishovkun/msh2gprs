@@ -50,9 +50,10 @@ class EdgeComparison
 {
  public:
 
-  static hash_algorithms::ConnectionMap<Edge> get_edges(std::vector<std::list<size_t>> & vertex_face_markers)
+  static hash_algorithms::ConnectionMap<std::vector<Edge>>
+  get_edges(std::vector<std::list<size_t>> & vertex_face_markers)
   {
-    hash_algorithms::ConnectionMap<Edge> cm;
+    hash_algorithms::ConnectionMap<std::vector<Edge>> cm;
     for (size_t v=0; v<vertex_face_markers.size(); ++v)
       for (size_t w=v+1; w<vertex_face_markers.size(); ++w)
       {
@@ -63,8 +64,15 @@ class EdgeComparison
             {
               const size_t m1 = ev.either();
               const size_t m2 = ev.other(m1);
-              const size_t data_index = cm.insert( m1, m2 );
-              cm.get_data(data_index) = Edge(v , w);
+              if (!cm.contains(m1, m2))
+              {
+                const size_t data_index = cm.insert( m1, m2 );
+                cm.get_data(data_index).push_back(Edge(v , w));
+              }
+              else
+              {
+                cm.get_data(m1, m2).push_back(Edge(v , w));
+              }
             }
       }
 

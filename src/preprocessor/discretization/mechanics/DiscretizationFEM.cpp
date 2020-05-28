@@ -8,6 +8,7 @@
 #include "StandardFiniteElement.hpp"
 #include "MeshStatsComputer.hpp"
 #include "logger/ProgressBar.hpp"  // provides ProgressBar
+#include "VTKWriter.hpp"                                       // debugging, provides io::VTKWriter
 
 
 namespace discretization
@@ -26,7 +27,7 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   throw std::runtime_error("Cannot use DFEM method without linking to Eigen");
   #endif
 
-  // analyze_cell_(_grid.cell(12));
+  // analyze_cell_(_grid.cell(704));
   // if (_config.method != strong_discontinuity)
   // {
   //   auto cell = _grid.begin_active_cells();
@@ -39,10 +40,12 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   _cell_data.resize( _grid.n_cells() );
   _frac_data.resize( _grid.n_faces() );
   logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
+  std::cout << std::endl;
   size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
-    progress.set_progress(item++);
+    std::cout << item++ << " (" << _grid.n_active_cells() << ")"<< std::endl;
+    // progress.set_progress(item++);
 
     const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
 
@@ -71,14 +74,17 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
       iface++;
     }
   }
+
   progress.finalize();
 }
 
 void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 {
+  IO::VTKWriter::write_geometry(_grid, cell, "output/geometry-" + std::to_string(cell.index()) + ".vtk");
+
   PolyhedralElementDirect de(cell, _config);
   // PolyhedralElementMSRSB de(cell, _config);
-  de.save_shape_functions("output/shape_functions" + std::to_string(cell.index())+ ".vtk");
+  de.save_shape_functions("output/shape_functions-" + std::to_string(cell.index())+ ".vtk");
   exit(0);
 
   StandardFiniteElement fe(cell);

@@ -17,10 +17,11 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
     assert ( children.size() == 1 );
     return split_cell(*children[0], plane, splitting_face_marker);
   }
-  std::cout << splitting_face_marker<< "-split " << cell.index() << " (parent "
-            << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"
-            << std::endl << std::flush;
+  // std::cout << splitting_face_marker<< "-split " << cell.index() << " (parent "
+  //           << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"
+  //           << std::endl << std::flush;
   assert (cell.is_active());
+  const size_t parent_cell_index = cell.index();
 
   // Bookkeeping:
   //  fill polygroup's internal set with the existing vertex coordinates
@@ -75,9 +76,15 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
   const size_t child_cell_index1 = _grid.insert_cell_(cell_above_faces, tmp_faces, cell.marker());
   const size_t child_cell_index2 = _grid.insert_cell_(cell_below_faces, tmp_faces, cell.marker());
   _grid._n_inactive_cells++;
+  std::cout << "split " << parent_cell_index << " (parent "
+            << _grid.cell(parent_cell_index).parent().index()
+            << " ult " << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
+            << child_cell_index1 << " " << child_cell_index2
+            << std::endl << std::flush;
+
 
   // handle parent/child cell dependencies
-  _grid.cell(cell.index()).m_children = {child_cell_index1, child_cell_index2};
+  _grid.cell(parent_cell_index).m_children = {child_cell_index1, child_cell_index2};
   _grid.cell(child_cell_index1).m_parent = cell.index();
   _grid.cell(child_cell_index2).m_parent = cell.index();
 
@@ -85,11 +92,11 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
   // the eiasiest way to do it is to track split edges
   for (const auto & it_edge : find_affected_edges_(new_vertices, cell))
     for ( const auto icell : _grid.neighbors_indices_(it_edge.first) )
-      if (icell != cell.index() && icell != child_cell_index1 && icell != child_cell_index2)
+      if (icell != parent_cell_index && icell != child_cell_index1 && icell != child_cell_index2)
       {
-        std::cout << "insert hanging into " << _grid.cell(icell).index()
-                  << "(" << _grid.cell(icell).ultimate_parent().index() << ")"
-                  << std::endl;
+        // std::cout << "insert hanging into " << _grid.cell(icell).index()
+        //           << "(" << _grid.cell(icell).ultimate_parent().index() << ")"
+        //           << std::endl;
         const auto & neighbor = _grid.cell(icell);
         if (!neighbor.has_vertex(it_edge.second))
           insert_hanging_node_(neighbor, it_edge.first, it_edge.second);
@@ -109,8 +116,8 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
         const auto & neighbor = _grid.cell(icell);
         if (!neighbor.has_edge(split_edge))
         {
-          std::cout << "split neighbor face " << neighbor.index() << "("
-                    << neighbor.ultimate_parent().index() << std::endl;
+          // std::cout << "split neighbor face " << neighbor.index() << "("
+          //           << neighbor.ultimate_parent().index() << std::endl;
           split_face_in_cell_(neighbor, split_edge);
         }
 
@@ -185,10 +192,15 @@ void CellSplitter::insert_hanging_node_(const Cell parent, const vertex_pair edg
   }
   std::vector<size_t> indices_in_tmp(tmp_faces.size());
   std::iota(indices_in_tmp.begin(), indices_in_tmp.end(), 0);
+  const size_t parent_cell_index = parent.index();
   const size_t child_cell_index = _grid.insert_cell_(indices_in_tmp, tmp_faces, parent.marker());
-  _grid.cell(child_cell_index).m_parent = parent.index();
-  _grid.cell(parent.index()).m_children = {child_cell_index};
+  _grid.cell(child_cell_index).m_parent = parent_cell_index;
+  _grid.cell(parent_cell_index).m_children = {child_cell_index};
   _grid._n_inactive_cells++;
+  std::cout << "insert hanging into " << parent_cell_index << " "
+            << "(" << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
+            << child_cell_index
+            << std::endl;
 }
 
 void CellSplitter::split_face_in_cell_(const Cell parent, const vertex_pair new_edge)
@@ -236,10 +248,17 @@ void CellSplitter::split_face_in_cell_(const Cell parent, const vertex_pair new_
     tmp_faces.push_back(std::move(f2));
     std::vector<size_t> indices_in_tmp(tmp_faces.size());
     std::iota(indices_in_tmp.begin(), indices_in_tmp.end(), 0);
+    const size_t parent_index = parent.index();
     const size_t child_cell_index = _grid.insert_cell_(indices_in_tmp, tmp_faces, parent.marker());
-    _grid.cell(child_cell_index).m_parent = parent.index();
-    _grid.cell(parent.index()).m_children = {child_cell_index};
+    _grid.cell(child_cell_index).m_parent = parent_index;
+    _grid.cell(parent_index).m_children = {child_cell_index};
     _grid._n_inactive_cells++;
+    std::cout << "split neighbor face in "
+              << parent_index << "(par "
+              << _grid.cell(parent_index).parent().index() << ", ult "
+              << _grid.cell(parent_index).ultimate_parent().index() << "): "
+              << child_cell_index
+              << std::endl;
   }
 }
 

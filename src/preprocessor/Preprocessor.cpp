@@ -271,6 +271,10 @@ void Preprocessor::build_geomechanics_discretization_()
   data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>
       (mech_numbering_mgr.get_numbering());
 
+  // std::cout << "data.mech_numbering(653) = " << data.mech_numbering->cell_dof(653) << std::endl;
+  // std::cout << "data.mech_numbering(704) = " << data.mech_numbering->cell_dof(704) << std::endl;
+  // exit(0);
+
   // split geomechanics DFM faces
   std::cout << "splitting faces of DFM fractures" << std::endl;
   p_frac_mgr->split_faces(data.geomechanics_grid);
