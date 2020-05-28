@@ -40,12 +40,12 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   _cell_data.resize( _grid.n_cells() );
   _frac_data.resize( _grid.n_faces() );
   logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
-  std::cout << std::endl;
+  // std::cout << std::endl;
   size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
-    std::cout << item++ << " (" << _grid.n_active_cells() << ")"<< std::endl;
-    // progress.set_progress(item++);
+    // std::cout << item++ << " (" << _grid.n_active_cells() << ")"<< std::endl;
+    progress.set_progress(item++);
 
     const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
 

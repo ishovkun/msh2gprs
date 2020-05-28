@@ -59,21 +59,11 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
   // assert( groups.size() > 1 );
   if ( groups.size() == 1 )
     return;
-  for (auto g : groups)
-  {
-    for (auto c : g)
-    {
-      std::cout << c << "\t";
-      assert( _grid.cell(c).has_vertex(vertex_index) );
-    }
-    std::cout << std::endl;
-  }
 
   // create new vertices
   std::vector<std::size_t> new_vertex_indices(groups.size());
   auto & child_vertices = _parent_to_child_vertices[vertex_index];
   const angem::Point<3,double> vertex_coord = _vertex_coord[vertex_index];
-  std::cout << "n_groups = " << groups.size() << std::endl;
   for (std::size_t group = 0; group < groups.size(); group++)
   {
     if (group == 0)  // group 0 retains old vertex
@@ -81,7 +71,7 @@ void FaceSplitter::split_vertex_(const std::size_t               vertex_index,
     else  // add new vertices
     {
       const std::size_t new_vertex_index = _vertex_coord.size();
-      std::cout << "adding vertex " << new_vertex_index << std::endl;
+      // std::cout << "adding vertex " << new_vertex_index << std::endl;
       new_vertex_indices[group] = new_vertex_index;
       _vertex_coord.push_back(vertex_coord);
       child_vertices.push_back(new_vertex_index);

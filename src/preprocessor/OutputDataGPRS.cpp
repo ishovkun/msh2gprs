@@ -264,25 +264,6 @@ void OutputDataGPRS::save_geometry_() const
   out << "GMFACE_GMCELLS" << std::endl;
   for (auto face=grid.begin_active_faces(); face!=grid.end_active_faces(); ++face)
   {
-  //   if (data.is_fracture(face.marker()))  // timur want to retain neighbors of master frac face
-  //   {
-  //     if (face.index() == face.master_index())
-  //     {
-  //       const auto it_frac_face = data.dfm_faces.find(face.master_index());
-  //       if (it_frac_face == data.dfm_faces.end())
-  //       {
-  //         throw std::runtime_error("bug in dfm connections");
-  //       }
-  //       const auto & neighbors = it_frac_face->second.neighbor_cells;
-
-  //       out << neighbors.size() << "\t";
-  //       for (const auto & neighbor : neighbors)
-  //         out << neighbor + 1 << "\t";
-  //       out << std::endl;
-  //     }
-  //   }
-  //   else
-  //   {
       const std::vector<const mesh::Cell*> neighbors = face->neighbors();
       out << neighbors.size() << "\t";
       if (_data.dfm_faces.find(face->index()) != _data.dfm_faces.end())
@@ -295,7 +276,6 @@ void OutputDataGPRS::save_geometry_() const
       out << "\n";
   }
   out << "/\n\n";
-
 }
 
 
@@ -496,7 +476,7 @@ void OutputDataGPRS::save_discrete_fracture_properties_(const std::string file_n
 
 void OutputDataGPRS::saveWells(const std::string file_name) const
 {
-  std::ofstream out;
+  std::ofstream out;
   out.open(file_name.c_str());
 
   out << "WELSPECS" << std::endl;
@@ -779,7 +759,6 @@ void OutputDataGPRS::save_fem_data_() const
   out << "/\n\n";
 
   // SAVE FACE DATA
-  // face gauss weights
   const auto & faces = _data.fe_face_data;  // fe values and gradients for grid faces
   if (faces.empty())
   {
@@ -787,6 +766,7 @@ void OutputDataGPRS::save_fem_data_() const
     return;
   }
 
+  // face gauss weights
   out << "GMFACE_GAUSS_WEIGHTS" << "\n";
   for (const auto & face : faces)
     if (!face.points.empty())
@@ -799,6 +779,7 @@ void OutputDataGPRS::save_fem_data_() const
     }
   out << "/\n\n";
 
+  // center detJ
   out << "GMFACE_GAUSS_WEIGHTS_CENTER" << "\n";
   for (const auto & face : faces)
     if (!face.points.empty())
@@ -863,6 +844,8 @@ void OutputDataGPRS::save_fem_data_() const
       }
       else
       {
+        if ( data[1].element_index != neighbors[0]->index() )
+          throw std::runtime_error("something went wront");
         export_point_grads(out, data[1]);
         export_point_grads(out, data[0]);
       }
