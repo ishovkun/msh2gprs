@@ -64,7 +64,8 @@ void get_face_integration_points(FeValues<angem::TriangleID> & fe_values,
   Point zero_point = {0,0,0};
   std::fill(integration_points.begin(), integration_points.end(), zero_point);
 
-  const size_t nv = N_ELEMENT_VERTICES<angem::TriangleID>;  // number of vertices in triangle
+  // const size_t nv = N_ELEMENT_VERTICES<angem::TriangleID>;  // number of vertices in triangle
+  const size_t nv = ElementTraits<angem::TriangleID>::n_vertices;  // number of vertices in triangle
   for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
     for (size_t v = 0; v < nv; ++v)
       integration_points[q] += fe_values.value(v, q) * master_qpoints[q];
@@ -88,7 +89,8 @@ void IntegrationRuleFacesFractures::compute_face_fe_quantities_(const size_t par
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
   const auto & basis_functions = _element._basis_functions;
   std::vector<Point> local_integration_points;
-  const size_t nv = N_ELEMENT_VERTICES<angem::TetrahedronID>;
+  const size_t nv = ElementTraits<angem::TetrahedronID>::n_vertices;
+
 
   for (const size_t iface : face_indices)
   {
@@ -104,6 +106,7 @@ void IntegrationRuleFacesFractures::compute_face_fe_quantities_(const size_t par
         fe_face_values.update(face);
         get_face_integration_points(fe_face_values, local_integration_points);
         fe_cell_values.update(cell, local_integration_points);
+        // fe_cell_values.update(cell);
 
         for (size_t q = 0; q < fe_face_values.n_integration_points(); ++q)
           region_areas[region] += fe_face_values.JxW(q);
@@ -125,6 +128,9 @@ void IntegrationRuleFacesFractures::compute_face_fe_quantities_(const size_t par
         break;  // stop searching region
       }
   }
+  // const double sum_area = std::accumulate( region_areas.begin(), region_areas.end(), 0.0);
+  // if (std::fabs(sum_area - _element._parent_cell.faces()[parent_face]->area() > 1e-8))
+  //   abort();
 
   for (size_t region=0; region<regions.size(); ++region)  // tributary regions
   {

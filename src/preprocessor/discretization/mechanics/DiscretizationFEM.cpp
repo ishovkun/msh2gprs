@@ -27,7 +27,7 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   throw std::runtime_error("Cannot use DFEM method without linking to Eigen");
   #endif
 
-  // analyze_cell_(_grid.cell(704));
+  // analyze_cell_(_grid.cell(546));
   // if (_config.method != strong_discontinuity)
   // {
   //   auto cell = _grid.begin_active_cells();
@@ -232,7 +232,7 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
     p_discr = std::make_unique<StandardFiniteElement>(cell, need_face_values, need_fracture_values);
   else if (_config.method == mixed)
   {
-    if (cell.vtk_id() == angem::GeneralPolygonID)
+    if (cell.vtk_id() == angem::GeneralPolyhedronID)
     {
       if (_config.solver == direct || _config.solver == cg)
         p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config, need_face_values,

@@ -652,10 +652,10 @@ void OutputDataGPRS::save_cell_geometry_(std::ofstream & out, const mesh::Mesh &
 
 void export_point_grads(std::ofstream & out, const discretization::FiniteElementData & data)
 {
-  for (const auto & point_data : data.points)
+  for (const auto & point_data : data.points)  // loop q points
   {
-    for (const auto & grad : point_data.grads)
-      out << grad << "\t";
+    for (const auto & grad : point_data.grads)  // loop vertices
+      out << grad << "\t";                      // writes 3 values (x,y,z)
     out << "\n";
   }
  
@@ -739,12 +739,7 @@ void OutputDataGPRS::save_fem_data_() const
   for (const auto & cell : cells)
     if (!cell.points.empty())
     {
-      for (const auto &point : cell.points)
-      {
-        for (const angem::Point<3,double> & grad : point.grads)
-          out << grad << "\t";
-        out << "\n";
-      }
+      export_point_grads(out, cell);
     }
   out << "/\n\n";
   // center
@@ -812,12 +807,7 @@ void OutputDataGPRS::save_fem_data_() const
   out << "GMFACE_SHAPE_GRADS" << "\n";
   for (const auto & face : faces)
     if (!face.points.empty())
-    {
-      for (const auto &point : face.points)
-        for (const angem::Point<3,double> & grad : point.grads)
-          out << grad << "\t";
-      out << "\n";
-    }
+      export_point_grads(out, face);
   out << "/\n\n";
 
   out << "GMFACE_SHAPE_GRADS_CENTER" << "\n";
