@@ -679,7 +679,7 @@ void GmshInterface::insert_elements_(const int dim, const int tag,
 
 #else
 
-void GmshInterface::build_triangulation(const mesh::Cell & cell)
+void GmshInterface::build_triangulation(const mesh::Cell & cell, const double n_vertices_on_edge)
 {
   throw std::invalid_argument("Gmsh is not linked. Gridding options not available");
 }
@@ -701,6 +701,10 @@ static void get_mesh_from_model(mesh:: Mesh & grid)
 {
   throw std::runtime_error("Gmsh has not been linked");
 }
+
+void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & grid,
+                                        const double n_vertices_on_edge)
+{}
 
 
 #endif

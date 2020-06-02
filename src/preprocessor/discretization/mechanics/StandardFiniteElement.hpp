@@ -46,7 +46,7 @@ template <angem::VTK_ID vtk_id>
 void StandardFiniteElement::build_(FeValues<vtk_id> & fe_values, FiniteElementData & entity_data,
                                    const bool update_center)
 {
-  const size_t nv = N_ELEMENT_VERTICES<vtk_id>;
+  const size_t nv = ElementTraits<vtk_id>::n_vertices;
   for (size_t q=0; q<fe_values.n_integration_points(); ++q)
   {
     FEPointData data;

@@ -3,6 +3,7 @@
 #include "config/FiniteElementConfig.hpp"   // provides FiniteElementConfig
 #include "mesh/Mesh.hpp"                    // provides mesh::Mesh, mesh::cell
 #include "gmsh_interface/GmshInterface.hpp" // provides GmshInterface
+#ifdef WITH_EIGEN
 #include <Eigen/Dense>                      // provides MatrixXd, VectorXd
 
 namespace discretization {
@@ -39,3 +40,5 @@ class PolyhedralElementBase : public FiniteElementBase
 };
 
 }  // end namespace discretization
+
+#endif

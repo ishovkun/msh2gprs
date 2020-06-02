@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef WITH_EIGEN
 #include "mesh/Mesh.hpp"
 #include "../PolyhedralElementBase.hpp"
 
@@ -26,3 +27,5 @@ class IntegrationRuleFacesFractures
 };
 
 }  // end namespace discretization
+
+#endif

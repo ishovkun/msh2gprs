@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef WITH_EIGEN
 #include "mesh/Mesh.hpp"  // provides mesh::Mesh
 #include "../PolyhedralElementBase.hpp"
 #include <vector>
@@ -42,3 +43,5 @@ class IntegrationRuleFacesAverage
 };
 
 }  // end namespace discretization
+
+#endif

@@ -42,11 +42,6 @@ void FeValues::get_elements_()
   _n_elements = _element_tags.size();
 }
 
-#else
-void FeValues::initialize_()
-{}
-#endif
-
 void FeValues::update(const size_t cell_number)
 {
   const size_t dim = 3;
@@ -118,6 +113,11 @@ size_t FeValues::n_vertices() const
   const double dim = 3;
   return _ref_gradients.size() / dim / n_q_points();
 }
+
+#else
+void FeValues::initialize_()
+{}
+#endif
 
 
 Point FeValues::grad(const size_t vertex, const size_t q) const
