@@ -702,6 +702,10 @@ static void get_mesh_from_model(mesh:: Mesh & grid)
   throw std::runtime_error("Gmsh has not been linked");
 }
 
+void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & grid,
+                                        const double n_vertices_on_edge)
+{}
+
 
 #endif
 }  // end namespace gprs_data
