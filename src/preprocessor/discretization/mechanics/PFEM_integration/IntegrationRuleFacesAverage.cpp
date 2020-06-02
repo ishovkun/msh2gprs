@@ -1,3 +1,4 @@
+#ifdef WITH_EIGEN
 #include "IntegrationRuleFacesAverage.hpp"
 #include "../FeValues.hpp"
 
@@ -309,3 +310,5 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
 }
 
 }  // end namespace discretization
+
+#endif

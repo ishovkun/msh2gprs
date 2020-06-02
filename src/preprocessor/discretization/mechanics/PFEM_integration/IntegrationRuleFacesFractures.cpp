@@ -1,3 +1,4 @@
+#ifdef WITH_EIGEN
 #include "IntegrationRuleFacesFractures.hpp"
 #include "../FeValues.hpp"
 
@@ -145,3 +146,5 @@ void IntegrationRuleFacesFractures::compute_face_fe_quantities_(const size_t par
 
 
 }  // end namespace discretization
+
+#endif

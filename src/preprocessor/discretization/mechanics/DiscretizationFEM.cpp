@@ -82,6 +82,7 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 {
   IO::VTKWriter::write_geometry(_grid, cell, "output/geometry-" + std::to_string(cell.index()) + ".vtk");
 
+#ifdef WITH_EIGEN
   PolyhedralElementDirect de(cell, _config);
   // PolyhedralElementMSRSB de(cell, _config);
   de.save_shape_functions("output/shape_functions-" + std::to_string(cell.index())+ ".vtk");
@@ -213,6 +214,7 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
   }
 
   exit(0);
+#endif
 }
 
 std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::Cell & cell)
@@ -222,11 +224,13 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
   std::unique_ptr<FiniteElementBase> p_discr;
   if (_config.method == FEMMethod::polyhedral_finite_element)
   {
+#ifdef WITH_EIGEN
     if (_config.solver == direct || _config.solver == cg)
       p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config, need_face_values,
                                                           need_fracture_values);
     else if (_config.solver == msrsb)
       p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
+#endif
   }
   else if (_config.method == strong_discontinuity)
     p_discr = std::make_unique<StandardFiniteElement>(cell, need_face_values, need_fracture_values);
@@ -234,11 +238,13 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
   {
     if (cell.vtk_id() == angem::GeneralPolyhedronID)
     {
+#ifdef WITH_EIGEN
       if (_config.solver == direct || _config.solver == cg)
         p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config, need_face_values,
                                                             need_fracture_values);
       else if (_config.solver == msrsb)
         p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
+#endif
     }
     else
       p_discr = std::make_unique<StandardFiniteElement>(cell, need_face_values, need_fracture_values);
