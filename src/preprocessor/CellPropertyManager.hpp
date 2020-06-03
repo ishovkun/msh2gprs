@@ -30,7 +30,8 @@ class CellPropertyManager
   // create properties that occured after cell splitting 
   void downscale_properties();
   // map coarse geomechanics cells to flow CVs
-  void map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs);
+  void map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs,
+                                        const mesh::Mesh & grid);
   // remove properties of refined cells after coarsening
   void coarsen_cells();
 

@@ -65,7 +65,8 @@ void Preprocessor::run()
   // Coupling
   // map mechanics cells to control volumes
   if (data.has_mechanics)
-    pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
+    pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering, data.geomechanics_grid);
+
   // map dfm flow grid to flow dofs
   data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
@@ -230,6 +231,11 @@ void Preprocessor::build_flow_discretization_()
     WellManager well_mgr(config.wells, data, *data.flow_numbering);
     well_mgr.setup();
   }
+
+  // used for coupling later on
+  if ( config.edfm_method != EDFMMethod::compartmental )
+    pm_dfm_mgr->distribute_properties();
+
   std::cout << "done flow discretization" << std::endl;
 }
 
@@ -242,8 +248,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
   if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
   {
-    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid,
-                                              config.n_multiscale_blocks);
+    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.n_multiscale_blocks);
     ms_handler.build_data();
 
     ms_handler.fill_output_model(data.ms_mech_data);
@@ -262,7 +267,7 @@ void Preprocessor::build_geomechanics_discretization_()
   dfm_markers = p_frac_mgr->get_face_markers();
 
   std::cout << "build FEM discretization" << std::endl;
-  discretization::DiscretizationFEM fem_discr(data.grid, config.fem, dfm_markers);
+  discretization::DiscretizationFEM fem_discr(data.geomechanics_grid, config.fem, dfm_markers);
   data.fe_cell_data = fem_discr.get_cell_data();
   data.fe_face_data = fem_discr.get_face_data();
   data.fe_frac_data = fem_discr.get_fracture_data();
