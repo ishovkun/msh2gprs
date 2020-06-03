@@ -242,8 +242,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
   if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
   {
-    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid,
-                                              config.n_multiscale_blocks);
+    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.n_multiscale_blocks);
     ms_handler.build_data();
 
     ms_handler.fill_output_model(data.ms_mech_data);
