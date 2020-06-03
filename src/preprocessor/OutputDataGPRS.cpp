@@ -308,6 +308,7 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
   std::ofstream out;
   out.open(file_name.c_str());
 
+  // write SDA cells
   out << "GM_EFRAC_CELLS" << std::endl;
   for (const auto & frac : _data.sda_data)
   {
