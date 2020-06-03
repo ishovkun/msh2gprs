@@ -65,7 +65,7 @@ void Preprocessor::run()
   // Coupling
   // map mechanics cells to control volumes
   if (data.has_mechanics)
-    pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
+    pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering, data.geomechanics_grid);
   // map dfm flow grid to flow dofs
   data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 

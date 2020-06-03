@@ -228,9 +228,9 @@ void CellPropertyManager::build_flow_output_property_keys_()
   }
 }
 
-void CellPropertyManager::map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
+void CellPropertyManager::map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs,
+                                                           const mesh::Mesh & grid)
 {
-  const auto & grid = m_data.grid;
   m_data.gmcell_to_flowcells.clear();
   m_data.gmcell_to_flowcells.resize(grid.n_active_cells());
   // simdata vector coupled
