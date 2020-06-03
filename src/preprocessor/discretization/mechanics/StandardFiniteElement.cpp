@@ -96,7 +96,7 @@ void StandardFiniteElement::update_cell_values_in_faces_()
           break;
         }
       default:
-        throw std::invalid_argument("FEM not implemented for this vtk type");
+        throw std::invalid_argument("FEM not implemented for this vtk type " + std::to_string(cell_id));
     }
   }
 
