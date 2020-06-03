@@ -262,7 +262,7 @@ void Preprocessor::build_geomechanics_discretization_()
   dfm_markers = p_frac_mgr->get_face_markers();
 
   std::cout << "build FEM discretization" << std::endl;
-  discretization::DiscretizationFEM fem_discr(data.grid, config.fem, dfm_markers);
+  discretization::DiscretizationFEM fem_discr(data.geomechanics_grid, config.fem, dfm_markers);
   data.fe_cell_data = fem_discr.get_cell_data();
   data.fe_face_data = fem_discr.get_face_data();
   data.fe_frac_data = fem_discr.get_fracture_data();
