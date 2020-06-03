@@ -362,10 +362,10 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
     out << frac.friction_angle << "\n";
   out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_DILATION" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   geomechfile << efrac.dilation_angle << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_DILATION" << "\n";
+  for (const auto & frac : _data.sda_data)
+    out << frac.dilation_angle << "\n";
+  out << "/\n\n";
 
   out.close();
 }
