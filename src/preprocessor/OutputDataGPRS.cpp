@@ -343,14 +343,14 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
     }
   out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_STRIKE" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
-  //   {
-  //     geomechfile << efrac.strike[i] << "\t";
-  //     if ((i+1)%n_entries_per_line == 0) geomechfile << std::endl;
-  //   }
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_STRIKE" << std::endl;
+  for (const auto & frac : _data.sda_data)
+    for (size_t i=0; i < frac.strike.size(); ++i)
+    {
+      out << frac.strike[i] << "\t";
+      if ((i+1)%n_entries_per_line == 0) out << "\n";
+    }
+  out << "/\n\n";
 
   // geomechfile << "GM_EFRAC_COHESION" << std::endl;
   // for (const auto & efrac : data.vEfrac)
