@@ -333,7 +333,7 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
   out << "/\n\n";
 
   // sda fracture dip in each fracture cell
-  out << "GM_EFRAC_DIP" << std::endl;
+  out << "GM_EFRAC_DIP" << "\n";
   for (const auto & frac : _data.sda_data)
     for (size_t i=0; i < frac.dip.size(); ++i)
     {
@@ -343,7 +343,7 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
     }
   out << "/\n\n";
 
-  out << "GM_EFRAC_STRIKE" << std::endl;
+  out << "GM_EFRAC_STRIKE" << "\n";
   for (const auto & frac : _data.sda_data)
     for (size_t i=0; i < frac.strike.size(); ++i)
     {
@@ -352,10 +352,10 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
     }
   out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_COHESION" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   geomechfile << efrac.cohesion << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_COHESION" << "\n";
+  for (const auto & frac : _data.sda_data)
+    out << frac.cohesion << std::endl;
+  out << "/\n\n";
 
   // geomechfile << "GM_EFRAC_FRICTION" << std::endl;
   // for (const auto & efrac : data.vEfrac)
