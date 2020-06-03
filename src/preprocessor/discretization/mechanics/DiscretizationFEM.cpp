@@ -20,9 +20,6 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
     : _grid(grid), _config( config ),
       _fracture_face_markers(fracture_face_markers.begin(), fracture_face_markers.end())
 {
-  #ifndef WITH_GMSH
-  throw std::runtime_error("Cannot use DFEM method without linking to GMsh");
-  #endif
   #ifndef WITH_EIGEN
   throw std::runtime_error("Cannot use DFEM method without linking to Eigen");
   #endif
@@ -230,7 +227,10 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
                                                           need_fracture_values);
     else if (_config.solver == msrsb)
       p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
+#else
+    throw std::runtime_error("Cannot use PDFEM method without linking to Eigen");
 #endif
+
   }
   else if (_config.method == strong_discontinuity)
     p_discr = std::make_unique<StandardFiniteElement>(cell, need_face_values, need_fracture_values);
@@ -244,6 +244,8 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
                                                             need_fracture_values);
       else if (_config.solver == msrsb)
         p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
+#else
+    throw std::runtime_error("Cannot use PFEM method without linking to Eigen");
 #endif
     }
     else
