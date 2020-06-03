@@ -30,11 +30,8 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   // std::cout << "save custom keyswords" << std::endl;
   // saveGeomechDataNewKeywords(output_path + data.config.domain_file);
 
-  // if (!data.vEfrac.empty())
-  // {
-  //   std::cout << "save embedded fractures" << std::endl;
-  //   saveEmbeddedFractureProperties(output_path + data.config.efrac_file);
-  // }
+  if (!_data.sda_data.empty())
+    save_embedded_fractures_(_output_path + "/" + _config.efrac_file);
 
   // std::cout << "save mech boundary conditions: "
   //           << output_path + data.config.bcond_file
@@ -305,26 +302,27 @@ void OutputDataGPRS::save_geomechanics_keywords_() const
 }
 
 
-void OutputDataGPRS::saveEmbeddedFractureProperties(const std::string file_name)
+void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
 {
-  // std::cout  << "Writing SDA props" << std::endl;
-  // std::ofstream geomechfile;
-  // geomechfile.open(file_name.c_str());
+  std::cout << "saving " << file_name << std::endl;
+  std::ofstream out;
+  out.open(file_name.c_str());
 
-  // geomechfile << "GM_EFRAC_CELLS" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  // {
-  //   geomechfile << efrac.cells.size() << std::endl << "\t";
-  //   for (std::size_t i=0; i<efrac.cells.size(); ++i)
-  //   {
-  //     geomechfile << efrac.cells[i] + 1 << "\t";
-  //     if ((i+1) % n_entries_per_line == 0)
-  //       geomechfile << std::endl;
-  //     if (i == efrac.cells.size() - 1)
-  //       geomechfile << std::endl;
-  //   }
-  // }
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_CELLS" << std::endl;
+  for (const auto & frac : _data.sda_data)
+  {
+    out << frac.cells.size() << std::endl << "\t";
+    for (size_t i=0; i < frac.cells.size(); ++i)
+    {
+      const double mech_cell = _data.mech_numbering->cell_dof(frac.cells[i]);
+      out << mech_cell + 1 << "\t";
+      if ((i+1) % n_entries_per_line == 0)
+        out << "\n";
+      if (i == frac.cells.size() - 1)
+        out << "\n";
+    }
+  }
+  out << "/\n\n";
 
   // geomechfile << "GM_EFRAC_POINTS" << std::endl;
   // for (const auto & efrac : data.vEfrac)
@@ -366,7 +364,7 @@ void OutputDataGPRS::saveEmbeddedFractureProperties(const std::string file_name)
   //   geomechfile << efrac.dilation_angle << std::endl;
   // geomechfile << "/" << std::endl << std::endl;
 
-  // geomechfile.close();
+  out.close();
 }
 
 

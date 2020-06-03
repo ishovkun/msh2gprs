@@ -48,7 +48,7 @@ public:
   void save_geomechanics_keywords_() const;
   // save computed element data: (grad) shape functions, gauss weights, JxW
   void save_fem_data_() const;
-  void saveEmbeddedFractureProperties(const std::string file_name);
+  void save_embedded_fractures_(const std::string file_name) const;
   // save dirichlet and neumann boundary conditions for geomechanics
   void save_geomechanics_boundary_conditions_() const;
   void save_dirichlet_component_vertices(const size_t comp, const std::string comp_name,
