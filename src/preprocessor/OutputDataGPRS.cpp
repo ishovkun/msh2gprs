@@ -325,11 +325,12 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
   }
   out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_POINTS" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
-  //     geomechfile << efrac.points[i] << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  // coordinates of a point in frac plane for each SDA cell
+  out << "GM_EFRAC_POINTS" << "\n";
+  for (const auto & frac : _data.sda_data)
+    for (size_t i=0; i < frac.points.size(); ++i)
+      out << frac.points[i] << std::endl;
+  out << "/\n\n";
 
   // geomechfile << "GM_EFRAC_DIP" << std::endl;
   // for (const auto & efrac : data.vEfrac)
