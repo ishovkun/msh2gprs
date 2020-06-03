@@ -66,6 +66,7 @@ void Preprocessor::run()
   // map mechanics cells to control volumes
   if (data.has_mechanics)
     pm_property_mgr->map_mechanics_to_control_volumes(*data.flow_numbering, data.geomechanics_grid);
+
   // map dfm flow grid to flow dofs
   data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
@@ -230,6 +231,11 @@ void Preprocessor::build_flow_discretization_()
     WellManager well_mgr(config.wells, data, *data.flow_numbering);
     well_mgr.setup();
   }
+
+  // used for coupling later on
+  if ( config.edfm_method != EDFMMethod::compartmental )
+    pm_dfm_mgr->distribute_properties();
+
   std::cout << "done flow discretization" << std::endl;
 }
 
