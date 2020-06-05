@@ -241,10 +241,13 @@ void Preprocessor::build_flow_discretization_()
 
 void Preprocessor::build_geomechanics_discretization_()
 {
-  // generate geomechanics sda properties
-  pm_edfm_mgr->distribute_mechanical_properties();
-  // map sda cells to flow dofs
-  pm_edfm_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
+  if (config.fem.method == strong_discontinuity)
+  {
+    // generate geomechanics sda properties
+    pm_edfm_mgr->distribute_mechanical_properties();
+    // map sda cells to flow dofs
+    pm_edfm_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
+  }
 
   if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
   {

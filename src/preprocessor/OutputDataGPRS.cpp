@@ -30,11 +30,8 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   // std::cout << "save custom keyswords" << std::endl;
   // saveGeomechDataNewKeywords(output_path + data.config.domain_file);
 
-  // if (!data.vEfrac.empty())
-  // {
-  //   std::cout << "save embedded fractures" << std::endl;
-  //   saveEmbeddedFractureProperties(output_path + data.config.efrac_file);
-  // }
+  if (!_data.sda_data.empty())
+    save_embedded_fractures_(_output_path + "/" + _config.efrac_file);
 
   // std::cout << "save mech boundary conditions: "
   //           << output_path + data.config.bcond_file
@@ -305,68 +302,72 @@ void OutputDataGPRS::save_geomechanics_keywords_() const
 }
 
 
-void OutputDataGPRS::saveEmbeddedFractureProperties(const std::string file_name)
+void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
 {
-  // std::cout  << "Writing SDA props" << std::endl;
-  // std::ofstream geomechfile;
-  // geomechfile.open(file_name.c_str());
+  std::cout << "saving " << file_name << std::endl;
+  std::ofstream out;
+  out.open(file_name.c_str());
 
-  // geomechfile << "GM_EFRAC_CELLS" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  // {
-  //   geomechfile << efrac.cells.size() << std::endl << "\t";
-  //   for (std::size_t i=0; i<efrac.cells.size(); ++i)
-  //   {
-  //     geomechfile << efrac.cells[i] + 1 << "\t";
-  //     if ((i+1) % n_entries_per_line == 0)
-  //       geomechfile << std::endl;
-  //     if (i == efrac.cells.size() - 1)
-  //       geomechfile << std::endl;
-  //   }
-  // }
-  // geomechfile << "/" << std::endl << std::endl;
+  // write SDA cells
+  out << "GM_EFRAC_CELLS" << std::endl;
+  for (const auto & frac : _data.sda_data)
+  {
+    out << frac.cells.size() << std::endl << "\t";
+    for (size_t i=0; i < frac.cells.size(); ++i)
+    {
+      const double mech_cell = _data.mech_numbering->cell_dof(frac.cells[i]);
+      out << mech_cell + 1 << "\t";
+      if ((i+1) % n_entries_per_line == 0)
+        out << "\n";
+      if (i == frac.cells.size() - 1)
+        out << "\n";
+    }
+  }
+  out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_POINTS" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
-  //     geomechfile << efrac.points[i] << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  // coordinates of a point in frac plane for each SDA cell
+  out << "GM_EFRAC_POINTS" << "\n";
+  for (const auto & frac : _data.sda_data)
+      for (const auto & point : frac.points)
+      out << point << "\n";
+  out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_DIP" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
-  //   {
-  //     geomechfile << efrac.dip[i] << "\t";
-  //     if ((i+1) % n_entries_per_line == 0)
-  //       geomechfile << std::endl;
-  //   }
-  // geomechfile << "/" << std::endl << std::endl;
+  // sda fracture dip in each fracture cell
+  out << "GM_EFRAC_DIP" << "\n";
+  for (const auto & frac : _data.sda_data)
+    for (size_t i=0; i < frac.dip.size(); ++i)
+    {
+      out << frac.dip[i] << "\t";
+      if ((i+1) % n_entries_per_line == 0)
+        out << "\n";
+    }
+  out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_STRIKE" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   for (std::size_t i=0; i<efrac.points.size(); ++i)
-  //   {
-  //     geomechfile << efrac.strike[i] << "\t";
-  //     if ((i+1)%n_entries_per_line == 0) geomechfile << std::endl;
-  //   }
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_STRIKE" << "\n";
+  for (const auto & frac : _data.sda_data)
+    for (size_t i=0; i < frac.strike.size(); ++i)
+    {
+      out << frac.strike[i] << "\t";
+      if ((i+1)%n_entries_per_line == 0) out << "\n";
+    }
+  out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_COHESION" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   geomechfile << efrac.cohesion << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_COHESION" << "\n";
+  for (const auto & frac : _data.sda_data)
+    out << frac.cohesion << "\n";
+  out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_FRICTION" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   geomechfile << efrac.friction_angle << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_FRICTION" << "\n";
+  for (const auto & frac : _data.sda_data)
+    out << frac.friction_angle << "\n";
+  out << "/\n\n";
 
-  // geomechfile << "GM_EFRAC_DILATION" << std::endl;
-  // for (const auto & efrac : data.vEfrac)
-  //   geomechfile << efrac.dilation_angle << std::endl;
-  // geomechfile << "/" << std::endl << std::endl;
+  out << "GM_EFRAC_DILATION" << "\n";
+  for (const auto & frac : _data.sda_data)
+    out << frac.dilation_angle << "\n";
+  out << "/\n\n";
 
-  // geomechfile.close();
+  out.close();
 }
 
 

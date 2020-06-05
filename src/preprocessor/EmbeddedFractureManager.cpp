@@ -160,7 +160,6 @@ map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
   {
     const auto & frac = m_data.sda_data[ifrac];
     for (std::size_t icell=0; icell<frac.cells.size(); ++icell)
-
     {
       // first map cell cv
       const size_t mech_cell = m_grid.cell(frac.cells[icell]).ultimate_parent().index();
