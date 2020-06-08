@@ -231,8 +231,7 @@ void CellPropertyManager::build_flow_output_property_keys_()
 void CellPropertyManager::map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs,
                                                            const mesh::Mesh & grid)
 {
-  // If we do m_data.gmcell_to_flowcells.clear, this erases edfm fracture cell id previously saved in gmcell_to_flowcells
-  // by the function map_mechanics_to_control_volumes.
+  m_data.gmcell_to_flowcells.clear();
   m_data.gmcell_to_flowcells.resize(grid.n_active_cells());
   // simdata vector coupled
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
