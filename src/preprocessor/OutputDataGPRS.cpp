@@ -325,14 +325,16 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
   }
   out << "/\n\n";
 
-  // write SDA Flow cells
+  // write SDA Flow cells for each geomechanics cell in embedded fractures defined in
+  // "GM_EFRAC_CELLS".
+  // The order is the same as in the order of geomechanics cells in "GM_EFRAC_CELLS".
   out << "GM_EFRAC_TO_FLOWCELLS" << std::endl;
   for (const auto & frac : _data.sda_data)
   {
     for (size_t i=0; i < frac.cells.size(); ++i)
     {
       const size_t mech_cell = _data.mech_numbering->cell_dof(frac.cells[i]);
-      std::vector<size_t> flow_cells = _data.gmcell_to_SDA_flowcells[mech_cell];
+      std::vector<size_t> flow_cells = _data.gmcell_to_SDA_flowcells[mech_cell]; // flow cells of geo cells in GM_EFRAC_CELLS
       if (flow_cells.size() == 0)
         out << 0 << "\t" << -1 << std::endl;
       else
@@ -346,9 +348,13 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
   }
   out << "/\n\n";
 
+  // Define a fracture region for each fracture.
+  // The fractures in the same fracture region is allocated with the
+  // same tabulated data for fracture permeability and volume multiplier
+  // defined with "GMCONTACT_NORMAL_PROPS"
   out << "GM_EFRAC_REGION" << std::endl;
   for (const auto & frac : _data.sda_data)
-    out << 1 << "\n";
+    out << 1 << "\n"; // Currently, set all fractures' region as 1.
   out << "/\n\n";
 
   // coordinates of a point in frac plane for each SDA cell
