@@ -100,6 +100,7 @@ struct SimData
   multiscale::MultiScaleOutputData ms_mech_data;
   // ----------------------- Other ---------------------- //
   std::vector<std::vector<size_t>> gmcell_to_flowcells;
+  std::vector<std::vector<size_t>> gmcell_to_SDA_flowcells;
   // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {

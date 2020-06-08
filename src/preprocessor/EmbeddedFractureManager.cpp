@@ -153,8 +153,8 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
 void EmbeddedFractureManager::
 map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
 {
-  if (m_data.gmcell_to_flowcells.size() != m_data.geomechanics_grid.n_active_cells())
-    m_data.gmcell_to_flowcells.resize(m_data.geomechanics_grid.n_active_cells());
+  if (m_data.gmcell_to_SDA_flowcells.size() != m_data.geomechanics_grid.n_active_cells())
+    m_data.gmcell_to_SDA_flowcells.resize(m_data.geomechanics_grid.n_active_cells());
 
   for (std::size_t ifrac=0; ifrac<m_data.sda_data.size(); ++ifrac)
   {
@@ -163,9 +163,9 @@ map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
     {
       // first map cell cv
       const size_t mech_cell = m_grid.cell(frac.cells[icell]).ultimate_parent().index();
-      assert( mech_cell < m_data.gmcell_to_flowcells.size() );
+      assert( mech_cell < m_data.gmcell_to_SDA_flowcells.size() );
       for (const size_t iface : frac.faces[icell])
-        m_data.gmcell_to_flowcells[mech_cell].push_back( dofs.face_dof(iface) );
+        m_data.gmcell_to_SDA_flowcells[mech_cell].push_back( dofs.face_dof(iface) );
     }
 
   }

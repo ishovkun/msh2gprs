@@ -308,7 +308,7 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
   std::ofstream out;
   out.open(file_name.c_str());
 
-  // write SDA cells
+  // write SDA Geomechanics cells
   out << "GM_EFRAC_CELLS" << std::endl;
   for (const auto & frac : _data.sda_data)
   {
@@ -323,6 +323,32 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
         out << "\n";
     }
   }
+  out << "/\n\n";
+
+  // write SDA Flow cells
+  out << "GM_EFRAC_TO_FLOWCELLS" << std::endl;
+  for (const auto & frac : _data.sda_data)
+  {
+    for (size_t i=0; i < frac.cells.size(); ++i)
+    {
+      const size_t mech_cell = _data.mech_numbering->cell_dof(frac.cells[i]);
+      std::vector<size_t> flow_cells = _data.gmcell_to_SDA_flowcells[mech_cell];
+      if (flow_cells.size() == 0)
+        out << 0 << "\t" << -1 << std::endl;
+      else
+      {
+        out << flow_cells.size() << "\t";
+        for (const std::size_t ielement : flow_cells)
+          out << ielement + 1 << "\t";
+        out << std::endl;
+      }
+    }
+  }
+  out << "/\n\n";
+
+  out << "GM_EFRAC_REGION" << std::endl;
+  for (const auto & frac : _data.sda_data)
+    out << 1 << "\n";
   out << "/\n\n";
 
   // coordinates of a point in frac plane for each SDA cell
