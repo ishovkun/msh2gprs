@@ -399,6 +399,12 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
     out << frac.dilation_angle << "\n";
   out << "/\n\n";
 
+  // fracture conductivity of each fracture (md-m)
+  out << "GM_EFRAC_CONDUCTIVITY" << std::endl;
+  for (const auto & frac : _data.sda_data)
+    out << frac.conductivity << "\n";
+  out << "/\n\n";
+
   out.close();
 }
 

@@ -32,6 +32,7 @@ struct EmbeddedFractureMechanicalProperties
   double cohesion;                            // fracture cohesive strength [bar]
   double friction_angle;                      // fracture friction angle [°]
   double dilation_angle;                      // fracture dilation angle [°]
+  double conductivity;                        // hydraulic conductivity of edfm fracture [m·md]
   mesh::SurfaceMesh<double> mesh;             // combined grid discretization of all embedded fractures
 };
 
