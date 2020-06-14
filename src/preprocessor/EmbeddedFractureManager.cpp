@@ -165,10 +165,13 @@ map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
       // first map cell cv
       const size_t mech_cell = m_grid.cell(frac.cells[icell]).ultimate_parent().index();
       assert( mech_cell < m_data.gmcell_to_SDA_flowcells.size() );
-      for (const size_t iface : frac.faces[icell])
-        m_data.gmcell_to_SDA_flowcells[mech_cell].push_back( dofs.face_dof(iface) );
+      for (const size_t iface : frac.faces[icell]){
+        if( m_data.coupling[dofs.face_dof(iface)]) // coupled
+            m_data.gmcell_to_SDA_flowcells[mech_cell].push_back( dofs.face_dof(iface) );
+        else // uncoupled
+            config[ifrac].coupled = false;
+      }
     }
-
   }
 }
 

@@ -335,9 +335,9 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
     {
       const size_t mech_cell = _data.mech_numbering->cell_dof(frac.cells[i]);
       std::vector<size_t> flow_cells = _data.gmcell_to_SDA_flowcells[mech_cell]; // flow cells of geo cells in GM_EFRAC_CELLS
-      if (flow_cells.size() == 0)
+      if (flow_cells.size() == 0) // uncoupled case
         out << 0 << "\t" << -1 << std::endl;
-      else
+      else // coupled case
       {
         out << flow_cells.size() << "\t";
         for (const std::size_t ielement : flow_cells)
