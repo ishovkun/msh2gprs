@@ -3,6 +3,7 @@
 #include <numeric>  // provides std;:iota
 #include <algorithm> // max_element
 #include <sstream>   // isstream
+#include <iterator>  // std::istream_iterator
 
 namespace gprs_data
 {
