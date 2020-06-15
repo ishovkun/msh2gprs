@@ -2,6 +2,7 @@
 #include <cstdlib> // atoi
 #include <numeric>  // provides std;:iota
 #include <algorithm> // max_element
+#include <sstream>   // isstream
 
 namespace gprs_data
 {
