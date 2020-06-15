@@ -51,6 +51,10 @@ class VTKWriter
                                        std::ofstream & out);
   static size_t count_number_of_cell_entries_(const Mesh & grid);
   static size_t count_number_of_cell_entries_(const Cell & cell);
+
+  template <typename T>
+  static void write(const angem::Polyhedron<T> & polyhedron, const std::string & fname);
+
  protected:
   static void write_geometry_classic_(const Mesh & grid, std::ofstream & out);
   static void write_geometry_face_based_(const Mesh & grid, std::ofstream & out);
@@ -71,6 +75,41 @@ void VTKWriter::add_data(const std::vector<T> &     property,
   for (const double item : property)
     out << static_cast<double>(item)<< std::endl;
   out << std::endl;
+}
+
+template <typename T>
+void VTKWriter::write(const angem::Polyhedron<T> & polyhedron, const std::string & fname)
+{
+  std::cout << "saving " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Polyhedron \n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  const std::size_t n_points = polyhedron.get_points().size();
+  out << "POINTS" << "\t" << n_points << " float" << "\n";
+  for (const auto & p : polyhedron.get_points()) out << p << "\n";
+
+  size_t n_entries = 1;  // << n_faces
+  for (const auto & face : polyhedron.get_faces())
+    n_entries += face.size() + 1;  // << n_face_vertices + each face vertex
+  out << "CELLS " << 1 << " " << n_entries + 1 << "\n";
+
+  out << n_entries << "\n";
+  out << polyhedron.get_faces().size() << "\n";
+  for (const auto & face : polyhedron.get_faces())
+  {
+    out << face.size() << " ";
+    for (const size_t v : face)
+      out << v << " ";
+    out << "\n";
+  }
+  out << "CELL_TYPES" << "\t" << 1 << "\n";
+  out << angem::GeneralPolyhedronID << "\n";
+
+  out.close();
 }
 
 }  // end namespace

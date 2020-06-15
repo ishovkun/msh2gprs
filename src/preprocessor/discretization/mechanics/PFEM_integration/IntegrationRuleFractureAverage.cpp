@@ -1,58 +1,38 @@
 #ifdef WITH_EIGEN
-#include "IntegrationRuleFacesFractures.hpp"
+#include "IntegrationRuleFractureAverage.hpp"
 #include "../FeValues.hpp"
 
 namespace discretization {
 
 using Point = angem::Point<3,double>;
 
-IntegrationRuleFacesFractures::IntegrationRuleFacesFractures(PolyhedralElementBase & element)
-    : _element(element)
+IntegrationRuleFractureAverage::
+IntegrationRuleFractureAverage(PolyhedralElementBase & element, const TributaryRegion2dBase  & tributary)
+    : _element(element), _tributary(tributary)
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
 
-  const auto face_polygons = _element._parent_cell.polyhedron()->get_face_polygons();
-  const size_t n_faces = face_polygons.size();
-  _face_triangles.resize(n_faces);
-  for (size_t iface=0; iface < n_faces; ++iface)
-    build_tributary_shapes_face_(iface, face_polygons[iface]);
-
   setup_storage_();
+  const size_t n_faces = tributary.get().size();
   for (size_t iface=0; iface < n_faces; ++iface)
     compute_face_fe_quantities_(iface);
 }
 
-void IntegrationRuleFacesFractures::setup_storage_()
+void IntegrationRuleFractureAverage::setup_storage_()
 {
   auto & data = _element._face_fracture_data;
   data.resize(_element._parent_cell.faces().size());
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
   for (size_t iface=0; iface<data.size(); ++iface)
   {
-    const size_t nq = _face_triangles[iface].size();
+    const size_t nq = _tributary.get()[iface].size();
     data[iface].points.resize(nq);
     for (size_t q = 0; q < nq; ++q)
     {
       data[iface].points[q].values.resize( n_parent_vertices );
       data[iface].points[q].grads.resize( n_parent_vertices );
     }
-  }
-}
-
-void IntegrationRuleFacesFractures::build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & face_poly)
-{
-  const angem::Point<3,double> center = face_poly.center();
-  const std::vector<angem::Point<3,double>> & vertices = face_poly.get_points();
-  std::vector<angem::Point<3,double>> result;
-  for (size_t i=0; i<vertices.size(); ++i)
-  {
-    size_t v1 = i, v2;
-    if ( i <  vertices.size() - 1) v2 = i + 1;
-    else                           v2 = 0;
-    std::vector<angem::Point<3,double>> triangle_vertices = {vertices[v1], vertices[v2], center};
-    angem::Polygon<double> triangle(triangle_vertices);
-    _face_triangles[iface].push_back(triangle);
   }
 }
 
@@ -72,7 +52,7 @@ void get_face_integration_points(FeValues<angem::TriangleID> & fe_values,
       integration_points[q] += fe_values.value(v, q) * master_qpoints[q];
 }
 
-void IntegrationRuleFacesFractures::compute_face_fe_quantities_(const size_t parent_face)
+void IntegrationRuleFractureAverage::compute_face_fe_quantities_(const size_t parent_face)
 {
   const auto & grid = _element._element_grid;
   const std::vector<size_t> & face_indices = _element._face_domains[parent_face];
@@ -85,7 +65,7 @@ void IntegrationRuleFacesFractures::compute_face_fe_quantities_(const size_t par
                      .get_basis();
   fe_face_values.set_basis(basis);
 
-  const auto & regions = _face_triangles[parent_face];
+  const auto & regions = _tributary.get()[parent_face];
   std::vector<double> region_areas( regions.size(), 0.0 );
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
   const auto & basis_functions = _element._basis_functions;

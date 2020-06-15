@@ -1,22 +1,20 @@
 #ifdef WITH_EIGEN
-#include "IntegrationRuleFacesAverage.hpp"
+#include "IntegrationRuleVerticesAverage.hpp"
 #include "../FeValues.hpp"
 
 namespace discretization {
 
 using Point = angem::Point<3,double>;
 
-IntegrationRuleFacesAverage::IntegrationRuleFacesAverage(PolyhedralElementBase & element)
+IntegrationRuleVerticesAverage::IntegrationRuleVerticesAverage(PolyhedralElementBase & element)
     : _element(element)
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
 
   build_tributary_shapes_cells_();
-
   const auto face_polygons = _element._parent_cell.polyhedron()->get_face_polygons();
   const size_t n_faces = face_polygons.size();
-  _face_triangles.resize(n_faces);
   for (size_t iface=0; iface < n_faces; ++iface)
     build_tributary_shapes_face_(iface, face_polygons[iface]);
 
@@ -26,50 +24,125 @@ IntegrationRuleFacesAverage::IntegrationRuleFacesAverage(PolyhedralElementBase &
     compute_face_fe_quantities_(iface);
 }
 
-void IntegrationRuleFacesAverage::build_tributary_shapes_cells_()
+void IntegrationRuleVerticesAverage::setup_storage_()
 {
-  /* Split a parent cell into tributary regions (pyramids) */
-  const auto polyhedron = _element._parent_cell.polyhedron();
-  std::vector<Point> vertices = polyhedron->get_points();
-  vertices.push_back(_element._parent_cell.center());
-  _element._cell_gauss_points.clear();
-  for (const auto & face : polyhedron->get_faces())
+  auto & cell_data = _element._cell_data;
+  const auto & basis_functions = _element._basis_functions;
+  cell_data.points.resize( _tributary3d.size() );
+  for (auto & point : cell_data.points)
   {
-    _pyramids.push_back(create_pyramid_(face, vertices));
-    _element._cell_gauss_points.push_back( _pyramids.back().center() );
+    point.values.resize( basis_functions.size(), 0 );
+    point.grads.resize( basis_functions.size() );
+  }
+
+  cell_data.center.values.resize( basis_functions.size(), 0 );
+  cell_data.center.grads.resize( basis_functions.size() );
+
+  const std::vector<const mesh::Face*> parent_faces = _element._parent_cell.faces();
+  _element._face_data.resize( _tributary2d.size() );
+  for (size_t parent_face = 0; parent_face < _tributary2d.size(); ++parent_face)
+  {
+    auto & data = _element._face_data[parent_face];
+    const size_t n_vertices = parent_faces[parent_face]->vertices().size();
+    data.points.resize( _tributary2d[parent_face].size() );
+    for (size_t q=0; q<data.points.size(); ++q)
+    {
+      data.points[q].values.resize(n_vertices);
+      data.points[q].grads.resize(n_vertices);
+    }
+    data.center.values.resize(n_vertices);
+    data.center.grads.resize(n_vertices);
   }
 }
 
-angem::Polyhedron<double>
-IntegrationRuleFacesAverage::create_pyramid_(const std::vector<size_t> & face,
-                                             const std::vector<Point> & vertices) const
+std::vector<mesh::Edge> get_edges_with_vertex(const size_t vertex,
+                                              const mesh::Face & face)
 {
-  const size_t vertex_center = vertices.size() - 1;  // HACK: I just pushed it to this array
-  const auto c = _element._parent_cell.center();
-  std::vector<std::vector<size_t>> pyramid_faces;
-  for (size_t iv=0; iv<face.size(); ++iv)
-  {
-    size_t v1, v2;
-    v1 = face[iv];
-    if ( iv < face.size() - 1 )
-      v2 = face[iv+1];
-    else
-      v2 = face[0];
-    pyramid_faces.push_back( {v1, v2, vertex_center} );
-  }
-  pyramid_faces.push_back( face );  // base
-
-  angem::Polyhedron<double> pyramid(vertices, pyramid_faces);
-  return pyramid;
+  const auto & vertices = face.vertices();
+  const size_t ivertex = std::distance(vertices.begin(), std::find(
+      vertices.begin(), vertices.end(), vertex));
+  size_t iv1, iv2;
+  if (ivertex < vertices.size() - 1)
+      iv2 = ivertex + 1;
+  else iv2 = 0;
+  if (ivertex > 0)
+      iv1 = ivertex - 1;
+  else iv1 = vertices.size() - 1;
+  
+  return {{vertex, vertices[iv1]}, {vertex, vertices[iv2]}};
 }
 
-void IntegrationRuleFacesAverage::compute_cell_fe_quantities_()
+void IntegrationRuleVerticesAverage::build_tributary_shapes_cells_()
+{
+  const auto & cell = _element._parent_cell;
+  const auto & vertices = cell.vertices();
+  for (size_t ivertex = 0; ivertex < vertices.size(); ++ivertex)
+  {
+    std::vector<std::vector<size_t>> tributary_cell_faces;
+    angem::PointSet<3, double> tributary_cell_vertices;
+    const size_t vertex = vertices[ivertex];
+    for (const auto face : cell.faces())
+    {
+      if (face->has_vertex(vertex))
+      {
+        const auto edges = get_edges_with_vertex(vertex, *face);
+        build_tributary_cell_faces_(edges, tributary_cell_faces, tributary_cell_vertices);
+      }
+    }
+    _tributary3d.emplace_back(tributary_cell_vertices.points, tributary_cell_faces);
+  }
+}
+
+void IntegrationRuleVerticesAverage::
+build_tributary_cell_faces_(const std::vector<mesh::Edge> & edges,
+                            std::vector<std::vector<size_t>> & tributary_faces,
+                            angem::PointSet<3,double> & tributary_vertices)
+{
+  const auto & grid = _element._parent_grid;
+  const size_t v0 = tributary_vertices.insert(grid.vertex(edges[0].first));
+  const Point p1 = grid.vertex(edges[0].first)  + grid.vertex(edges[0].second);
+  const Point p2 = grid.vertex(edges[1].first)  + grid.vertex(edges[1].second);
+  const size_t v1 = tributary_vertices.insert(p1);
+  const size_t v2 = tributary_vertices.insert(p2);
+  tributary_faces.push_back({v0, v1, v2});
+  // cell center
+  const Point c = _element._parent_cell.center();
+  const size_t vc = tributary_vertices.insert(c);
+  tributary_faces.push_back({vc, v1, v2});
+}
+
+void IntegrationRuleVerticesAverage::
+build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & face_poly)
+{
+  _tributary2d.emplace_back();
+  auto & face_tributary_polygons = _tributary2d.back();
+  const auto & points = face_poly.get_points();
+  const size_t nv = points.size();
+  const Point c = face_poly.center();
+  for (size_t ivertex = 0; ivertex < nv; ++ivertex)
+  {
+    std::vector<Point> tributary_vertices(4);
+    // first vertex
+    tributary_vertices[0] = face_poly.get_points()[ivertex];
+    // second vertex
+    const size_t vertex1 = (ivertex < nv-1) ? ivertex + 1 : 0;
+    tributary_vertices[1] = 0.5 * (tributary_vertices[0] + points[vertex1]);
+    // third vertex
+    const size_t vertex2 = (ivertex > 0) ? ivertex - 1 : nv - 1;
+    tributary_vertices[2] = 0.5 * (tributary_vertices[0] + points[vertex2]);
+    // face center
+    tributary_vertices[3] = c;
+    face_tributary_polygons.emplace_back(tributary_vertices);
+  }
+}
+
+void IntegrationRuleVerticesAverage::compute_cell_fe_quantities_()
 {
   const Point parent_center = _element._parent_cell.center();
   bool center_found = false;
   // integrate over regions
   const size_t n_parents = _element._basis_functions.size();
-  std::vector<double> region_volumes( _pyramids.size(), 0.0 );
+  std::vector<double> region_volumes( _tributary3d.size(), 0.0 );
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
   const auto & grid = _element._element_grid;
   auto & cell_data = _element._cell_data;
@@ -77,9 +150,9 @@ void IntegrationRuleFacesAverage::compute_cell_fe_quantities_()
   {
     const Point c = cell->center();
     fe_values.update(*cell);
-    for (size_t region=0; region<_pyramids.size(); ++region)  // tributary regions
+    for (size_t region=0; region < _tributary3d.size(); ++region)  // tributary regions
     {
-      if (_pyramids[region].point_inside(c))
+      if (_tributary3d[region].point_inside(c))
       {
         const std::vector<size_t> & cell_verts = cell->vertices();
         const size_t nv = cell_verts.size();
@@ -117,7 +190,7 @@ void IntegrationRuleFacesAverage::compute_cell_fe_quantities_()
   }
 
   // normalize values and grads  by region volume
-  for (size_t region=0; region<_pyramids.size(); ++region)  // tributary regions
+  for (size_t region=0; region < _tributary3d.size(); ++region)  // tributary regions
   {
     auto & data = cell_data.points[region];
     for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
@@ -138,54 +211,7 @@ void IntegrationRuleFacesAverage::compute_cell_fe_quantities_()
   data.weight = vol;
 }
 
-void IntegrationRuleFacesAverage::setup_storage_()
-{
-  auto & cell_data = _element._cell_data;
-  const auto & basis_functions = _element._basis_functions;
-  cell_data.points.resize( _pyramids.size() );
-  for (auto & point : cell_data.points)
-  {
-    point.values.resize( basis_functions.size(), 0 );
-    point.grads.resize( basis_functions.size() );
-  }
-
-  cell_data.center.values.resize( basis_functions.size(), 0 );
-  cell_data.center.grads.resize( basis_functions.size() );
-
-  const std::vector<const mesh::Face*> parent_faces = _element._parent_cell.faces();
-  _element._face_data.resize( _face_triangles.size() );
-  for (size_t parent_face = 0; parent_face < _face_triangles.size(); ++parent_face)
-  {
-    auto & data = _element._face_data[parent_face];
-    const size_t n_vertices = parent_faces[parent_face]->vertices().size();
-    data.points.resize( _face_triangles[parent_face].size() );
-    for (size_t q=0; q<data.points.size(); ++q)
-    {
-      data.points[q].values.resize(n_vertices);
-      data.points[q].grads.resize(n_vertices);
-    }
-    data.center.values.resize(n_vertices);
-    data.center.grads.resize(n_vertices);
-  }
-}
-
-void IntegrationRuleFacesAverage::build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & face_poly)
-{
-  const angem::Point<3,double> center = face_poly.center();
-  const std::vector<angem::Point<3,double>> & vertices = face_poly.get_points();
-  std::vector<angem::Point<3,double>> result;
-  for (size_t i=0; i<vertices.size(); ++i)
-  {
-    size_t v1 = i, v2;
-    if ( i <  vertices.size() - 1) v2 = i + 1;
-    else                           v2 = 0;
-    std::vector<angem::Point<3,double>> triangle_vertices = {vertices[v1], vertices[v2], center};
-    angem::Polygon<double> triangle(triangle_vertices);
-    _face_triangles[iface].push_back(triangle);
-  }
-}
-
-void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t parent_face)
+void IntegrationRuleVerticesAverage::compute_face_fe_quantities_(const size_t parent_face)
 {
   const auto & grid = _element._element_grid;
   const std::vector<size_t> & face_indices = _element._face_domains[parent_face];
@@ -196,7 +222,7 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
                      .plane()
                      .get_basis();
   fe_values.set_basis(basis);
-  const auto & regions = _face_triangles[parent_face];
+  const auto & regions = _tributary2d[parent_face];
   std::vector<double> region_areas( regions.size(), 0.0 );
   const size_t n_parent_vertices = _element._face_data[parent_face].center.values.size();
   // map parent face vertices to parent cell vertices
@@ -308,6 +334,8 @@ void IntegrationRuleFacesAverage::compute_face_fe_quantities_(const size_t paren
     data.grads[parent_vertex] /= data.weight;
   }
 }
+
+
 
 }  // end namespace discretization
 

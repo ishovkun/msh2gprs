@@ -10,8 +10,9 @@ namespace discretization {
 using api = gprs_data::GmshInterface;
 
 PolyhedralElementBase::PolyhedralElementBase(const mesh::Cell & cell,
+                                             const mesh::Mesh & grid,
                                              const FiniteElementConfig & config)
-    : _parent_cell(cell), _config(config)
+    : _parent_cell(cell), _parent_grid(grid), _config(config)
 {}
 
 void PolyhedralElementBase::build_triangulation_()

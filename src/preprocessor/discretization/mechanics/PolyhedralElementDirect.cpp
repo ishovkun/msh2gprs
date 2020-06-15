@@ -4,8 +4,12 @@
 #include "mesh/Subdivision.hpp"  // provides mesh::Subdivision
 #include "FeValues.hpp"          // provides discretization::FeValues
 #include "EdgeComparison.hpp"
-#include "PFEM_integration/IntegrationRuleFacesAverage.hpp"  // provides IntegrationRuleFacesAverage
-#include "PFEM_integration/IntegrationRuleFacesFractures.hpp"  // provides IntegrationRuleFacesFractures
+#include "PFEM_integration/TributaryRegion2dFaces.hpp"
+#include "PFEM_integration/TributaryRegion3dFaces.hpp"
+#include "PFEM_integration/TributaryRegion3dVertices.hpp"
+#include "PFEM_integration/IntegrationRule3dAverage.hpp"
+#include "PFEM_integration/IntegrationRule2dAverage.hpp"
+#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationRuleFacesFractures
 #include "VTKWriter.hpp"                                       // debugging, provides io::VTKWriter
 #include "FEMFaceDoFManager.hpp"                               // provides discretization::FEMFaceDoFManager
 #include <Eigen/IterativeLinearSolvers>
@@ -19,16 +23,32 @@ const size_t UNMARKED = std::numeric_limits<size_t>::max();
 
 
 PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
+                                                 const mesh::Mesh & grid,
                                                  const FiniteElementConfig & config,
                                                  const bool update_face_values,
                                                  const bool update_fracture_values)
-    : PolyhedralElementBase(cell, config)
+    : PolyhedralElementBase(cell, grid, config)
 {
   // build grid for the element
   build_triangulation_();
   // solve problems on faces
   try {
     build_face_boundary_conditions_();
+  // construct the laplace system matrix for the cell volume laplace equation
+  build_cell_system_matrix_();
+  // impose BC's and solve laplace system to get shape functions
+  compute_shape_functions_();
+  // compute shape function values, gradients, and weights in the
+  // integration points in cells and faces
+  // IntegrationRuleFacesAverage integration_rule(*this);
+  // IntegrationRuleVerticesAverage integration_rule(*this);
+  TributaryRegion2dFaces tributary2d(*this);
+  // TributaryRegion3dFaces tributary3d(*this);
+  TributaryRegion3dVertices tributary3d(*this);
+  IntegrationRule3dAverage rule_cell(*this, tributary3d);
+  IntegrationRule2dAverage rule_faces(*this, tributary2d);
+  if (update_fracture_values)
+    IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
   }
   catch (const std::exception& e)
   {
@@ -36,16 +56,6 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
     save_face_domains_(std::to_string(cell.index()) + ".vtk");
     throw e;
   }
-  // construct the laplace system matrix for the cell volume laplace equation
-  build_cell_system_matrix_();
-  // impose BC's and solve laplace system to get shape functions
-  compute_shape_functions_();
-  // compute shape function values, gradients, and weights in the
-  // integration points in cells and faces
-  IntegrationRuleFacesAverage integration_rule(*this);
-
-  if (update_fracture_values)
-    IntegrationRuleFacesFractures rule_fractures(*this);
 }
 
 void PolyhedralElementDirect::build_face_boundary_conditions_()

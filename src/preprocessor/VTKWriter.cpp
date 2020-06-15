@@ -338,5 +338,4 @@ void VTKWriter::write_geometry(const std::vector<angem::Point<3,double>>  &verti
     out << type << std::endl;
 }
 
-
 }  // end namespace

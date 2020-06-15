@@ -282,15 +282,6 @@ void DiscretizationEDFM::build_pedfm_()
         const size_t cell_dof1 = m_dofs.cell_dof(frac_cell.index());
         const size_t cell_dof2 = m_dofs.cell_dof(iother_cell);
         const size_t face_dof = m_dofs.face_dof(face->index());
-        if (frac_cell.index() == 99 || iother_cell == 99)
-        {
-          std::cout << std::endl;
-          std::cout << "try " << frac_cell.index() << " " << iother_cell << " ("
-                    << cell_dof1 << " " << cell_dof2 << ")" << std::endl;
-          // std::cout << "face->center()= " << face->center() << std::endl;
-          // std::cout << "face->area()= " << face->area() << std::endl;
-        }
-
         // if already cleared, then skip
         if (cleared_connections.contains(cell_dof1, cell_dof2))
         {
@@ -324,11 +315,11 @@ void DiscretizationEDFM::build_pedfm_()
           const bool kill_connection = build_pedfm_(mat_mat_con, frac_mat_con);
           // if small trans then kill connection
           if (kill_connection) {
-        if (frac_cell.index() == 1482 || iother_cell == 1482)
-            {
-              std::cout << "clear connection " << frac_cell.index() << " "
-                        << iother_cell << "(" << cell_dof1 << ", "<< cell_dof2 << ")" <<std::endl;
-            }
+        // if (frac_cell.index() == 1482 || iother_cell == 1482)
+        //     {
+        //       std::cout << "clear connection " << frac_cell.index() << " "
+        //                 << iother_cell << "(" << cell_dof1 << ", "<< cell_dof2 << ")" <<std::endl;
+        //     }
 
             cleared_connections.insert(cell_dof1, cell_dof2);
             // exit(0);

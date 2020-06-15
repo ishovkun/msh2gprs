@@ -24,7 +24,7 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   throw std::runtime_error("Cannot use DFEM method without linking to Eigen");
   #endif
 
-  // analyze_cell_(_grid.cell(546));
+  // analyze_cell_(_grid.cell(0));
   // if (_config.method != strong_discontinuity)
   // {
   //   auto cell = _grid.begin_active_cells();
@@ -80,7 +80,7 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
   IO::VTKWriter::write_geometry(_grid, cell, "output/geometry-" + std::to_string(cell.index()) + ".vtk");
 
 #ifdef WITH_EIGEN
-  PolyhedralElementDirect de(cell, _config);
+  PolyhedralElementDirect de(cell, _grid, _config);
   // PolyhedralElementMSRSB de(cell, _config);
   de.save_shape_functions("output/shape_functions-" + std::to_string(cell.index())+ ".vtk");
   exit(0);
@@ -223,10 +223,10 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
   {
 #ifdef WITH_EIGEN
     if (_config.solver == direct || _config.solver == cg)
-      p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config, need_face_values,
+      p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config, need_face_values,
                                                           need_fracture_values);
     else if (_config.solver == msrsb)
-      p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
+      p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _grid, _config);
 #else
     throw std::runtime_error("Cannot use PDFEM method without linking to Eigen");
 #endif
@@ -240,10 +240,10 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
     {
 #ifdef WITH_EIGEN
       if (_config.solver == direct || _config.solver == cg)
-        p_discr = std::make_unique<PolyhedralElementDirect>(cell, _config, need_face_values,
+        p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config, need_face_values,
                                                             need_fracture_values);
       else if (_config.solver == msrsb)
-        p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _config);
+        p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _grid, _config);
 #else
     throw std::runtime_error("Cannot use PFEM method without linking to Eigen");
 #endif

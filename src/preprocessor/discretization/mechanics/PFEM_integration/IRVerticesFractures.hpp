@@ -6,15 +6,12 @@
 
 namespace discretization {
 
-/* This class implements cell integration rules but the integration point locations
- * are located at the faces
- */
-class IntegrationRuleFacesFractures
-{
+class IRVerticesFractures {
  public:
-  IntegrationRuleFacesFractures(PolyhedralElementBase & element);
+  IRVerticesFractures();
+  virtual ~IRVerticesFractures() = default;
 
-  protected:
+ protected:
   void build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & face_poly);
   // compute shape function values, gradients, and weights in the
   // integration points in a given face but for cells
@@ -27,5 +24,6 @@ class IntegrationRuleFacesFractures
 };
 
 }  // end namespace discretization
+
 
 #endif

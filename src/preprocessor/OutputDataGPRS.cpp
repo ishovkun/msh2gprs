@@ -258,16 +258,16 @@ void OutputDataGPRS::save_geometry_() const
   out << "GMFACE_GMCELLS" << std::endl;
   for (auto face=grid.begin_active_faces(); face!=grid.end_active_faces(); ++face)
   {
-      const std::vector<const mesh::Cell*> neighbors = face->neighbors();
-      out << neighbors.size() << "\t";
-      if (_data.dfm_faces.find(face->index()) != _data.dfm_faces.end())
-      {
-        assert( neighbors.size() == 2 );
-      }
+    const std::vector<const mesh::Cell*> neighbors = face->neighbors();
+    out << neighbors.size() << "\t";
+    if (_data.dfm_faces.find(face->index()) != _data.dfm_faces.end())
+    {
+      assert( neighbors.size() == 2 );
+    }
 
-      for (const mesh::Cell* neighbor : neighbors)
-        out << _data.mech_numbering->cell_dof(neighbor->index()) + 1 << "\t";
-      out << "\n";
+    for (const mesh::Cell* neighbor : neighbors)
+      out << _data.mech_numbering->cell_dof(neighbor->index()) + 1 << "\t";
+    out << "\n";
   }
   out << "/\n\n";
 }
@@ -481,9 +481,9 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
   for (const auto & well : _data.wells)
   {
     out << well.name << "\tGROUP1\t";
-    // connected volume + j + k empty
     assert( !well.connected_volumes.empty() );
-    out << well.connected_volumes[0] << " 1 1 ";
+    // connected volume + j_volume_index (1 for unstructured)
+    out << well.connected_volumes[0] << " 1 ";
     // reference depth
     out << -well.reference_depth << " /" << std::endl;
   }

@@ -38,11 +38,14 @@ class PolyhedralElementDirect : public PolyhedralElementBase
    *
    * Input:
    * \param[in] cell : grid cell to be discretized
+   * \param[in] parent_grid : grid the discretized cell belongs to
    * \param[in] config : constains information about the type and order of refinement
    * \param[in] update_face_values : update face shape functions within face quadrature points
    * \param[in] update_fracture_values : update cell shape function in face quadrature points
    */
-  PolyhedralElementDirect(const mesh::Cell & cell, const FiniteElementConfig & config,
+  PolyhedralElementDirect(const mesh::Cell & cell,
+                          const mesh::Mesh & parent_grid,
+                          const FiniteElementConfig & config,
                           const bool update_face_values = true,
                           const bool update_fracture_values = true);
   // get vector of cell integration points (where cell_data is defined)

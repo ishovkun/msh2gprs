@@ -1,8 +1,13 @@
 #ifdef WITH_EIGEN
 #include "PolyhedralElementMSRSB.hpp"
 #include "EdgeComparison.hpp"
-#include "PFEM_integration/IntegrationRuleFacesAverage.hpp" // provides IntegrationRuleFacesAverage
+// #include "PFEM_integration/IntegrationRuleFacesAverage.hpp" // provides IntegrationRuleFacesAverage
 #include "FeValues.hpp"  // provides FeValues
+#include "PFEM_integration/TributaryRegion2dFaces.hpp"
+#include "PFEM_integration/TributaryRegion3dFaces.hpp"
+#include "PFEM_integration/IntegrationRule3dAverage.hpp"
+#include "PFEM_integration/IntegrationRule2dAverage.hpp"
+#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationRuleFacesFractures
 #include "VTKWriter.hpp"
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
@@ -12,8 +17,9 @@ namespace discretization {
 using Point = angem::Point<3,double>;
 
 PolyhedralElementMSRSB::PolyhedralElementMSRSB(const mesh::Cell & cell,
+                                               const mesh::Mesh & grid,
                                                const FiniteElementConfig & config)
-    : PolyhedralElementBase(cell, config)
+    : PolyhedralElementBase(cell, grid, config)
 {
   build_();
 }
@@ -44,7 +50,12 @@ void PolyhedralElementMSRSB::build_()
   run_msrsb_();
 
 
-  IntegrationRuleFacesAverage integration_rule(*this);
+  // IntegrationRuleFacesAverage integration_rule(*this);
+  TributaryRegion2dFaces tributary2d(*this);
+  TributaryRegion3dFaces tributary3d(*this);
+  IntegrationRule3dAverage rule_cell(*this, tributary3d);
+  IntegrationRule2dAverage rule_faces(*this, tributary2d);
+  IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
 
   // postprocessing
   // debug_save_shape_functions_("shape_functions-final.vtk");

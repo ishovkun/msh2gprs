@@ -18,7 +18,7 @@ class PolyhedralElementMSRSB : public PolyhedralElementBase
 {
  public:
   /* Constructor */
-  PolyhedralElementMSRSB(const mesh::Cell & cell, const FiniteElementConfig & config);
+  PolyhedralElementMSRSB(const mesh::Cell & cell, const mesh::Mesh & grid, const FiniteElementConfig & config);
   // get FE data for volume integration
   const FiniteElementData & get_cell_data() const;
   // get FE data for surface integration
