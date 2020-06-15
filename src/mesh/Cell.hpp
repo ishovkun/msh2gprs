@@ -6,6 +6,7 @@
 #include "constants.hpp"
 #include <vector>
 #include <functional>  // std::reference_wrapper
+#include <memory>      // provides unique_ptr
 
 namespace mesh
 {
