@@ -1,4 +1,5 @@
 #include "VTKReader.hpp"
+#include <set>  // provides set
 
 namespace mesh {
 
