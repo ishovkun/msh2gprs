@@ -76,8 +76,6 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   void build_edge_boundary_conditions_();
   // map element_grid vertices to parent cell faces
   std::vector<std::vector<size_t>> map_vertices_to_parent_faces_();
-  // map parent cell vertices to parent cell faces
-  std::vector<std::list<size_t>> map_parent_vertices_to_parent_faces_();
   // put the face boundary problem solution in to the container for the boundary conditions of
   // the 3D domain system
   void append_face_solution_(const size_t pv, const Eigen::VectorXd & solution,

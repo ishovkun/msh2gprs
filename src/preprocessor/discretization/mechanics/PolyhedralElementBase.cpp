@@ -3,6 +3,7 @@
 #include "mesh/Subdivision.hpp"              // provides mesh::Subdivision
 #include "VTKWriter.hpp"                     // provides VTKWriter
 
+
 #ifdef WITH_EIGEN
 
 namespace discretization {
@@ -62,6 +63,26 @@ void PolyhedralElementBase::save_shape_functions(const std::string fname) const
     IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
   }
   out.close();
+}
+
+std::vector<std::list<size_t>> PolyhedralElementBase::map_parent_vertices_to_parent_faces_()
+{
+  // map parent vertex to parent faces
+  std::vector<std::list<size_t>> parent_vertex_markers( _parent_cell.n_vertices() );
+  const std::vector<size_t> parent_vertices = _parent_cell.vertices();
+  const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
+  for (size_t ipf=0; ipf<parent_faces.size(); ++ipf)
+  {
+    const auto parent_face = parent_faces[ipf];
+
+    for (size_t iv_parent=0; iv_parent<parent_vertices.size(); ++iv_parent)
+    {
+      const size_t parent_vertex = parent_vertices[iv_parent];
+      if (parent_face->has_vertex(parent_vertex))
+        parent_vertex_markers[iv_parent].push_back(ipf + 1);
+    }
+  }
+  return parent_vertex_markers;
 }
 
 

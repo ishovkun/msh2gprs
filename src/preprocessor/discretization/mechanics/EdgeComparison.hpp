@@ -51,7 +51,7 @@ class EdgeComparison
  public:
 
   static hash_algorithms::ConnectionMap<std::vector<Edge>>
-  get_edges(std::vector<std::list<size_t>> & vertex_face_markers)
+  get_edges(const std::vector<std::list<size_t>> & vertex_face_markers)
   {
     hash_algorithms::ConnectionMap<std::vector<Edge>> cm;
     for (size_t v=0; v<vertex_face_markers.size(); ++v)
