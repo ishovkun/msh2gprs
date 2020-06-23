@@ -145,6 +145,7 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
     sda[i].dip   .assign( n_frac_cells, config[i].body->plane().dip_angle() );
     sda[i].strike.assign( n_frac_cells, config[i].body->plane().strike_angle() );
     sda[i].cohesion       = config[i].cohesion;
+    sda[i].conductivity   = config[i].conductivity;
     sda[i].friction_angle = config[i].friction_angle;
     sda[i].dilation_angle = config[i].dilation_angle;
   }
@@ -153,8 +154,8 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
 void EmbeddedFractureManager::
 map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
 {
-  if (m_data.gmcell_to_flowcells.size() != m_data.geomechanics_grid.n_active_cells())
-    m_data.gmcell_to_flowcells.resize(m_data.geomechanics_grid.n_active_cells());
+  if (m_data.gmcell_to_SDA_flowcells.size() != m_data.geomechanics_grid.n_active_cells())
+    m_data.gmcell_to_SDA_flowcells.resize(m_data.geomechanics_grid.n_active_cells());
 
   for (std::size_t ifrac=0; ifrac<m_data.sda_data.size(); ++ifrac)
   {
@@ -163,11 +164,14 @@ map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs)
     {
       // first map cell cv
       const size_t mech_cell = m_grid.cell(frac.cells[icell]).ultimate_parent().index();
-      assert( mech_cell < m_data.gmcell_to_flowcells.size() );
-      for (const size_t iface : frac.faces[icell])
-        m_data.gmcell_to_flowcells[mech_cell].push_back( dofs.face_dof(iface) );
+      assert( mech_cell < m_data.gmcell_to_SDA_flowcells.size() );
+      for (const size_t iface : frac.faces[icell]){
+        if( m_data.coupling[dofs.face_dof(iface)]) // coupled
+            m_data.gmcell_to_SDA_flowcells[mech_cell].push_back( dofs.face_dof(iface) );
+        else // uncoupled
+            config[ifrac].coupled = false;
+      }
     }
-
   }
 }
 

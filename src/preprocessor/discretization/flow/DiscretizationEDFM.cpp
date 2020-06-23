@@ -166,6 +166,7 @@ void DiscretizationEDFM::build_matrix_edfm_(ConnectionData &con)
   if ( !std::isnan(1. / (T_m + T_f) ) )
     T = T_m*T_f / (T_m + T_f);
   con.coefficients = {-T, T};
+  con.update_formula = { con.area, d, k_d, T };
 }
 
 void DiscretizationEDFM::identify_edfm_faces_()
@@ -227,7 +228,10 @@ std::vector<size_t> DiscretizationEDFM::create_connections_()
           new_con.area = 2 * con.area;
           const double dist = (cell.center - face.center).dot(con.normal);
           const double cell_volume_ratio = cell.volume / parent_cell.volume;
-          new_con.distances = {0.0, std::fabs(dist) * cell_volume_ratio};
+          // Calculate the volumetric average
+          if(new_con.distances.empty())
+            new_con.distances = {0.0, 0.0};
+          new_con.distances[1] += std::fabs(dist) * cell_volume_ratio;
         }
         else // DFM-matrix
         {
@@ -493,11 +497,13 @@ bool DiscretizationEDFM::build_pedfm_(ConnectionData & mm_con,
     const double face_area = fm_con.area;
     const double T1 = face_area * Kp1 / (c1 - cp).norm();
     const double T2 = face_area * Kp2 / (c2 - cp).norm();
+    const double distance_tot = (c1 - c2).norm();
     // face transmissibility
     double T = 0.0;
     if ( std::isnormal(T1 + T2) )
       T = T1*T2 / ( T1 + T2 );
     fm_con.coefficients = {-T, T};
+    fm_con.update_formula = {face_area, distance_tot, Kp2, T };
   }
   return kill_connection;
 }
