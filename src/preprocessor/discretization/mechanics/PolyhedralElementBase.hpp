@@ -47,8 +47,11 @@ class PolyhedralElementBase : public FiniteElementBase
   friend class TributaryRegion2dVertices;
   friend class IntegrationRule3dAverage;
   friend class IntegrationRule2dAverage;
+  friend class IntegrationRule2dPointwise;
   friend class IntegrationRuleFractureAverage;
   friend class IntegrationRule3dPointwise;
+  friend class IntegrationRuleFractureMS;
+  friend class IntegrationRule3dMS;
 };
 
 }  // end namespace discretization

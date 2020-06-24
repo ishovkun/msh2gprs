@@ -44,11 +44,14 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/PFEM_integration/TributaryRegion3dBase.cpp
   discretization/mechanics/PFEM_integration/TributaryRegion3dFaces.cpp
   discretization/mechanics/PFEM_integration/TributaryRegion3dVertices.cpp
+  discretization/mechanics/PFEM_integration/IntegrationRule3dMS.cpp
   discretization/mechanics/PFEM_integration/TributaryRegion2dFaces.cpp
   discretization/mechanics/PFEM_integration/TributaryRegion2dVertices.cpp
   discretization/mechanics/PFEM_integration/IntegrationRule3dAverage.cpp
   discretization/mechanics/PFEM_integration/IntegrationRule2dAverage.cpp
+  discretization/mechanics/PFEM_integration/IntegrationRule2dPointwise.cpp
   discretization/mechanics/PFEM_integration/IntegrationRuleFractureAverage.cpp
+  discretization/mechanics/PFEM_integration/IntegrationRuleFractureMS.cpp
   discretization/mechanics/PFEM_integration/IntegrationRule3dPointwise.cpp
 )
 

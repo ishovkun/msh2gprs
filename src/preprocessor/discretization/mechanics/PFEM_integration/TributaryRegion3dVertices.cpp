@@ -36,8 +36,8 @@ TributaryRegion3dVertices::TributaryRegion3dVertices(PolyhedralElementBase & ele
   const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_faces );
   const auto parent_faces = cell.faces();
   const Point c = cell.center();
-  std::cout << "parent_faces.size() = " << parent_faces.size() << std::endl;
-  IO::VTKWriter::write_geometry(grid, cell, "parent.vtk");
+  // std::cout << "parent_faces.size() = " << parent_faces.size() << std::endl;
+  // IO::VTKWriter::write_geometry(grid, cell, "parent.vtk");
   
 
   for (size_t ivertex = 0; ivertex < vertices.size(); ++ivertex)
@@ -47,7 +47,7 @@ TributaryRegion3dVertices::TributaryRegion3dVertices(PolyhedralElementBase & ele
     std::vector<std::vector<size_t>> tributary_cell_faces;
     const size_t v = tributary_cell_vertices.insert(grid.vertex(vertices[ivertex]));
     const size_t cc = tributary_cell_vertices.insert(c);
-    std::cout << "ivertex = " << ivertex << std::endl;
+    // std::cout << "ivertex = " << ivertex << std::endl;
 
     // loop pairs of faces adjacent to the vertex
     const auto & markers = parent_vertex_faces[ivertex];
@@ -55,56 +55,41 @@ TributaryRegion3dVertices::TributaryRegion3dVertices(PolyhedralElementBase & ele
       for (auto it2 = std::next(it1, 1); it2 != markers.end(); ++it2)
         if (pair_markers_to_edge.contains(*it1, *it2))
         {
-          std::cout << "\t" << *it1 << " " << *it2 << std::endl;
+          // std::cout << "\t" << *it1 << " " << *it2 << std::endl;
           const auto * face1 = parent_faces[*it1 - 1];
           const auto * face2 = parent_faces[*it2 - 1];
+          const size_t f1c = tributary_cell_vertices.insert(face1->center());
+          const size_t f2c = tributary_cell_vertices.insert(face2->center());
+
           // there are two edges that separate two faces adjacent to ivertex
           // in the case of a handing node; otherwise 1 edge
           const auto & edges = pair_markers_to_edge.get_data(*it1, *it2);
-          if (edges.size() == 1)  // not a hanging node
+          // if (edges.size() == 1)  // not a hanging node
+          for (const auto & edge : edges)
           {
-            const auto & edge = edges[0];
+            // const auto & edge = edges[0];
             const size_t jvertex = (edge.either() == ivertex) ? edge.other(edge.either()) :
                                                                 edge.either();
             const Point edge_center = 0.5 * (grid.vertex(vertices[ivertex]) +
                                              grid.vertex(vertices[jvertex]));
             const size_t ec = tributary_cell_vertices.insert(edge_center);
-            const size_t f1c = tributary_cell_vertices.insert(face1->center());
             tributary_cell_faces.push_back({v, ec, f1c});
             tributary_cell_faces.push_back({ec, f1c, cc});
-            const size_t f2c = tributary_cell_vertices.insert(face2->center());
             tributary_cell_faces.push_back({v, ec, f2c});
             tributary_cell_faces.push_back({ec, f2c, cc});
           }
-          else if (vertices.size() == 2)  // not a hanging node
-          {
-            throw std::runtime_error("hanging not not implemented yet");
-          }
-          else
-            throw std::runtime_error("unexpected situation; should not happen");
-        }
-          // for (const auto & edge : pair_markers_to_edge.get_data(*it1, *it2))
+          // else if (vertices.size() == 2)  // not a hanging node
           // {
-          //   const size_t jvertex = (edge.either() == ivertex) ? edge.other(edge.either()) :
-          //                                                       edge.either();
-          //   build_face_(vertices[ivertex], vertices[jvertex], *parent_faces[*it1 - 1],
-          //               tributary_cell_faces, tributary_cell_vertices);
+          //   throw std::runtime_error("hanging not not implemented yet");
           // }
-
-    // const size_t vertex = vertices[ivertex];
-    // for (const auto face : cell.faces())
-    // {
-    //   if (face->has_vertex(vertex))
-    //   {
-    //     const auto edges = get_edges_with_vertex(vertex, *face);
-    //     build_tributary_cell_faces_(edges, *face, tributary_cell_faces, tributary_cell_vertices);
-    //   }
-    // }
+          // else
+          //   throw std::runtime_error("unexpected situation; should not happen");
+        }
     _tributary.emplace_back(tributary_cell_vertices.points, tributary_cell_faces);
-    IO::VTKWriter::write(_tributary.back(), "tributary-" + std::to_string(cell.index()) +
-                     "-" + std::to_string(ivertex) + ".vtk");
+    // IO::VTKWriter::write(_tributary.back(), "tributary-" + std::to_string(cell.index()) +
+    //                  "-" + std::to_string(ivertex) + ".vtk");
   }
-  exit(0);
+  // exit(0);
 }
 
 void TributaryRegion3dVertices::

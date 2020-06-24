@@ -6,10 +6,15 @@
 #include "EdgeComparison.hpp"
 #include "PFEM_integration/TributaryRegion2dFaces.hpp"
 #include "PFEM_integration/TributaryRegion3dFaces.hpp"
+#include "PFEM_integration/TributaryRegion2dVertices.hpp"
 #include "PFEM_integration/TributaryRegion3dVertices.hpp"
 #include "PFEM_integration/IntegrationRule3dAverage.hpp"
+#include "PFEM_integration/IntegrationRule3dMS.hpp"
+#include "PFEM_integration/IntegrationRule3dPointwise.hpp"
 #include "PFEM_integration/IntegrationRule2dAverage.hpp"
-#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationRuleFacesFractures
+#include "PFEM_integration/IntegrationRule2dPointwise.hpp"
+#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
+#include "PFEM_integration/IntegrationRuleFractureMS.hpp"  // provides IntegrationFractureMS
 #include "VTKWriter.hpp"                                       // debugging, provides io::VTKWriter
 #include "FEMFaceDoFManager.hpp"                               // provides discretization::FEMFaceDoFManager
 #include <Eigen/IterativeLinearSolvers>
@@ -42,13 +47,21 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
   // integration points in cells and faces
   // IntegrationRuleFacesAverage integration_rule(*this);
   // IntegrationRuleVerticesAverage integration_rule(*this);
-  TributaryRegion2dFaces tributary2d(*this);
+  TributaryRegion2dVertices tributary2d(*this);
+  // TributaryRegion2dFaces tributary2d(*this);
+  // TributaryRegion2dFaces tributary2d(*this);
   // TributaryRegion3dFaces tributary3d(*this);
-  TributaryRegion3dVertices tributary3d(*this);
-  IntegrationRule3dAverage rule_cell(*this, tributary3d);
-  IntegrationRule2dAverage rule_faces(*this, tributary2d);
+  // TributaryRegion3dVertices tributary3d(*this);
+  // IntegrationRule3dAverage rule_cell(*this, tributary3d);
+  // IntegrationRule3dPointwise rule_cell(*this, tributary3d);
+  IntegrationRule3dMS rule_cell(*this);
+  // IntegrationRule2dAverage rule_faces(*this, tributary2d);
+  IntegrationRule2dPointwise rule_faces(*this, tributary2d);
   if (update_fracture_values)
-    IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
+  {
+    // IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
+    IntegrationRuleFractureMS rule_fractures(*this);
+  }
   }
   catch (const std::exception& e)
   {

@@ -14,6 +14,7 @@ IntegrationRule3dPointwise::IntegrationRule3dPointwise(PolyhedralElementBase & e
   const auto & regions = tributary.get();
   const Point parent_center = element._parent_cell.center();
   bool center_found = false;
+  std::vector<int> region_found(regions.size(), 0);
   // integrate over regions
   const size_t n_parents = element._basis_functions.size();
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
@@ -22,27 +23,25 @@ IntegrationRule3dPointwise::IntegrationRule3dPointwise(PolyhedralElementBase & e
   for( auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell  )
   {
     for (size_t region=0; region<regions.size(); ++region)  // tributary regions
+      if (!region_found[region])
     {
       const Point c = regions[region].center();
-      // if (regions[region].point_inside(c))
       if (cell->polyhedron()->point_inside(c))
       {
-        fe_values.update(*cell, {c});
+        fe_values.update(*cell, {cell->center()});
+        region_found[region] = 1;
         const std::vector<size_t> & cell_verts = cell->vertices();
         const size_t nv = cell_verts.size();
         auto & data = cell_data.points[region];
-        const size_t q = 0;
-
         for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
           for (size_t v=0; v<nv; ++v)
             {
-              data.values[parent_vertex] += fe_values.value( v, q ) *
+              data.values[parent_vertex] += fe_values.value( v, 0 ) *
                   element._basis_functions[parent_vertex][cell_verts[v]];
-              data.grads[parent_vertex] += fe_values.grad(v, q) *
+              data.grads[parent_vertex] += fe_values.grad(v, 0) *
                   element._basis_functions[parent_vertex][cell_verts[v]];
           }
 
-        break;  // stop searching region
       }
     }
 
@@ -65,16 +64,22 @@ IntegrationRule3dPointwise::IntegrationRule3dPointwise(PolyhedralElementBase & e
               data.grads[parent_vertex] += fe_values.grad(v, q) *
                   element._basis_functions[parent_vertex][cell_verts[v]];
           }
-        // throw std::runtime_error("not implemented");
-       
       }
   }
 
   // normalize values and grads  by region volume
   for (size_t region=0; region<regions.size(); ++region)  // tributary regions
+    cell_data.points[region].weight = regions[region].volume();
+  cell_data.center.weight = _element._parent_cell.volume();
+
+  const size_t nfound = std::accumulate(region_found.begin(), region_found.end(), 0);
+  if (nfound != region_found.size())
   {
-    auto & data = cell_data.points[region];
-    data.weight = regions[region].volume();
+    std::cout << std::endl;
+    for (auto r : region_found)
+      std::cout << r << " ";
+    std::cout << std::endl;
+    throw std::runtime_error("fuck up my regions");
   }
 }
 

@@ -102,7 +102,7 @@ void IntegrationRuleFractureAverage::compute_face_fe_quantities_(const size_t pa
                                             basis_functions[parent_vertex][cell_verts[v]] *
                                             fe_face_values.JxW(q);
               data.grads[parent_vertex] += fe_cell_values.grad(v, q) *
-                                           basis_functions[parent_vertex][cell_verts[v]];
+                                           basis_functions[parent_vertex][cell_verts[v]] *
                                            fe_face_values.JxW(q);
             }
 
