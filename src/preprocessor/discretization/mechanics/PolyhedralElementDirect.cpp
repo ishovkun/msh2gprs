@@ -43,20 +43,25 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
   build_cell_system_matrix_();
   // impose BC's and solve laplace system to get shape functions
   compute_shape_functions_();
+
   // compute shape function values, gradients, and weights in the
   // integration points in cells and faces
   // IntegrationRuleFacesAverage integration_rule(*this);
   // IntegrationRuleVerticesAverage integration_rule(*this);
-  TributaryRegion2dVertices tributary2d(*this);
-  // TributaryRegion2dFaces tributary2d(*this);
-  // TributaryRegion2dFaces tributary2d(*this);
   // TributaryRegion3dFaces tributary3d(*this);
   // TributaryRegion3dVertices tributary3d(*this);
   // IntegrationRule3dAverage rule_cell(*this, tributary3d);
   // IntegrationRule3dPointwise rule_cell(*this, tributary3d);
   IntegrationRule3dMS rule_cell(*this);
-  // IntegrationRule2dAverage rule_faces(*this, tributary2d);
-  IntegrationRule2dPointwise rule_faces(*this, tributary2d);
+
+  if (update_face_values)
+  {
+    TributaryRegion2dVertices tributary2d(*this);
+    // TributaryRegion2dFaces tributary2d(*this);
+    // TributaryRegion2dFaces tributary2d(*this);
+    //  IntegrationRule2dAverage rule_faces(*this, tributary2d);
+    IntegrationRule2dPointwise rule_faces(*this, tributary2d);
+  }
   if (update_fracture_values)
   {
     // IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
