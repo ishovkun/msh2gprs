@@ -73,6 +73,7 @@ struct EmbeddedFractureConfig
   double aperture = 1e-3;   // hydraulic aperture of the fracture [m]
   double conductivity = 10; // hydraulic conductivity of dfm fracture [m·md]
   bool coupled = true;      // whether to couple with geomechanics
+  size_t region = 0;
 };
 
 
@@ -82,6 +83,7 @@ struct DiscreteFractureConfig
   double conductivity = 10;
   double aperture = 1e-3;
   bool coupled = true;  // whether to couple with geomechanics
+  size_t region = 0;    // property table index
 };
 
 

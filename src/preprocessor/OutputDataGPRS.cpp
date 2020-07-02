@@ -354,7 +354,7 @@ void OutputDataGPRS::save_embedded_fractures_(const std::string file_name) const
   // defined with "GMCONTACT_NORMAL_PROPS"
   out << "GM_EFRAC_REGION" << std::endl;
   for (const auto & frac : _data.sda_data)
-    out << 1 << "\n"; // Currently, set all fractures' region as 1.
+    out << frac.region + 1 << "\n";
   out << "/\n\n";
 
   // coordinates of a point in frac plane for each SDA cell
@@ -498,7 +498,7 @@ void OutputDataGPRS::save_discrete_fracture_properties_(const std::string file_n
 
   out << "GMFACE_FRACTURE_REGION" << std::endl;
   for (const auto & it : _data.dfm_faces)
-    out << 1 << "\n";
+    out << it.second.region + 1 << "\n";
   out << "/\n\n";
 
   out << "GMFACE_FRACTURE_GROUP" << std::endl;

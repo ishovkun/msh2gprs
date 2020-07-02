@@ -159,6 +159,7 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
   double conductivity = conf.conductivity;
   std::size_t n1 = conf.n1;
   std::size_t n2 = conf.n2;
+  size_t region = conf.region;
 
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
@@ -189,6 +190,8 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
       aperture = it->second.as<double>();
     else if (key == "conductivity")
       conductivity = it->second.as<double>();
+    else if (key == "region")
+      region = it->second.as<size_t>();
     else if (key == "remesh")
     {
       std::vector<std::size_t> remesh_pars =
@@ -220,6 +223,7 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
   conf.aperture = aperture;
   conf.conductivity = conductivity;
   conf.n1 = n1; conf.n2 = n2;
+  conf.region = region;
 }
 
 void YamlParser::discrete_fracture(const YAML::Node       & node,
@@ -236,6 +240,8 @@ void YamlParser::discrete_fracture(const YAML::Node       & node,
       conf.conductivity = it->second.as<double>();
     else if (key == "label")
       conf.label = it->second.as<int>();
+    else if (key == "region")
+      conf.region = it->second.as<size_t>();
   }
 }
 

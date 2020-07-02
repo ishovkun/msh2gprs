@@ -52,6 +52,7 @@ void DiscreteFractureManager::distribute_properties()
         f.coupled = config.coupled;
         f.aperture = config.aperture;
         f.conductivity = config.conductivity;
+        f.region = config.region;
         // compute custom data as weighted average of the bounding cells
         const auto cells = face->neighbors();
         const auto cell1 = *cells[0];

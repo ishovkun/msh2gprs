@@ -20,6 +20,7 @@ struct DiscreteFractureFace
   double aperture;                      // hydraulic aperture of the fracture [m]
   double conductivity;                  // hydraulic conductivity of dfm fracture [m·md]
   std::vector<double> custom_flow_data;
+  size_t region;  // fracture region (used by AD-GPRS for property tables)
 };
 
 struct EmbeddedFractureMechanicalProperties
@@ -34,6 +35,7 @@ struct EmbeddedFractureMechanicalProperties
   double dilation_angle;                      // fracture dilation angle [°]
   double conductivity;                        // hydraulic conductivity of edfm fracture [m·md]
   mesh::SurfaceMesh<double> mesh;             // combined grid discretization of all embedded fractures
+  size_t region;                              // fracture region (used by AD-GPRS for property tables)
 };
 
 struct BoundaryConstraintData

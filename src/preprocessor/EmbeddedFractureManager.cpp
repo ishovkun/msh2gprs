@@ -148,6 +148,7 @@ void EmbeddedFractureManager::distribute_mechanical_properties()
     sda[i].conductivity   = config[i].conductivity;
     sda[i].friction_angle = config[i].friction_angle;
     sda[i].dilation_angle = config[i].dilation_angle;
+    sda[i].region         = config[i].region;
   }
 }
 
