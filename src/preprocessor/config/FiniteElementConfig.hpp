@@ -3,6 +3,15 @@
 #include "PolyhedralFEMSubdivision.hpp"
 #include "SolverType.hpp"
 
+enum PolyhedronIntegrationRule
+{
+  Full,
+  FacesAverage,
+  VerticesAverage,
+  FacesPointwise,
+  VerticesPointwise
+};
+
 
 struct FiniteElementConfig
 {
@@ -11,4 +20,5 @@ struct FiniteElementConfig
   double solver_tolerance = 1e-5;                 // tolerance for msrsb convergence
   SolverType solver = direct;
   size_t order = 0;  // refinement order (the more the finer)
+  PolyhedronIntegrationRule integration_rule = PolyhedronIntegrationRule::Full;
 };

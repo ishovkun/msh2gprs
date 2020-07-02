@@ -49,19 +49,11 @@ void PolyhedralElementMSRSB::build_()
   //
   run_msrsb_();
 
-
-  // IntegrationRuleFacesAverage integration_rule(*this);
-  TributaryRegion2dFaces tributary2d(*this);
-  TributaryRegion3dFaces tributary3d(*this);
-  IntegrationRule3dAverage rule_cell(*this, tributary3d);
-  IntegrationRule2dAverage rule_faces(*this, tributary2d);
-  IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
-
-  // postprocessing
-  // debug_save_shape_functions_("shape_functions-final.vtk");
-  // save_support_boundaries_();
-  // find_integration_points_();
-  // compute_fe_quantities_();
+  // compute shape function values, gradients, and weights in the
+  // integration points in cells and faces
+  build_fe_cell_data_();
+  build_fe_face_data_();
+  build_fe_fracture_data_();
 }
 
 void PolyhedralElementMSRSB::build_support_boundaries_()

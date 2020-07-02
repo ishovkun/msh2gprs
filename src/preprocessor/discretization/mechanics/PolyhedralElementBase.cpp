@@ -2,6 +2,17 @@
 #include "gmsh_interface/GmshInterface.hpp"  // provides gprs_data::GmshInterface
 #include "mesh/Subdivision.hpp"              // provides mesh::Subdivision
 #include "VTKWriter.hpp"                     // provides VTKWriter
+#include "PFEM_integration/TributaryRegion2dFaces.hpp"
+#include "PFEM_integration/TributaryRegion3dFaces.hpp"
+#include "PFEM_integration/TributaryRegion2dVertices.hpp"
+#include "PFEM_integration/TributaryRegion3dVertices.hpp"
+#include "PFEM_integration/IntegrationRule3dAverage.hpp"
+#include "PFEM_integration/IntegrationRule3dMS.hpp"
+#include "PFEM_integration/IntegrationRule3dPointwise.hpp"
+#include "PFEM_integration/IntegrationRule2dAverage.hpp"
+#include "PFEM_integration/IntegrationRule2dPointwise.hpp"
+#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
+#include "PFEM_integration/IntegrationRuleFractureMS.hpp"  // provides IntegrationFractureMS
 
 
 #ifdef WITH_EIGEN
@@ -85,6 +96,72 @@ std::vector<std::list<size_t>> PolyhedralElementBase::map_parent_vertices_to_par
   return parent_vertex_markers;
 }
 
+void PolyhedralElementBase::build_fe_cell_data_()
+{
+  switch (_config.integration_rule)
+  {
+    case PolyhedronIntegrationRule::Full:
+      {
+        IntegrationRule3dMS rule_cell(*this);
+        break;
+      }
+    case PolyhedronIntegrationRule::FacesAverage:
+      {
+        TributaryRegion3dFaces tributary3d(*this);
+        IntegrationRule3dAverage rule_cell(*this, tributary3d);
+        break;
+      }
+    case PolyhedronIntegrationRule::FacesPointwise:
+      {
+        TributaryRegion3dFaces tributary3d(*this);
+        IntegrationRule3dPointwise rule_cell(*this, tributary3d);
+        break;
+      }
+    case PolyhedronIntegrationRule::VerticesAverage:
+      {
+        TributaryRegion3dVertices tributary3d(*this);
+        IntegrationRule3dAverage rule_cell(*this, tributary3d);
+        break;
+      }
+    case PolyhedronIntegrationRule::VerticesPointwise:
+      {
+        TributaryRegion3dVertices tributary3d(*this);
+        IntegrationRule3dAverage rule_cell(*this, tributary3d);
+        break;
+      }
+    default:
+      throw std::invalid_argument("Integration rule unknown");
+  }
+}
+
+void PolyhedralElementBase::build_fe_face_data_()
+{
+  switch (_config.integration_rule)
+  {
+    case PolyhedronIntegrationRule::VerticesPointwise:
+      {
+        TributaryRegion2dVertices tributary2d(*this);
+        IntegrationRule2dPointwise rule_faces(*this, tributary2d);
+        break;
+      }
+    case PolyhedronIntegrationRule::FacesAverage:
+      {
+        TributaryRegion2dFaces tributary2d(*this);
+        IntegrationRule2dAverage rule_faces(*this, tributary2d);
+      }
+    default:
+      {
+        TributaryRegion2dVertices tributary2d(*this);
+        IntegrationRule2dPointwise rule_faces(*this, tributary2d);
+        break;
+      }
+  }
+}
+
+void PolyhedralElementBase::build_fe_fracture_data_()
+{
+  IntegrationRuleFractureMS rule_fractures(*this);
+}
 
 }  // end namespace discretization
 

@@ -30,7 +30,15 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<std::vector<size_t>> create_face_domains_();
   // map vertices of parent cell to the markers of parent cell face
   std::vector<std::list<size_t>> map_parent_vertices_to_parent_faces_();
-
+  // compute shape function values, gradients, and weights in the
+  // integration points in cells
+  void build_fe_cell_data_();
+  // compute shape function values, gradients, and weights in the
+  // integration points in faces
+  void build_fe_face_data_();
+  // compute shape function values, gradients, and weights in the
+  // integration points in fractures
+  void build_fe_fracture_data_();
 
   const mesh::Cell & _parent_cell;                             // reference to the discretized cell
   const mesh::Mesh & _parent_grid;                             // grid the discrefized cell belongs to

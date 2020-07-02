@@ -4,19 +4,8 @@
 #include "mesh/Subdivision.hpp"  // provides mesh::Subdivision
 #include "FeValues.hpp"          // provides discretization::FeValues
 #include "EdgeComparison.hpp"
-#include "PFEM_integration/TributaryRegion2dFaces.hpp"
-#include "PFEM_integration/TributaryRegion3dFaces.hpp"
-#include "PFEM_integration/TributaryRegion2dVertices.hpp"
-#include "PFEM_integration/TributaryRegion3dVertices.hpp"
-#include "PFEM_integration/IntegrationRule3dAverage.hpp"
-#include "PFEM_integration/IntegrationRule3dMS.hpp"
-#include "PFEM_integration/IntegrationRule3dPointwise.hpp"
-#include "PFEM_integration/IntegrationRule2dAverage.hpp"
-#include "PFEM_integration/IntegrationRule2dPointwise.hpp"
-#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
-#include "PFEM_integration/IntegrationRuleFractureMS.hpp"  // provides IntegrationFractureMS
-#include "VTKWriter.hpp"                                       // debugging, provides io::VTKWriter
-#include "FEMFaceDoFManager.hpp"                               // provides discretization::FEMFaceDoFManager
+#include "VTKWriter.hpp"         // debugging, provides io::VTKWriter
+#include "FEMFaceDoFManager.hpp" // provides discretization::FEMFaceDoFManager
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
 
@@ -46,27 +35,11 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
 
   // compute shape function values, gradients, and weights in the
   // integration points in cells and faces
-  // IntegrationRuleFacesAverage integration_rule(*this);
-  // IntegrationRuleVerticesAverage integration_rule(*this);
-  // TributaryRegion3dFaces tributary3d(*this);
-  // TributaryRegion3dVertices tributary3d(*this);
-  // IntegrationRule3dAverage rule_cell(*this, tributary3d);
-  // IntegrationRule3dPointwise rule_cell(*this, tributary3d);
-  IntegrationRule3dMS rule_cell(*this);
-
+  build_fe_cell_data_();
   if (update_face_values)
-  {
-    TributaryRegion2dVertices tributary2d(*this);
-    // TributaryRegion2dFaces tributary2d(*this);
-    // TributaryRegion2dFaces tributary2d(*this);
-    //  IntegrationRule2dAverage rule_faces(*this, tributary2d);
-    IntegrationRule2dPointwise rule_faces(*this, tributary2d);
-  }
+    build_fe_face_data_();
   if (update_fracture_values)
-  {
-    // IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
-    IntegrationRuleFractureMS rule_fractures(*this);
-  }
+    build_fe_fracture_data_();
   }
   catch (const std::exception& e)
   {
@@ -283,7 +256,6 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
           const size_t m2 = markers[mj];
           if ( !pair_markers_to_edge.contains(m1, m2) )  // happend in some patrially split cells
           {
-            std::cout << v << " " << m1 << " " << m2 << " does not exist" << std::endl;
             continue;
           }
           const auto & edges = pair_markers_to_edge.get_data(m1, m2);
