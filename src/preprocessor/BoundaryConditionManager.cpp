@@ -324,7 +324,15 @@ void BoundaryConditionManager::create_constraint_groups_()
     _data.boundary_constraints[igroup].components.assign( _constrained_node_groups[igroup].size(), comp );
     _data.boundary_constraints[igroup].penalty = penalty;
   }
+}
 
+std::vector<int> BoundaryConditionManager::get_neumann_face_markers() const
+{
+  std::vector<int> result;
+  for (size_t iconf=0; iconf<_face_config.size(); ++iconf)
+    if (_face_config[iconf].type == BoundaryConditionType::neumann)
+      result.push_back(_face_config[iconf].label);
+  return result;
 }
 
 }  // end namespace gprs_data

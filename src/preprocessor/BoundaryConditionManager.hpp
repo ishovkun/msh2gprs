@@ -13,6 +13,8 @@ class BoundaryConditionManager
                            const std::vector<BCConfig> & node_config,
                            SimData & data);
 
+  std::vector<int> get_neumann_face_markers() const;
+
  private:
   // build boundary conditions and save them into simdata
   void build_boundary_conditions_();
