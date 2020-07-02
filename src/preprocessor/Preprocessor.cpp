@@ -253,7 +253,6 @@ void Preprocessor::build_geomechanics_discretization_()
   {
     multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.n_multiscale_blocks);
     ms_handler.build_data();
-
     ms_handler.fill_output_model(data.ms_mech_data);
   }
 
@@ -269,26 +268,25 @@ void Preprocessor::build_geomechanics_discretization_()
 
   dfm_markers = p_frac_mgr->get_face_markers();
 
-  std::cout << "build FEM discretization" << std::endl;
-  discretization::DiscretizationFEM fem_discr(data.geomechanics_grid, config.fem, dfm_markers);
-  data.fe_cell_data = fem_discr.get_cell_data();
-  data.fe_face_data = fem_discr.get_face_data();
-  data.fe_frac_data = fem_discr.get_fracture_data();
-
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
   data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>
       (mech_numbering_mgr.get_numbering());
-
-  // std::cout << "data.mech_numbering(653) = " << data.mech_numbering->cell_dof(653) << std::endl;
-  // std::cout << "data.mech_numbering(704) = " << data.mech_numbering->cell_dof(704) << std::endl;
-  // exit(0);
 
   // split geomechanics DFM faces
   std::cout << "splitting faces of DFM fractures" << std::endl;
   p_frac_mgr->split_faces(data.geomechanics_grid);
 
   // build mechanics boundary conditions
+  std::cout << "Building mechanics boundary conditions" << std::endl;
   BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
+
+  std::cout << "Building FEM discretization" << std::endl;
+  discretization::DiscretizationFEM fem_discr(data.geomechanics_grid, config.fem, dfm_markers,
+                                              bc_mgr.get_neumann_face_markers());
+  data.fe_cell_data = fem_discr.get_cell_data();
+  data.fe_face_data = fem_discr.get_face_data();
+  data.fe_frac_data = fem_discr.get_fracture_data();
+
 }
 
 

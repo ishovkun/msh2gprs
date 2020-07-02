@@ -16,9 +16,11 @@ namespace discretization
 using Point = angem::Point<3,double>;
 
 DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElementConfig & config,
-                                     const std::vector<int> & fracture_face_markers)
+                                     const std::vector<int> & fracture_face_markers,
+                                     const std::vector<int> & neumann_face_markers)
     : _grid(grid), _config( config ),
-      _fracture_face_markers(fracture_face_markers.begin(), fracture_face_markers.end())
+      _fracture_face_markers(fracture_face_markers.begin(), fracture_face_markers.end()),
+      _neumann_face_markers(neumann_face_markers.begin(), neumann_face_markers.end())
 {
   #ifndef WITH_EIGEN
   throw std::runtime_error("Cannot use DFEM method without linking to Eigen");
@@ -56,13 +58,16 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
     for ( const mesh::Face * face : cell->faces() )
     {
       const size_t face_index = face->index();
-      if ( _face_data[face->index()].points.empty() )
-      {
-        face_data[iface].element_index = face_index;
-       _face_data[face_index] = face_data[iface];
-      }
+      const bool is_fracture = _fracture_face_markers.find( face->marker() ) != _fracture_face_markers.end();
+      const bool is_neumann = _neumann_face_markers.find( face->marker() ) != _neumann_face_markers.end();
+      if (is_neumann || is_fracture)
+        if ( _face_data[face->index()].points.empty() )
+        {
+          face_data[iface].element_index = face_index;
+          _face_data[face_index] = face_data[iface];
+        }
 
-      if ( _fracture_face_markers.find( face->marker() ) != _fracture_face_markers.end() )
+      if (is_fracture)
         {
           frac_data[iface].element_index = cell->index();
           _frac_data[face_index].push_back(frac_data[iface]);
@@ -216,8 +221,8 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 
 std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::Cell & cell)
 {
-  const bool need_face_values = true;
   const bool need_fracture_values = has_fracture_face_(cell);
+  const bool need_face_values = has_neumann_face_(cell) || need_fracture_values;
   std::unique_ptr<FiniteElementBase> p_discr;
   if (_config.method == FEMMethod::polyhedral_finite_element)
   {
@@ -259,6 +264,14 @@ bool DiscretizationFEM::has_fracture_face_(const mesh::Cell & cell)
 {
   for (const mesh::Face * face : cell.faces() )
     if ( _fracture_face_markers.find( face->marker() ) != _fracture_face_markers.end()  )
+      return true;
+  return false;
+}
+
+bool DiscretizationFEM::has_neumann_face_(const mesh::Cell & cell)
+{
+  for (const mesh::Face * face : cell.faces() )
+    if ( _neumann_face_markers.find( face->marker() ) != _neumann_face_markers.end()  )
       return true;
   return false;
 }
