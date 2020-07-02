@@ -89,6 +89,20 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
       else throw std::invalid_argument("Subdivision method unknown" + values.first);
       config.fem.order = values.second;
     }
+    else if (key == "integration rule")
+    {
+      const auto str_rule = it->second.as<std::string>();
+      if (str_rule == "full")
+        config.fem.integration_rule = PolyhedronIntegrationRule::Full;
+      else if (str_rule == "faces average")
+        config.fem.integration_rule = PolyhedronIntegrationRule::FacesAverage;
+      else if (str_rule == "vertices average")
+        config.fem.integration_rule = PolyhedronIntegrationRule::VerticesAverage;
+      else if (str_rule == "faces pointwise")
+        config.fem.integration_rule = PolyhedronIntegrationRule::FacesPointwise;
+      else if (str_rule == "vertices pointwise")
+        config.fem.integration_rule = PolyhedronIntegrationRule::VerticesPointwise;
+    }
     else if (key == "fracture")
     {
       config.embedded_fractures.emplace_back();
