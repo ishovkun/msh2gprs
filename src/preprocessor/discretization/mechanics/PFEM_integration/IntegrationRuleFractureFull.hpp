@@ -7,12 +7,11 @@
 namespace discretization {
 
 /* This integration rule assumes that face subdivisioins are the tributary regions.
- * It takes pointwise sub-face center values. Since this exactly what
- * multiscale medhos do, I call it an MS rule. */
-class IntegrationRuleFractureMS {
+ * It takes pointwise sub-face center values.  */
+class IntegrationRuleFractureFull {
  public:
-  IntegrationRuleFractureMS(PolyhedralElementBase & element);
-  virtual ~IntegrationRuleFractureMS() = default;
+  IntegrationRuleFractureFull(PolyhedralElementBase & element);
+  virtual ~IntegrationRuleFractureFull() = default;
 
  protected:
   //  integration points in a given face but for cells

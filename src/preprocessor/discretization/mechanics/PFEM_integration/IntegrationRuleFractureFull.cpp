@@ -1,10 +1,10 @@
 #ifdef WITH_EIGEN
-#include "IntegrationRuleFractureMS.hpp"
+#include "IntegrationRuleFractureFull.hpp"
 #include "../FeValues.hpp"
 
 namespace discretization {
 
-IntegrationRuleFractureMS::IntegrationRuleFractureMS(PolyhedralElementBase & element)
+IntegrationRuleFractureFull::IntegrationRuleFractureFull(PolyhedralElementBase & element)
     : _element(element)
 {
   if (_element._face_domains.empty())
@@ -16,7 +16,7 @@ IntegrationRuleFractureMS::IntegrationRuleFractureMS(PolyhedralElementBase & ele
     compute_face_fe_quantities_(iface);
 }
 
-void IntegrationRuleFractureMS::setup_storage_()
+void IntegrationRuleFractureFull::setup_storage_()
 {
   auto & data = _element._face_fracture_data;
   data.resize(_element._parent_cell.faces().size());
@@ -52,7 +52,7 @@ void get_face_integration_points(FeValues<angem::TriangleID> & fe_values,
 
 }
 
-void IntegrationRuleFractureMS::compute_face_fe_quantities_(const size_t parent_face)
+void IntegrationRuleFractureFull::compute_face_fe_quantities_(const size_t parent_face)
 {
   const auto & grid = _element._element_grid;
   const std::vector<size_t> & face_indices = _element._face_domains[parent_face];
@@ -88,7 +88,7 @@ void IntegrationRuleFractureMS::compute_face_fe_quantities_(const size_t parent_
     for (size_t parent_vertex = 0; parent_vertex < n_parent_vertices; ++parent_vertex)
       for (size_t v = 0; v < nv; ++v)
       {
-        data.values[parent_vertex] = fe_cell_values.value(v, 0) *
+        data.values[parent_vertex] += fe_cell_values.value(v, 0) *
                                      basis_functions[parent_vertex][cell_verts[v]];
         data.grads[parent_vertex] += fe_cell_values.grad(v, 0) *
                                      basis_functions[parent_vertex][cell_verts[v]];

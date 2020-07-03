@@ -1,11 +1,11 @@
-#include "IntegrationRule3dMS.hpp"
+#include "IntegrationRule3dFull.hpp"
 #include "../FeValues.hpp"  // provides FeValues
 
 #ifdef WITH_EIGEN
 
 namespace discretization {
 
-IntegrationRule3dMS::IntegrationRule3dMS(PolyhedralElementBase & element)
+IntegrationRule3dFull::IntegrationRule3dFull(PolyhedralElementBase & element)
     : _element(element)
 {
   setup_storage_();
@@ -16,12 +16,12 @@ IntegrationRule3dMS::IntegrationRule3dMS(PolyhedralElementBase & element)
   const Point parent_center = element._parent_cell.center();
 
   size_t icell = 0;
+  double min_dist = std::numeric_limits<double>::max();
   for( auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell, ++icell  )
   {
     fe_values.update(*cell);
     const std::vector<size_t> & cell_verts = cell->vertices();
     const size_t nv = cell_verts.size();
-    // auto & data = element._cell_data.points[cell->index()];
     auto & data = element._cell_data.points[icell];
     for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
       for (size_t v=0; v<nv; ++v)
@@ -33,8 +33,11 @@ IntegrationRule3dMS::IntegrationRule3dMS(PolyhedralElementBase & element)
       }
     data.weight = cell->volume();
 
-    if (cell->polyhedron()->point_inside(parent_center))
+    // if (cell->polyhedron()->point_inside(parent_center))
+    const double dist_to_center = cell->center().distance(parent_center);
+    if (dist_to_center < min_dist)
     {
+      min_dist = dist_to_center;
       _element._cell_data.center.values = data.values;
       _element._cell_data.center.grads = data.grads;
     }
@@ -42,7 +45,7 @@ IntegrationRule3dMS::IntegrationRule3dMS(PolyhedralElementBase & element)
   _element._cell_data.center.weight = element._parent_cell.volume();
 }
 
-void IntegrationRule3dMS::setup_storage_()
+void IntegrationRule3dFull::setup_storage_()
 {
   auto & data = _element._cell_data;
   const auto & basis_functions = _element._basis_functions;

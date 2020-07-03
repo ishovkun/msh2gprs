@@ -7,12 +7,13 @@
 #include "PFEM_integration/TributaryRegion2dVertices.hpp"
 #include "PFEM_integration/TributaryRegion3dVertices.hpp"
 #include "PFEM_integration/IntegrationRule3dAverage.hpp"
-#include "PFEM_integration/IntegrationRule3dMS.hpp"
+#include "PFEM_integration/IntegrationRule3dFull.hpp"
 #include "PFEM_integration/IntegrationRule3dPointwise.hpp"
 #include "PFEM_integration/IntegrationRule2dAverage.hpp"
 #include "PFEM_integration/IntegrationRule2dPointwise.hpp"
+#include "PFEM_integration/IntegrationRule2dFull.hpp"
 #include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
-#include "PFEM_integration/IntegrationRuleFractureMS.hpp"  // provides IntegrationFractureMS
+#include "PFEM_integration/IntegrationRuleFractureFull.hpp"  // provides IntegrationFractureFull
 
 
 #ifdef WITH_EIGEN
@@ -102,7 +103,7 @@ void PolyhedralElementBase::build_fe_cell_data_()
   {
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRule3dMS rule_cell(*this);
+        IntegrationRule3dFull rule_cell(*this);
         break;
       }
     case PolyhedronIntegrationRule::FacesAverage:
@@ -148,6 +149,12 @@ void PolyhedralElementBase::build_fe_face_data_()
       {
         TributaryRegion2dFaces tributary2d(*this);
         IntegrationRule2dAverage rule_faces(*this, tributary2d);
+        break;
+      }
+    case PolyhedronIntegrationRule::Full:
+      {
+        IntegrationRule2dFull tributary2d(*this);
+        break;
       }
     default:
       {
@@ -160,7 +167,22 @@ void PolyhedralElementBase::build_fe_face_data_()
 
 void PolyhedralElementBase::build_fe_fracture_data_()
 {
-  IntegrationRuleFractureMS rule_fractures(*this);
+  switch (_config.integration_rule)
+  {
+    case PolyhedronIntegrationRule::Full:
+      {
+        IntegrationRuleFractureFull rule_fractures(*this);
+        break;
+      }
+    case PolyhedronIntegrationRule::FacesAverage:
+      {
+        TributaryRegion2dFaces tributary2d(*this);
+        IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
+        break;
+      }
+    default:
+      throw std::invalid_argument("Not implemented");
+  }
 }
 
 }  // end namespace discretization

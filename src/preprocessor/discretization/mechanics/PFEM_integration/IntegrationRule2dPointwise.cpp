@@ -41,12 +41,7 @@ void IntegrationRule2dPointwise::compute_face_fe_quantities_(const size_t parent
   const auto & grid = _element._element_grid;
   const std::vector<size_t> & face_indices = _element._face_domains[parent_face];
   FeValues<angem::VTK_ID::TriangleID> fe_values;
-  const auto basis = grid
-                     .face(face_indices.front())
-                     .polygon()
-                     .plane()
-                     .get_basis();
-
+  const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
   fe_values.set_basis(basis);
   const auto & regions = _tributary.get()[parent_face];
   std::vector<int> region_found(regions.size(), 0);
