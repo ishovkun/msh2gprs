@@ -16,7 +16,6 @@ IntegrationRule3dFull::IntegrationRule3dFull(PolyhedralElementBase & element)
   const Point parent_center = element._parent_cell.center();
 
   size_t icell = 0;
-  double min_dist = std::numeric_limits<double>::max();
   for( auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell, ++icell  )
   {
     fe_values.update(*cell);
@@ -30,19 +29,24 @@ IntegrationRule3dFull::IntegrationRule3dFull(PolyhedralElementBase & element)
             element._basis_functions[parent_vertex][cell_verts[v]];
         data.grads[parent_vertex] += fe_values.grad(v, 0) *
             element._basis_functions[parent_vertex][cell_verts[v]];
+        _element._cell_data.center.values[parent_vertex] +=
+            fe_values.value( v, 0 ) *
+            element._basis_functions[parent_vertex][cell_verts[v]] *
+            fe_values.JxW(0);
+        _element._cell_data.center.grads[parent_vertex] +=
+            fe_values.grad( v, 0 ) *
+            element._basis_functions[parent_vertex][cell_verts[v]] *
+            fe_values.JxW(0);
       }
     data.weight = cell->volume();
-
-    // if (cell->polyhedron()->point_inside(parent_center))
-    const double dist_to_center = cell->center().distance(parent_center);
-    if (dist_to_center < min_dist)
-    {
-      min_dist = dist_to_center;
-      _element._cell_data.center.values = data.values;
-      _element._cell_data.center.grads = data.grads;
-    }
   }
-  _element._cell_data.center.weight = element._parent_cell.volume();
+  const double parent_cell_volume = element._parent_cell.volume();
+  for (size_t parent_vertex=0; parent_vertex<n_parents; ++parent_vertex)
+  {
+    _element._cell_data.center.values[parent_vertex] /= parent_cell_volume;
+    _element._cell_data.center.grads[parent_vertex] /= parent_cell_volume;
+  }
+  _element._cell_data.center.weight = parent_cell_volume;
 }
 
 void IntegrationRule3dFull::setup_storage_()

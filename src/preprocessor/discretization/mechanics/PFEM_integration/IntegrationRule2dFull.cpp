@@ -70,19 +70,24 @@ void IntegrationRule2dFull::compute_face_fe_quantities_(const size_t ipf)
             basis_functions[parent_vertex][face_verts[v]];
         data.grads[parent_vertex] += fe_values.grad(v, 0) *
             basis_functions[parent_vertex][face_verts[v]];
+        _element._face_data[ipf].center.values[parent_vertex] +=
+            fe_values.value( v, 0 ) *
+            basis_functions[parent_vertex][face_verts[v]] *
+            fe_values.JxW(0);
+        _element._face_data[ipf].center.grads[parent_vertex] +=
+            fe_values.grad( v, 0 ) *
+            basis_functions[parent_vertex][face_verts[v]] *
+            fe_values.JxW(0);
       }
     data.weight = face.area();
-
-    // if (face.polygon().point_inside(parent_center))
-    const double dist_to_center = face.center().distance(parent_center);
-    if (dist_to_center < min_dist)
-    {
-      min_dist = dist_to_center;
-      _element._face_data[ipf].center.values = data.values;
-      _element._face_data[ipf].center.grads = data.grads;
-    }
   }
-  _element._face_data[ipf].center.weight = parent_face->area();
+  const double parent_face_area = parent_face->area();
+  _element._face_data[ipf].center.weight = parent_face_area;
+  for (size_t parent_vertex=0; parent_vertex < n_parent_vertices; ++parent_vertex)
+  {
+    _element._face_data[ipf].center.values[parent_vertex] /= parent_face_area;
+    _element._face_data[ipf].center.grads[parent_vertex] /= parent_face_area;
+  }
 }
 
 }  // end namespace discretization
