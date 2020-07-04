@@ -7,32 +7,27 @@ namespace discretization {
 using Point = angem::Point<3,double>;
 
 IntegrationRuleFractureAverage::
-IntegrationRuleFractureAverage(PolyhedralElementBase & element, const TributaryRegion2dBase  & tributary)
-    : _element(element), _tributary(tributary)
+IntegrationRuleFractureAverage(PolyhedralElementBase & element,
+                               const std::vector<std::vector<angem::Polygon<double>>> & tributary_2d,
+                               const size_t parent_face)
+    : _element(element), _tributary_2d(tributary_2d), _parent_face(parent_face)
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
-
-  setup_storage_();
-  const size_t n_faces = tributary.get().size();
-  for (size_t iface=0; iface < n_faces; ++iface)
-    compute_face_fe_quantities_(iface);
 }
 
-void IntegrationRuleFractureAverage::setup_storage_()
+void IntegrationRuleFractureAverage::setup_storage_(FiniteElementData & data) const
 {
-  auto & data = _element._face_fracture_data;
-  data.resize(_element._parent_cell.faces().size());
+  // auto & data = _element._face_fracture_data;
+  // data.resize(_element._parent_cell.faces().size());
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
-  for (size_t iface=0; iface<data.size(); ++iface)
+  // for (size_t iface=0; iface<data.size(); ++iface)
+  const size_t nq = _tributary_2d[_parent_face].size();
+  data.points.resize(nq);
+  for (size_t q = 0; q < nq; ++q)
   {
-    const size_t nq = _tributary.get()[iface].size();
-    data[iface].points.resize(nq);
-    for (size_t q = 0; q < nq; ++q)
-    {
-      data[iface].points[q].values.resize( n_parent_vertices );
-      data[iface].points[q].grads.resize( n_parent_vertices );
-    }
+    data.points[q].values.resize( n_parent_vertices );
+    data.points[q].grads.resize( n_parent_vertices );
   }
 }
 
@@ -52,20 +47,18 @@ void get_face_integration_points(FeValues<angem::TriangleID> & fe_values,
       integration_points[q] += fe_values.value(v, q) * master_qpoints[q];
 }
 
-void IntegrationRuleFractureAverage::compute_face_fe_quantities_(const size_t parent_face)
+FiniteElementData IntegrationRuleFractureAverage::get() const
 {
+  FiniteElementData face_data;
+  setup_storage_(face_data);
   const auto & grid = _element._element_grid;
-  const std::vector<size_t> & face_indices = _element._face_domains[parent_face];
+  const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TetrahedronID> fe_cell_values;
   FeValues<angem::VTK_ID::TriangleID> fe_face_values;
-  const auto basis = grid
-                     .face(face_indices.front())
-                     .polygon()
-                     .plane()
-                     .get_basis();
+  const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
   fe_face_values.set_basis(basis);
 
-  const auto & regions = _tributary.get()[parent_face];
+  const auto & regions = _tributary_2d[_parent_face];
   std::vector<double> region_areas( regions.size(), 0.0 );
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
   const auto & basis_functions = _element._basis_functions;
@@ -92,7 +85,7 @@ void IntegrationRuleFractureAverage::compute_face_fe_quantities_(const size_t pa
         for (size_t q = 0; q < fe_face_values.n_integration_points(); ++q)
           region_areas[region] += fe_face_values.JxW(q);
 
-        auto & data = _element._face_fracture_data[parent_face].points[region];
+        auto & data = face_data.points[region];
 
         for (size_t parent_vertex = 0; parent_vertex < n_parent_vertices; ++parent_vertex)
           for (size_t v = 0; v < nv; ++v)
@@ -109,19 +102,17 @@ void IntegrationRuleFractureAverage::compute_face_fe_quantities_(const size_t pa
         break;  // stop searching region
       }
   }
-  // const double sum_area = std::accumulate( region_areas.begin(), region_areas.end(), 0.0);
-  // if (std::fabs(sum_area - _element._parent_cell.faces()[parent_face]->area() > 1e-8))
-  //   abort();
 
   for (size_t region=0; region<regions.size(); ++region)  // tributary regions
   {
-    auto & data = _element._face_fracture_data[parent_face].points[region];
+    auto & data = face_data.points[region];
     for (size_t parent_vertex=0; parent_vertex<n_parent_vertices; ++parent_vertex)
     {
       data.values[parent_vertex] /= region_areas[region];
       data.grads[parent_vertex] /= region_areas[region];
     }
   }
+  return face_data;
 }
 
 

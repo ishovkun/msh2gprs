@@ -148,26 +148,32 @@ void PolyhedralElementBase::build_fe_cell_data_()
 }
 
 FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
-                                                       const angem::Point<3,double> & normal)
+                                                       angem::Point<3,double> normal)
 {
   if (_tributary_2d.empty())
     build_tributary_();
+
+  if (_basis_functions.empty())
+    throw std::runtime_error("should be initialized");
 
   switch (_config.integration_rule)
   {
     case PolyhedronIntegrationRule::VerticesPointwise:
       {
-        IntegrationRule2dPointwise rule_faces(*this, _tributary2d);
+        IntegrationRule2dPointwise rule(*this, _tributary_2d, iface);
+        return rule.get();
         break;
       }
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        IntegrationRule2dAverage rule_faces(*this, _tributary2d);
+        IntegrationRule2dAverage rule(*this, _tributary_2d, iface);
+        return rule.get();
         break;
       }
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRule2dFull rule_faces(*this);
+        IntegrationRule2dFull rule(*this, iface);
+        return rule.get();
         break;
       }
     default:
@@ -175,8 +181,7 @@ FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
   }
 }
 
-FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
-                                                          const angem::Point<3,double> & normal)
+FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface, angem::Point<3,double> normal)
 {
   if (_tributary_2d.empty())
     build_tributary_();
@@ -185,12 +190,14 @@ FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
   {
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRuleFractureFull rule_fractures(*this);
+        IntegrationRuleFractureFull rule(*this, iface);
+        return rule.get();
         break;
       }
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        IntegrationRuleFractureAverage rule_fractures(*this, _tributary2d);
+        IntegrationRuleFractureAverage rule(*this, _tributary_2d, iface);
+        return rule.get();
         break;
       }
     default:

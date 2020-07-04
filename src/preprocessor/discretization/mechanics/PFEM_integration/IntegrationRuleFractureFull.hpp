@@ -10,16 +10,16 @@ namespace discretization {
  * It takes pointwise sub-face center values.  */
 class IntegrationRuleFractureFull {
  public:
-  IntegrationRuleFractureFull(PolyhedralElementBase & element);
+  IntegrationRuleFractureFull(PolyhedralElementBase & element, const size_t parent_face);
   virtual ~IntegrationRuleFractureFull() = default;
+  FiniteElementData get() const;
 
  protected:
-  //  integration points in a given face but for cells
-  void compute_face_fe_quantities_(const size_t parent_face);
   // do proper resizing of storage vectors
-  void setup_storage_();
+  void setup_storage_(FiniteElementData & data) const;
 
   PolyhedralElementBase & _element;
+  const size_t _parent_face;
 };
 
 

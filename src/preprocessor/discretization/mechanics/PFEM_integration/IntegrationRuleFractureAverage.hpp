@@ -2,7 +2,6 @@
 
 #ifdef WITH_EIGEN
 #include "../PolyhedralElementBase.hpp"
-#include "TributaryRegion2dBase.hpp"
 
 namespace discretization {
 
@@ -12,17 +11,19 @@ namespace discretization {
 class IntegrationRuleFractureAverage
 {
  public:
-  IntegrationRuleFractureAverage(PolyhedralElementBase & element, const TributaryRegion2dBase  & tributary);
+  IntegrationRuleFractureAverage(PolyhedralElementBase & element,
+                               const std::vector<std::vector<angem::Polygon<double>>> & tributary_2d,
+                               const size_t parent_face);
   virtual ~IntegrationRuleFractureAverage() = default;
+  FiniteElementData get() const;
+
   protected:
-  // compute shape function values, gradients, and weights in the
-  // integration points in a given face but for cells
-  void compute_face_fe_quantities_(const size_t parent_face);
   // do proper resizing of storage vectors
-  void setup_storage_();
+  void setup_storage_(FiniteElementData & data) const;
 
   PolyhedralElementBase & _element;
-  const TributaryRegion2dBase  & _tributary;
+  const std::vector<std::vector<angem::Polygon<double>>> & _tributary_2d;
+  const size_t _parent_face;
 };
 
 }  // end namespace discretization

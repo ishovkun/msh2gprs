@@ -5,27 +5,18 @@
 
 namespace discretization {
 
-IntegrationRule2dFull::IntegrationRule2dFull(PolyhedralElementBase & element)
-    : _element(element)
+IntegrationRule2dFull::IntegrationRule2dFull(PolyhedralElementBase & element, const size_t parent_face)
+    : _element(element), _parent_face(parent_face)
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
-  setup_storage_();
-  const size_t n_faces = _element._face_domains.size();
-  for (size_t iface=0; iface < n_faces; ++iface)
-    compute_face_fe_quantities_(iface);
 }
 
-void IntegrationRule2dFull::setup_storage_()
+void IntegrationRule2dFull::setup_storage_(FiniteElementData & data) const
 {
   const std::vector<const mesh::Face*> parent_faces = _element._parent_cell.faces();
-  // const auto & basis_functions = _element._basis_functions;
-  _element._face_data.resize(_element._face_domains.size());
-  for (size_t parent_face = 0; parent_face < _element._face_domains.size(); ++parent_face)
-  {
-    auto & data = _element._face_data[parent_face];
-    data.points.resize(_element._face_domains[parent_face].size());
-    const size_t n_vertices = parent_faces[parent_face]->vertices().size();
+    data.points.resize(_element._face_domains[_parent_face].size());
+    const size_t n_vertices = parent_faces[_parent_face]->vertices().size();
     for (size_t q = 0; q < data.points.size(); ++q)
     {
       data.points[q].values.resize(n_vertices);
@@ -33,18 +24,20 @@ void IntegrationRule2dFull::setup_storage_()
     }
     data.center.values.resize(n_vertices);
     data.center.grads.resize(n_vertices);
-  }
 }
 
-void IntegrationRule2dFull::compute_face_fe_quantities_(const size_t ipf)
+FiniteElementData IntegrationRule2dFull::get() const
 {
+  FiniteElementData face_data;
+  setup_storage_(face_data);
   const auto & grid = _element._element_grid;
-  const std::vector<size_t> & face_indices = _element._face_domains[ipf];
+  const size_t ipf = _parent_face;
+  const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TriangleID> fe_values;
   const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
   fe_values.set_basis(basis);
-  const size_t n_parent_vertices = _element._face_data[ipf].center.values.size();
-  const auto * parent_face = _element._parent_cell.faces()[ipf];
+  const size_t n_parent_vertices = face_data.center.values.size();
+  const auto * parent_face = _element._parent_cell.faces()[_parent_face];
   const Point parent_center = parent_face->center();
   const auto parent_cell_vertices = _element._parent_cell.vertices();
   std::vector<size_t> parent_vertices(n_parent_vertices);
@@ -55,14 +48,14 @@ void IntegrationRule2dFull::compute_face_fe_quantities_(const size_t ipf)
                                  parent_face->vertices()[v]));
   const auto & basis_functions = _element._basis_functions;
 
-  auto & data_center = _element._face_data[ipf].center;
+  auto & data_center = face_data.center;
   for (size_t iface = 0; iface < face_indices.size(); ++iface)
   {
     const size_t face_index = face_indices[iface];
     const auto & face = grid.face(face_index);
     const auto & face_verts = face.vertices();
     const size_t nv = face_verts.size();
-    auto & data = _element._face_data[ipf].points[iface];
+    auto & data = face_data.points[iface];
     fe_values.update(face);
     for (size_t parent_vertex=0; parent_vertex < n_parent_vertices; ++parent_vertex)
       for (size_t v=0; v<nv; ++v)
@@ -81,15 +74,14 @@ void IntegrationRule2dFull::compute_face_fe_quantities_(const size_t ipf)
     data.weight = face.area();
   }
   const double parent_face_area = parent_face->area();
-  _element._face_data[ipf].center.weight = parent_face_area;
+  face_data.center.weight = parent_face_area;
   for (size_t parent_vertex=0; parent_vertex < n_parent_vertices; ++parent_vertex)
   {
-    _element._face_data[ipf].center.values[parent_vertex] /= parent_face_area;
-    _element._face_data[ipf].center.grads[parent_vertex] /= parent_face_area;
+    face_data.center.values[parent_vertex] /= parent_face_area;
+    face_data.center.grads[parent_vertex] /= parent_face_area;
   }
 
-  // for (size_t iface = 0; iface < face_indices.size(); ++iface)
- 
+  return face_data;
 }
 
 }  // end namespace discretization

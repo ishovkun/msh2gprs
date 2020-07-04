@@ -55,8 +55,6 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
     cell_fem_data.element_index = cell->index();
     _cell_data[cell->index()] = std::move(cell_fem_data);
 
-    // std::vector<FiniteElementData> face_data = p_discr->get_face_data();
-    // std::vector<FiniteElementData> frac_data = p_discr->get_fracture_data();
     size_t iface = 0;
     for ( const mesh::Face * face : cell->faces() )
     {
@@ -233,8 +231,7 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
   {
 #ifdef WITH_EIGEN
     if (_config.solver == direct || _config.solver == cg)
-      p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config, need_face_values,
-                                                          need_fracture_values);
+      p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config);
     else if (_config.solver == msrsb)
       p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _grid, _config);
 #else
@@ -250,8 +247,7 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
     {
 #ifdef WITH_EIGEN
       if (_config.solver == direct || _config.solver == cg)
-        p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config, need_face_values,
-                                                            need_fracture_values);
+        p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config);
       else if (_config.solver == msrsb)
         p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _grid, _config);
 #else

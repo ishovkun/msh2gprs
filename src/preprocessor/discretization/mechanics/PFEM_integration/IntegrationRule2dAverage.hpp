@@ -2,7 +2,6 @@
 
 #ifdef WITH_EIGEN
 #include "../PolyhedralElementBase.hpp"
-#include "TributaryRegion2dBase.hpp"
 
 namespace discretization {
 
@@ -12,16 +11,18 @@ namespace discretization {
  */
 class IntegrationRule2dAverage {
  public:
-  IntegrationRule2dAverage(PolyhedralElementBase & element, const TributaryRegion2dBase  & tributary);
+  IntegrationRule2dAverage(PolyhedralElementBase & element,
+                           const std::vector<std::vector<angem::Polygon<double>>> & tributary_2d,
+                           const size_t parent_face);
   virtual ~IntegrationRule2dAverage() = default;
+  FiniteElementData get() const;
+ 
  protected:
-  void setup_storage_(PolyhedralElementBase & element, const TributaryRegion2dBase  & tributary);
-  // compute shape function values, gradients, and weights in the
-  // integration points in a given face
-  void compute_face_fe_quantities_(const size_t parent_face);
+  void setup_storage_(FiniteElementData & data) const;
 
   PolyhedralElementBase & _element;
-  const TributaryRegion2dBase  & _tributary;
+  const std::vector<std::vector<angem::Polygon<double>>> & _tributary_2d;
+  const size_t _parent_face;
 };
 
 }  // end namespace discretization

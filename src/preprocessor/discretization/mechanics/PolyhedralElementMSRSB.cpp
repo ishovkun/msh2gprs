@@ -48,12 +48,6 @@ void PolyhedralElementMSRSB::build_()
   // debug_save_shape_functions_("shape_functions-initial-guess.vtk");
   //
   run_msrsb_();
-
-  // compute shape function values, gradients, and weights in the
-  // integration points in cells and faces
-  build_fe_cell_data_();
-  build_fe_face_data_();
-  build_fe_fracture_data_();
 }
 
 void PolyhedralElementMSRSB::build_support_boundaries_()

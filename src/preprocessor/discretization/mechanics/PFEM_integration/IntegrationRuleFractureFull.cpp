@@ -4,31 +4,24 @@
 
 namespace discretization {
 
-IntegrationRuleFractureFull::IntegrationRuleFractureFull(PolyhedralElementBase & element)
-    : _element(element)
+IntegrationRuleFractureFull::IntegrationRuleFractureFull(PolyhedralElementBase & element, const size_t parent_face)
+    : _element(element), _parent_face(parent_face)
 {
   if (_element._face_domains.empty())
-    _element._face_domains = _element.create_face_domains_(/*sort_faces=*/true);
-
-  setup_storage_();
-  const size_t n_faces = _element._face_domains.size();
-  for (size_t iface=0; iface < n_faces; ++iface)
-    compute_face_fe_quantities_(iface);
+    _element._face_domains = _element.create_face_domains_();
 }
 
-void IntegrationRuleFractureFull::setup_storage_()
+void IntegrationRuleFractureFull::setup_storage_(FiniteElementData & data) const
 {
-  auto & data = _element._face_fracture_data;
-  data.resize(_element._parent_cell.faces().size());
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
-  for (size_t iface=0; iface<data.size(); ++iface)
+  // for (size_t iface=0; iface<data.size(); ++iface)
   {
-    const size_t nq = _element._face_domains[iface].size();
-    data[iface].points.resize(nq);
+    const size_t nq = _element._face_domains[_parent_face].size();
+    data.points.resize(nq);
     for (size_t q = 0; q < nq; ++q)
     {
-      data[iface].points[q].values.resize( n_parent_vertices );
-      data[iface].points[q].grads.resize( n_parent_vertices );
+      data.points[q].values.resize( n_parent_vertices );
+      data.points[q].grads.resize( n_parent_vertices );
     }
   }
 }
@@ -52,10 +45,12 @@ void get_face_integration_points(FeValues<angem::TriangleID> & fe_values,
 
 }
 
-void IntegrationRuleFractureFull::compute_face_fe_quantities_(const size_t parent_face)
+FiniteElementData IntegrationRuleFractureFull::get() const
 {
+  FiniteElementData face_data;
+  setup_storage_(face_data);
   const auto & grid = _element._element_grid;
-  const std::vector<size_t> & face_indices = _element._face_domains[parent_face];
+  const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TetrahedronID> fe_cell_values;
   FeValues<angem::VTK_ID::TriangleID> fe_face_values;
   const auto basis = grid
@@ -80,7 +75,7 @@ void IntegrationRuleFractureFull::compute_face_fe_quantities_(const size_t paren
     fe_cell_values.update(cell, local_integration_points);
 
     const std::vector<size_t> & cell_verts = cell.vertices();
-    auto & data = _element._face_fracture_data[parent_face].points[iface];
+    auto & data = face_data.points[iface];
 
     for (size_t parent_vertex = 0; parent_vertex < n_parent_vertices; ++parent_vertex)
       for (size_t v = 0; v < nv; ++v)
@@ -92,6 +87,8 @@ void IntegrationRuleFractureFull::compute_face_fe_quantities_(const size_t paren
       }
     data.weight = face.area();
   }
+
+  return face_data;
 }
 
 

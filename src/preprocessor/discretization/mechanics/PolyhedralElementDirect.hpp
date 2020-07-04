@@ -45,9 +45,7 @@ class PolyhedralElementDirect : public PolyhedralElementBase
    */
   PolyhedralElementDirect(const mesh::Cell & cell,
                           const mesh::Mesh & parent_grid,
-                          const FiniteElementConfig & config,
-                          const bool update_face_values = true,
-                          const bool update_fracture_values = true);
+                          const FiniteElementConfig & config);
   // get vector of cell integration points (where cell_data is defined)
   const std::vector<angem::Point<3,double>> & get_cell_integration_points() const {return _cell_gauss_points;}
   //  purely debugging purposes
@@ -55,7 +53,7 @@ class PolyhedralElementDirect : public PolyhedralElementBase
 
  protected:
   // solve problems on faces
-  void build_face_boundary_conditions_(const bool sort_faces);
+  void build_face_boundary_conditions_();
   // build system matrix for the face poisson problem
   void build_face_system_matrix_(const size_t parent_face,
                                  Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
@@ -97,7 +95,6 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   std::vector<std::vector<double>> _support_edge_values;       // edge dirichlet values for each parent vertex
   std::vector<std::vector<size_t>> _support_boundary_vertices; // face vertices for each parent vertex
   std::vector<std::vector<double>> _support_boundary_values;   // face dirichlet values for each parent vertex
-  // Eigen::SparseMatrix<double,Eigen::ColMajor> _system_matrix;  // 3d cell system matrix with no BC's
   Eigen::SparseMatrix<double,Eigen::RowMajor> _system_matrix;  // 3d cell system matrix with no BC's
 };
 

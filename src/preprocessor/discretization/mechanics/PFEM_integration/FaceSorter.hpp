@@ -16,7 +16,7 @@ struct point_comparator
     // const auto pp2 = _pln.project_point(p2);
     const auto &pp1 = p1;
     const auto &pp2 = p2;
-    for (int i = 3; i >=0; i--)
+    for (int i = 2; i >=0; i--)
     {
       const double diff = pp1[i] - pp2[i];
       if (std::fabs(diff) < tol)

@@ -18,29 +18,19 @@ const size_t UNMARKED = std::numeric_limits<size_t>::max();
 
 PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
                                                  const mesh::Mesh & grid,
-                                                 const FiniteElementConfig & config,
-                                                 const bool update_face_values,
-                                                 const bool update_fracture_values)
-    : PolyhedralElementBase(cell, grid, config)
+                                                 const FiniteElementConfig & config)
+    : PolyhedralElementBase(cell, grid, config, true)
 {
   // build grid for the element
   build_triangulation_();
   // solve problems on faces
   try {
-    build_face_boundary_conditions_(update_fracture_values);
+    build_face_boundary_conditions_();
     // build_face_boundary_conditions_(false);
-  // construct the laplace system matrix for the cell volume laplace equation
-  build_cell_system_matrix_();
-  // impose BC's and solve laplace system to get shape functions
-  compute_shape_functions_();
-
-  // compute shape function values, gradients, and weights in the
-  // integration points in cells and faces
-  build_fe_cell_data_();
-  if (update_face_values)
-    build_fe_face_data_();
-  if (update_fracture_values)
-    build_fe_fracture_data_();
+    // construct the laplace system matrix for the cell volume laplace equation
+    build_cell_system_matrix_();
+    // impose BC's and solve laplace system to get shape functions
+    compute_shape_functions_();
   }
   catch (const std::exception& e)
   {
@@ -50,11 +40,11 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
   }
 }
 
-void PolyhedralElementDirect::build_face_boundary_conditions_(const bool sort_faces)
+void PolyhedralElementDirect::build_face_boundary_conditions_()
 {
   build_edge_boundary_conditions_();
   // identify child faces that belong to each face parent
-  _face_domains = create_face_domains_(sort_faces);
+  _face_domains = create_face_domains_();
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
   FEMFaceDoFManager dof_manager;
