@@ -8,7 +8,7 @@ IntegrationRuleFractureFull::IntegrationRuleFractureFull(PolyhedralElementBase &
     : _element(element)
 {
   if (_element._face_domains.empty())
-    _element._face_domains = _element.create_face_domains_();
+    _element._face_domains = _element.create_face_domains_(/*sort_faces=*/true);
 
   setup_storage_();
   const size_t n_faces = _element._face_domains.size();
@@ -67,9 +67,6 @@ void IntegrationRuleFractureFull::compute_face_fe_quantities_(const size_t paren
   fe_face_values.set_basis(basis);
 
   std::vector<Point> local_integration_points;
-  // const size_t n_parent_vertices = _element._face_data[parent_face].center.values.size();
-  // std::vector<size_t> parent_vertices(n_parent_vertices);
-  // const auto * parent_face = _element._parent_cell.faces()[parent_face];
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
   const size_t nv = ElementTraits<angem::TetrahedronID>::n_vertices;
   const auto & basis_functions = _element._basis_functions;

@@ -54,6 +54,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/PFEM_integration/IntegrationRuleFractureAverage.cpp
   discretization/mechanics/PFEM_integration/IntegrationRuleFractureFull.cpp
   discretization/mechanics/PFEM_integration/IntegrationRule3dPointwise.cpp
+  discretization/mechanics/PFEM_integration/FaceSorter.cpp
 )
 
 SET_TARGET_PROPERTIES (

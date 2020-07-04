@@ -27,7 +27,7 @@ class PolyhedralElementBase : public FiniteElementBase
                         const FiniteElementConfig & config);
   void build_triangulation_();
   // identify child faces that belong to each face parent
-  std::vector<std::vector<size_t>> create_face_domains_();
+  std::vector<std::vector<size_t>> create_face_domains_(const bool sort_faces = false);
   // map vertices of parent cell to the markers of parent cell face
   std::vector<std::list<size_t>> map_parent_vertices_to_parent_faces_();
   // compute shape function values, gradients, and weights in the

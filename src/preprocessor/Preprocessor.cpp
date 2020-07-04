@@ -266,11 +266,8 @@ void Preprocessor::build_geomechanics_discretization_()
     p_frac_mgr = pm_cedfm_mgr;
   }
 
-  dfm_markers = p_frac_mgr->get_face_markers();
-
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
-  data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>
-      (mech_numbering_mgr.get_numbering());
+  data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>(mech_numbering_mgr.get_numbering());
 
   // split geomechanics DFM faces
   std::cout << "splitting faces of DFM fractures" << std::endl;
@@ -281,12 +278,12 @@ void Preprocessor::build_geomechanics_discretization_()
   BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
 
   std::cout << "Building FEM discretization" << std::endl;
+  dfm_markers = p_frac_mgr->get_face_markers();
   discretization::DiscretizationFEM fem_discr(data.geomechanics_grid, config.fem, dfm_markers,
                                               bc_mgr.get_neumann_face_markers());
   data.fe_cell_data = fem_discr.get_cell_data();
   data.fe_face_data = fem_discr.get_face_data();
   data.fe_frac_data = fem_discr.get_fracture_data();
-
 }
 
 

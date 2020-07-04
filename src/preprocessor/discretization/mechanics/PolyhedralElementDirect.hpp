@@ -55,7 +55,7 @@ class PolyhedralElementDirect : public PolyhedralElementBase
 
  protected:
   // solve problems on faces
-  void build_face_boundary_conditions_();
+  void build_face_boundary_conditions_(const bool sort_faces);
   // build system matrix for the face poisson problem
   void build_face_system_matrix_(const size_t parent_face,
                                  Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,

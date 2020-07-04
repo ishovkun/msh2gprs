@@ -823,9 +823,11 @@ void OutputDataGPRS::save_fem_data_() const
     if (!face.points.empty())
     {
       for (const auto &point : face.points)
+      {
         for (const double value : point.values)
           out << value << "\t";
-      out << "\n";
+        out << "\n";
+      }
     }
   out << "/\n\n";
 

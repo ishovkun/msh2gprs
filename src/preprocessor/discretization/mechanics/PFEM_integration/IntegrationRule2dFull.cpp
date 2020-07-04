@@ -55,6 +55,7 @@ void IntegrationRule2dFull::compute_face_fe_quantities_(const size_t ipf)
                                  parent_face->vertices()[v]));
   const auto & basis_functions = _element._basis_functions;
 
+  auto & data_center = _element._face_data[ipf].center;
   for (size_t iface = 0; iface < face_indices.size(); ++iface)
   {
     const size_t face_index = face_indices[iface];
@@ -67,17 +68,15 @@ void IntegrationRule2dFull::compute_face_fe_quantities_(const size_t ipf)
       for (size_t v=0; v<nv; ++v)
       {
         data.values[parent_vertex] += fe_values.value( v, 0 ) *
-            basis_functions[parent_vertex][face_verts[v]];
+                                      basis_functions[parent_vertices[parent_vertex]][face_verts[v]];
         data.grads[parent_vertex] += fe_values.grad(v, 0) *
-            basis_functions[parent_vertex][face_verts[v]];
-        _element._face_data[ipf].center.values[parent_vertex] +=
-            fe_values.value( v, 0 ) *
-            basis_functions[parent_vertex][face_verts[v]] *
-            fe_values.JxW(0);
-        _element._face_data[ipf].center.grads[parent_vertex] +=
-            fe_values.grad( v, 0 ) *
-            basis_functions[parent_vertex][face_verts[v]] *
-            fe_values.JxW(0);
+                                     basis_functions[parent_vertices[parent_vertex]][face_verts[v]];
+        data_center.values[parent_vertex] += fe_values.value( v, 0 ) *
+                                             basis_functions[parent_vertices[parent_vertex]][face_verts[v]] *
+                                             fe_values.JxW(0);
+        data_center.grads[parent_vertex] += fe_values.grad( v, 0 ) *
+                                            basis_functions[parent_vertices[parent_vertex]][face_verts[v]] *
+                                            fe_values.JxW(0);
       }
     data.weight = face.area();
   }
@@ -88,6 +87,9 @@ void IntegrationRule2dFull::compute_face_fe_quantities_(const size_t ipf)
     _element._face_data[ipf].center.values[parent_vertex] /= parent_face_area;
     _element._face_data[ipf].center.grads[parent_vertex] /= parent_face_area;
   }
+
+  // for (size_t iface = 0; iface < face_indices.size(); ++iface)
+ 
 }
 
 }  // end namespace discretization

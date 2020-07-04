@@ -14,6 +14,7 @@
 #include "PFEM_integration/IntegrationRule2dFull.hpp"
 #include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
 #include "PFEM_integration/IntegrationRuleFractureFull.hpp"  // provides IntegrationFractureFull
+#include "PFEM_integration/FaceSorter.hpp"  // provides Facesorter
 
 
 #ifdef WITH_EIGEN
@@ -44,7 +45,7 @@ void PolyhedralElementBase::build_triangulation_()
   else throw std::invalid_argument("unknown subdivision method");
 }
 
-std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
+std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_(const bool sort_faces)
 {
   std::vector<std::vector<size_t>> parent_face_children(_parent_cell.faces().size());
   for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
@@ -53,6 +54,16 @@ std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
       const size_t parent_face_index = static_cast<size_t>(face->marker() - 1);
       parent_face_children[ parent_face_index ].push_back( face->index() );
     }
+
+  // the order of fe_face_values that correspond to fractures must be consistent with the
+  // neighbor's fe_face_values
+  if (sort_faces)
+    for (size_t iface = 0; iface < parent_face_children.size(); ++iface)
+    {
+      FaceSorter sorter(*_parent_cell.faces()[iface], _element_grid);
+      sorter.sort(parent_face_children[iface]);
+    }
+
   return parent_face_children;
 }
 
