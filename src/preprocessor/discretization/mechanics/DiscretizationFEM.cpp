@@ -18,13 +18,16 @@ using Point = angem::Point<3,double>;
 DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElementConfig & config,
                                      const std::vector<int> & fracture_face_markers,
                                      const std::vector<int> & neumann_face_markers)
-    : _grid(grid), _config( config ),
-      _fracture_face_markers(fracture_face_markers.begin(), fracture_face_markers.end()),
-      _neumann_face_markers(neumann_face_markers.begin(), neumann_face_markers.end())
+    : _grid(grid), _config( config )
 {
   #ifndef WITH_EIGEN
   throw std::runtime_error("Cannot use DFEM method without linking to Eigen");
   #endif
+
+  for (const int marker : fracture_face_markers)
+    _fracture_face_orientation[marker] = {angem::Basis<3, double>(), false};
+  for (const int marker : neumann_face_markers)
+    _neumann_face_orientation[marker] = {angem::Basis<3, double>(), false};
 
   // analyze_cell_(_grid.cell(0));
   // if (_config.method != strong_discontinuity)
@@ -52,25 +55,27 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
     cell_fem_data.element_index = cell->index();
     _cell_data[cell->index()] = std::move(cell_fem_data);
 
-    std::vector<FiniteElementData> face_data = p_discr->get_face_data();
-    std::vector<FiniteElementData> frac_data = p_discr->get_fracture_data();
+    // std::vector<FiniteElementData> face_data = p_discr->get_face_data();
+    // std::vector<FiniteElementData> frac_data = p_discr->get_fracture_data();
     size_t iface = 0;
     for ( const mesh::Face * face : cell->faces() )
     {
       const size_t face_index = face->index();
-      const bool is_fracture = _fracture_face_markers.find( face->marker() ) != _fracture_face_markers.end();
-      const bool is_neumann = _neumann_face_markers.find( face->marker() ) != _neumann_face_markers.end();
+      const bool is_fracture = _fracture_face_orientation.find( face->marker() ) !=
+                               _fracture_face_orientation.end();
+      const bool is_neumann = _neumann_face_orientation.find( face->marker() ) !=
+                              _neumann_face_orientation.end();
       if (is_neumann || is_fracture)
         if ( _face_data[face->index()].points.empty() )
         {
-          face_data[iface].element_index = face_index;
-          _face_data[face_index] = face_data[iface];
+          _face_data[face_index] = p_discr->get_face_data(iface);
+          _face_data[face_index].element_index = face_index;
         }
 
       if (is_fracture)
         {
-          frac_data[iface].element_index = cell->index();
-          _frac_data[face_index].push_back(frac_data[iface]);
+          _frac_data[face_index].push_back(p_discr->get_fracture_data(iface));
+          _frac_data[face_index].back().element_index = cell->index();
         }
 
       iface++;
@@ -221,8 +226,8 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 
 std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::Cell & cell)
 {
-  const bool need_fracture_values = has_fracture_face_(cell);
-  const bool need_face_values = has_neumann_face_(cell) || need_fracture_values;
+  const bool need_fracture_values = false;
+  const bool need_face_values = false;
   std::unique_ptr<FiniteElementBase> p_discr;
   if (_config.method == FEMMethod::polyhedral_finite_element)
   {
@@ -238,7 +243,7 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
 
   }
   else if (_config.method == strong_discontinuity)
-    p_discr = std::make_unique<StandardFiniteElement>(cell, need_face_values, need_fracture_values);
+    p_discr = std::make_unique<StandardFiniteElement>(cell);
   else if (_config.method == mixed)
   {
     if (cell.vtk_id() == angem::GeneralPolyhedronID)
@@ -254,26 +259,10 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
 #endif
     }
     else
-      p_discr = std::make_unique<StandardFiniteElement>(cell, need_face_values, need_fracture_values);
+      p_discr = std::make_unique<StandardFiniteElement>(cell);
   }
 
   return p_discr;
-}
-
-bool DiscretizationFEM::has_fracture_face_(const mesh::Cell & cell)
-{
-  for (const mesh::Face * face : cell.faces() )
-    if ( _fracture_face_markers.find( face->marker() ) != _fracture_face_markers.end()  )
-      return true;
-  return false;
-}
-
-bool DiscretizationFEM::has_neumann_face_(const mesh::Cell & cell)
-{
-  for (const mesh::Face * face : cell.faces() )
-    if ( _neumann_face_markers.find( face->marker() ) != _neumann_face_markers.end()  )
-      return true;
-  return false;
 }
 
 }  // end namepsace discretization

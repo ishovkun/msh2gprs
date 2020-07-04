@@ -26,9 +26,15 @@ class StandardFiniteElement : public FiniteElementBase {
    * Input:
    * @param[in] cell : grid cell to be discretized
    */
-  StandardFiniteElement(const mesh::Cell & cell,
-                        const bool update_face_values = true,
-                        const bool update_fracture_values = true);
+  StandardFiniteElement(const mesh::Cell & cell);
+  // get FE data for surface integration
+  virtual FiniteElementData get_face_data(const size_t iface,
+                                          angem::Point<3,double> normal = {0,0,0}) override;
+  // get FE data of cell shape functions at face integration points.
+  // This is needed for modeling discrete fractures
+  virtual FiniteElementData get_fracture_data(const size_t iface,
+                                              angem::Point<3,double> normal = {0,0,0}) override;
+  virtual ~StandardFiniteElement() = default;
 
  protected:
   template <angem::VTK_ID vtk_id>
@@ -39,7 +45,6 @@ class StandardFiniteElement : public FiniteElementBase {
   void update_cell_values_in_faces_();
 
   const mesh::Cell & _cell;
-  const bool _update_frac_values;
 };
 
 template <angem::VTK_ID vtk_id>

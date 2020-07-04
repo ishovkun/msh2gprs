@@ -20,14 +20,22 @@ class PolyhedralElementBase : public FiniteElementBase
   const mesh::Mesh & get_grid() const { return _element_grid; }
   // Save a vtk file with shape function values
   void save_shape_functions(const std::string fname) const;
+  // get FE data for surface integration
+  virtual FiniteElementData get_face_data(const size_t iface,
+                                          const angem::Point<3,double> normal = {0,0,0}) override;
+  // get FE data of cell shape functions at face integration points.
+  // This is needed for modeling discrete fractures
+  virtual FiniteElementData get_fracture_data(const size_t iface,
+                                              const angem::Point<3,double> normal = {0,0,0}) override;
 
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,
                         const mesh::Mesh & parent_grid,
-                        const FiniteElementConfig & config);
+                        const FiniteElementConfig & config,
+                        const bool sort_faces = false);
   void build_triangulation_();
   // identify child faces that belong to each face parent
-  std::vector<std::vector<size_t>> create_face_domains_(const bool sort_faces = false);
+  std::vector<std::vector<size_t>> create_face_domains_();
   // map vertices of parent cell to the markers of parent cell face
   std::vector<std::list<size_t>> map_parent_vertices_to_parent_faces_();
   // compute shape function values, gradients, and weights in the
@@ -39,15 +47,19 @@ class PolyhedralElementBase : public FiniteElementBase
   // compute shape function values, gradients, and weights in the
   // integration points in fractures
   void build_fe_fracture_data_();
+  //
+  void build_tributary_();
 
   const mesh::Cell & _parent_cell;                             // reference to the discretized cell
   const mesh::Mesh & _parent_grid;                             // grid the discrefized cell belongs to
   const FiniteElementConfig & _config;
+  const bool _sort_faces;
   mesh::Mesh _element_grid;                                    // triangulation of the discretized cell
   std::vector<Eigen::VectorXd> _basis_functions;               // numerical shape function values
   std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
+  std::vector<std::vector<angem::Polygon<double>>> _tributary_2d;      // face tributary regions
 
   friend class TributaryRegion3dFaces;
   friend class TributaryRegion3dVertices;

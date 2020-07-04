@@ -5,10 +5,8 @@ namespace discretization {
 
 using VTK_ID = angem::VTK_ID;
 
-StandardFiniteElement::StandardFiniteElement(const mesh::Cell & cell,
-                                             const bool update_face_values,
-                                             const bool update_fracture_values)
-    : _cell(cell), _update_frac_values(update_fracture_values)
+StandardFiniteElement::StandardFiniteElement(const mesh::Cell & cell)
+    : _cell(cell)
 {
   const VTK_ID id = static_cast<VTK_ID>(_cell.vtk_id());
   switch (id)
@@ -37,12 +35,6 @@ StandardFiniteElement::StandardFiniteElement(const mesh::Cell & cell,
     default:
       throw std::invalid_argument("FEM not implemented for this vtk type " + std::to_string(id));
   }
-
-  if (update_face_values || update_fracture_values)
-    update_face_values_();
-
-  if (update_fracture_values)
-    update_cell_values_in_faces_();
 }
 
 std::vector<angem::Point<3,double>> compute_face_qpoint_coordinates(const std::vector<angem::Point<3,double>> & face_vertices,
@@ -57,81 +49,83 @@ std::vector<angem::Point<3,double>> compute_face_qpoint_coordinates(const std::v
   return face_qpoints;
 }
 
-void StandardFiniteElement::update_cell_values_in_faces_()
+FiniteElementData StandardFiniteElement::get_fracture_data(const size_t iface,
+                                                           angem::Point<3,double> normal)
 {
   const auto faces = _cell.faces();
   const size_t n_faces = faces.size();
-  _face_fracture_data.resize( n_faces );
+
+  if (std::fabs(normal.norm()) < 1e-12)
+    normal = faces[iface]->normal();
+
+  assert( iface < n_faces );
+
+  FiniteElementData data;   // FEM values and gradients in face integration points
+
+  const auto face_qpoints = compute_face_qpoint_coordinates(faces[iface]->vertex_coordinates(),
+                                                            get_face_data(iface, normal));
 
   const VTK_ID cell_id = static_cast<VTK_ID>(_cell.vtk_id());
-
-  for (size_t i = 0; i < n_faces; ++i)
-  {
-    std::vector<Point> face_qpoints =
-        compute_face_qpoint_coordinates(faces[i]->vertex_coordinates(), _face_data[i]);
-
     switch (cell_id)
     {
       case VTK_ID::TetrahedronID:
         {
           FeValues<VTK_ID::TetrahedronID> fe_values;
           fe_values.update(_cell, face_qpoints);
-          build_<VTK_ID::TetrahedronID>(fe_values, _face_fracture_data[i], /*update_center = */ false);
+          build_<VTK_ID::TetrahedronID>(fe_values, data, /*update_center = */ false);
           break;
         }
       case VTK_ID::HexahedronID:
         {
           FeValues<VTK_ID::HexahedronID> fe_values;
           fe_values.update(_cell, face_qpoints);
-          build_<VTK_ID::HexahedronID>(fe_values, _face_fracture_data[i],
-                                       /* update_center = */ false);
+          build_<VTK_ID::HexahedronID>(fe_values, data, /* update_center = */ false);
           break;
         }
       case VTK_ID::WedgeID:
         {
           FeValues<VTK_ID::WedgeID> fe_values;
           fe_values.update(_cell, face_qpoints);
-          build_<VTK_ID::WedgeID>(fe_values, _face_fracture_data[i],
-                                       /* update_center = */ false);
+          build_<VTK_ID::WedgeID>(fe_values, data, /* update_center = */ false);
           break;
         }
       default:
         throw std::invalid_argument("FEM not implemented for this vtk type " + std::to_string(cell_id));
     }
-  }
 
- 
+    return data;
 }
 
-void StandardFiniteElement::update_face_values_()
+FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
+                                                       angem::Point<3,double> normal)
 {
   const auto faces = _cell.faces();
-  _face_data.resize( faces.size() );
+  FiniteElementData data;
+  if (std::fabs(normal.norm()) < 1e-12)
+    normal = faces[iface]->normal();
 
-  for (size_t i=0; i<faces.size(); ++i)
+  const mesh::Face* face = faces[iface];
+  const VTK_ID id = static_cast<VTK_ID>(face->vtk_id());
+  switch (id)
   {
-    const mesh::Face* face = faces[i];
-    const VTK_ID id = static_cast<VTK_ID>(face->vtk_id());
-    switch (id)
-    {
-      case VTK_ID::TriangleID:
-        {
-          FeValues<VTK_ID::TriangleID> fe_values;
-          fe_values.update(*face);
-          build_<VTK_ID::TriangleID>(fe_values, _face_data[i]);
-          break;
-        }
-      case VTK_ID::QuadrangleID:
-        {
-          FeValues<VTK_ID::QuadrangleID> fe_values;
-          fe_values.update(*face);
-          build_<VTK_ID::QuadrangleID>(fe_values, _face_data[i]);
-          break;
-        }
-      default:
-        throw std::invalid_argument("FEM not implemented for this vtk type");
-    }
+    case VTK_ID::TriangleID:
+      {
+        FeValues<VTK_ID::TriangleID> fe_values;
+        fe_values.update(*face);
+        build_<VTK_ID::TriangleID>(fe_values, data);
+        break;
+      }
+    case VTK_ID::QuadrangleID:
+      {
+        FeValues<VTK_ID::QuadrangleID> fe_values;
+        fe_values.update(*face);
+        build_<VTK_ID::QuadrangleID>(fe_values, data);
+        break;
+      }
+    default:
+      throw std::invalid_argument("FEM not implemented for this vtk type");
   }
+  return data;
 }
 
 

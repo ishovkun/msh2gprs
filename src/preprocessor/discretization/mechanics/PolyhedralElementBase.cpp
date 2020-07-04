@@ -25,8 +25,9 @@ using api = gprs_data::GmshInterface;
 
 PolyhedralElementBase::PolyhedralElementBase(const mesh::Cell & cell,
                                              const mesh::Mesh & grid,
-                                             const FiniteElementConfig & config)
-    : _parent_cell(cell), _parent_grid(grid), _config(config)
+                                             const FiniteElementConfig & config,
+                                             const bool sort_faces)
+    : _parent_cell(cell), _parent_grid(grid), _config(config), _sort_faces(sort_faces)
 {}
 
 void PolyhedralElementBase::build_triangulation_()
@@ -45,7 +46,7 @@ void PolyhedralElementBase::build_triangulation_()
   else throw std::invalid_argument("unknown subdivision method");
 }
 
-std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_(const bool sort_faces)
+std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
 {
   std::vector<std::vector<size_t>> parent_face_children(_parent_cell.faces().size());
   for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
@@ -57,7 +58,7 @@ std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_(con
 
   // the order of fe_face_values that correspond to fractures must be consistent with the
   // neighbor's fe_face_values
-  if (sort_faces)
+  if (_sort_faces)
     for (size_t iface = 0; iface < parent_face_children.size(); ++iface)
     {
       FaceSorter sorter(*_parent_cell.faces()[iface], _element_grid);
@@ -146,38 +147,40 @@ void PolyhedralElementBase::build_fe_cell_data_()
   }
 }
 
-void PolyhedralElementBase::build_fe_face_data_()
+FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
+                                                       const angem::Point<3,double> & normal)
 {
+  if (_tributary_2d.empty())
+    build_tributary_();
+
   switch (_config.integration_rule)
   {
     case PolyhedronIntegrationRule::VerticesPointwise:
       {
-        TributaryRegion2dVertices tributary2d(*this);
-        IntegrationRule2dPointwise rule_faces(*this, tributary2d);
+        IntegrationRule2dPointwise rule_faces(*this, _tributary2d);
         break;
       }
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        TributaryRegion2dFaces tributary2d(*this);
-        IntegrationRule2dAverage rule_faces(*this, tributary2d);
+        IntegrationRule2dAverage rule_faces(*this, _tributary2d);
         break;
       }
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRule2dFull tributary2d(*this);
+        IntegrationRule2dFull rule_faces(*this);
         break;
       }
     default:
-      {
-        TributaryRegion2dVertices tributary2d(*this);
-        IntegrationRule2dPointwise rule_faces(*this, tributary2d);
-        break;
-      }
+      throw std::invalid_argument("Integration rule unknown");
   }
 }
 
-void PolyhedralElementBase::build_fe_fracture_data_()
+FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
+                                                          const angem::Point<3,double> & normal)
 {
+  if (_tributary_2d.empty())
+    build_tributary_();
+
   switch (_config.integration_rule)
   {
     case PolyhedronIntegrationRule::Full:
@@ -187,12 +190,39 @@ void PolyhedralElementBase::build_fe_fracture_data_()
       }
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        TributaryRegion2dFaces tributary2d(*this);
-        IntegrationRuleFractureAverage rule_fractures(*this, tributary2d);
+        IntegrationRuleFractureAverage rule_fractures(*this, _tributary2d);
         break;
       }
     default:
       throw std::invalid_argument("Not implemented");
+  }
+}
+
+void PolyhedralElementBase::build_tributary_()
+{
+  switch (_config.integration_rule)
+{
+    case PolyhedronIntegrationRule::VerticesPointwise:
+      {
+        TributaryRegion2dVertices tributary2d(*this);
+        _tributary_2d = tributary2d.get();
+        break;
+      }
+    case PolyhedronIntegrationRule::FacesAverage:
+      {
+        TributaryRegion2dFaces tributary2d(*this);
+        _tributary_2d = tributary2d.get();
+        break;
+      }
+    case PolyhedronIntegrationRule::Full:
+      {
+        // no need to build anothing
+        break;
+      }
+    default:
+      {
+        throw std::invalid_argument("Tributary region not implemented");
+      }
   }
 }
 
