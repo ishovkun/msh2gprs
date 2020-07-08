@@ -38,6 +38,9 @@ class DiscretizationFEM
   // choose an element discretization based on config and cell vtk id
   std::unique_ptr<FiniteElementBase> build_element(const mesh::Cell & cell);
 
+  const angem::Basis<3, double>& get_basis_(const mesh::Face & face,
+                                            FaceOrientation &orientation) noexcept;
+
   const mesh::Mesh & _grid;
   const FiniteElementConfig & _config;
   std::unordered_map<int, FaceOrientation> _fracture_face_orientation;

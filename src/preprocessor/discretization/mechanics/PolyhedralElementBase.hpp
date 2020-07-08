@@ -20,6 +20,14 @@ class PolyhedralElementBase : public FiniteElementBase
   const mesh::Mesh & get_grid() const { return _element_grid; }
   // Save a vtk file with shape function values
   void save_shape_functions(const std::string fname) const;
+  // Compute cell 3d integration data and return it
+  virtual FiniteElementData get_cell_data() override
+  {
+    if (_cell_data.points.empty())
+      build_fe_cell_data_();
+    return _cell_data;
+  }
+
   // get FE data for surface integration
   virtual FiniteElementData get_face_data(const size_t iface,
                                           const angem::Point<3,double> normal = {0,0,0}) override;

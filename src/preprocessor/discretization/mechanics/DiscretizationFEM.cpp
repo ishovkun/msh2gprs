@@ -42,11 +42,11 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   _cell_data.resize( _grid.n_cells() );
   _frac_data.resize( _grid.n_faces() );
   logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
+  angem::Basis<3, double> face_basis;
   // std::cout << std::endl;
   size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
-    // std::cout << item++ << " (" << _grid.n_active_cells() << ")"<< std::endl;
     progress.set_progress(item++);
 
     const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
@@ -63,16 +63,21 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
                                _fracture_face_orientation.end();
       const bool is_neumann = _neumann_face_orientation.find( face->marker() ) !=
                               _neumann_face_orientation.end();
+      if (is_fracture)
+        face_basis = get_basis_(*face, _fracture_face_orientation.find(face->marker())->second);
+      if (is_neumann)
+        face_basis = get_basis_(*face, _neumann_face_orientation.find(face->marker())->second);
+
       if (is_neumann || is_fracture)
         if ( _face_data[face->index()].points.empty() )
         {
-          _face_data[face_index] = p_discr->get_face_data(iface);
+          _face_data[face_index] = p_discr->get_face_data(iface, face_basis[2]);
           _face_data[face_index].element_index = face_index;
         }
 
       if (is_fracture)
         {
-          _frac_data[face_index].push_back(p_discr->get_fracture_data(iface));
+          _frac_data[face_index].push_back(p_discr->get_fracture_data(iface, face_basis[2]));
           _frac_data[face_index].back().element_index = cell->index();
         }
 
@@ -260,5 +265,19 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
 
   return p_discr;
 }
+
+const angem::Basis<3, double> &
+DiscretizationFEM::get_basis_(const mesh::Face & face,
+                              FaceOrientation &orientation) noexcept
+{
+  if (!orientation.assigned)
+  {
+    orientation.basis = face.polygon().plane().get_basis();
+    orientation.assigned = true;
+  }
+
+  return orientation.basis;
+}
+
 
 }  // end namepsace discretization

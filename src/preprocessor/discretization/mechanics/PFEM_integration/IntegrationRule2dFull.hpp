@@ -7,7 +7,8 @@ namespace discretization {
 
 class IntegrationRule2dFull {
  public:
-  IntegrationRule2dFull(PolyhedralElementBase & element, const size_t parent_face);
+  IntegrationRule2dFull(PolyhedralElementBase & element, const size_t parent_face,
+                        const angem::Basis<3, double> & basis);
   virtual ~IntegrationRule2dFull() = default;
   FiniteElementData get() const;
 
@@ -16,6 +17,7 @@ class IntegrationRule2dFull {
 
   PolyhedralElementBase & _element;
   const size_t _parent_face;
+  const angem::Basis<3,double> _basis;
 };
 
 

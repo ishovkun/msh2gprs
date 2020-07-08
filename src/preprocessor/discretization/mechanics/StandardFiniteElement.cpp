@@ -105,6 +105,10 @@ FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
     normal = faces[iface]->normal();
 
   const mesh::Face* face = faces[iface];
+  auto pln = face->polygon().plane();
+  if (pln.get_basis()[2].dot(normal) < 0)
+    pln.invert_normal();
+
   const VTK_ID id = static_cast<VTK_ID>(face->vtk_id());
   switch (id)
   {
@@ -112,6 +116,7 @@ FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
       {
         FeValues<VTK_ID::TriangleID> fe_values;
         fe_values.update(*face);
+        fe_values.set_basis(pln.get_basis());
         build_<VTK_ID::TriangleID>(fe_values, data);
         break;
       }
@@ -119,6 +124,7 @@ FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
       {
         FeValues<VTK_ID::QuadrangleID> fe_values;
         fe_values.update(*face);
+        fe_values.set_basis(pln.get_basis());
         build_<VTK_ID::QuadrangleID>(fe_values, data);
         break;
       }

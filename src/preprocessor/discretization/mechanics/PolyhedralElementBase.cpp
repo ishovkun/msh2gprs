@@ -156,6 +156,10 @@ FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
   if (_basis_functions.empty())
     throw std::runtime_error("should be initialized");
 
+  auto pln = _parent_grid.face(iface).polygon().plane();
+  if (pln.get_basis()[2].dot(normal) < 0)
+    pln.invert_normal();
+
   switch (_config.integration_rule)
   {
     case PolyhedronIntegrationRule::VerticesPointwise:
@@ -172,7 +176,7 @@ FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
       }
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRule2dFull rule(*this, iface);
+        IntegrationRule2dFull rule(*this, iface, pln.get_basis());
         return rule.get();
         break;
       }
