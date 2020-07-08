@@ -18,7 +18,7 @@ IntegrationRule3dPointwise::IntegrationRule3dPointwise(PolyhedralElementBase & e
   // integrate over regions
   const size_t n_parents = element._basis_functions.size();
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
-  const auto & grid = element._element_grid;
+  const auto & grid = element._subgrid;
   auto & cell_data = element._cell_data;
   for( auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell  )
   {

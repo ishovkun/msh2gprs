@@ -17,7 +17,7 @@ class IntegrationRuleFacesAverage;
 class PolyhedralElementBase : public FiniteElementBase
 {
  public:
-  const mesh::Mesh & get_grid() const { return _element_grid; }
+  const mesh::Mesh & get_grid() const { return _subgrid; }
   // Save a vtk file with shape function values
   void save_shape_functions(const std::string fname) const;
   // Compute cell 3d integration data and return it
@@ -62,7 +62,7 @@ class PolyhedralElementBase : public FiniteElementBase
   const mesh::Mesh & _parent_grid;                             // grid the discrefized cell belongs to
   const FiniteElementConfig & _config;
   const bool _sort_faces;
-  mesh::Mesh _element_grid;                                    // triangulation of the discretized cell
+  mesh::Mesh _subgrid;                                    // triangulation of the discretized cell
   std::vector<Eigen::VectorXd> _basis_functions;               // numerical shape function values
   std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points

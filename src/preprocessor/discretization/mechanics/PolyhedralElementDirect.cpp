@@ -53,7 +53,7 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
     assert(_face_domains[iface].size() > 2);
 
     // identify vertices the will constitute the linear system and create dof mapping
-    const DoFNumbering vertex_numbering = dof_manager.build(_element_grid, _face_domains[iface]);
+    const DoFNumbering vertex_numbering = dof_manager.build(_subgrid, _face_domains[iface]);
     // initialize system matrix
     Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix =
         Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
@@ -91,7 +91,7 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
       if (std::find(parent_face_vertices.begin(), parent_face_vertices.end(),
                     parent_grid_vertex) == parent_face_vertices.end())
       {
-        for (size_t vertex = 0; vertex < _element_grid.n_vertices(); ++vertex)
+        for (size_t vertex = 0; vertex < _subgrid.n_vertices(); ++vertex)
           if (vertex_numbering.has_vertex(vertex)) {
             _support_boundary_vertices[pv].push_back(vertex);
             _support_boundary_values[pv].push_back(0.0);
@@ -140,13 +140,13 @@ void PolyhedralElementDirect::impose_bc_face_rhs_(const size_t parent_vertex,
 void PolyhedralElementDirect::build_cell_system_matrix_()
 {
   // build element jacobian for the homogeneous laplace equation
-  _system_matrix = Eigen::SparseMatrix<double,Eigen::ColMajor>(_element_grid.n_vertices(),
-                                                               _element_grid.n_vertices());
+  _system_matrix = Eigen::SparseMatrix<double,Eigen::ColMajor>(_subgrid.n_vertices(),
+                                                               _subgrid.n_vertices());
   // since we only build tetrahedral element mesh
   const size_t nv = 4;
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
   Eigen::MatrixXd cell_matrix(nv, nv);
-  for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
+  for (auto cell = _subgrid.begin_active_cells(); cell != _subgrid.end_active_cells(); ++cell)
   {
     cell_matrix.setZero();
     fe_values.update(*cell);
@@ -186,7 +186,7 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face
   std::vector<size_t> face_dofs(nv);
 
   // all faces within the parent face must have the same orientation
-  const auto basis = _element_grid
+  const auto basis = _subgrid
                      .face(face_indices.front())
                      .polygon()
                      .plane()
@@ -195,7 +195,7 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face
 
   for (const size_t iface : face_indices)
   {
-    const mesh::Face & face = _element_grid.face(iface);
+    const mesh::Face & face = _subgrid.face(iface);
     fe_values.update(face);
     cell_matrix.setZero();
 
@@ -235,7 +235,7 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
   _support_edge_vertices.resize( parent_nodes.size() );
   _support_edge_values.resize( parent_nodes.size() );
 
-  for (size_t v=0; v<_element_grid.n_vertices(); ++v)
+  for (size_t v=0; v<_subgrid.n_vertices(); ++v)
   {
     if ( vertex_parent_faces[v].size() > 1 )
     {
@@ -257,8 +257,8 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
             const Point p1 = parent_nodes[vp1];
             const Point p2 = parent_nodes[vp2];
             const double dp = p1.distance(p2);
-            const double d1 = _element_grid.vertex(v).distance(p1);
-            const double d2 = _element_grid.vertex(v).distance(p2);
+            const double d1 = _subgrid.vertex(v).distance(p1);
+            const double d2 = _subgrid.vertex(v).distance(p2);
             _support_edge_vertices[vp1].push_back(v);
             _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
             _support_edge_vertices[vp2].push_back(v);
@@ -280,8 +280,8 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
 std::vector<std::vector<size_t>> PolyhedralElementDirect::map_vertices_to_parent_faces_()
 {
   /* Build structure that store face markers for each vertex in grid */
-  std::vector<std::vector<size_t>> vertex_markers( _element_grid.n_vertices() );
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  std::vector<std::vector<size_t>> vertex_markers( _subgrid.n_vertices() );
+  for (auto face = _subgrid.begin_active_faces(); face != _subgrid.end_active_faces(); ++face)
     if (face->neighbors().size() == 1 && face->marker() > 0)
     {
       const size_t ipf = face->marker();  // index parent face
@@ -300,8 +300,8 @@ void PolyhedralElementDirect::debug_save_boundary_face_solution(const std::strin
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_element_grid, out);
-  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::write_geometry(_subgrid, out);
+  const size_t nv = _subgrid.n_vertices();
   IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
@@ -328,7 +328,7 @@ void PolyhedralElementDirect::append_face_solution_(const size_t pv, const Eigen
 
   _support_boundary_vertices[pv].reserve( _support_boundary_vertices[pv].size() + vertex_numbering.n_dofs() );
   _support_boundary_values[pv].reserve( _support_boundary_vertices[pv].size() + vertex_numbering.n_dofs() );
-  for (size_t i=0; i<_element_grid.n_vertices(); ++i)
+  for (size_t i=0; i<_subgrid.n_vertices(); ++i)
     if ( vertex_numbering.has_vertex(i) )
     {
       _support_boundary_vertices[pv].push_back( i );
@@ -341,8 +341,8 @@ void PolyhedralElementDirect::compute_shape_functions_()
   const size_t n_parent_vertices = _parent_cell.vertices().size();
   // allocate shape functions
   for (std::size_t i=0; i<n_parent_vertices; ++i)
-    _basis_functions.push_back(Eigen::VectorXd::Zero(_element_grid.n_vertices()));
-  Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _element_grid.n_vertices() );
+    _basis_functions.push_back(Eigen::VectorXd::Zero(_subgrid.n_vertices()));
+  Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _subgrid.n_vertices() );
 
   // can compress it since imposing bc's operates on row iterators
   _system_matrix.makeCompressed();
@@ -414,12 +414,12 @@ void PolyhedralElementDirect::save_face_domains_(std::string fname)
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_element_grid, out);
-  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::write_geometry(_subgrid, out);
+  const size_t nv = _subgrid.n_vertices();
   IO::VTKWriter::enter_section_point_data(nv, out);
 
   std::vector<double> output(nv, 0);
-  for (auto face = _element_grid.begin_faces(); face != _element_grid.end_faces(); ++face)
+  for (auto face = _subgrid.begin_faces(); face != _subgrid.end_faces(); ++face)
     if (face->marker() != 0)
     {
       for (auto v : face->vertices())

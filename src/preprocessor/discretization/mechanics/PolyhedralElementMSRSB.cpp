@@ -55,7 +55,7 @@ void PolyhedralElementMSRSB::build_support_boundaries_()
   const std::vector<const mesh::Face*> parent_faces = _parent_cell.faces();
   const std::vector<size_t> parent_vertices = _parent_cell.vertices();
   _support_boundaries.resize(parent_vertices.size());
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  for (auto face = _subgrid.begin_active_faces(); face != _subgrid.end_active_faces(); ++face)
   {
     if (face->marker() > 0 && face->neighbors().size() == 1)
     {
@@ -82,8 +82,8 @@ void PolyhedralElementMSRSB::save_support_edges_()
 
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_geometry(_element_grid, out);
-  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::write_geometry(_subgrid, out);
+  const size_t nv = _subgrid.n_vertices();
   IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
@@ -100,7 +100,7 @@ void PolyhedralElementMSRSB::save_support_edges_()
   }
   // save bnd markers
   std::vector<double> output(nv, 0);
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  for (auto face = _subgrid.begin_active_faces(); face != _subgrid.end_active_faces(); ++face)
   {
     if (face->marker() > 0 && face->neighbors().size() == 1)
     {
@@ -119,8 +119,8 @@ void PolyhedralElementMSRSB::save_support_boundaries_()
 
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_geometry(_element_grid, out);
-  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::write_geometry(_subgrid, out);
+  const size_t nv = _subgrid.n_vertices();
   IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
@@ -133,7 +133,7 @@ void PolyhedralElementMSRSB::save_support_boundaries_()
   }
   // save bnd markers
   std::vector<double> output(nv, 0);
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  for (auto face = _subgrid.begin_active_faces(); face != _subgrid.end_active_faces(); ++face)
   {
     if (face->marker() > 0 && face->neighbors().size() == 1)
     {
@@ -150,11 +150,11 @@ void PolyhedralElementMSRSB::run_msrsb_()
   JacobiPreconditioner preconditioner(_system_matrix);
   std::vector<Eigen::VectorXd> solutions;
   for (size_t i=0; i < _parent_cell.vertices().size(); ++i)
-    solutions.push_back(Eigen::VectorXd::Zero( _element_grid.n_vertices() ));
+    solutions.push_back(Eigen::VectorXd::Zero( _subgrid.n_vertices() ));
 
   double dphi = 10  * _config.solver_tolerance;
   size_t iter = 0;
-  const size_t max_iter = 10 * _element_grid.n_vertices();
+  const size_t max_iter = 10 * _subgrid.n_vertices();
   do
   {
     dphi = jacobi_iteration_(solutions, preconditioner) / solutions[0].size();
@@ -180,7 +180,7 @@ double PolyhedralElementMSRSB::jacobi_iteration_(std::vector<Eigen::VectorXd> & 
   for (size_t parent_node = 0; parent_node < _parent_cell.vertices().size(); parent_node++)
     prec.solve(_system_matrix, _basis_functions[parent_node], solutions[parent_node]);
 
-  for (size_t vertex=0; vertex < _element_grid.n_vertices(); vertex++)
+  for (size_t vertex=0; vertex < _subgrid.n_vertices(); vertex++)
   {
     enforce_zero_on_boundary_(vertex, solutions);
     enforce_partition_of_unity_(vertex, solutions);
@@ -229,14 +229,14 @@ void PolyhedralElementMSRSB::enforce_zero_on_boundary_(const size_t fine_vertex,
 void PolyhedralElementMSRSB::build_jacobian_()
 {
   // build element jacobian for the homogeneous laplace equation
-  _system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(_element_grid.n_vertices(),
-                                                               _element_grid.n_vertices());
+  _system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(_subgrid.n_vertices(),
+                                                               _subgrid.n_vertices());
   // since we only build tetrahedral element mesh
   const size_t nv = 4;
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
 
   Eigen::MatrixXd cell_matrix(nv, nv);
-  for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
+  for (auto cell = _subgrid.begin_active_cells(); cell != _subgrid.end_active_cells(); ++cell)
   {
     cell_matrix.setZero();
     fe_values.update(*cell);
@@ -269,20 +269,20 @@ void PolyhedralElementMSRSB::initialize_shape_functions_()
 {
   const size_t parent_n_vert = _parent_cell.vertices().size();
   for (std::size_t i=0; i<parent_n_vert; ++i)
-    _basis_functions.push_back(Eigen::VectorXd::Zero(_element_grid.n_vertices()));
+    _basis_functions.push_back(Eigen::VectorXd::Zero(_subgrid.n_vertices()));
 }
 
 void PolyhedralElementMSRSB::initial_guess_()
 {
   const auto parent_nodes = _parent_cell.polyhedron()->get_points();
-  for (size_t v=0; v < _element_grid.n_vertices(); ++v)
+  for (size_t v=0; v < _subgrid.n_vertices(); ++v)
   {
     double min_dist = std::numeric_limits<double>::max();
     size_t closest = 0;
     for (size_t j = 0; j < parent_nodes.size(); ++j)
     {
       const auto & pn = parent_nodes[j];
-      const double dist = pn.distance(_element_grid.vertex(v));
+      const double dist = pn.distance(_subgrid.vertex(v));
       if (dist < min_dist)
       {
         min_dist = dist;
@@ -296,9 +296,9 @@ void PolyhedralElementMSRSB::initial_guess_()
 void PolyhedralElementMSRSB::initial_guess2_()
 {
   const auto parent_nodes = _parent_cell.polyhedron()->get_points();
-  for (size_t v=0; v < _element_grid.n_vertices(); ++v)
+  for (size_t v=0; v < _subgrid.n_vertices(); ++v)
   {
-    const Point & x = _element_grid.vertex(v);
+    const Point & x = _subgrid.vertex(v);
     for (size_t i = 0; i < parent_nodes.size(); ++i)
     {
       const Point & xi = parent_nodes[i];
@@ -313,7 +313,7 @@ void PolyhedralElementMSRSB::initial_guess2_()
       _basis_functions[i][v] = num / denom;
     }
   }
-  for (size_t v=0; v < _element_grid.n_vertices(); ++v)
+  for (size_t v=0; v < _subgrid.n_vertices(); ++v)
     for (size_t i = 0; i < parent_nodes.size(); ++i)
     {
       const double val = _basis_functions[i][v];
@@ -327,8 +327,8 @@ void PolyhedralElementMSRSB::debug_save_shape_functions_(const std::string fname
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_element_grid, out);
-  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::write_geometry(_subgrid, out);
+  const size_t nv = _subgrid.n_vertices();
   IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
@@ -400,7 +400,7 @@ void PolyhedralElementMSRSB::compute_fe_quantities_()
   // FeValues<angem::VTK_ID::TriangleID> fe_values;
   // const size_t nv = 3;
 
-  // for (auto cell = _element_grid.begin_active_cells(); cell != _element_grid.end_active_cells(); ++cell)
+  // for (auto cell = _subgrid.begin_active_cells(); cell != _subgrid.end_active_cells(); ++cell)
   //   for (size_t q=0; q<_cell_gauss_points.size(); ++q)
   //     if ( cell->polyhedron()->point_inside(_cell_gauss_points[q]) )
   //     {
@@ -436,8 +436,8 @@ const FiniteElementData & PolyhedralElementMSRSB::get_cell_data() const
 void PolyhedralElementMSRSB::build_support_edges_()
 {
   /* Build structure that store face markers for each vertex in grid */
-  std::vector<std::vector<size_t>> vertex_markers( _element_grid.n_vertices() );
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  std::vector<std::vector<size_t>> vertex_markers( _subgrid.n_vertices() );
+  for (auto face = _subgrid.begin_active_faces(); face != _subgrid.end_active_faces(); ++face)
     if (face->neighbors().size() == 1 && face->marker() > 0)
     {
       const size_t ipf = face->marker();  // i parent face
@@ -468,7 +468,7 @@ void PolyhedralElementMSRSB::build_support_edges_()
   _support_edge_vertices.resize( parent_vertices.size() );
   _support_edge_values.resize( parent_vertices.size() );
   const auto parent_nodes = _parent_cell.polyhedron()->get_points();
-  for (size_t v=0; v<_element_grid.n_vertices(); ++v)
+  for (size_t v=0; v<_subgrid.n_vertices(); ++v)
   {
     if ( vertex_markers[v].size() > 1 )
     {
@@ -488,8 +488,8 @@ void PolyhedralElementMSRSB::build_support_edges_()
             const Point p1 = parent_nodes[vp1];
             const Point p2 = parent_nodes[vp2];
             const double dp = p1.distance(p2);
-            const double d1 = _element_grid.vertex(v).distance(p1);
-            const double d2 = _element_grid.vertex(v).distance(p2);
+            const double d1 = _subgrid.vertex(v).distance(p1);
+            const double d2 = _subgrid.vertex(v).distance(p2);
             _support_edge_vertices[vp1].push_back(v);
             _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
             _support_edge_vertices[vp2].push_back(v);
@@ -528,14 +528,14 @@ void PolyhedralElementMSRSB::compute_shape_functions_()
 
   // allocate shape functions
   for (std::size_t i=0; i<n_parent_vertices; ++i)
-    _basis_functions.push_back(Eigen::VectorXd::Zero(_element_grid.n_vertices()));
+    _basis_functions.push_back(Eigen::VectorXd::Zero(_subgrid.n_vertices()));
 
   for (size_t pv=0; pv<n_parent_vertices; ++pv)
   {
     // assemble problem with BC's for the parent vertex
     // copy system matrix and create a rhs vector
     Eigen::SparseMatrix<double,Eigen::RowMajor> mat = _system_matrix;
-    Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _element_grid.n_vertices() );
+    Eigen::VectorXd rhs = Eigen::VectorXd::Zero( _subgrid.n_vertices() );
     // impose boundary conditions
     impose_boundary_conditions_(mat, rhs, pv);
     mat.makeCompressed();
@@ -569,7 +569,7 @@ void PolyhedralElementMSRSB::compute_shape_functions_()
     std::cout << "done solving " << pv << std::endl;
   }
 
-  for (size_t i=0; i<_element_grid.n_vertices(); ++i)
+  for (size_t i=0; i<_subgrid.n_vertices(); ++i)
   {
     double sum = 0;
     for (size_t j=0; j<n_parent_vertices; ++j)

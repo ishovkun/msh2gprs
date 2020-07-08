@@ -31,7 +31,7 @@ FiniteElementData IntegrationRule2dFull::get() const
 {
   FiniteElementData face_data;
   setup_storage_(face_data);
-  const auto & grid = _element._element_grid;
+  const auto & grid = _element._subgrid;
   const size_t ipf = _parent_face;
   const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TriangleID> fe_values;

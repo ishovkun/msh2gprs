@@ -2,6 +2,7 @@
 
 #ifdef WITH_EIGEN
 #include "../PolyhedralElementBase.hpp"
+#include "angem/Basis.hpp"
 
 namespace discretization {
 

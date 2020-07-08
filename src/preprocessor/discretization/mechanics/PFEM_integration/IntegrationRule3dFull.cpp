@@ -12,7 +12,7 @@ IntegrationRule3dFull::IntegrationRule3dFull(PolyhedralElementBase & element)
 
   const size_t n_parents = element._basis_functions.size();
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
-  const auto & grid = element._element_grid;
+  const auto & grid = element._subgrid;
   const Point parent_center = element._parent_cell.center();
 
   size_t icell = 0;
@@ -54,7 +54,7 @@ void IntegrationRule3dFull::setup_storage_()
   auto & data = _element._cell_data;
   const auto & basis_functions = _element._basis_functions;
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
-  data.points.resize(_element._element_grid.n_active_cells());
+  data.points.resize(_element._subgrid.n_active_cells());
   for (auto & point : data.points)
   {
     point.values.resize( basis_functions.size(), 0 );

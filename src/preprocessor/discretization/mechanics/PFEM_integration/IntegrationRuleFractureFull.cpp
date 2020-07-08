@@ -4,8 +4,9 @@
 
 namespace discretization {
 
-IntegrationRuleFractureFull::IntegrationRuleFractureFull(PolyhedralElementBase & element, const size_t parent_face)
-    : _element(element), _parent_face(parent_face)
+IntegrationRuleFractureFull::IntegrationRuleFractureFull(PolyhedralElementBase & element, const size_t parent_face,
+                                                         const angem::Basis<3, double> & basis)
+    : _element(element), _parent_face(parent_face), _basis(basis)
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
@@ -14,15 +15,12 @@ IntegrationRuleFractureFull::IntegrationRuleFractureFull(PolyhedralElementBase &
 void IntegrationRuleFractureFull::setup_storage_(FiniteElementData & data) const
 {
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
-  // for (size_t iface=0; iface<data.size(); ++iface)
+  const size_t nq = _element._face_domains[_parent_face].size();
+  data.points.resize(nq);
+  for (size_t q = 0; q < nq; ++q)
   {
-    const size_t nq = _element._face_domains[_parent_face].size();
-    data.points.resize(nq);
-    for (size_t q = 0; q < nq; ++q)
-    {
-      data.points[q].values.resize( n_parent_vertices );
-      data.points[q].grads.resize( n_parent_vertices );
-    }
+    data.points[q].values.resize( n_parent_vertices, 0.0 );
+    data.points[q].grads.resize( n_parent_vertices, {0.0, 0.0, 0.0} );
   }
 }
 
@@ -49,17 +47,11 @@ FiniteElementData IntegrationRuleFractureFull::get() const
 {
   FiniteElementData face_data;
   setup_storage_(face_data);
-  const auto & grid = _element._element_grid;
+  const auto & grid = _element._subgrid;
   const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TetrahedronID> fe_cell_values;
   FeValues<angem::VTK_ID::TriangleID> fe_face_values;
-  const auto basis = grid
-                     .face(face_indices.front())
-                     .polygon()
-                     .plane()
-                     .get_basis();
-
-  fe_face_values.set_basis(basis);
+  fe_face_values.set_basis(_basis);
 
   std::vector<Point> local_integration_points;
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();

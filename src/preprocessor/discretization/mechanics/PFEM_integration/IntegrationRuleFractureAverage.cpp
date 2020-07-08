@@ -18,16 +18,13 @@ IntegrationRuleFractureAverage(PolyhedralElementBase & element,
 
 void IntegrationRuleFractureAverage::setup_storage_(FiniteElementData & data) const
 {
-  // auto & data = _element._face_fracture_data;
-  // data.resize(_element._parent_cell.faces().size());
   const size_t n_parent_vertices = _element._parent_cell.vertices().size();
-  // for (size_t iface=0; iface<data.size(); ++iface)
   const size_t nq = _tributary_2d[_parent_face].size();
   data.points.resize(nq);
   for (size_t q = 0; q < nq; ++q)
   {
-    data.points[q].values.resize( n_parent_vertices );
-    data.points[q].grads.resize( n_parent_vertices );
+    data.points[q].values.resize( n_parent_vertices, 0.0 );
+    data.points[q].grads.resize( n_parent_vertices, {0,0,0} );
   }
 }
 
@@ -51,7 +48,7 @@ FiniteElementData IntegrationRuleFractureAverage::get() const
 {
   FiniteElementData face_data;
   setup_storage_(face_data);
-  const auto & grid = _element._element_grid;
+  const auto & grid = _element._subgrid;
   const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TetrahedronID> fe_cell_values;
   FeValues<angem::VTK_ID::TriangleID> fe_face_values;

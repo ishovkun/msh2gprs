@@ -144,7 +144,7 @@ void IntegrationRuleVerticesAverage::compute_cell_fe_quantities_()
   const size_t n_parents = _element._basis_functions.size();
   std::vector<double> region_volumes( _tributary3d.size(), 0.0 );
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
-  const auto & grid = _element._element_grid;
+  const auto & grid = _element._subgrid;
   auto & cell_data = _element._cell_data;
   for( auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell  )
   {
@@ -213,7 +213,7 @@ void IntegrationRuleVerticesAverage::compute_cell_fe_quantities_()
 
 void IntegrationRuleVerticesAverage::compute_face_fe_quantities_(const size_t parent_face)
 {
-  const auto & grid = _element._element_grid;
+  const auto & grid = _element._subgrid;
   const std::vector<size_t> & face_indices = _element._face_domains[parent_face];
   FeValues<angem::VTK_ID::TriangleID> fe_values;
   const auto basis = grid

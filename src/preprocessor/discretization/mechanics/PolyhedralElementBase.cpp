@@ -36,12 +36,12 @@ void PolyhedralElementBase::build_triangulation_()
   if (_config.subdivision_method == PolyhedralFEMSubdivision::gmsh_generate)
   {
     api::initialize_gmsh();
-    api::build_triangulation(_parent_cell, _element_grid, double(_config.order));
+    api::build_triangulation(_parent_cell, _subgrid, double(_config.order));
     api::finalize_gmsh();
   }
   else if (_config.subdivision_method == PolyhedralFEMSubdivision::refinement)
   {
-    mesh::Subdivision subdivision(_parent_cell, _element_grid, _config.order);
+    mesh::Subdivision subdivision(_parent_cell, _subgrid, _config.order);
   }
   else throw std::invalid_argument("unknown subdivision method");
 }
@@ -49,7 +49,7 @@ void PolyhedralElementBase::build_triangulation_()
 std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
 {
   std::vector<std::vector<size_t>> parent_face_children(_parent_cell.faces().size());
-  for (auto face = _element_grid.begin_active_faces(); face != _element_grid.end_active_faces(); ++face)
+  for (auto face = _subgrid.begin_active_faces(); face != _subgrid.end_active_faces(); ++face)
     if (face->marker() > 0 && face->neighbors().size() == 1)
     {
       const size_t parent_face_index = static_cast<size_t>(face->marker() - 1);
@@ -61,7 +61,7 @@ std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
   if (_sort_faces)
     for (size_t iface = 0; iface < parent_face_children.size(); ++iface)
     {
-      FaceSorter sorter(*_parent_cell.faces()[iface], _element_grid);
+      FaceSorter sorter(*_parent_cell.faces()[iface], _subgrid);
       sorter.sort(parent_face_children[iface]);
     }
 
@@ -74,8 +74,8 @@ void PolyhedralElementBase::save_shape_functions(const std::string fname) const
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_element_grid, out);
-  const size_t nv = _element_grid.n_vertices();
+  IO::VTKWriter::write_geometry(_subgrid, out);
+  const size_t nv = _subgrid.n_vertices();
   IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
@@ -190,11 +190,15 @@ FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface, a
   if (_tributary_2d.empty())
     build_tributary_();
 
+  auto pln = _parent_grid.face(iface).polygon().plane();
+  if (pln.get_basis()[2].dot(normal) < 0)
+    pln.invert_normal();
+
   switch (_config.integration_rule)
   {
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRuleFractureFull rule(*this, iface);
+        IntegrationRuleFractureFull rule(*this, iface, pln.get_basis());
         return rule.get();
         break;
       }
