@@ -5,7 +5,7 @@ namespace logging {
 Logger * Logger::_p_logger = NULL;
 
 Logger::Logger()
-    : _verbosity(Debug)
+    : _verbosity(LogLevel::Debug)
 {}
 
 Logger::~Logger()
@@ -47,23 +47,26 @@ void Logger::print_prefix_(const LogLevel level)
 
   switch (level)
   {
-    case Debug:
+    case LogLevel::Debug:
       _fout << "Debug   : ";
       break;
-    case Message:
+    case LogLevel::Message:
       _fout << "Message : ";
       break;
-    case Brief:
+    case LogLevel::Brief:
       _fout << "Brief   : ";
       break;
-    case Warning:
+    case LogLevel::Warning:
       std::cout << colors::BrightRed << "Warning: ";
       _fout << "Warning : ";
       break;
-    case Critical:
+    case LogLevel::Critical:
       std::cout << colors::BrightRed << "Error: ";
       _fout << "Critical: ";
       break;
+     default:
+       _fout << "Message  :";
+       break;
   }
 }
 

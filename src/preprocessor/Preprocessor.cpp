@@ -241,7 +241,7 @@ void Preprocessor::build_flow_discretization_()
 
 void Preprocessor::build_geomechanics_discretization_()
 {
-  if (config.fem.method == strong_discontinuity)
+  if (config.fem.method == FEMMethod::strong_discontinuity)
   {
     // generate geomechanics sda properties
     pm_edfm_mgr->distribute_mechanical_properties();

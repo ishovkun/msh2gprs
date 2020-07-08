@@ -235,25 +235,25 @@ std::unique_ptr<FiniteElementBase> DiscretizationFEM::build_element(const mesh::
   if (_config.method == FEMMethod::polyhedral_finite_element)
   {
 #ifdef WITH_EIGEN
-    if (_config.solver == direct || _config.solver == cg)
+    if (_config.solver == SolverType::direct || _config.solver == SolverType::cg)
       p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config);
-    else if (_config.solver == msrsb)
+    else if (_config.solver == SolverType::msrsb)
       p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _grid, _config);
 #else
     throw std::runtime_error("Cannot use PDFEM method without linking to Eigen");
 #endif
 
   }
-  else if (_config.method == strong_discontinuity)
+  else if (_config.method == FEMMethod::strong_discontinuity)
     p_discr = std::make_unique<StandardFiniteElement>(cell);
-  else if (_config.method == mixed)
+  else if (_config.method == FEMMethod::mixed)
   {
     if (cell.vtk_id() == angem::GeneralPolyhedronID)
     {
 #ifdef WITH_EIGEN
-      if (_config.solver == direct || _config.solver == cg)
+      if (_config.solver == SolverType::direct || _config.solver == SolverType::cg)
         p_discr = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config);
-      else if (_config.solver == msrsb)
+      else if (_config.solver == SolverType::msrsb)
         p_discr = std::make_unique<PolyhedralElementMSRSB>(cell, _grid, _config);
 #else
     throw std::runtime_error("Cannot use PFEM method without linking to Eigen");

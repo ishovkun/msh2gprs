@@ -1,6 +1,6 @@
 #pragma once
 
-enum FEMMethod
+enum class FEMMethod
 {
   strong_discontinuity,      // just computes regular FEM shape functions
   polyhedral_finite_element, // Bishop, A displacement-based finite element formulation

@@ -18,7 +18,7 @@ struct FiniteElementConfig
   FEMMethod method = FEMMethod::strong_discontinuity;
   PolyhedralFEMSubdivision subdivision_method = PolyhedralFEMSubdivision::refinement;
   double solver_tolerance = 1e-5;                 // tolerance for msrsb convergence
-  SolverType solver = direct;
+  SolverType solver = SolverType::direct;
   size_t order = 0;  // refinement order (the more the finer)
   PolyhedronIntegrationRule integration_rule = PolyhedronIntegrationRule::Full;
 };

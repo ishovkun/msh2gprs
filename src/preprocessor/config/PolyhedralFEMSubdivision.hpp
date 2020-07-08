@@ -1,6 +1,6 @@
 #pragma once
 
-enum PolyhedralFEMSubdivision
+enum class PolyhedralFEMSubdivision
 {
   gmsh_generate,
   refinement

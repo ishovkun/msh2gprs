@@ -6,7 +6,7 @@
 
 namespace logging {
 
-enum LogLevel : int
+enum class LogLevel : int
 {
   Critical = 0,
   Silent   = 1,

@@ -1,6 +1,6 @@
 #pragma once
 
-enum SolverType
+enum class SolverType
 {
   direct,
   cg,
