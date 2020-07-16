@@ -13,7 +13,8 @@ class IntegrationRule2dAverage {
  public:
   IntegrationRule2dAverage(PolyhedralElementBase & element,
                            const std::vector<std::vector<angem::Polygon<double>>> & tributary_2d,
-                           const size_t parent_face);
+                           const size_t parent_face,
+                           const angem::Basis<3, double> & basis);
   virtual ~IntegrationRule2dAverage() = default;
   FiniteElementData get() const;
  
@@ -23,6 +24,7 @@ class IntegrationRule2dAverage {
   PolyhedralElementBase & _element;
   const std::vector<std::vector<angem::Polygon<double>>> & _tributary_2d;
   const size_t _parent_face;
+  const angem::Basis<3,double> _basis;
 };
 
 }  // end namespace discretization

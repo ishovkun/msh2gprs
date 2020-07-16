@@ -17,6 +17,7 @@ void FaceSorter::sort(std::vector<size_t> & face_indices)
   auto it_dest = face_indices.begin();
   for (auto it = _pmap.begin(); it != _pmap.end(); ++it, ++it_dest)
     *it_dest = it->second;
+  _pmap.clear();
 }
 
 }  // end namespace discretization

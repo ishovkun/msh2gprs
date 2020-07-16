@@ -260,11 +260,6 @@ void OutputDataGPRS::save_geometry_() const
   {
     const std::vector<const mesh::Cell*> neighbors = face->neighbors();
     out << neighbors.size() << "\t";
-    if (_data.dfm_faces.find(face->index()) != _data.dfm_faces.end())
-    {
-      assert( neighbors.size() == 2 );
-    }
-
     for (const mesh::Cell* neighbor : neighbors)
       out << _data.mech_numbering->cell_dof(neighbor->index()) + 1 << "\t";
     out << "\n";
@@ -867,6 +862,7 @@ void OutputDataGPRS::save_fem_data_() const
       auto & data = _data.fe_frac_data[iface];
       if (data[0].element_index == neighbors[0]->index())
       {
+        assert( data[0].points.size() == data[1].points.size() );
         export_point_grads(out, data[0]);
         export_point_grads(out, data[1]);
       }

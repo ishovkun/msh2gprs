@@ -29,11 +29,11 @@ class StandardFiniteElement : public FiniteElementBase {
   StandardFiniteElement(const mesh::Cell & cell);
   // get FE data for surface integration
   virtual FiniteElementData get_face_data(const size_t iface,
-                                          angem::Point<3,double> normal = {0,0,0}) override;
+                                          const angem::Basis<3,double> basis) override;
   // get FE data of cell shape functions at face integration points.
   // This is needed for modeling discrete fractures
   virtual FiniteElementData get_fracture_data(const size_t iface,
-                                              angem::Point<3,double> normal = {0,0,0}) override;
+                                          const angem::Basis<3,double> basis) override;
   virtual ~StandardFiniteElement() = default;
 
  protected:

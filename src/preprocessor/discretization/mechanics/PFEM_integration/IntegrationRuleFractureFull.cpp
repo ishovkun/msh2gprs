@@ -63,7 +63,7 @@ FiniteElementData IntegrationRuleFractureFull::get() const
     const mesh::Face & face = grid.face(face_indices[iface]);
     fe_face_values.update(face);
     get_face_integration_points(fe_face_values, local_integration_points);
-    const mesh::Cell & cell = *face.neighbors()[0];  // face only has one neighbor
+    const mesh::Cell & cell = *face.neighbors().front();  // face only has one neighbor
     fe_cell_values.update(cell, local_integration_points);
 
     const std::vector<size_t> & cell_verts = cell.vertices();

@@ -50,20 +50,17 @@ std::vector<angem::Point<3,double>> compute_face_qpoint_coordinates(const std::v
 }
 
 FiniteElementData StandardFiniteElement::get_fracture_data(const size_t iface,
-                                                           angem::Point<3,double> normal)
+                                                           const angem::Basis<3,double> basis)
 {
   const auto faces = _cell.faces();
   const size_t n_faces = faces.size();
-
-  if (std::fabs(normal.norm()) < 1e-12)
-    normal = faces[iface]->normal();
 
   assert( iface < n_faces );
 
   FiniteElementData data;   // FEM values and gradients in face integration points
 
   const auto face_qpoints = compute_face_qpoint_coordinates(faces[iface]->vertex_coordinates(),
-                                                            get_face_data(iface, normal));
+                                                            get_face_data(iface, basis));
 
   const VTK_ID cell_id = static_cast<VTK_ID>(_cell.vtk_id());
     switch (cell_id)
@@ -97,17 +94,12 @@ FiniteElementData StandardFiniteElement::get_fracture_data(const size_t iface,
 }
 
 FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
-                                                       angem::Point<3,double> normal)
+                                                       const angem::Basis<3,double> basis)
 {
   const auto faces = _cell.faces();
   FiniteElementData data;
-  if (std::fabs(normal.norm()) < 1e-12)
-    normal = faces[iface]->normal();
 
   const mesh::Face* face = faces[iface];
-  auto pln = face->polygon().plane();
-  if (pln.get_basis()[2].dot(normal) < 0)
-    pln.invert_normal();
 
   const VTK_ID id = static_cast<VTK_ID>(face->vtk_id());
   switch (id)
@@ -116,7 +108,7 @@ FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
       {
         FeValues<VTK_ID::TriangleID> fe_values;
         fe_values.update(*face);
-        fe_values.set_basis(pln.get_basis());
+        fe_values.set_basis(basis);
         build_<VTK_ID::TriangleID>(fe_values, data);
         break;
       }
@@ -124,7 +116,7 @@ FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
       {
         FeValues<VTK_ID::QuadrangleID> fe_values;
         fe_values.update(*face);
-        fe_values.set_basis(pln.get_basis());
+        fe_values.set_basis(basis);
         build_<VTK_ID::QuadrangleID>(fe_values, data);
         break;
       }

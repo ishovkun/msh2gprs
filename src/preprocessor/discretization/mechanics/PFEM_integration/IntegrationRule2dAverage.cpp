@@ -7,8 +7,9 @@ namespace discretization {
 
 IntegrationRule2dAverage::IntegrationRule2dAverage(PolyhedralElementBase & element,
                            const std::vector<std::vector<angem::Polygon<double>>> & tributary_2d,
-                           const size_t iface)
-    : _element(element), _tributary_2d(tributary_2d), _parent_face(iface)
+                           const size_t parent_face,
+                           const angem::Basis<3, double> & basis)
+    : _element(element), _tributary_2d(tributary_2d), _parent_face(parent_face), _basis(basis)
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
@@ -35,8 +36,8 @@ FiniteElementData IntegrationRule2dAverage::get() const
   const auto & grid = _element._subgrid;
   const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TriangleID> fe_values;
-  const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
-  fe_values.set_basis(basis);
+  // const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
+  fe_values.set_basis(_basis);
   const auto & regions = _tributary_2d[_parent_face];
   std::vector<double> region_areas( regions.size(), 0.0 );
   const size_t n_parent_vertices = face_data.center.values.size();
@@ -141,7 +142,14 @@ FiniteElementData IntegrationRule2dAverage::get() const
     sum_weights += region_areas[region];
   }
   if (std::fabs(sum_weights - _element._parent_cell.faces()[_parent_face]->area()) > 1e-10)
+  {
+    std::cout << std::endl;
+    std::cout << "geom area = " << _element._parent_cell.faces()[_parent_face]->area() << std::endl;
+    for (auto w : region_areas)
+      std::cout << w << " ";
+    std::cout << " (sum) " << sum_weights << std::endl;
     throw std::runtime_error("weights and face area don't add up");
+  }
 
   auto & data = face_data.center;
   for (size_t parent_vertex=0; parent_vertex<n_parent_vertices; ++parent_vertex)

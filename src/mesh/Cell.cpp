@@ -229,5 +229,16 @@ std::vector<size_t> Cell::sorted_vertices() const
   return result;
 }
 
+std::vector<vertex_pair> Cell::edges() const noexcept
+{
+  std::set<vertex_pair> sedges;
+  for (const auto * face : faces())
+  {
+    const auto fedges = face->edges();
+    for (const auto & edge : fedges)
+        sedges.insert(std::minmax(edge.first, edge.second));
+  }
+  return std::vector<vertex_pair> (sedges.begin(), sedges.end());
+}
 
 }  // end namespace

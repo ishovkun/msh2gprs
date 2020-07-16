@@ -106,11 +106,9 @@ if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra")
 endif()
 
-# # memory leak debugging
-# set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-# set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-# for profiling memory leaks
-# TARGET_LINK_LIBRARIES(msh2gprs preprocessor yaml-cpp mesh -lstdc++fs -lasan)
+# memory leak debugging
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+TARGET_LINK_LIBRARIES(msh2gprs preprocessor yaml-cpp mesh -lstdc++fs -lasan)
 
 # last flag for std::filesystem
 TARGET_LINK_LIBRARIES(msh2gprs preprocessor yaml-cpp mesh -lstdc++fs)

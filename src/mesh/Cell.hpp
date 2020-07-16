@@ -17,15 +17,15 @@ class Cell
 {
  public:
   // constructor
-  Cell(const std::size_t                cell_index,
-       const std::vector<std::size_t> & vertices,
-       const std::vector<std::size_t> & faces,
-       std::vector<Point>             & grid_vertices,
-       std::vector<Cell>              & grid_cells,
-       std::vector<Face>              & grid_faces,
-       const int                        vtk_id,
-       const int                        marker,
-       const std::size_t                parent = constants::invalid_index);
+  explicit Cell(const std::size_t                cell_index,
+                const std::vector<std::size_t> & vertices,
+                const std::vector<std::size_t> & faces,
+                std::vector<Point>             & grid_vertices,
+                std::vector<Cell>              & grid_cells,
+                std::vector<Face>              & grid_faces,
+                const int                        vtk_id,
+                const int                        marker,
+                const std::size_t                parent = constants::invalid_index);
   // assignment operator
   Cell & operator=(const Cell & other);
   // comparison operator
@@ -86,6 +86,8 @@ class Cell
   bool has_edge(const vertex_pair edge) const;
   // set cell marker
   void set_marker(const int marker) {m_marker = marker;}
+  // vector of unique cell edges
+  std::vector<vertex_pair> edges() const noexcept;
 
  protected:
   // recursive part of the public ultimate_children() method

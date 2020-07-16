@@ -35,7 +35,6 @@ FiniteElementData IntegrationRule2dFull::get() const
   const size_t ipf = _parent_face;
   const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TriangleID> fe_values;
-  // const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
   fe_values.set_basis(_basis);
   const size_t n_parent_vertices = face_data.center.values.size();
   const auto * parent_face = _element._parent_cell.faces()[_parent_face];

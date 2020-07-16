@@ -29,7 +29,9 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   for (const int marker : neumann_face_markers)
     _neumann_face_orientation[marker] = {angem::Basis<3, double>(), false};
 
-  // analyze_cell_(_grid.cell(0));
+  // std::cout << "25263 " << _grid.n_cells() << std::endl;
+  // analyze_cell_(_grid.cell(19908));
+
   // if (_config.method != strong_discontinuity)
   // {
   //   auto cell = _grid.begin_active_cells();
@@ -65,19 +67,19 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
                               _neumann_face_orientation.end();
       if (is_fracture)
         face_basis = get_basis_(*face, _fracture_face_orientation.find(face->marker())->second);
-      if (is_neumann)
+      else if (is_neumann)
         face_basis = get_basis_(*face, _neumann_face_orientation.find(face->marker())->second);
 
       if (is_neumann || is_fracture)
         if ( _face_data[face->index()].points.empty() )
         {
-          _face_data[face_index] = p_discr->get_face_data(iface, face_basis[2]);
+          _face_data[face_index] = p_discr->get_face_data(iface, face_basis);
           _face_data[face_index].element_index = face_index;
         }
 
       if (is_fracture)
         {
-          _frac_data[face_index].push_back(p_discr->get_fracture_data(iface, face_basis[2]));
+          _frac_data[face_index].push_back(p_discr->get_fracture_data(iface, face_basis));
           _frac_data[face_index].back().element_index = cell->index();
         }
 
@@ -90,44 +92,30 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
 
 void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
 {
+  std::cout << "vertices: ";
+  for(auto v : cell.vertices())
+    std::cout << v << " ";
+  std::cout << std::endl;
+
+  std::cout << "faces:" << std::endl;
+  for (auto * f : cell.faces())
+  {
+    for (auto v : f->vertices())
+      std::cout << v << " ";
+    std::cout << std::endl;
+  }
+
   IO::VTKWriter::write_geometry(_grid, cell, "output/geometry-" + std::to_string(cell.index()) + ".vtk");
 
 #ifdef WITH_EIGEN
   PolyhedralElementDirect de(cell, _grid, _config);
   // PolyhedralElementMSRSB de(cell, _config);
   de.save_shape_functions("output/shape_functions-" + std::to_string(cell.index())+ ".vtk");
-  exit(0);
+  de.debug_save_boundary_face_solution("output/face_solutions.vtk");
 
-  StandardFiniteElement fe(cell);
-  FiniteElementData an_data =  fe.get_cell_data();
   auto verts = cell.vertices();
-  std::cout << "+======COORDINATES" << std::endl;
-  // std::cout << "analytic" << std::endl;
-  // for (size_t q=0; q<an_data.points.size(); ++q)
-  // {
-  //   Point p (0,00,0);
-  //   for (size_t v=0; v<verts.size(); ++v)
-  //   {
-  //     p += _grid.vertex(verts[v]) * an_data.points[q].values[v];
-  //   }
-  //   std::cout << "p = " << p << std::endl;
-  // }
 
   auto data =  de.get_cell_data();
-  auto qpoints = de.get_cell_integration_points();
-  std::cout << "============================" << std::endl;
-  std::cout << "Recovery integration points:" << std::endl;
-  for (size_t q=0; q<data.points.size(); ++q)
-  {
-    Point p (0,00,0);
-    for (size_t v=0; v<verts.size(); ++v)
-    {
-      assert( data.points[q].values.size() == verts.size() );
-      p += _grid.vertex(verts[v]) * data.points[q].values[v];
-    }
-
-    std::cout << "diff = " << (p - qpoints[q]).norm()<< std::endl;
-  }
 
   std::cout << "============================" << std::endl;
   std::cout << "Weights:" << std::endl;
@@ -142,32 +130,29 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
   std::cout << "weights sum = " << wsum << "  (should be " << data.center.weight << ")" << std::endl;
 
 
-  // std::cout << "============================" << std::endl;
-  // std::cout << "Values:" << std::endl;
-  // for (size_t q=0; q<data.points.size(); ++q)
-  // {
-  //   std::cout << q << "\n";
-  //   for (size_t v=0; v<verts.size(); ++v)
-  //   {
-  //     std::cout << data.points[q].values[v] << " "
-  //               << an_data.points[q].values[v] << " "
-  //               << std::fabs( (data.points[q].values[v] - an_data.points[q].values[v]) / an_data.points[q].values[v]  )
-  //               << std::endl;
-  //   }
-  // }
+  std::cout << "============================" << std::endl;
+  std::cout << "Values:" << std::endl;
+  for (size_t q=0; q<data.points.size(); ++q)
+  {
+    const double sum = std::accumulate(data.points[q].values.begin(),
+                                       data.points[q].values.end(), 0.0);
+    if (std::fabs(sum - 1.0) > 1e-10)
+    {
+      std::cout << "Error: q = " << q << " sum values = " << sum << std::endl;
+    }
+  }
 
   std::cout << "============================" << std::endl;
   std::cout << "Gradients:" << std::endl;
   for (size_t q=0; q<data.points.size(); ++q)
   {
-    std::cout << q << "\n";
-    for (size_t v=0; v<verts.size(); ++v)
-    {
-      std::cout <<  data.points[q].grads[v] << "\t";
-    }
-    std::cout << std::endl;
+    angem::Point<3,double> sum;
+    for (auto & p : data.points[q].grads)
+      sum += p;
+    std::cout << q << " " << sum << std::endl;
   }
 
+  exit(0);
 
   // std::cout << "======= shape functions ==========" << std::endl;
   // std::cout << "analytic" << std::endl;

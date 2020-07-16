@@ -7,19 +7,16 @@ namespace discretization {
 
 struct point_comparator
 {
-  explicit point_comparator(const angem::Plane<double> & pln)
-      : _pln(pln) {};
+  explicit point_comparator(const angem::Plane<double> & pln,
+                            const double tolerance = 1e-9)
+      : _pln(pln), _tol(tolerance) {};
 
-  bool operator() (const angem::Point<3,double> & p1, const angem::Point<3,double> &p2) const
+  bool operator() (const angem::Point<3,double> & p1, const angem::Point<3,double> & p2) const
   {
-    // const auto pp1 = _pln.project_point(p1);
-    // const auto pp2 = _pln.project_point(p2);
-    const auto &pp1 = p1;
-    const auto &pp2 = p2;
     for (int i = 2; i >=0; i--)
     {
-      const double diff = pp1[i] - pp2[i];
-      if (std::fabs(diff) < tol)
+      const double diff = p1[i] - p2[i];
+      if (std::fabs(diff) < _tol)
         continue;
       else if (diff < 0)
         return true;
@@ -29,7 +26,8 @@ struct point_comparator
     return false;
   }
 
-  const double tol = 1e-9;
+ private:
+  const double _tol;
   const angem::Plane<double> _pln;
 };
 

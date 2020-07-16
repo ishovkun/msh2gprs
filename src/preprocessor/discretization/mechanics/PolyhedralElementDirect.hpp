@@ -63,11 +63,8 @@ class PolyhedralElementDirect : public PolyhedralElementBase
   void impose_bc_on_face_system_(const size_t parent_vertex,
                                  const DoFNumbering & vertex_dofs,
                                  Eigen::SparseMatrix<double,Eigen::RowMajor> & face_system_matrix,
-                                 Eigen::VectorXd & rhs);
-  // impose bc only on rhs vector but not matrix (face system)
-  void impose_bc_face_rhs_(const size_t parent_vertex,
-                           const DoFNumbering & vertex_dofs,
-                           Eigen::VectorXd & rhs);
+                                 Eigen::VectorXd & rhs,
+                                 const bool impose_on_matrix = true);
   void build_edge_boundary_conditions_(const std::vector<size_t> & parent_face_vertices,
                                        const std::vector<size_t> & faces);
   // find out which vertices reside on parent edges and compute the dirichlet values for them

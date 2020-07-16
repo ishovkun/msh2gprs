@@ -414,6 +414,11 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,ElementTraits<vtk_
                                        double & detJ) const
 {
   angem::Plane<double> plane (_vertex_coord[0], _vertex_coord[1], _vertex_coord[2]);
+  if (_basis_set)
+  {
+    plane.set_origin(_vertex_coord[0]);
+    plane.set_basis(_face_basis);
+  }
   // get vertex coordinates in 2d face basis
   std::array<Point,ElementTraits<vtk_id>::n_vertices> loc_coord;
   for (size_t i=0; i < ElementTraits<vtk_id>::n_vertices; ++i)

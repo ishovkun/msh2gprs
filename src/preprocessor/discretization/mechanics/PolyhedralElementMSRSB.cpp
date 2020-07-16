@@ -463,7 +463,8 @@ void PolyhedralElementMSRSB::build_support_edges_()
     }
   }
 
-  const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_markers );
+  const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_markers,
+                                                                        _parent_cell.polyhedron()->get_edges());
 
   _support_edge_vertices.resize( parent_vertices.size() );
   _support_edge_values.resize( parent_vertices.size() );

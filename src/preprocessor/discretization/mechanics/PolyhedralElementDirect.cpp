@@ -55,8 +55,8 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
     // identify vertices the will constitute the linear system and create dof mapping
     const DoFNumbering vertex_numbering = dof_manager.build(_subgrid, _face_domains[iface]);
     // initialize system matrix
-    Eigen::SparseMatrix<double,Eigen::RowMajor> face_system_matrix =
-        Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(), vertex_numbering.n_dofs());
+    auto face_system_matrix = Eigen::SparseMatrix<double,Eigen::RowMajor>(vertex_numbering.n_dofs(),
+                                                                          vertex_numbering.n_dofs());
     // fill system matrix
     build_face_system_matrix_(iface, face_system_matrix, _face_domains[iface], vertex_numbering);
     const std::vector<size_t> parent_face_vertices = parent_faces[iface]->vertices();
@@ -70,9 +70,11 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
                                       std::find( parent_vertices.begin(), parent_vertices.end(),
                                                  parent_face_vertices[ipv] ));
       if (ipv == 0)
-        impose_bc_on_face_system_( pv, vertex_numbering, face_system_matrix, rhs );
+        impose_bc_on_face_system_( pv, vertex_numbering, face_system_matrix, rhs,
+                                   /*impose_on_matrix = */ true);
       else
-        impose_bc_face_rhs_(pv, vertex_numbering, rhs);
+        impose_bc_on_face_system_( pv, vertex_numbering, face_system_matrix, rhs,
+                                   /*impose_on_matrix = */ false);
 
       if (ipv == 0)  // factorize only once since matrix doesn't change, only rhs
       {
@@ -105,36 +107,30 @@ void PolyhedralElementDirect::build_face_boundary_conditions_()
 void PolyhedralElementDirect::impose_bc_on_face_system_(const size_t parent_vertex,
                                                         const DoFNumbering & vertex_dofs,
                                                         Eigen::SparseMatrix<double,Eigen::RowMajor> & mat,
-                                                        Eigen::VectorXd & rhs)
+                                                        Eigen::VectorXd & rhs,
+                                                        const bool impose_on_matrix)
 {
-  for (size_t iv=0; iv<_support_edge_vertices[parent_vertex].size(); ++iv)
-  {
-    const size_t vertex = _support_edge_vertices[parent_vertex][iv];
-    if (vertex_dofs.has_vertex(vertex))
+  // for (size_t iv=0; iv<_support_edge_vertices[parent_vertex].size(); ++iv)
+  // {
+  //   const size_t vertex = _support_edge_vertices[parent_vertex][iv];
+  //   if (vertex_dofs.has_vertex(vertex))
+  //   {
+  //     const size_t dof = vertex_dofs.vertex_dof(vertex);
+  //     for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, dof); it; ++it)
+  //       it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
+  //     rhs[dof] = _support_edge_values[parent_vertex][iv];
+  //   }
+
+  // }
+  for (size_t vertex = 0; vertex < _subgrid.n_vertices(); ++vertex)
+    if (vertex_dofs.has_vertex(vertex) && _support_edge_values[parent_vertex][vertex] >= 0)
     {
       const size_t dof = vertex_dofs.vertex_dof(vertex);
-      for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, dof); it; ++it)
-        it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
-      rhs[dof] = _support_edge_values[parent_vertex][iv];
+      if (impose_on_matrix)
+        for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, dof); it; ++it)
+          it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
+      rhs[dof] = _support_edge_values[parent_vertex][vertex];
     }
-
-  }
-}
-
-void PolyhedralElementDirect::impose_bc_face_rhs_(const size_t parent_vertex,
-                                                  const DoFNumbering & vertex_dofs,
-                                                  Eigen::VectorXd & rhs)
-{
-  for (size_t iv=0; iv<_support_edge_vertices[parent_vertex].size(); ++iv)
-  {
-    const size_t vertex = _support_edge_vertices[parent_vertex][iv];
-    if (vertex_dofs.has_vertex(vertex))
-    {
-      const size_t dof = vertex_dofs.vertex_dof(vertex);
-      rhs[dof] = _support_edge_values[parent_vertex][iv];
-    }
-  }
-
 }
 
 void PolyhedralElementDirect::build_cell_system_matrix_()
@@ -186,11 +182,7 @@ void PolyhedralElementDirect::build_face_system_matrix_(const size_t parent_face
   std::vector<size_t> face_dofs(nv);
 
   // all faces within the parent face must have the same orientation
-  const auto basis = _subgrid
-                     .face(face_indices.front())
-                     .polygon()
-                     .plane()
-                     .get_basis();
+  const auto basis = _subgrid.face(face_indices.front()).polygon().plane().get_basis();
   fe_values.set_basis(basis);
 
   for (const size_t iface : face_indices)
@@ -230,10 +222,11 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
 {
   std::vector<std::vector<size_t>> vertex_parent_faces  = map_vertices_to_parent_faces_();
   std::vector<std::list<size_t>> parent_vertex_faces = map_parent_vertices_to_parent_faces_();
-  const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_faces );
+  const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_faces,
+                                                                        _parent_cell.polyhedron()->get_edges());
   const auto parent_nodes = _parent_cell.polyhedron()->get_points();
   _support_edge_vertices.resize( parent_nodes.size() );
-  _support_edge_values.resize( parent_nodes.size() );
+  _support_edge_values.resize( parent_nodes.size(), std::vector<double>(_subgrid.n_vertices(), -1.) );
 
   for (size_t v=0; v<_subgrid.n_vertices(); ++v)
   {
@@ -259,17 +252,58 @@ void PolyhedralElementDirect::build_edge_boundary_conditions_()
             const double dp = p1.distance(p2);
             const double d1 = _subgrid.vertex(v).distance(p1);
             const double d2 = _subgrid.vertex(v).distance(p2);
-            _support_edge_vertices[vp1].push_back(v);
-            _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
-            _support_edge_vertices[vp2].push_back(v);
-            _support_edge_values[vp2].push_back( (dp - d2) / dp );
+            // _support_edge_vertices[vp1].push_back(v);
+            // _support_edge_values[vp1].push_back( (dp - d1 ) / dp );
+            // _support_edge_vertices[vp2].push_back(v);
+            // _support_edge_values[vp2].push_back( (dp - d2) / dp );
+            const double val1 = (dp - d1) / dp;
+            const double val2 = (dp - d2) / dp;
+            // if < 0 it means it's a vertex  on an edge with internal parent vertex
+            // (hangin node)
+            // then dirichlet value sohuld be zero
+            if (val1 < 0 || val2 < 0)
+            {
+              _support_edge_values[vp1][v] = 0;
+              _support_edge_values[vp2][v] = 0;
+            }
+            else
+            {
+              _support_edge_values[vp1][v] = val1;
+              _support_edge_values[vp2][v] = val2;
+            }
+            // if ( (dp - d1) / dp < 0 || (dp - d2) / dp < 0)
+            // {
+            //   std::cout << "suck " << v << " " << vp1 << " " << vp2 << std::endl;
+            //   throw "fuck";
+            // }
+            // assert( (dp - d1) / dp >= 0.0 );
+            // assert( (dp - d2) / dp >= 0.0 );
 
+            // if ( vp1 == 2 || vp2 == 2 )
+            // if (v == 2 && (vp1 == 2 || vp2 == 2))
+            // {
+            //   std::cout << "Set phi["<<vp1<<"] = " << (dp - d1 ) / dp
+            //             << " in " << v
+            //             << " on " << vp1 << "-" << vp2
+            //             << std::endl;
+            //   std::cout << "Set phi["<<vp2<<"] = " <<  (dp - d2) / dp
+            //             << " in " << v
+            //             << " on " << vp1 << "-" << vp2
+            //             << std::endl;
+            // }
             // also set zero on edges that do not have either parent
             for (size_t vp=0; vp<parent_nodes.size(); ++vp)
               if (vp != vp1 && vp != vp2)
               {
-                _support_edge_vertices[vp].push_back(v);
-                _support_edge_values[vp].push_back(0.0);
+                if (std::fabs(_support_edge_values[vp][v] + 1) < 1e-8)
+                  _support_edge_values[vp][v] = 0.0;
+                // _support_edge_vertices[vp].push_back(v);
+                // _support_edge_values[vp].push_back(0.0);
+                // if (v == 2 && vp == 2)
+                // std::cout << "Set phi["<<vp<<"] = " << 0
+                //           << " in " << v
+                //           << " on " << vp1 << "-" << vp2
+                //           << std::endl;
               }
           }
         }

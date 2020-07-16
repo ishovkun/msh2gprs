@@ -33,7 +33,8 @@ TributaryRegion3dVertices::TributaryRegion3dVertices(PolyhedralElementBase & ele
   const auto & vertices = cell.vertices();
 
   const auto parent_vertex_faces = _element.map_parent_vertices_to_parent_faces_();
-  const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_faces );
+  const auto pair_markers_to_edge = edgecmp::EdgeComparison::get_edges( parent_vertex_faces,
+                                                                        _element._parent_cell.polyhedron()->get_edges());
   const auto parent_faces = cell.faces();
   const Point c = cell.center();
   // std::cout << "parent_faces.size() = " << parent_faces.size() << std::endl;

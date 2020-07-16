@@ -74,6 +74,13 @@ std::vector<const Cell*> Face::neighbors() const
   }
   assert(!result.empty());
   assert(result.size() <= 2);
+  // sort result by index
+  // This is done to avoid changing the order of neighbors
+  // if vertex reordering is performed
+  std::sort(result.begin(), result.end(), [](const auto c1, const auto c2) -> bool
+                                          {
+                                            return c1->index() < c2->index();
+                                          });
   return result;
 }
 

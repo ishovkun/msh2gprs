@@ -266,8 +266,26 @@ void Preprocessor::build_geomechanics_discretization_()
     p_frac_mgr = pm_cedfm_mgr;
   }
 
+  // renumber nodes of some grid faces
+  // this is needed for AD-GPRS DFM fractures
+  for (auto face = data.geomechanics_grid.begin_active_faces(); face != data.geomechanics_grid.end_active_faces(); ++face)
+  {
+    if ( face->normal().dot(face->center() - face->neighbors()[0]->center()) > 0 )
+    {
+      mesh::Face & nc_face = const_cast<mesh::Face&>(*face);
+      auto & verts = nc_face.vertices();
+      std::reverse(verts.begin(), verts.end());
+    }
+  }
+
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
   data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>(mech_numbering_mgr.get_numbering());
+  // for (auto cell = data.geomechanics_grid.begin_active_cells(); cell != data.geomechanics_grid.end_active_cells(); ++cell)
+  //   if (data.mech_numbering->cell_dof(cell->index()) == 750)
+  //   {
+  //     std::cout << "yay " << cell->index() << " " << data.mech_numbering->cell_dof(cell->index()) << std::endl;
+  //     exit(0);
+  //   }
 
   // split geomechanics DFM faces
   std::cout << "splitting faces of DFM fractures" << std::endl;

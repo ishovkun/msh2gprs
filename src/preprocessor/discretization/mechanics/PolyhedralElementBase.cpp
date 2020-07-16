@@ -148,17 +148,13 @@ void PolyhedralElementBase::build_fe_cell_data_()
 }
 
 FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
-                                                       angem::Point<3,double> normal)
+                                                       const angem::Basis<3,double> basis)
 {
   if (_tributary_2d.empty())
     build_tributary_();
 
   if (_basis_functions.empty())
     throw std::runtime_error("should be initialized");
-
-  auto pln = _parent_grid.face(iface).polygon().plane();
-  if (pln.get_basis()[2].dot(normal) < 0)
-    pln.invert_normal();
 
   switch (_config.integration_rule)
   {
@@ -170,13 +166,13 @@ FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
       }
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        IntegrationRule2dAverage rule(*this, _tributary_2d, iface);
+        IntegrationRule2dAverage rule(*this, _tributary_2d, iface, basis);
         return rule.get();
         break;
       }
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRule2dFull rule(*this, iface, pln.get_basis());
+        IntegrationRule2dFull rule(*this, iface, basis);
         return rule.get();
         break;
       }
@@ -185,26 +181,23 @@ FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
   }
 }
 
-FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface, angem::Point<3,double> normal)
+FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
+                                                           const angem::Basis<3,double> basis)
 {
   if (_tributary_2d.empty())
     build_tributary_();
-
-  auto pln = _parent_grid.face(iface).polygon().plane();
-  if (pln.get_basis()[2].dot(normal) < 0)
-    pln.invert_normal();
 
   switch (_config.integration_rule)
   {
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRuleFractureFull rule(*this, iface, pln.get_basis());
+        IntegrationRuleFractureFull rule(*this, iface, basis);
         return rule.get();
         break;
       }
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        IntegrationRuleFractureAverage rule(*this, _tributary_2d, iface);
+        IntegrationRuleFractureAverage rule(*this, _tributary_2d, iface, basis);
         return rule.get();
         break;
       }

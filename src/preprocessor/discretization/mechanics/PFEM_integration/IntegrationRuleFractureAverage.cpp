@@ -8,9 +8,10 @@ using Point = angem::Point<3,double>;
 
 IntegrationRuleFractureAverage::
 IntegrationRuleFractureAverage(PolyhedralElementBase & element,
-                               const std::vector<std::vector<angem::Polygon<double>>> & tributary_2d,
-                               const size_t parent_face)
-    : _element(element), _tributary_2d(tributary_2d), _parent_face(parent_face)
+                           const std::vector<std::vector<angem::Polygon<double>>> & tributary_2d,
+                           const size_t parent_face,
+                           const angem::Basis<3, double> & basis)
+    : _element(element), _tributary_2d(tributary_2d), _parent_face(parent_face), _basis(basis)
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
@@ -52,8 +53,8 @@ FiniteElementData IntegrationRuleFractureAverage::get() const
   const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   FeValues<angem::VTK_ID::TetrahedronID> fe_cell_values;
   FeValues<angem::VTK_ID::TriangleID> fe_face_values;
-  const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
-  fe_face_values.set_basis(basis);
+  // const auto basis = grid.face(face_indices.front()).polygon().plane().get_basis();
+  fe_face_values.set_basis(_basis);
 
   const auto & regions = _tributary_2d[_parent_face];
   std::vector<double> region_areas( regions.size(), 0.0 );
