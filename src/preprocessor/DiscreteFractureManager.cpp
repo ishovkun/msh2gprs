@@ -91,7 +91,7 @@ void DiscreteFractureManager::distribute_properties()
           const size_t key = m_data.output_flow_properties[j];
           f.custom_flow_data[j] +=
               (m_data.cell_properties[key][cell1.index()] * v1 +
-               m_data.cell_properties[key][cell2.index()] * v2 ) / ( v2 + v2 ) ;
+               m_data.cell_properties[key][cell2.index()] * v2 ) / ( v1 + v2 ) ;
         }
         m_data.dfm_faces.insert({face->index(), std::move(f)});
       }
