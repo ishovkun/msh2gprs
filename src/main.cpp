@@ -31,10 +31,10 @@ int main(int argc, char *argv[])
   const std::string fname_config = argv[1];
   const Path path_config(fname_config);
 
-  // auto & logger = logging::Logger::ref();
-  // const Path log_file_path = path_config.parent_path() / "log.txt";
-  // logger.set_file(log_file_path.filename());
-  // logger.set_verbosity(logging::Debug);
+  auto & logger = logging::Logger::ref();
+  const Path log_file_path = path_config.parent_path() / "log.txt";
+  logger.set_file(log_file_path.filename());
+  logger.set_verbosity(logging::LogLevel::Debug);
 
   try {
     // read stuff
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   }
   catch (const std::exception& e)
   {
-    std::cout << "Error: " << e.what() << std::endl;
+    logging::critical() << e.what() << std::endl;
     return 1;
   }
 

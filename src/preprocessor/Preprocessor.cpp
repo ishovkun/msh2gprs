@@ -14,6 +14,7 @@
 #include "OutputDataVTK.hpp"
 #include "OutputDataGPRS.hpp"
 #include "OutputDataPostprocessor.hpp"
+#include "logger/Logger.hpp"
 #include <string>
 
 namespace gprs_data {
@@ -33,11 +34,11 @@ void Preprocessor::run()
 {
   // property manager for grid with split cells (due to edfm splitting)
   pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, config.domains, data);
-  std::cout << "Generating properties" << std::endl;
+  logging::log() << "Generating properties" << std::endl;
   pm_property_mgr->generate_properties();
 
   // create discrete fracture manager
-  std::cout << "Initializing Fracture managers" << std::endl;
+  logging::log() << "Initializing Fracture managers" << std::endl;
   pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(config.discrete_fractures, data);
   pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures, config.edfm_method,
                                                           config.edfm_min_dist_to_node, data);
@@ -46,11 +47,11 @@ void Preprocessor::run()
   data.geomechanics_grid = data.grid;
 
   /* Split cells due to edfm intersection */
-  std::cout << "Splitting cells..." << std::flush;
+  logging::log() << "Splitting cells..." << std::flush;
   pm_edfm_mgr->split_cells();
-  std::cout << "OK" << std::endl << std::flush;
+  logging::log() << "OK" << std::endl << std::flush;
 
-  std::cout << "building flow discretization" << std::endl;
+  logging::log() << "building flow discretization" << "\n";
   build_flow_discretization_();
 
   // build edfm grid for vtk output
@@ -288,14 +289,14 @@ void Preprocessor::build_geomechanics_discretization_()
   //   }
 
   // split geomechanics DFM faces
-  std::cout << "splitting faces of DFM fractures" << std::endl;
+  logging::log() << "Splitting faces of DFM fractures" << std::endl;
   p_frac_mgr->split_faces(data.geomechanics_grid);
 
   // build mechanics boundary conditions
-  std::cout << "Building mechanics boundary conditions" << std::endl;
+  logging::log() << "Building mechanics boundary conditions" << std::endl;
   BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
 
-  std::cout << "Building FEM discretization" << std::endl;
+  logging::log() << "Building FEM discretization" << std::endl;
   dfm_markers = p_frac_mgr->get_face_markers();
   discretization::DiscretizationFEM fem_discr(data.geomechanics_grid, config.fem, dfm_markers,
                                               bc_mgr.get_neumann_face_markers());

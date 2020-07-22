@@ -8,12 +8,12 @@ namespace logging {
 
 enum class LogLevel : int
 {
-  Critical = 0,
-  Silent   = 1,
-  Warning  = 2,
-  Brief    = 3,
-  Message  = 4,
-  Debug    = 5,
+  Critical  = 0,
+  Silent    = 1,
+  Warning   = 2,
+  Important = 3,
+  Message   = 4,
+  Debug     = 5,
 };
 
 /**
@@ -42,7 +42,10 @@ class Logger {
    * do the log
    */
   template <typename T>
-   std::ostream & operator<<(T & data);
+  Logger & operator<<(const T & data);
+
+  Logger & operator<<(std::ostream& (*os)(std::ostream&));
+
   /**
    * do the log
    */
@@ -62,6 +65,8 @@ class Logger {
   Logger();
   // print debug, brief, etc. + timestamp
   void print_prefix_(const LogLevel level);
+  void select_color_(const LogLevel level);
+  void reset_color_();
 
 
   // ------------------ Variables ---------------------- //
@@ -72,26 +77,31 @@ class Logger {
 };
 
 template <typename T>
-std::ostream & Logger::operator<<(T & data)
+Logger & Logger::operator<<(const T & msg)
 {
   if (_verbosity >= _msg_level)
   {
     print_prefix_(_msg_level);
-    std::cout << data << std::endl;
+    select_color_(_msg_level);
+    std::cout << msg;
     if (_fout.is_open())
-    {
-      _fout << data << std::endl;
-    }
+      _fout << msg;
 
-    std::cout << colors::Default;
+    reset_color_();
   }
-  return std::cout;
+  return *this;
 }
+
+// use for Message loging level
+Logger& log();
+// use for debug messages
+Logger& debug();
+// use for warnings
+Logger& warning();
+// use for critical errors
+Logger& critical();
+// use for important messages
+Logger& important();
 
 
 }  // end namespace logger
-
-// #define log logging::Logger::ref().set_message_level(logging::Debug); logging::Logger::ref()
-// #define brief logging::Logger::ref().set_message_level(logging::Brief); logging::Logger::ref()
-// #define warning logging::Logger::ref().set_message_level(logging::Brief); logging::Logger::ref()
-// #define error logging::Logger::ref().set_message_level(logging::Critical); logging::Logger::ref()

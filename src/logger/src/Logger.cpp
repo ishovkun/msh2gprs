@@ -48,26 +48,98 @@ void Logger::print_prefix_(const LogLevel level)
   switch (level)
   {
     case LogLevel::Debug:
-      _fout << "Debug   : ";
+      _fout << "Debug     : ";
       break;
     case LogLevel::Message:
-      _fout << "Message : ";
+      _fout << "Message   : ";
       break;
-    case LogLevel::Brief:
-      _fout << "Brief   : ";
+    case LogLevel::Important:
+      _fout << "Important : ";
       break;
     case LogLevel::Warning:
-      std::cout << colors::BrightRed << "Warning: ";
-      _fout << "Warning : ";
+      std::cout << "Warning: ";
+      _fout << "Warning   : ";
       break;
     case LogLevel::Critical:
-      std::cout << colors::BrightRed << "Error: ";
-      _fout << "Critical: ";
+      _fout << "Critical  : ";
       break;
      default:
        _fout << "Message  :";
        break;
   }
 }
+
+void Logger::select_color_(const LogLevel level)
+{
+  switch (level)
+  {
+    case LogLevel::Important:
+      std::cout << colors::BrightBlue;
+      break;
+    case LogLevel::Warning:
+      std::cout << colors::BrightRed;
+      break;
+    case LogLevel::Critical:
+      std::cout << colors::BrightRed;
+      break;
+    default:
+      break;
+  }
+}
+
+void Logger::reset_color_()
+{
+  std::cout << colors::Default;
+}
+
+Logger& log()
+{
+  auto & logger = Logger::ref();
+  logger.set_message_level(LogLevel::Message);
+  return logger;
+}
+
+Logger& debug()
+{
+  auto & logger = Logger::ref();
+  logger.set_message_level(LogLevel::Debug);
+  return logger;
+}
+
+Logger& warning()
+{
+  auto & logger = Logger::ref();
+  logger.set_message_level(LogLevel::Warning);
+  return logger;
+}
+
+Logger& critical()
+{
+  auto & logger = Logger::ref();
+  logger.set_message_level(LogLevel::Critical);
+  return logger;
+}
+
+Logger& important()
+{
+  auto & logger = Logger::ref();
+  logger.set_message_level(LogLevel::Important);
+  return logger;
+}
+
+Logger & Logger::operator<<(std::ostream& (*os)(std::ostream&))
+{
+  if (_verbosity >= _msg_level)
+  {
+    // print_prefix_(_msg_level);
+    std::cout << os;
+    if (_fout.is_open())
+      _fout << os;
+
+    // reset_color_();
+  }
+  return *this;
+}
+
 
 }  // end namespace logger
