@@ -134,9 +134,12 @@ class Postprocessor:
             x = numpy_support.numpy_to_vtk(data[key].values[mapping])
             x.SetName(key)
             output.GetCellData().AddArray(x)
-        time = numpy_support.numpy_to_vtk([time])
-        time.SetName("TIME")
-        output.GetFieldData().AddArray(time)
+        # make time array the size of the n_cells; otherwise,
+        # I cannot plot selection vs real time
+        time_arr = numpy_support.numpy_to_vtk(time*np.ones(len( mapping )))
+        time_arr.SetName("Time_")
+        output.GetCellData().AddArray(time_arr)
+        # output.GetFieldData().AddArray(time_arr)
 
 
     def addMechDataToReader(self, reader, data, data_type="point"):
