@@ -47,12 +47,14 @@ void Preprocessor::run()
   data.geomechanics_grid = data.grid;
 
   /* Split cells due to edfm intersection */
-  logging::log() << "Splitting cells..." << std::flush;
+  logging::important() << "Splitting cells..." << std::flush;
   pm_edfm_mgr->split_cells();
-  logging::log() << "OK" << std::endl << std::flush;
+  logging::important() << "Finished splitting cells" << std::endl << std::flush;
 
-  logging::log() << "building flow discretization" << "\n";
+  logging::important() << "Building flow discretization" << "\n";
   build_flow_discretization_();
+  logging::important() << "Finished flow discretization" << std::endl;
+
 
   // build edfm grid for vtk output
   // pm_edfm_mgr->build_edfm_grid(*data.flow_numbering);
@@ -85,37 +87,37 @@ void Preprocessor::create_output_dir_()
 {
   if (filesystem::exists(m_output_dir))
   {
-    std::cout << "cleaning directory " << m_output_dir << std::endl;
+    logging::debug() << "cleaning directory " << m_output_dir << std::endl;
     filesystem::remove_all(m_output_dir);
   }
-  std::cout << "creating directory " << m_output_dir << std::endl;
+  logging::debug() << "creating directory " << m_output_dir << std::endl;
   filesystem::create_directory(m_output_dir);
 }
 
 void Preprocessor::write_output_()
 {
-  std::cout << "Write Output data\n";
+  logging::log() << "Write Output data\n";
   create_output_dir_();
   for (auto format : config.output_formats)
   {
     switch (format) {
       case OutputFormat::gprs :
         {
-          std::cout << "Output gprs format" << std::endl;
+          logging::log() << "Output gprs format" << std::endl;
           gprs_data::OutputDataGPRS output_data(data, config.gprs_output);
           output_data.write_output(m_output_dir);
           break;
         }
         case OutputFormat::vtk :
           {
-            std::cout << "Output vtk format" << std::endl;
+            logging::log() << "Output vtk format" << std::endl;
             gprs_data::OutputDataVTK output_data(data, config.vtk_config);
             output_data.write_output(m_output_dir);
             break;
           }
         case OutputFormat::postprocessor :
           {
-            std::cout << "Output postprocessor format" << std::endl;
+            logging::log() << "Output postprocessor format" << std::endl;
             gprs_data::OutputDataPostprocessor output_data(data, config,
                                                            *data.flow_numbering,
                                                            m_output_dir);
@@ -129,14 +131,13 @@ void Preprocessor::read_config_file_(const Path config_file_path)
 {
   if (!filesystem::exists(config_file_path))
   {
-    const std::string error_msg =
-        "config file does not exist: " +
-        std::string(filesystem::absolute(config_file_path));
+    const std::string error_msg = "config file does not exist: " +
+                                  std::string(filesystem::absolute(config_file_path));
     throw std::invalid_argument(error_msg);
   }
 
-  std::cout << "reading ";
-  std::cout << filesystem::absolute(config_file_path) << std::endl;
+  logging::important() << "Reading ";
+  logging::important() << filesystem::absolute(config_file_path) << std::endl;
 
   const std::string fname = config_file_path.filename();
   const std::size_t str_len = fname.size();
@@ -148,7 +149,7 @@ void Preprocessor::read_config_file_(const Path config_file_path)
   }
   else
   {
-    std::cout << "Only .yaml configuration files are supported" << std::endl;
+    logging::warning() << "Only .yaml configuration files are supported" << std::endl;
     throw std::invalid_argument("File type not supported");
   }
 }
@@ -162,14 +163,14 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
     throw std::invalid_argument(msg);
   }
 
-  std::cout << "reading " << filesystem::absolute(mesh_file_path) << std::endl;
+  logging::important() << "Reading mesh file: " << filesystem::absolute(mesh_file_path) << std::endl;
 
   // check filetype
   const std::string fname = mesh_file_path.filename();
   const std::size_t str_len = fname.size();
   const std::string extension = fname.substr(str_len - 3, str_len);
 
-  std::cout << "extension:" << extension << std::endl;
+  logging::debug() << "extension: " << extension << std::endl;
   if (extension == "msh")
     GmshInterface::read_msh(filesystem::absolute(mesh_file_path), data.grid);
   else if (extension == "vtk")
@@ -222,13 +223,13 @@ void Preprocessor::build_flow_discretization_()
   else
     data.flow_numbering = p_unsplit_dofs;
 
-  std::cout << "build discr" << std::endl;
+  logging::debug() << "invoke discretization class" << std::endl;
   discr_edfm.build();
 
   // setup wells
   if (!config.wells.empty())
   {
-    std::cout << "setup wells" << std::endl;
+    logging::log() << "setup wells" << std::endl;
     WellManager well_mgr(config.wells, data, *data.flow_numbering);
     well_mgr.setup();
   }
@@ -236,8 +237,6 @@ void Preprocessor::build_flow_discretization_()
   // used for coupling later on
   if ( config.edfm_method != EDFMMethod::compartmental )
     pm_dfm_mgr->distribute_properties();
-
-  std::cout << "done flow discretization" << std::endl;
 }
 
 void Preprocessor::build_geomechanics_discretization_()

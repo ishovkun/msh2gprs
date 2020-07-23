@@ -1,4 +1,5 @@
 #include "OutputDataVTK.hpp"
+#include "logger/Logger.hpp"
 
 namespace gprs_data
 {
@@ -28,7 +29,7 @@ void OutputDataVTK::write_output(const std::string & output_path) const
 
 void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
 {
-  std::cout << "writing " << fname << std::endl;
+  logging::log() << "writing " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
   IO::VTKWriter::write_geometry(m_flow_grid, out);
@@ -98,7 +99,7 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
 
 void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) const
 {
-  std::cout << "writing " << fname << std::endl;
+  logging::log() << "writing " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
   // IO::VTKWriter::write_geometry(m_mech_grid, out);
@@ -226,7 +227,7 @@ void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) co
 
 void OutputDataVTK::save_dfm_data(const std::string & fname) const
 {
-  std::cout << "Saving DFM mesh file: " << fname << std::endl;
+  logging::log() << "Saving DFM mesh file: " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
   const auto & grid = _data.fracture_grid;
@@ -339,6 +340,7 @@ void OutputDataVTK::save_edfm_data(const std::string & fname) const
 
 void OutputDataVTK::save_wells_(const std::string & fname) const
 {
+  logging::log() << "writing " << fname << std::endl;
   IO::VTKWriter::write_well_trajectory(_data.well_vertices.points, _data.well_vertex_indices, fname);
 }
 

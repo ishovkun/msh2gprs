@@ -5,8 +5,15 @@ namespace logging {
 Logger * Logger::_p_logger = NULL;
 
 Logger::Logger()
-    : _verbosity(LogLevel::Debug)
-{}
+    : _verbosity(LogLevel::Debug), _file_stream_index(-1)
+{
+  add_stream(std::cout);
+}
+
+void Logger::add_stream(std::ostream & out)
+{
+  _streams.emplace_back(&out);
+}
 
 Logger::~Logger()
 {
@@ -29,6 +36,12 @@ void Logger::set_file(const std::string file_name)
   if (_fout.is_open())
     _fout.close();
   _fout.open(file_name.c_str());
+
+  if (_file_stream_index == _file_stream_undefined)
+  {
+    _file_stream_index = _streams.size();
+    add_stream(_fout);
+  }
 }
 
 void Logger::set_verbosity(const LogLevel verbosity)
@@ -43,28 +56,19 @@ void Logger::set_message_level(const LogLevel level)
 
 void Logger::print_prefix_(const LogLevel level)
 {
-  // if (_fount.is_open())  // timestamp
+  if (!_fout.is_open())
+    return;
 
   switch (level)
   {
-    case LogLevel::Debug:
-      _fout << "Debug     : ";
-      break;
-    case LogLevel::Message:
-      _fout << "Message   : ";
-      break;
-    case LogLevel::Important:
-      _fout << "Important : ";
-      break;
     case LogLevel::Warning:
       std::cout << "Warning: ";
-      _fout << "Warning   : ";
+      _fout << "\nWarning   : ";
       break;
     case LogLevel::Critical:
-      _fout << "Critical  : ";
+      _fout << "\nCritical  : ";
       break;
      default:
-       _fout << "Message  :";
        break;
   }
 }

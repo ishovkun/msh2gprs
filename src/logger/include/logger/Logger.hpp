@@ -2,6 +2,7 @@
 #include "Color.hpp"  // colors::Color
 #include <iostream>  // std::cout
 #include <fstream>  // std::ofstream
+#include <vector>   // std::vector
 #include <memory>   // std::unique_ptr
 
 namespace logging {
@@ -22,39 +23,24 @@ enum class LogLevel : int
  */
 class Logger {
  public:
-  /**
-   * Return reference to the logger
-   */
+  /** Return reference to the logger */
   static Logger & ref();
-  /**
-   * Set file to print secondary output into
-   */
+  /** Add output stream */
+  void add_stream(std::ostream & out);
+  /** Set file to print secondary output into */
   void set_file(const std::string file_name);
-  /**
-   * Set debugging level of the subsequent messages
-   */
+  /** Set debugging level of the subsequent messages */
   void set_verbosity(const LogLevel verbosity);
-  /**
-   * Set the level of the subsequent message
-   */
+  /* Set the level of the subsequent message */
   void set_message_level(const LogLevel level);
-  /**
-   * do the log
-   */
+  /* write the log */
   template <typename T>
+  // output operator
   Logger & operator<<(const T & data);
-
+  // Operator overloading for std::endl
   Logger & operator<<(std::ostream& (*os)(std::ostream&));
-
-  /**
-   * do the log
-   */
-   void print(const std::string & message, const LogLevel msg_level);
-  /**
-   * Destructor
-   */
+  /* * Destructor */
   ~Logger();
-
   Logger(Logger const&) = delete;
   void operator=(Logger const&) = delete;
 
@@ -72,6 +58,9 @@ class Logger {
   // ------------------ Variables ---------------------- //
   static Logger * _p_logger;  // pointer to the logger instannce
   std::ofstream _fout;  // output file stream
+  static constexpr int _file_stream_undefined = -1;
+  int _file_stream_index;
+  std::vector<std::ostream*> _streams;
   LogLevel _verbosity;           // current level of debugging
   LogLevel _msg_level;
 };
@@ -83,9 +72,8 @@ Logger & Logger::operator<<(const T & msg)
   {
     print_prefix_(_msg_level);
     select_color_(_msg_level);
-    std::cout << msg;
-    if (_fout.is_open())
-      _fout << msg;
+    for (auto * p_stream : _streams)
+      (*p_stream) << msg;
 
     reset_color_();
   }
