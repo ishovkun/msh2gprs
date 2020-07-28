@@ -136,12 +136,12 @@ void PolyhedralElementBase::build_fe_cell_data_()
         IntegrationRule3dAverage rule_cell(*this, tributary3d);
         break;
       }
-    case PolyhedronIntegrationRule::VerticesPointwise:
-      {
-        TributaryRegion3dVertices tributary3d(*this);
-        IntegrationRule3dAverage rule_cell(*this, tributary3d);
-        break;
-      }
+    // case PolyhedronIntegrationRule::VerticesPointwise:
+    //   {
+    //     TributaryRegion3dVertices tributary3d(*this);
+    //     IntegrationRule3dAverage rule_cell(*this, tributary3d);
+    //     break;
+    //   }
     default:
       throw std::invalid_argument("Integration rule unknown");
   }
@@ -170,6 +170,7 @@ FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
         return rule.get();
         break;
       }
+    case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::Full:
       {
         IntegrationRule2dFull rule(*this, iface, basis);
@@ -189,6 +190,7 @@ FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
 
   switch (_config.integration_rule)
   {
+    case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::Full:
       {
         IntegrationRuleFractureFull rule(*this, iface, basis);
@@ -222,6 +224,7 @@ void PolyhedralElementBase::build_tributary_()
         _tributary_2d = tributary2d.get();
         break;
       }
+    case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::Full:
       {
         // no need to build anothing

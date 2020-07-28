@@ -10,16 +10,16 @@ class TributaryRegion3dVertices : public TributaryRegion3dBase
  public:
   TributaryRegion3dVertices(PolyhedralElementBase & element);
   virtual ~TributaryRegion3dVertices() = default;
-
+  // get the volume of the tributary region index
+  virtual double volume(const size_t region_index) const override {return _vol_tot / _n_parent_vertices ;}
+  // returns the number of tributary regions
+  virtual size_t size() const noexcept override {return _cells.size();}
+  virtual double volume_center() const override {return _vol_tot;}
  protected:
-  void build_tributary_cell_faces_(const std::vector<mesh::Edge> & edges,
-                                   const mesh::Face & face,
-                                   std::vector<std::vector<size_t>> & tributary_faces,
-                                   angem::PointSet<3,double> & tributary_vertices);
-  void build_face_(const size_t vert1, const size_t vert2,
-                   const mesh::Face & face,
-                   std::vector<std::vector<size_t>> & tributary_faces,
-                   angem::PointSet<3,double> & tributary_vertices) const;
+  void mark_cells_();
+
+  double _vol_tot;
+  size_t _n_parent_vertices;
 };
 
 }  // end namespace discretization

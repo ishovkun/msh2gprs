@@ -16,6 +16,9 @@ class IntegrationRule3dAverage {
   virtual ~IntegrationRule3dAverage() = default;
  protected:
   void setup_storage_(PolyhedralElementBase & element, const TributaryRegion3dBase  & tributary);
+  void compute_fe_values_(const std::vector<size_t> &cells, FEPointData & dst);
+
+  PolyhedralElementBase & _element;
 };
 
 }  // end namespace discretization

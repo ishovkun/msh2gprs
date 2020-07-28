@@ -1,5 +1,6 @@
 #ifdef WITH_EIGEN
 #include "TributaryRegion3dFaces.hpp"
+#include <algorithm>  // iota
 
 namespace discretization {
 
@@ -18,6 +19,8 @@ TributaryRegion3dFaces::TributaryRegion3dFaces(PolyhedralElementBase & element)
     _tributary.push_back(create_pyramid_(face, vertices));
     _element._cell_gauss_points.push_back( _tributary.back().center() );
   }
+
+  mark_cells_();
 }
 
 angem::Polyhedron<double>
@@ -43,6 +46,23 @@ TributaryRegion3dFaces::create_pyramid_(const std::vector<size_t> & face,
   return pyramid;
 }
 
+void TributaryRegion3dFaces::mark_cells_()
+{
+  const auto & grid = _element._subgrid;
+  _cells.resize( _tributary.size() );
+  for( auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell  )
+  {
+    const Point c = cell->center();
+    for (size_t region=0; region<_tributary.size(); ++region)  // tributary regions
+      if (_tributary[region].point_inside(c))
+        _cells[region].push_back(cell->index());
+  }
+
+  _cells_center.reserve( grid.n_active_cells() );
+  std::transform(grid.begin_active_cells(), grid.end_active_cells(),
+                 std::back_inserter(_cells_center),
+                 [](const auto cell) {return cell.index();});
+}
 
 }  // end namespace discretization
 

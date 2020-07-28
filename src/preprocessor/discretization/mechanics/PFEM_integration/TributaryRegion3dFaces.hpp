@@ -14,6 +14,7 @@ class TributaryRegion3dFaces : public TributaryRegion3dBase
  protected:
   angem::Polyhedron<double> create_pyramid_(const std::vector<size_t> & face,
                                             const std::vector<angem::Point<3,double>> & vertices) const;
+  void mark_cells_();
 };
 
 }  // end namespace discretization
