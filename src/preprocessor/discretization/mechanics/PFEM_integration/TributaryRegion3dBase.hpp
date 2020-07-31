@@ -21,7 +21,7 @@ class TributaryRegion3dBase {
   // for some rules (e.g. pointwise) that would be a single cell per region
   inline const std::vector<std::size_t> & get(const size_t region_index) const noexcept
   {
-    assert( parent_vertex < size() && "Vertex index must be less the the number of vertices");
+    assert( region_index < size() && "Vertex index must be less the the number of vertices");
     return _cells[region_index];
   }
 

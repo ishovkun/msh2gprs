@@ -11,11 +11,13 @@ namespace discretization {
 class TributaryRegion2dVertices : public TributaryRegion2dBase
 {
  public:
-  TributaryRegion2dVertices(PolyhedralElementBase & element);
+  TributaryRegion2dVertices(PolyhedralElementBase & element,
+                            const size_t parent_face);
   virtual ~TributaryRegion2dVertices() = default;
 
  protected:
   void build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & face_poly);
+  void mark_faces_(const std::vector<std::size_t> & parent_verts);
 };
 
 }  // end namespace discretization

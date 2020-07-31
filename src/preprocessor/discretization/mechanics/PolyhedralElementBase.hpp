@@ -9,6 +9,7 @@
 namespace discretization {
 
 class IntegrationRuleFacesAverage;
+class TributaryRegion2dBase;
 
 /**
  * This is a base class for all polyhedral finite elements.
@@ -56,7 +57,7 @@ class PolyhedralElementBase : public FiniteElementBase
   // integration points in fractures
   void build_fe_fracture_data_();
   //
-  void build_tributary_();
+  void build_tributary_2d_(const size_t parent_face);
 
   const mesh::Cell & _parent_cell;                             // reference to the discretized cell
   const mesh::Mesh & _parent_grid;                             // grid the discrefized cell belongs to
@@ -67,13 +68,15 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
-  std::vector<std::vector<angem::Polygon<double>>> _tributary_2d;      // face tributary regions
+  // std::vector<std::vector<angem::Polygon<double>>> _tributary_2d;      // face tributary regions
+  std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;
 
   friend class TributaryRegion3dFaces;
   friend class TributaryRegion3dVertices;
   friend class TributaryRegion2dFaces;
   friend class TributaryRegion2dVertices;
   friend class IntegrationRule3dAverage;
+  friend class IntegrationRule2dBase;
   friend class IntegrationRule2dAverage;
   friend class IntegrationRule2dPointwise;
   friend class IntegrationRule2dFull;

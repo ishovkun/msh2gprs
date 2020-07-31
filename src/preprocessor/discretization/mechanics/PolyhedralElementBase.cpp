@@ -150,27 +150,26 @@ void PolyhedralElementBase::build_fe_cell_data_()
 FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
                                                        const angem::Basis<3,double> basis)
 {
-  if (_tributary_2d.empty())
-    build_tributary_();
+  build_tributary_2d_(iface);
 
   if (_basis_functions.empty())
     throw std::runtime_error("should be initialized");
 
   switch (_config.integration_rule)
   {
-    case PolyhedronIntegrationRule::VerticesPointwise:
-      {
-        IntegrationRule2dPointwise rule(*this, _tributary_2d, iface);
-        return rule.get();
-        break;
-      }
+    // case PolyhedronIntegrationRule::VerticesPointwise:
+    //   {
+    //     // IntegrationRule2dPointwise rule(*this, _tributary_2d, iface);
+    //     // return rule.get();
+    //     break;
+      // }
+    case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        IntegrationRule2dAverage rule(*this, _tributary_2d, iface, basis);
+        IntegrationRule2dAverage rule(*this, *_tributary_2d[iface], iface, basis);
         return rule.get();
         break;
       }
-    case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::Full:
       {
         IntegrationRule2dFull rule(*this, iface, basis);
@@ -185,21 +184,20 @@ FiniteElementData PolyhedralElementBase::get_face_data(const size_t iface,
 FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
                                                            const angem::Basis<3,double> basis)
 {
-  if (_tributary_2d.empty())
-    build_tributary_();
+  build_tributary_2d_(iface);
 
   switch (_config.integration_rule)
   {
-    case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::Full:
       {
         IntegrationRuleFractureFull rule(*this, iface, basis);
         return rule.get();
         break;
       }
+    case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        IntegrationRuleFractureAverage rule(*this, _tributary_2d, iface, basis);
+        IntegrationRuleFractureAverage rule(*this, *_tributary_2d[iface], iface, basis);
         return rule.get();
         break;
       }
@@ -208,33 +206,31 @@ FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
   }
 }
 
-void PolyhedralElementBase::build_tributary_()
+void PolyhedralElementBase::build_tributary_2d_(const size_t parent_face)
 {
-  switch (_config.integration_rule)
-{
-    case PolyhedronIntegrationRule::VerticesPointwise:
-      {
-        TributaryRegion2dVertices tributary2d(*this);
-        _tributary_2d = tributary2d.get();
+  if ( _tributary_2d.empty() )
+    _tributary_2d.resize( _parent_cell.faces().size(), nullptr );
+
+  if (!_tributary_2d[parent_face])
+    switch (_config.integration_rule)
+    {
+      // case PolyhedronIntegrationRule::VerticesPointwise:
+      //   {
+      //     TributaryRegion2dVertices tributary2d(*this);
+      //     _tributary_2d = tributary2d.get();
+      //   break;
+      // }
+      case PolyhedronIntegrationRule::FacesAverage:
+        _tributary_2d[parent_face] = std::make_shared<TributaryRegion2dFaces>(*this, parent_face);
         break;
-      }
-    case PolyhedronIntegrationRule::FacesAverage:
-      {
-        TributaryRegion2dFaces tributary2d(*this);
-        _tributary_2d = tributary2d.get();
+      case PolyhedronIntegrationRule::VerticesAverage:
+        _tributary_2d[parent_face] = std::make_shared<TributaryRegion2dVertices>(*this, parent_face);
         break;
-      }
-    case PolyhedronIntegrationRule::VerticesAverage:
-    case PolyhedronIntegrationRule::Full:
-      {
-        // no need to build anothing
+      case PolyhedronIntegrationRule::Full:
         break;
-      }
-    default:
-      {
+      default:
         throw std::invalid_argument("Tributary region not implemented");
-      }
-  }
+    }
 }
 
 }  // end namespace discretization

@@ -39,7 +39,6 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/FeValuesTetrahedron.cpp
   discretization/mechanics/FeValuesHexahedron.cpp
   discretization/mechanics/FeValuesQuadrangle.cpp
-  discretization/mechanics/PFEM_integration/TributaryRegion2dBase.cpp
   discretization/mechanics/PFEM_integration/TributaryRegion3dBase.cpp
   discretization/mechanics/PFEM_integration/TributaryRegion3dFaces.cpp
   discretization/mechanics/PFEM_integration/TributaryRegion3dVertices.cpp
