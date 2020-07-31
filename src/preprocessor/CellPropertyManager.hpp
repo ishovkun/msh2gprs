@@ -37,13 +37,13 @@ class CellPropertyManager
 
  private:
   void print_setup_message_();
-  void assign_expressions_(const DomainConfig& domain,
-                           std::vector<mu::Parser> & parsers,
-                           std::vector<double> & vars);
+  void assign_variables_(std::vector<mu::Parser> & parsers, std::vector<double> & vars);
+  void assign_expressions_(const DomainConfig& domain, std::vector<mu::Parser> & parsers);
   // return the number of matched cells
   size_t evaluate_expressions_(const DomainConfig& domain,
                                std::vector<mu::Parser> & parsers,
                                std::vector<double> & vars);
+  void assign_custom_functions_(std::vector<mu::Parser> & parsers);
   void build_permeability_function_();
   void build_porosity_function_();
   void build_flow_output_property_keys_();

@@ -1,5 +1,7 @@
 #include "CellPropertyManager.hpp"
 #include "discretization/flow/DoFNumbering.hpp"
+#include "property_expressions/value_functions.hpp"
+#include "logger/Logger.hpp"
 
 namespace gprs_data {
 
@@ -39,7 +41,8 @@ void CellPropertyManager::generate_properties()
     const std::size_t n_expressions = domain.expressions.size();
     // set up muparser
     std::vector<mu::Parser> parsers(n_expressions);
-    assign_expressions_(domain, parsers, vars);
+    assign_variables_(parsers, vars);
+    assign_expressions_(domain, parsers);
     // run muparser
     n_matched_cells += evaluate_expressions_(domain, parsers, vars);
   }
@@ -103,25 +106,31 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
   return count;
 }
 
-void CellPropertyManager::assign_expressions_(const DomainConfig& domain,
-                                              std::vector<mu::Parser> & parsers,
-                                              std::vector<double> & vars)
+void CellPropertyManager::assign_variables_(std::vector<mu::Parser> & parsers,
+                                            std::vector<double> & vars)
 {
-  const std::size_t n_expressions = domain.expressions.size();
-  const std::size_t n_variables = config.all_vars.size();
-  for (std::size_t i = 0; i < n_expressions; ++i)
-  {
-    // define variables
-    for (std::size_t j = 0; j < n_variables; ++j) {
+  const size_t n_variables = config.all_vars.size();
+  for (auto & parser : parsers)
+    for (std::size_t j = 0; j < n_variables; ++j)
+    {
       try {
-        parsers[i].DefineVar(config.all_vars[j], &vars[j]);
-      } catch (mu::Parser::exception_type &e) {
+        parser.DefineVar(config.all_vars[j], &vars[j]);
+      }
+      catch (mu::Parser::exception_type &e) {
         const std::string error_msg = "Expression error: " + std::string(e.GetMsg()) +
                                       "\nwhen setting variable '" + config.all_vars[j] + "'";
         throw std::runtime_error(error_msg);
       }
     }
-    // define expression
+}
+
+void CellPropertyManager::assign_expressions_(const DomainConfig& domain,
+                                              std::vector<mu::Parser> & parsers)
+{
+  const std::size_t n_expressions = domain.expressions.size();
+  assign_custom_functions_(parsers);
+  for (std::size_t i = 0; i < n_expressions; ++i)
+  {
     try {
       parsers[i].SetExpr(domain.expressions[i]);
     } catch (mu::Parser::exception_type &e) {
@@ -133,17 +142,25 @@ void CellPropertyManager::assign_expressions_(const DomainConfig& domain,
   }
 }
 
+void CellPropertyManager::assign_custom_functions_(std::vector<mu::Parser> & parsers)
+{
+  for (auto & parser : parsers)
+  {
+    parser.DefineFun("clip", property_functions::clip);
+  }
+}
+
 void CellPropertyManager::print_setup_message_()
 {
-  std::cout << "Setting up function parsers with the following"
-            << " set of variables: "<< std::endl;
+  logging::log() << "Setting up function parsers with the following"
+                 << " set of variables: "<< std::endl;
   for (std::size_t i=0; i<config.all_vars.size(); ++i)
   {
-    std::cout << config.all_vars[i] << "\t";
+    logging::log() << config.all_vars[i] << "\t";
     if ((i + 1) % 3 == 0)
-      std::cout << std::endl;
+      logging::log() << std::endl;
   }
-  std::cout << std::endl;
+  logging::log() << std::endl;
 }
 
 void CellPropertyManager::build_permeability_function_()
