@@ -184,9 +184,11 @@ class Postprocessor:
 
     def readMechVTKData(self, fname):
         reader = self.matrix_mech_vtk_ouput_reader
-        fnum_str = "%09d"%(self.output_file_number)
         if (self.output_file_number == 0):
-            fnum_str = "%09d"%(self.output_file_number + 1)
+            fnum_str = "%09d"%(self.output_file_number)
+            # fnum_str = "%09d"%(self.output_file_number + 1)
+        else:
+            fnum_str = "%09d"%(self.output_file_number - 1)
 
         vtk_file_path = self.case_path + "/OUTPUT.vtk_output/" + fname + \
                         "." + fnum_str + ".vtk"
