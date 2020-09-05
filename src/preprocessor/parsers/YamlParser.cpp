@@ -223,8 +223,10 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
     else if (key == "center")
       center = it->second.as<std::vector<double>>();
     else
-      std::cout << "\t\tattribute " << key
-                << " unknown: skipping" << std::endl;
+    {
+      std::cout << "\t\tattribute " << key << " unknown:" << std::endl;
+      throw std::invalid_argument("attribute unknown");
+    }
   }
 
   std::cout << "Making embedded fracture" << std::endl;
