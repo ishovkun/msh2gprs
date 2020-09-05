@@ -108,6 +108,7 @@ std::vector<DiscreteFractureConfig> EmbeddedFractureManager::generate_dfm_config
   {
     const auto & conf = config[it.second];
     DiscreteFractureConfig dfm;
+    dfm.region = conf.region;
     dfm.label = it.first;
     dfm.conductivity = conf.conductivity;
     dfm.aperture = conf.aperture;
