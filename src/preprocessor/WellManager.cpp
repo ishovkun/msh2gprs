@@ -8,8 +8,9 @@ using Point = angem::Point<3,double>;
 
 WellManager::WellManager(const std::vector<WellConfig> & config,
                          SimData & data,
-                         const discretization::DoFNumbering & dofs)
-    : m_config(config), m_data(data), m_dofs(dofs)
+                         const discretization::DoFNumbering & dofs,
+                         const EDFMMethod edfm_method)
+    : m_config(config), m_data(data), m_dofs(dofs), _edfm_method(edfm_method)
 {}
 
 void WellManager::setup()
@@ -43,7 +44,7 @@ void WellManager::setup_simple_well_(Well & well)
   // well assigned with a single coordinate
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
-    const std::unique_ptr<angem::Polyhedron<double>> p_poly_cell = cell->polyhedron();
+    const auto p_poly_cell = cell->polyhedron();
     // define sufficiantly-large artificial segment to compute intersection with cell
     const Point cell_center = p_poly_cell->center();
     const double h = cell_center.distance(p_poly_cell->get_points()[0]);
@@ -58,26 +59,13 @@ void WellManager::setup_simple_well_(Well & well)
     {
       if (angem::collision(p1, p2, *p_poly_cell, section_data, tol))
     {
-      if (cell->ultimate_parent() != *cell)
-      {
+      if (cell->ultimate_parent() != *cell || _edfm_method == EDFMMethod::compartmental )
+        case_penetration_no_edfm_(well, cell->index(), direction, section_data);
+      else
         throw std::runtime_error("well crosses refined cell " +
                                  std::to_string(cell->index()) + "(" +
                                  std::to_string(cell->ultimate_parent().index()) +
                                  "). not implemented yet");
-      }
-
-      assert( section_data.size() == 2 );
-
-      well.connected_volumes.push_back(m_dofs.cell_dof(cell->index()));
-      m_well_connected_cells.back().push_back(cell->index());
-      const double segment_length = section_data[0].distance(section_data[1]);
-
-      well.segment_length.push_back(segment_length);
-      well.directions.push_back(direction);
-      // for visulatization
-      m_data.well_vertex_indices.emplace_back();
-      m_data.well_vertex_indices.back().first = m_data.well_vertices.insert(section_data[0]);
-      m_data.well_vertex_indices.back().second = m_data.well_vertices.insert(section_data[1]);
     }
     }
     catch (const std::exception & e)
@@ -260,6 +248,25 @@ angem::Point<3,double> WellManager::get_bounding_box_(const std::size_t icell) c
   dir = {0, 0, 1};
   result[2] = get_bounding_interval(dir, cell_poly.get());
   return result;
+}
+
+void WellManager::case_penetration_no_edfm_(Well & well,
+                                            size_t cell_index,
+                                            const angem::Point<3,double> & direction,
+                                            const std::vector<Point> & section_data)
+{
+  assert( section_data.size() == 2 );
+
+  well.connected_volumes.push_back(m_dofs.cell_dof(cell_index));
+  m_well_connected_cells.back().push_back(cell_index);
+  const double segment_length = section_data[0].distance(section_data[1]);
+
+  well.segment_length.push_back(segment_length);
+  well.directions.push_back(direction);
+  // for visulatization
+  m_data.well_vertex_indices.emplace_back();
+  m_data.well_vertex_indices.back().first = m_data.well_vertices.insert(section_data[0]);
+  m_data.well_vertex_indices.back().second = m_data.well_vertices.insert(section_data[1]);
 }
 
 }  // end namespace gprs_data

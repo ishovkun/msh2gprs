@@ -230,7 +230,7 @@ void Preprocessor::build_flow_discretization_()
   if (!config.wells.empty())
   {
     logging::log() << "setup wells" << std::endl;
-    WellManager well_mgr(config.wells, data, *data.flow_numbering);
+    WellManager well_mgr(config.wells, data, *data.flow_numbering, config.edfm_method);
     well_mgr.setup();
   }
 
