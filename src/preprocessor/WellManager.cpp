@@ -2,6 +2,7 @@
 #include "angem/Collisions.hpp"
 #include <numeric>  // std::accumulate
 #include "VTKWriter.hpp" // debugging, provides io::VTKWriter
+#include "logger/Logger.hpp"
 
 namespace gprs_data {
 
@@ -51,9 +52,14 @@ void WellManager::setup_simple_well_(Well & well)
         setup_simple_well_to_fracture_(well, cell->index());
       }
     }
-    else if (processed_cells.find(cell->ultimate_parent().index()) == processed_cells.end())
+    else  // (p)EDFM case
     {
-      setup_simple_well_matrix_(well, cell->ultimate_parent().index());
+      // we should process merged cells only once
+      //  here we pass ultimate_parent since split cells are merged back together
+      if (processed_cells.find(cell->ultimate_parent().index()) == processed_cells.end())
+        setup_simple_well_matrix_(well, cell->ultimate_parent().index());
+      // single edfm segments are not merged, we process all of them
+      setup_simple_well_to_fracture_(well, cell->index());
     }
   if ( well.segment_data.empty() )
     throw std::invalid_argument("Well " + well.name + " has no connected volumes");
@@ -230,6 +236,8 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
       {
         if (well.force_fracture_connection())
         {
+          logging::debug() << "forcing " << well.name << " to connect to frac face " << face->index()
+                           << std::endl;
           const auto center = face->center();
           p1.x() = center.x();
           p2.x() = center.x();
@@ -243,7 +251,8 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
       }
       if (!section_data.empty())
       {
-        if (poly.point_inside(section_data.front()))
+        if (poly.point_inside(section_data.front(), /*tol=*/ 0.01 * h) ||
+            section_data.size() == 2)
         {
           well.segment_data.emplace_back();
           auto & segment = well.segment_data.back();
