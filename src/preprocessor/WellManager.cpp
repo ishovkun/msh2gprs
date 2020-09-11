@@ -217,66 +217,73 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
   {
     if (_dofs.is_active_face(face->index()))  // it's a fracture
     {
-      if (well.force_fracture_connection())
+      const auto poly = face->polygon();
+      std::vector<Point> section_data;
+      const Point direction(0, 0, 1);
+      Point p1 = well.coordinate;
+      Point p2 = well.coordinate;
+      const double h = face->vertex_coordinates()[1].distance(face->vertex_coordinates()[0]);
+      p1.z() = poly.support(direction).z() + h;
+      p2.z() = poly.support(-direction).z() - h;
+      angem::collision(p1, p2, poly.plane(), section_data);
+      if (section_data.empty())
       {
-        std::cout << "fuck" << std::endl;
-        abort();
-      }
-      else
-      {
-        const auto poly = face->polygon();
-        std::vector<Point> section_data;
-        const Point direction(0, 0, 1);
-        Point p1 = well.coordinate;
-        Point p2 = well.coordinate;
-        p1.z() = poly.support(direction).z();
-        p2.z() = poly.support(-direction).z();
-        angem::collision(p1, p2, poly.plane(), section_data);
-        if (!section_data.empty())
+        if (well.force_fracture_connection())
         {
-          if (poly.point_inside(section_data.front()))
-          {
-            well.segment_data.emplace_back();
-            auto & segment = well.segment_data.back();
-            segment.dof = _dofs.face_dof(face->index());
-            const auto & plane = poly.plane();
-            const Point tangent1 = plane.project_vector({0, 0, 1}).normalize();
-            const Point tangent2 = tangent1.cross(plane.normal()).normalize();
-            // well.connected_volumes.push_back(frac_dof);
-            const auto & frac_cv = _data.cv_data[segment.dof];
-            if (section_data.size() == 1)
-            {
-              // find angle alpha between well direcion and its projection onto frac plane
-              // segment_length = 2*r_well / sin(alpha) -- stole from Robin Hui
-              const double cos_alpha = direction.dot(tangent1);
-              segment.length = well.radius / std::sqrt( 1 - cos_alpha*cos_alpha );
-              // find a bounding box for the intersection
-              angem::Line<3,double> l1(section_data.front(), tangent1);
-              angem::Line<3,double> l2(section_data.front(), tangent2);
-              std::vector<Point>  sect1, sect2;
-              angem::collision(l1, poly, sect1);
-              angem::collision(l2, poly, sect2);
-              assert( sect1.size() == 2 );
-              assert( sect2.size() == 2 );
-              segment.bounding_box = {sect1.front().distance(sect1.back()),
-                                      sect2.front().distance(sect2.back()), 0};
-            }
-            else  // well is colinear to the segment size() == 2
-            {
-              segment.length = section_data.back().distance(section_data.front());
-              angem::Line<3,double> l2(0.5 * (section_data.front() + section_data.back()),
-                                       tangent2);
-              std::vector<Point> sect2;
-              angem::collision(l2, poly, sect2);
-              segment.bounding_box = {segment.length, sect2.front().distance(sect2.back()), 0};
-            }
-
-            segment.direction = direction;
-            // IO::VTKWriter::write_geometry(_data.grid, cell,
-            //                               "output/geometry-" + std::to_string(cell.index()) + ".vtk");
-          }
+          const auto center = face->center();
+          p1.x() = center.x();
+          p2.x() = center.x();
+          p1.y() = center.y();
+          p2.y() = center.y();
+          angem::collision(p1, p2, poly.plane(), section_data);
+          if (section_data.empty())
+            throw std::runtime_error("could not connect well " + well.name +
+                                     " in cell " + std::to_string(cell_index));
         }
+      }
+      if (!section_data.empty())
+      {
+        if (poly.point_inside(section_data.front()))
+        {
+          well.segment_data.emplace_back();
+          auto & segment = well.segment_data.back();
+          segment.dof = _dofs.face_dof(face->index());
+          const auto & plane = poly.plane();
+          const Point tangent1 = plane.project_vector({0, 0, 1}).normalize();
+          const Point tangent2 = tangent1.cross(plane.normal()).normalize();
+          // well.connected_volumes.push_back(frac_dof);
+          const auto & frac_cv = _data.cv_data[segment.dof];
+          if (section_data.size() == 1)
+          {
+            // find angle alpha between well direcion and its projection onto frac plane
+            // segment_length = 2*r_well / sin(alpha) -- stole from Robin Hui
+            const double cos_alpha = direction.dot(tangent1);
+            segment.length = well.radius / std::sqrt( 1 - cos_alpha*cos_alpha );
+            // find a bounding box for the intersection
+            angem::Line<3,double> l1(section_data.front(), tangent1);
+            angem::Line<3,double> l2(section_data.front(), tangent2);
+            std::vector<Point>  sect1, sect2;
+            angem::collision(l1, poly, sect1);
+            angem::collision(l2, poly, sect2);
+            assert( sect1.size() == 2 );
+            assert( sect2.size() == 2 );
+            segment.bounding_box = {sect1.front().distance(sect1.back()),
+                                    sect2.front().distance(sect2.back()), 0};
+          }
+          else  // well is colinear to the segment size() == 2
+          {
+            segment.length = section_data.back().distance(section_data.front());
+            angem::Line<3,double> l2(0.5 * (section_data.front() + section_data.back()),
+                                     tangent2);
+            std::vector<Point> sect2;
+            angem::collision(l2, poly, sect2);
+            segment.bounding_box = {segment.length, sect2.front().distance(sect2.back()), 0};
+          }
 
+          segment.direction = direction;
+          // IO::VTKWriter::write_geometry(_data.grid, cell,
+          //                               "output/geometry-" + std::to_string(cell.index()) + ".vtk");
+        }
       }
     }
   }

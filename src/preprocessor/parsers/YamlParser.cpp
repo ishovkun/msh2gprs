@@ -554,6 +554,8 @@ void YamlParser::read_well(const YAML::Node & node,
       well.name = it->second.as<std::string>();
     else if (key == "radius")
       well.radius = it->second.as<double>();
+    else if (key == "force_connect_fractures")
+      well.force_connect_fractures = it->second.as<bool>();
     else if (key == "nodes")
     {
       const std::string line = it->second.as<std::string>();
