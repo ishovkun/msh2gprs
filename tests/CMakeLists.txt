@@ -1,5 +1,4 @@
 # msh2gprs_root/tests/CMakeLists.txt
-# enable_testing()
 
 # shape function test polyhedral element direct with r0 subdivision
 set(test_dir "${CMAKE_SOURCE_DIR}/examples/mech/pfem-direct-r0-hex")
@@ -30,3 +29,9 @@ add_test( dfm_shear_mech_compare_bc ${CMAKE_COMMAND} -E compare_files
             ${test_dir}/output/gm_bcond.txt ${test_dir}/gm_bcond_test.txt)
 add_test( dfm_shear_mech_compare_frac ${CMAKE_COMMAND} -E compare_files
             ${test_dir}/output/gm_DFM.txt ${test_dir}/gm_DFM_test.txt)
+
+# pure flow, single edfm + simple well forced to connect
+set(test_dir "${CMAKE_SOURCE_DIR}/examples/flow/simple-well-connect-edfm-2d")
+add_test( well_edfm_force_connect "${PROJECT_BINARY_DIR}/msh2gprs" ${test_dir}/config.yaml)
+add_test( well_edfm_force_connect_compare ${CMAKE_COMMAND} -E compare_files
+            ${test_dir}/output/wells.txt ${test_dir}/wells_reference.txt)
