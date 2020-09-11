@@ -93,6 +93,7 @@ struct WellConfig
   double radius;
   std::vector<angem::Point<3,double>> coordinates;
   std::vector<bool> perforated;
+  bool force_connect_fractures = false;
 };
 
 struct CellPropertyConfig

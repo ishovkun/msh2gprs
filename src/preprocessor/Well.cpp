@@ -5,7 +5,8 @@ Well::Well(const WellConfig & config)
     :
     name(config.name),
     radius(config.radius),
-    perforated(config.perforated)
+    perforated(config.perforated),
+    _force_frac_connect(config.force_connect_fractures)
 {
   assert(!config.coordinates.empty());
   assert(config.radius > 0 );

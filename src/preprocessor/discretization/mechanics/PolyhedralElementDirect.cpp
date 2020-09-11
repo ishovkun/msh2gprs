@@ -26,7 +26,6 @@ PolyhedralElementDirect::PolyhedralElementDirect(const mesh::Cell & cell,
   // solve problems on faces
   try {
     build_face_boundary_conditions_();
-    // build_face_boundary_conditions_(false);
     // construct the laplace system matrix for the cell volume laplace equation
     build_cell_system_matrix_();
     // impose BC's and solve laplace system to get shape functions
