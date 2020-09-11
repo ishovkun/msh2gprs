@@ -44,7 +44,7 @@ class Cell
   // get const vector of vertex indices
   inline const std::vector<std::size_t> & vertices() const { return m_vertices; }
   // get sorted (by vertex index) vector of vertices in the order given by polyhedron() method
-  std::vector<size_t> sorted_vertices() const;
+  // std::vector<size_t> sorted_vertices() const;
   // get the coordinates of cell vertices
   std::vector<Point> vertex_coordinates() const;
   // get vector of neighbors

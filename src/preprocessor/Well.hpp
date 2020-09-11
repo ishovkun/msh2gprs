@@ -32,12 +32,12 @@ class Well
 
   // well data after computing mesh collision
   // flow volumes: cells and fractures intersected by the well
-  std::vector<std::size_t> connected_volumes;
+  // std::vector<std::size_t> connected_volumes;
   // segment length at each intersection
-  std::vector<double> segment_length;
-  std::vector<angem::Point<3,double>> directions;
+  // std::vector<double> segment_length;
+  // std::vector<angem::Point<3,double>> directions;
   // productivity at each intersection
-  std::vector<double> indices;
+  // std::vector<double> indices;
   bool _force_frac_connect;
-  std::vector<discretization::WellSegment> _segments;
+  std::vector<discretization::WellSegment> segment_data;
 };

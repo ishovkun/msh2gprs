@@ -511,7 +511,8 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
     out << well.name << "\tGROUP1\t";
     assert( !well.connected_volumes.empty() );
     // connected volume + j_volume_index (1 for unstructured)
-    out << well.connected_volumes[0] << " 1 ";
+    // out << well.connected_volumes[0] << " 1 ";
+    out << well.segment_data.front().dof << " 1 ";
     // reference depth
     out << -well.reference_depth << " /" << std::endl;
   }
@@ -521,14 +522,14 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
   out << "-- name\tcell\tidk\tidk\tidk\topen\tidk\tWI\trad" << std::endl;
   for (const auto & well : _data.wells)
   {
-    for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
+    // for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
+    for (const auto & segment : well.segment_data)
     {
       out << well.name << "\t";
-      assert( !well.connected_volumes.empty() );
-      out << well.connected_volumes[i] + 1 << "\t";
+      out << segment.dof + 1 << "\t";
       // j, k1:k2 open sat_table_number
       out << "1\t1\t1\tOPEN\t1*\t";
-      out << well.indices[i] * transmissibility_conversion_factor << "\t";
+      out << segment.wi * transmissibility_conversion_factor << "\t";
       out << 2*well.radius << "\t";  // adgprs needs well diameter
       out << "/" << std::endl;
     }

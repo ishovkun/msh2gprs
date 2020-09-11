@@ -29,7 +29,7 @@ void WellManager::setup()
     }
 
     compute_well_index_(well);
-    if (well.connected_volumes.empty())
+    if (well.segment_data.empty())
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
     _data.wells.push_back( std::move(well) );
   }
@@ -39,21 +39,23 @@ void WellManager::setup_simple_well_(Well & well)
 {
   const auto & grid = _data.grid;
   well.reference_depth = -well.coordinate.z();
-  _well_connected_cells.emplace_back();
+  // _well_connected_cells.emplace_back();
   std::unordered_set<size_t> processed_cells;
   // well assigned with a single coordinate
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     if (cell->ultimate_parent() != *cell || _edfm_method == EDFMMethod::compartmental )
     {
-      const bool intersection_found = setup_simple_well_element_(well, cell->index());
+      const bool intersection_found = setup_simple_well_matrix_(well, cell->index());
       if (intersection_found)
+      {
         setup_simple_well_to_fracture_(well, cell->index());
+      }
     }
     else if (processed_cells.find(cell->ultimate_parent().index()) == processed_cells.end())
     {
-      setup_simple_well_element_(well, cell->ultimate_parent().index());
+      setup_simple_well_matrix_(well, cell->ultimate_parent().index());
     }
-  if ( well.connected_volumes.empty() )
+  if ( well.segment_data.empty() )
     throw std::invalid_argument("Well " + well.name + " has no connected volumes");
 }
 
@@ -141,25 +143,28 @@ double get_bounding_interval(const angem::Point<3,double>     & direction,
 
 void WellManager::compute_well_index_(Well &well)
 {
-  well.indices.resize(well.connected_volumes.size());
-  for (std::size_t i = 0; i<well.connected_volumes.size(); ++i)
+  for (auto & segment : well.segment_data)
   {
-    const auto & cv = _data.cv_data[well.connected_volumes[i]];
+    const auto & cv = _data.cv_data[segment.dof];
     if (cv.type == discretization::ControlVolumeType::cell)  // matrix
-      compute_WI_matrix_(well, i);
+      compute_WI_matrix_(well, segment);
     else // fracture
-      compute_WI_frac_(well, well.connected_volumes[i]);
+      compute_WI_frac_(well, segment);
   }
 
-  const double wi_sum = std::accumulate(well.indices.begin(), well.indices.end(), 0.0);
+  // const double wi_sum = std::accumulate(well.indices.begin(), well.indices.end(), 0.0);
+  const double wi_sum = std::accumulate(well.segment_data.begin(), well.segment_data.end(),
+                                        0.0, [](const double sofar, const auto & segment)
+                                             {return segment.wi + sofar;});
   if (wi_sum == 0)
     throw std::runtime_error( "All well indices are zero for well: " + well.name );
 }
 
-angem::Point<3,double> WellManager::get_bounding_box_(const std::size_t icell) const
+std::array<double,3> WellManager::get_bounding_box_(const std::size_t icell) const
 {
   const auto cell_poly = _data.grid.cell(icell).polyhedron();
-  angem::Point<3,double> dir, result;
+  angem::Point<3,double> dir;
+  std::array<double,3> result;
   dir = {1, 0, 0};
   result[0] = get_bounding_interval(dir, cell_poly.get());
   dir = {0, 1, 0};
@@ -169,35 +174,37 @@ angem::Point<3,double> WellManager::get_bounding_box_(const std::size_t icell) c
   return result;
 }
 
-bool WellManager::setup_simple_well_element_(Well & well, size_t cell_index)
+bool WellManager::setup_simple_well_matrix_(Well & well, size_t cell_index)
 {
   const auto & cell = _data.grid.cell(cell_index);
   const auto p_poly_cell = cell.polyhedron();
-  // define sufficiantly-large artificial segment to compute intersection with cell
-  const Point cell_center = p_poly_cell->center();
-  const double h = cell_center.distance(p_poly_cell->get_points()[0]);
   Point p1 = well.coordinate;
   Point p2 = well.coordinate;
-  p1.z() = cell_center.z() + h * 10;
-  p2.z() = cell_center.z() - h * 10;
-
   static const Point direction = {0, 0, -1};
+  const double h = cell.vertex_coordinates()[1].distance(cell.vertex_coordinates()[0]);
+  p1.z() = p_poly_cell->support(direction) .z() - h;
+  p2.z() = p_poly_cell->support(-direction).z() + h;
+
   std::vector<Point> section_data;
   const double tol = 1e-6*fabs(p1.z()-p2.z());
   if (angem::collision(p1, p2, *p_poly_cell, section_data, tol))
   {
     assert( section_data.size() == 2 );
-
-    well.connected_volumes.push_back(_dofs.cell_dof(cell_index));
-    _well_connected_cells.back().push_back(cell_index);
     const double segment_length = section_data[0].distance(section_data[1]);
 
-    well.segment_length.push_back(segment_length);
-    well.directions.push_back(direction);
     // for visulatization
     _data.well_vertex_indices.emplace_back();
     _data.well_vertex_indices.back().first = _data.well_vertices.insert(section_data[0]);
     _data.well_vertex_indices.back().second = _data.well_vertices.insert(section_data[1]);
+
+    well.segment_data.emplace_back();
+    discretization::WellSegment & segment = well.segment_data.back();
+    segment.dof = _dofs.cell_dof(cell_index);
+    segment.element_id = cell_index;
+    segment.length = segment_length;
+    segment.direction = direction;
+    segment.perforated = true;
+    segment.bounding_box = get_bounding_box_(cell_index);
     return true;
   }
   return false;
@@ -229,39 +236,42 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
         {
           if (poly.point_inside(section_data.front()))
           {
-            const size_t frac_dof = _dofs.face_dof(face->index());
-            well.connected_volumes.push_back(frac_dof);
-            const auto & frac_cv = _data.cv_data[frac_dof];
-            std::array<double,3> bbox;
-            double segment_length;
+            well.segment_data.emplace_back();
+            auto & segment = well.segment_data.back();
+            segment.dof = _dofs.face_dof(face->index());
+            const auto & plane = poly.plane();
+            const Point tangent1 = plane.project_vector({0, 0, 1}).normalize();
+            const Point tangent2 = tangent1.cross(plane.normal()).normalize();
+            // well.connected_volumes.push_back(frac_dof);
+            const auto & frac_cv = _data.cv_data[segment.dof];
             if (section_data.size() == 1)
             {
               // find angle alpha between well direcion and its projection onto frac plane
               // segment_length = 2*r_well / sin(alpha) -- stole from Robin Hui
-              const auto & plane = poly.plane();
-              Point tangent1 = plane.project_vector({0, 0, 1}).normalize();
               const double cos_alpha = direction.dot(tangent1);
-              segment_length = well.radius / std::sqrt( 1 - cos_alpha*cos_alpha );
+              segment.length = well.radius / std::sqrt( 1 - cos_alpha*cos_alpha );
               // find a bounding box for the intersection
               angem::Line<3,double> l1(section_data.front(), tangent1);
-              const auto tangent2 = tangent1.cross(plane.normal()).normalize();
               angem::Line<3,double> l2(section_data.front(), tangent2);
               std::vector<Point>  sect1, sect2;
               angem::collision(l1, poly, sect1);
               angem::collision(l2, poly, sect2);
               assert( sect1.size() == 2 );
               assert( sect2.size() == 2 );
-              std::array<double,3> bounding_box = {sect1.front().distance(sect1.back()),
-                                                   sect2.front().distance(sect2.back()),
-                                                   0};
+              segment.bounding_box = {sect1.front().distance(sect1.back()),
+                                      sect2.front().distance(sect2.back()), 0};
             }
-            else
+            else  // well is colinear to the segment size() == 2
             {
-              segment_length = section_data.back().distance(section_data.front());
+              segment.length = section_data.back().distance(section_data.front());
+              angem::Line<3,double> l2(0.5 * (section_data.front() + section_data.back()),
+                                       tangent2);
+              std::vector<Point> sect2;
+              angem::collision(l2, poly, sect2);
+              segment.bounding_box = {segment.length, sect2.front().distance(sect2.back()), 0};
             }
 
-            well.segment_length.push_back(segment_length);
-            well.directions.push_back(direction);
+            segment.direction = direction;
             // IO::VTKWriter::write_geometry(_data.grid, cell,
             //                               "output/geometry-" + std::to_string(cell.index()) + ".vtk");
           }
@@ -273,29 +283,27 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
  
 }
 
-void WellManager::compute_WI_matrix_(Well & well, const size_t segment)
+void WellManager::compute_WI_matrix_(Well & well, discretization::WellSegment & segment)
 {
-  const std::size_t icell = _well_connected_cells.back()[segment];
+  // const std::size_t icell = _well_connected_cells.back()[segment];
   // const angem::Tensor2<3,double> perm = _data.get_permeability(icell);
-  const auto & perm = _data.cv_data[well.connected_volumes[segment]].permeability;
-  angem::Point<3,double> dx_dy_dz = get_bounding_box_(icell);
+  const auto & perm = _data.cv_data[segment.dof].permeability;
+  const auto & dx_dy_dz = segment.bounding_box;
   angem::Point<3,double> productivity;
   // project on plane yz
   productivity[0] = compute_productivity(perm(1,1), perm(2,2), dx_dy_dz[1], dx_dy_dz[2],
-                                         well.segment_length[segment]*fabs(well.directions[segment][0]),
+                                         segment.length*fabs(segment.direction[0]),
                                          well.radius);
   // project on plane xz
   productivity[1] = compute_productivity(perm(0,0), perm(2,2), dx_dy_dz[0], dx_dy_dz[2],
-                                         well.segment_length[segment]*
-                                         fabs(well.directions[segment][1]),
+                                         segment.length* fabs(segment.direction[1]),
                                          well.radius);
   // project on plane xy
   productivity[2] = compute_productivity(perm(0,0), perm(1,1), dx_dy_dz[0], dx_dy_dz[1],
-                                         well.segment_length[segment]
-                                         *fabs(well.directions[segment][2]),
-                                           well.radius);
-  const double wi = productivity.norm();
-  if (productivity[0] < 0 or productivity[1] < 0 or productivity[2] < 0 or std::isnan(wi))
+                                         segment.length*fabs(segment.direction[2]),
+                                         well.radius);
+  segment.wi = productivity.norm();
+  if (productivity[0] < 0 or productivity[1] < 0 or productivity[2] < 0 or std::isnan(segment.wi))
   {
     const std::string msg = "Wrong directional WI for well " + well.name + ": "
         + std::to_string( productivity[0] ) + " "
@@ -303,13 +311,27 @@ void WellManager::compute_WI_matrix_(Well & well, const size_t segment)
         + std::to_string(productivity[2]);
     throw std::runtime_error(msg);
   }
-
-    well.indices[segment] = wi;
 }
 
-void WellManager::compute_WI_frac_(Well & well, const size_t face_index)
+void WellManager::compute_WI_frac_(Well & well, discretization::WellSegment & segment)
 {
- 
+  // refer to the slide: fracture wellbore index of my cedfm presentation
+  // fracture-well intersection is decomposed into a radial flow part and
+  // a reduced linear flow part
+
+  const auto & frac = _data.cv_data[segment.dof];
+  const double perm = frac.permeability(0,0);
+  // full linear slot
+  const double wi_lin_slot = 8 * frac.aperture * segment.bounding_box[0] * perm;
+  // reduced linear slot
+  const double wi_red_slot = 8 * frac.aperture * (segment.length - 2 * well.radius) * perm;
+
+  const double wi_rad_slot = compute_productivity(perm, perm,
+                                                  segment.bounding_box[0],
+                                                  segment.bounding_box[1],
+                                                  frac.aperture, well.radius,
+                                                  /*skin =*/ 0);
+  segment.wi = std::min(wi_red_slot + wi_rad_slot, wi_lin_slot);
 }
 
 }  // end namespace gprs_data

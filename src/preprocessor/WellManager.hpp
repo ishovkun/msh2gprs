@@ -35,18 +35,18 @@ class WellManager
   void setup_simple_well_(Well & well);
   void setup_segmented_well_(Well & well);
   void compute_well_index_(Well & well);
-  angem::Point<3,double> get_bounding_box_(const std::size_t icell) const;
-  bool setup_simple_well_element_(Well & well, size_t cell_index);
+  std::array<double,3> get_bounding_box_(const std::size_t icell) const;
+  bool setup_simple_well_matrix_(Well & well, size_t cell_index);
   // returns false if no intersection found
   void setup_simple_well_to_fracture_(Well & well, size_t cell_index);
-  void compute_WI_matrix_(Well & well, const size_t segment);
-  void compute_WI_frac_(Well & well, const size_t face_index);
+  void compute_WI_matrix_(Well & well, discretization::WellSegment & segment);
+  void compute_WI_frac_(Well & well, discretization::WellSegment & segment);
 
   const std::vector<WellConfig> _config;
   SimData & _data;
   const discretization::DoFNumbering & _dofs;
   const EDFMMethod _edfm_method;
-  std::vector<std::vector<size_t>> _well_connected_cells;
+  // std::vector<std::vector<size_t>> _well_connected_cells;
 };
 
 }  // end namespace preprocessor

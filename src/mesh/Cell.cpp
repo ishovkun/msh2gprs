@@ -222,12 +222,12 @@ bool Cell::has_vertex(const size_t vert) const
   return false;
 }
 
-std::vector<size_t> Cell::sorted_vertices() const
-{
-  std::vector<size_t> result(vertices());
-  std::sort(result.begin(), result.end());
-  return result;
-}
+// std::vector<size_t> Cell::sorted_vertices() const
+// {
+//   std::vector<size_t> result(vertices());
+//   std::sort(result.begin(), result.end());
+//   return result;
+// }
 
 std::vector<vertex_pair> Cell::edges() const noexcept
 {
