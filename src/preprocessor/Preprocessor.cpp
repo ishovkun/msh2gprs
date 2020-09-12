@@ -26,6 +26,7 @@ Preprocessor::Preprocessor(const Path config_file_path)
   read_config_file_(config_file_path);
   // infer grid file path
   const Path config_dir_path = config_file_path.parent_path();
+  setup_grid_(config_dir_path);
   m_output_dir = config_dir_path / config.output_dir;
 }
 
@@ -38,6 +39,7 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
   }
   else if (config.mesh_config.type == MeshType::cartesian)
   {
+    logging::log() << "Building Cartesian grid";
     data.grid = mesh::CartesianMeshBuilder(config.mesh_config.cartesian);
   }
   else throw std::invalid_argument("Invalid mesh format");
