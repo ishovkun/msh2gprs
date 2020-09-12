@@ -509,9 +509,7 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
   for (const auto & well : _data.wells)
   {
     out << well.name << "\tGROUP1\t";
-    assert( !well.connected_volumes.empty() );
-    // connected volume + j_volume_index (1 for unstructured)
-    // out << well.connected_volumes[0] << " 1 ";
+    assert( !well.segment_data.empty() && "Well does not contain connection data" );
     out << well.segment_data.front().dof << " 1 ";
     // reference depth
     out << -well.reference_depth << " /" << std::endl;

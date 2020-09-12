@@ -101,6 +101,9 @@ class Mesh
   // Returns an iterator referring to the past-the-end active cell
   inline active_cell_const_iterator end_active_cells() const {return active_cell_const_iterator(nullptr);}
 
+  // allocation optimization
+  void reserve_vertices(size_t nv);
+
   /* -------------------------- RAW cell iterators, use with caution ---------- */
   //  create cell iterator for the first cell
   //  NOTE: RAW cell iterator, use with caution
@@ -186,6 +189,7 @@ class Mesh
   void coarsen_cells();
 
  protected:
+  void validate_vertex_(size_t v) const;
   // find edge neighboring cells
   std::vector<size_t> neighbors_indices_(const vertex_pair & edge) const;
 
@@ -241,18 +245,12 @@ class Mesh
   std::vector<angem::Point<3,double>>   m_vertices;      // vector of vertex coordinates
   std::vector<Cell>                     m_cells;
   std::vector<Face>                     m_faces;
-  public:
+ public:
   std::vector<std::vector<std::size_t>> m_vertex_cells;  // vertex neighboring cells
   std::vector<std::vector<std::size_t>> m_vertex_faces;  // vertex neighboring faces
-  private:
-  // Used as a tmp container when splitting faces for dfm
-  std::vector<std::size_t> m_faces_marked_for_split;
-  // to count active cells
-  size_t _n_inactive_cells;
-  // for keeping track of cell vertices during cell splitting
-  angem::PointSet<3, double> m_vertices_from_cell_splitting;
-  // for keeping track of cell vertices during cell splitting
-  std::vector<size_t> m_vertices_from_cell_splitting_indices;
+
+ private:
+  size_t _n_inactive_cells;  //
 
   friend class Subdivision;
   friend class FaceSplitter;

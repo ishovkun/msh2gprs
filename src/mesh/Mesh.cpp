@@ -83,9 +83,9 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
 }
 
 size_t Mesh::insert_face(const std::vector<std::size_t> & ivertices,
-                          const int                        vtk_id,
-                          const int                        marker,
-                          const std::size_t                face_parent)
+                         const int                        vtk_id,
+                         const int                        marker,
+                         const std::size_t                face_parent)
 {
   FaceTmpData f;
   f.vertices = ivertices;
@@ -132,8 +132,11 @@ size_t Mesh::insert_face_(const FaceTmpData & f)
     // assert(m_faces[face_index].m_vtk_id == f.vtk_id);
   }
   for (const size_t vertex : f.vertices)
+  {
+    validate_vertex_(vertex);
     if (!std::count( m_vertex_faces[vertex].begin(), m_vertex_faces[vertex].end(), face_index))
       m_vertex_faces[vertex].push_back(face_index);
+  }
 
   return face_index;
 }
@@ -276,10 +279,7 @@ Mesh & Mesh::operator=(const Mesh & other)
   m_faces = other.m_faces;
   m_vertex_cells = other.m_vertex_cells;
   m_vertex_faces = other.m_vertex_faces;
-  m_faces_marked_for_split = other.m_faces_marked_for_split;
   _n_inactive_cells = other._n_inactive_cells;
-  m_vertices_from_cell_splitting = other.m_vertices_from_cell_splitting;
-  m_vertices_from_cell_splitting_indices = other.m_vertices_from_cell_splitting_indices;
   for (auto & cell : m_cells)
   {
     cell.pm_grid_vertices = &m_vertices;
@@ -310,7 +310,26 @@ std::vector<size_t> Mesh::neighbors_indices_(const vertex_pair & edge) const
 size_t Mesh::insert_vertex(const angem::Point<3,double> & coord)
 {
   m_vertices.push_back(coord);
-  return m_vertices.size() - 1;
+  m_vertex_cells.resize(n_vertices());
+  m_vertex_faces.resize(n_vertices());
+  return n_vertices() - 1;
 }
+
+void Mesh::reserve_vertices(size_t nv)
+{
+  if (nv > n_vertices())
+  {
+    m_vertices.reserve(nv);
+    m_vertex_cells.reserve(nv);
+    m_vertex_faces.reserve(nv);
+  }
+}
+
+void Mesh::validate_vertex_(size_t v) const
+{
+  if (v >= n_vertices())
+    throw std::invalid_argument("invalid vertex index " + std::to_string(v));
+}
+
 
 }  // end namespace mesh

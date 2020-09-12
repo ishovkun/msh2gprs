@@ -23,7 +23,9 @@ namespace gprs_data {
 Preprocessor::Preprocessor(const Path config_file_path)
 {
   // read configuration file
+  logging::log() << "reading config file: " << config_file_path << std::endl;
   read_config_file_(config_file_path);
+  logging::log() << "finished reading config" << std::endl;
   // infer grid file path
   const Path config_dir_path = config_file_path.parent_path();
   setup_grid_(config_dir_path);
