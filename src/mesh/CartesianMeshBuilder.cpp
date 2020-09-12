@@ -118,8 +118,6 @@ void CartesianMeshBuilder::setup_cells_(Mesh & grid) const
   const int bottom_boundary = 4;
   const int top_boundary = 5;
 
-  std::cout << "\nn_vertices() = " << n_vertices() << std::endl;
-  std::cout << "n_cells = " << n_cells() << std::endl;
   grid.cells().reserve(n_cells());
   for (size_t k = 0; k < nz(); ++k)
     for (size_t j = 0; j < ny(); ++j)

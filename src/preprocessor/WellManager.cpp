@@ -1,7 +1,6 @@
 #include "WellManager.hpp"
 #include "angem/Collisions.hpp"
 #include <numeric>  // std::accumulate
-#include "VTKWriter.hpp" // debugging, provides io::VTKWriter
 #include "logger/Logger.hpp"
 
 namespace gprs_data {
@@ -290,8 +289,6 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
           }
 
           segment.direction = direction;
-          // IO::VTKWriter::write_geometry(_data.grid, cell,
-          //                               "output/geometry-" + std::to_string(cell.index()) + ".vtk");
         }
       }
     }
