@@ -40,7 +40,9 @@ private:
   void build_geomechanics_discretization_();
   // read yaml config file
   void read_config_file_(const Path config_file_path);
-  // read .msh grid file
+  // create grid
+  void setup_grid_(const Path config_dir_path);
+  // read .msh or .vtk grid file
   void read_mesh_file_(const Path mesh_file_path);
   // create an output directory. If it already exists, cleans it first.
   // WARNING: this can destroy your files.

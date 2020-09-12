@@ -2,6 +2,7 @@
 
 #include "angem/Polygon.hpp"
 #include "config/FiniteElementConfig.hpp"
+#include "config/MeshConfig.hpp"
 
 #include <map>
 #include <memory> // shared / unique_ptr
@@ -171,7 +172,8 @@ struct PreprocessorConfig
                                               OutputFormat::postprocessor};
 
   // the name of gmsh grid file
-  std::string mesh_file;
+  MeshConfig mesh_config;
+  // std::string mesh_file;
   // output file names
   std::string output_dir            = "output";
   // GPRS format

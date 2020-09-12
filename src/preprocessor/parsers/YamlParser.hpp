@@ -17,6 +17,7 @@ class YamlParser
 
  private:
   // sections
+  void section_mesh(const YAML::Node & node);
   // var type can be 0 or 1: flow domain or geomechanics domain
   void section_domain_props(const YAML::Node &         node,
                             const ExpressionDomainType var_type);
@@ -28,6 +29,7 @@ class YamlParser
   // subsections
   void boundary_conditions_faces(const YAML::Node & node);
   void boundary_conditions_nodes(const YAML::Node & node);
+  void subsection_cartesian_grid(const YAML::Node & node);
   // subsections
   void embedded_fracture(const YAML::Node       & node,
                          EmbeddedFractureConfig & conf);

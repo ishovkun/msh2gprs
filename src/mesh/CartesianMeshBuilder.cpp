@@ -124,11 +124,7 @@ void CartesianMeshBuilder::setup_cells_(Mesh & grid) const
           grid.insert_face({v1, v3, v4, v2}, angem::QuadrangleID, bottom_boundary);
         else if (k == nz() - 1)
           grid.insert_face({v5, v7, v8, v6}, angem::QuadrangleID, top_boundary);
-
       }
-
-
-
 }
 
 }  // end namespace mesh

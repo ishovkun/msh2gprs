@@ -1,6 +1,7 @@
 #include "Preprocessor.hpp"
 #include "parsers/YamlParser.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
+#include "mesh/CartesianMeshBuilder.hpp"
 #include "mesh/io/VTKReader.hpp"
 #include "BoundaryConditionManager.hpp"
 #include "discretization/mechanics/DiscretizationFEM.hpp"
@@ -25,9 +26,21 @@ Preprocessor::Preprocessor(const Path config_file_path)
   read_config_file_(config_file_path);
   // infer grid file path
   const Path config_dir_path = config_file_path.parent_path();
-  const Path grid_file_path = config_dir_path / config.mesh_file;
-  read_mesh_file_(grid_file_path);
   m_output_dir = config_dir_path / config.output_dir;
+}
+
+void Preprocessor::setup_grid_(const Path config_dir_path)
+{
+  if (config.mesh_config.type == MeshType::file)
+  {
+    const Path grid_file_path = config_dir_path / config.mesh_config.file;
+    read_mesh_file_(grid_file_path);
+  }
+  else if (config.mesh_config.type == MeshType::cartesian)
+  {
+    data.grid = mesh::CartesianMeshBuilder(config.mesh_config.cartesian);
+  }
+  else throw std::invalid_argument("Invalid mesh format");
 }
 
 void Preprocessor::run()

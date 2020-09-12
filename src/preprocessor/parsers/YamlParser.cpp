@@ -27,7 +27,12 @@ void YamlParser::parse_file(const std::string & fname)
     std::cout << "Reading section: " << key  << std::endl;
 
     if (key == "Mesh file")
-      config.mesh_file = it->second.as<std::string>();
+    {
+      config.mesh_config.type = MeshType::file;
+      config.mesh_config.file = it->second.as<std::string>();
+    }
+    else if (key == "Mesh")
+      section_mesh(it->second);
     else if (key == "Domain Flow Properties")
       section_domain_props(it->second, ExpressionDomainType::flow);
     else if (key == "Domain Mechanical Properties")
@@ -649,6 +654,53 @@ void YamlParser::section_multiscale(const YAML::Node & node)
     else
       std::cout << "\tSkipping unknown keyword" << std::endl;
   }
+}
+
+void YamlParser::section_mesh(const YAML::Node & node)
+{
+  auto & conf = config.mesh_config;
+  for (auto it = node.begin(); it!=node.end(); ++it)
+  {
+    const std::string key = it->first.as<std::string>();
+    std::cout << "\treading key " << key << std::endl;
+    if (key == "file")
+    {
+      conf.type = MeshType::file;
+      conf.file = it->second.as<std::string>();
+    }
+    else if (key == "cartesian")
+    {
+      conf.type = MeshType::cartesian;
+      subsection_cartesian_grid(it->second);
+    }
+    else throw std::invalid_argument("Unknown key " + key);
+  }
+}
+
+void YamlParser::subsection_cartesian_grid(const YAML::Node & node)
+{
+  auto & conf = config.mesh_config.cartesian;
+  std::array<size_t,3> dimens = {1, 1, 1};
+  angem::Point<3,double> origin = {0,0,0};
+  angem::Point<3,double> corner = {1,1,1};
+  for (auto it = node.begin(); it!=node.end(); ++it)
+  {
+    const std::string key = it->first.as<std::string>();
+    if (key == "dimens")
+      dimens = it->second.as<std::array<size_t,3>>();
+    else if (key == "origin")
+      origin = it->second.as<std::vector<double>>();
+    else if (key == "corner")
+      corner = it->second.as<std::vector<double>>();
+  }
+
+  const auto diff = corner - origin;
+  for (auto value : dimens)
+    if (value == 0) throw std::invalid_argument("Cartesian grid dimension must be > 0");
+  conf.dx.assign(dimens[0], diff[0] / dimens[0]);
+  conf.dy.assign(dimens[1], diff[1] / dimens[1]);
+  conf.dz.assign(dimens[2], diff[2] / dimens[2]);
+  conf.origin = origin;
 }
 
 }  // end namespace
