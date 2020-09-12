@@ -35,3 +35,9 @@ set(test_dir "${CMAKE_SOURCE_DIR}/examples/flow/simple-well-connect-edfm-2d")
 add_test( well_edfm_force_connect "${PROJECT_BINARY_DIR}/msh2gprs" ${test_dir}/config.yaml)
 add_test( well_edfm_force_connect_compare ${CMAKE_COMMAND} -E compare_files
             ${test_dir}/output/wells.txt ${test_dir}/wells_reference.txt)
+
+# cartesian grid builder
+set(test_dir "${CMAKE_SOURCE_DIR}/examples/flow/cartesian_grid_3d")
+add_test( cartesian_grid_builder "${PROJECT_BINARY_DIR}/msh2gprs" ${test_dir}/config.yaml)
+add_test( cartesian_grid_builder_compare ${CMAKE_COMMAND} -E compare_files
+            ${test_dir}/output/flow_reservoir_mesh.vtk ${test_dir}/flow_reservoir_mesh_reference.vtk)

@@ -1,0 +1,41 @@
+# Mesh file: grid.msh
+
+Mesh:
+  # file : grid.msh
+  cartesian:
+    dimens: [10, 10, 2]
+    dimens: [3,3,1]
+    origin : [-50,-50,0]
+    corner : [50,50,-10]
+
+# Embedded Fractures :
+#   # method: compartmental         # simple
+#   method: simple
+#   min_distance_to_vertices: 0.001
+#   fracture:
+#     center: [0, 0, 0]
+#     length: 50
+#     width: 200
+#     strike: 30
+#     dip: 90
+#     friction angle: 30
+#     dilation angle: 0
+#     aperture: 1e-2
+#     conductivity: 200
+
+Domain Flow Properties:
+  domain:
+    label: 0
+    Coupled: true
+    PORO: 0.2
+    PERM: 1
+    SWAT: 1
+    PRESSURE: 1
+
+Wells:
+  well:
+    name: INJ
+    radius: 0.1
+    nodes:
+      -15 -5 0
+    force_connect_fractures: true
