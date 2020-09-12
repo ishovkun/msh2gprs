@@ -4,6 +4,7 @@ Embedded Fractures :
 #   method: compartmental
   mech-method: discrete
   subdivision : [refinement, 0]
+  integration_rule : faces_average
   solver : [direct, 0]
 #   dfem-msrsb-tol: 1e-8
 #   fracture:
