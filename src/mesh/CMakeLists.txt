@@ -17,6 +17,7 @@ ADD_LIBRARY(mesh
   CellSplitter.cpp
   FractureTip.cpp
   MeshStatsComputer.cpp
+  CartesianMeshBuilder.cpp
   io/VTKReader.cpp
 )
 
