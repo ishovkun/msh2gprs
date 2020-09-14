@@ -28,6 +28,9 @@ ADD_LIBRARY(preprocessor
   MultiScaleDataMech.cpp
   GridEntityNumberingManager.cpp
   UnionFind.cpp
+  intersections/GridIntersectionSearcher.cpp
+  intersections/UniformCartesianGrid.cpp
+  intersections/Mapper.cpp
   discretization/mechanics/DiscretizationFEM.cpp
   discretization/mechanics/PolyhedralElementBase.cpp
   discretization/mechanics/PolyhedralElementMSRSB.cpp
@@ -54,7 +57,6 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/PFEM_integration/IntegrationRuleFractureFull.cpp
   discretization/mechanics/PFEM_integration/IntegrationRule3dPointwise.cpp
   discretization/mechanics/PFEM_integration/FaceSorter.cpp
-  SearchGrid.cpp
 )
 
 SET_TARGET_PROPERTIES (

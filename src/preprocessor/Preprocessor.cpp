@@ -3,6 +3,7 @@
 #include "gmsh_interface/GmshInterface.hpp"
 #include "mesh/CartesianMeshBuilder.hpp"
 #include "mesh/io/VTKReader.hpp"
+#include "intersections/GridIntersectionSearcher.hpp"
 #include "BoundaryConditionManager.hpp"
 #include "discretization/mechanics/DiscretizationFEM.hpp"
 #include "discretization/flow/DiscretizationTPFA.hpp"
@@ -53,6 +54,9 @@ void Preprocessor::run()
   pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, config.domains, data);
   logging::log() << "Generating properties" << std::endl;
   pm_property_mgr->generate_properties();
+
+  logging::log() << "Initializing grid searcher" << std::endl;
+  GridIntersectionSearcher grid_searcher(data.grid);
 
   // create discrete fracture manager
   logging::log() << "Initializing Fracture managers" << std::endl;
