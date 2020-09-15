@@ -33,7 +33,8 @@ void EmbeddedFractureManager::split_cells()
     std::vector<size_t> cells_to_split;
     // iteratively shift fracture if it collides with any grid vertices
     size_t iter = 0;
-    while (!find_edfm_cells_(*frac.body, cells_to_split))
+    // while (!find_edfm_cells_(*frac.body, cells_to_split))
+    while (!find_edfm_cells_fast_(*frac.body, cells_to_split))
     {
       cells_to_split.clear();
       if (++iter > 100)
@@ -100,6 +101,37 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
 
   return true;
 }
+
+bool EmbeddedFractureManager::find_edfm_cells_fast_(angem::Polygon<double> & fracture, std::vector<size_t> & cells)
+{
+  angem::CollisionGJK<double> collision;
+  for (const size_t cell_index : m_data.grid_searcher->collision(fracture))
+  {
+    const auto & cell = m_grid.cell(cell_index);
+    const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
+    if (collision.check(fracture, *polyhedron))
+    {
+      cells.push_back(cell.index());
+
+      // check if some vertices are too close to the fracture
+      // and if so move a fracture a little bit
+      const std::vector<Point> & vertices = polyhedron->get_points();
+      for (const Point & vertex : vertices)
+      {
+        const double h = polyhedron->center().distance(vertex);
+        const double min_dist = h * _min_dist_to_node;
+        if ( std::fabs( fracture.plane().signed_distance(vertex)) < min_dist )
+        {
+          const Point shift = h/50 * fracture.plane().normal();
+          fracture.move(shift);
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 
 std::vector<DiscreteFractureConfig> EmbeddedFractureManager::generate_dfm_config()
 {

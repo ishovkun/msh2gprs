@@ -82,6 +82,7 @@ class EmbeddedFractureManager
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells);
+  bool find_edfm_cells_fast_(angem::Polygon<double> & fracture, std::vector<size_t> & cells);
   void find_edfm_cells_and_faces_();
   // split internal grid cells due to intersection with embedded fracture
   void split_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells, const int face_marker);

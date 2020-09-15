@@ -33,6 +33,7 @@ class WellManager
 
  protected:
   void setup_simple_well_(Well & well);
+  void setup_simple_well_fast_(Well & well);
   void setup_segmented_well_(Well & well);
   void compute_well_index_(Well & well);
   std::array<double,3> get_bounding_box_(const std::size_t icell) const;

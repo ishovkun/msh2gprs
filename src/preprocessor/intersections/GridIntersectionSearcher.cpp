@@ -97,7 +97,8 @@ void GridIntersectionSearcher::process_(const size_t search_cell,
                                         std::unordered_set<size_t> & result)
 {
   for (const size_t cell_index : _mapper.mapping(search_cell) )
-    result.insert(cell_index);
+    if (_grid.cell(cell_index).is_active())
+      result.insert(cell_index);
 }
 
 double GridIntersectionSearcher::step_(size_t search_cell,
@@ -132,7 +133,7 @@ double GridIntersectionSearcher::step_(size_t search_cell,
 std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<double> & polygon)
 {
   const angem::Point<3,double> vertical(0,0,1);
-  if (std::fabs(polygon.normal().dot(vertical)) - 1.0 < 1e-6)
+  if (std::fabs(polygon.normal().dot(vertical) - 1.0) < 1e-6)
     throw std::invalid_argument("Horizontal fractures not supported");
 
   const auto & sg = _mapper.get_search_grid();

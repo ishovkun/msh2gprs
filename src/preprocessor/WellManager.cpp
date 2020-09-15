@@ -21,7 +21,10 @@ void WellManager::setup()
     Well well(conf);
     std::cout << "setting up " << well.name << std::endl;
     if (well.simple())
-      setup_simple_well_(well);
+    {
+      // setup_simple_well_(well);
+      setup_simple_well_fast_(well);
+    }
     else
     {
       throw std::invalid_argument("Segmented wells not set up yet");
@@ -33,6 +36,42 @@ void WellManager::setup()
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
     _data.wells.push_back( std::move(well) );
   }
+}
+
+void WellManager::setup_simple_well_fast_(Well & well)
+{
+  if (!_data.grid_searcher)
+    throw std::runtime_error("Method is not supported without a valid grid searcher");
+  auto & searcher = *_data.grid_searcher;
+  auto p1 = well.coordinate, p2 = well.coordinate;
+  p1[2] = searcher.top();
+  p2[2] = searcher.bottom();
+  angem::LineSegment<double> segment(p1, p2);
+  std::unordered_set<size_t> processed_cells;
+  for (const size_t cell_index : searcher.collision(segment))
+  {
+    const auto & cell = _data.grid.cell(cell_index);
+    const size_t parent_index = cell.ultimate_parent().index();
+    if (parent_index == cell_index || _edfm_method == EDFMMethod::compartmental )
+    {
+      const bool intersection_found = setup_simple_well_matrix_(well, cell_index);
+      if (intersection_found)
+      {
+        setup_simple_well_to_fracture_(well, cell_index);
+      }
+    }
+    else  // (p)EDFM case
+    {
+      // we should process merged cells only once
+      //  here we pass ultimate_parent since split cells are merged back together
+      if (processed_cells.find(parent_index) == processed_cells.end())
+        setup_simple_well_matrix_(well, parent_index);
+      // single edfm segments are not merged, we process all of them
+      setup_simple_well_to_fracture_(well, cell_index);
+    }
+  }
+  if ( well.segment_data.empty() )
+    throw std::invalid_argument("Well " + well.name + " has no connected volumes");
 }
 
 void WellManager::setup_simple_well_(Well & well)
@@ -48,7 +87,6 @@ void WellManager::setup_simple_well_(Well & well)
       const bool intersection_found = setup_simple_well_matrix_(well, cell->index());
       if (intersection_found)
       {
-        std::cout << "cell->index() = " << cell->index() << std::endl;
         setup_simple_well_to_fracture_(well, cell->index());
       }
     }
@@ -63,18 +101,6 @@ void WellManager::setup_simple_well_(Well & well)
     }
   if ( well.segment_data.empty() )
     throw std::invalid_argument("Well " + well.name + " has no connected volumes");
-
-  if (_data.grid_searcher)
-  {
-    auto & searcher = *_data.grid_searcher;
-    auto p1 = well.coordinate, p2 = well.coordinate;
-    p1[2] = searcher.top();
-    p2[2] = searcher.bottom();
-    angem::LineSegment<double> segment(p1, p2);
-    for (const size_t icell : searcher.collision(segment))
-      std::cout << "icell = " << icell << std::endl;
-  }
-  exit(0);
 }
 
 void WellManager::setup_segmented_well_(Well & well)
