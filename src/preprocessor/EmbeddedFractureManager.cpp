@@ -72,7 +72,6 @@ void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
 bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture,
                                                std::vector<size_t> & cells)
 {
-  // performs fast collision check
   angem::CollisionGJK<double> collision;
 
   for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
