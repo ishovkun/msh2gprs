@@ -141,12 +141,12 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
   if (bot[2] < bottom()) bot[2] = bottom();
   bot[2] += 1e-2 * std::fabs(sg.stepping(2));
 
-  auto top = polygon.support({0,0,1});
+  auto top = polygon.support(vertical);
   if (top[2] > this->top()) top[2] = this->top();
   top[2] -= 1e-2 * std::fabs(sg.stepping(2));
 
   const int start_k = sg.get_ijk(sg.find_cell(bot))[2];
-  const int end_k = sg.get_ijk(sg.find_cell(bot))[2];
+  const int end_k = sg.get_ijk(sg.find_cell(top))[2];
   std::unordered_set<size_t> result;
   for (size_t k = start_k; k < end_k; ++k)
   {
@@ -155,7 +155,7 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
     const angem::Plane<double> section_plane(/*origin=*/{0, 0, z}, /*normal*/vertical);
     std::vector<angem::Point<3,double>> intersection;
     angem::collision(polygon, section_plane, intersection);
-    assert(!intersection.empty());
+    assert(intersection.size() == 2);
     angem::LineSegment<double> segment(intersection[0], intersection[1]);
     for (const size_t icell : collision(segment))
       result.insert(icell);
