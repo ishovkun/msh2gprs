@@ -66,7 +66,7 @@ void WellManager::setup_simple_well_(Well & well)
 
   if (_data.grid_searcher)
   {
-    const auto & searcher = *_data.grid_searcher;
+    auto & searcher = *_data.grid_searcher;
     auto p1 = well.coordinate, p2 = well.coordinate;
     p1[2] = searcher.top();
     p2[2] = searcher.bottom();

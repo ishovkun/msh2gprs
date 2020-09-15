@@ -36,7 +36,7 @@ double GridIntersectionSearcher::get_highest_bound_(const size_t direction) cons
 
 
 std::vector<size_t>
-GridIntersectionSearcher::collision(const angem::LineSegment<double> & segment) const
+GridIntersectionSearcher::collision(const angem::LineSegment<double> & segment)
 {
   const auto & sg = _mapper.get_search_grid();
   std::unordered_set<size_t> result;
@@ -94,7 +94,7 @@ double GridIntersectionSearcher::get_t_(const angem::LineSegment<double> & segme
 }
 
 void GridIntersectionSearcher::process_(const size_t search_cell,
-                                        std::unordered_set<size_t> & result) const
+                                        std::unordered_set<size_t> & result)
 {
   for (const size_t cell_index : _mapper.mapping(search_cell) )
     result.insert(cell_index);
@@ -127,6 +127,39 @@ double GridIntersectionSearcher::step_(size_t search_cell,
     }
   }
   return t_new;
+}
+
+std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<double> & polygon)
+{
+  const angem::Point<3,double> vertical(0,0,1);
+  if (std::fabs(polygon.normal().dot(vertical)) - 1.0 < 1e-6)
+    throw std::invalid_argument("Horizontal fractures not supported");
+
+  const auto & sg = _mapper.get_search_grid();
+  auto bot = polygon.support({0, 0, -1});
+  if (bot[2] < bottom()) bot[2] = bottom();
+  bot[2] += 1e-2 * std::fabs(sg.stepping(2));
+
+  auto top = polygon.support({0,0,1});
+  if (top[2] > this->top()) top[2] = this->top();
+  top[2] -= 1e-2 * std::fabs(sg.stepping(2));
+
+  const int start_k = sg.get_ijk(sg.find_cell(bot))[2];
+  const int end_k = sg.get_ijk(sg.find_cell(bot))[2];
+  std::unordered_set<size_t> result;
+  for (size_t k = start_k; k < end_k; ++k)
+  {
+    // z-center of the layer
+    const double z = sg.origin()[2] + sg.stepping(2) * (k + 0.5);
+    const angem::Plane<double> section_plane(/*origin=*/{0, 0, z}, /*normal*/vertical);
+    std::vector<angem::Point<3,double>> intersection;
+    angem::collision(polygon, section_plane, intersection);
+    assert(!intersection.empty());
+    angem::LineSegment<double> segment(intersection[0], intersection[1]);
+    for (const size_t icell : collision(segment))
+      result.insert(icell);
+  }
+  return std::vector<size_t>(result.begin(), result.end());
 }
 
 }  // end namespace gprs_data

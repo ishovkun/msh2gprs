@@ -60,7 +60,7 @@ insert_cell_(const std::vector<std::size_t> & ivertices,
              const int                        marker)
 {
   // parent so that function can be reused for adding cells after splitting
-  const std::size_t new_cell_index = n_cells();
+  const std::size_t new_cell_index = n_cells_total();
   std::vector<std::size_t> face_indices;
   face_indices.reserve(take_faces.size());
 
@@ -165,7 +165,7 @@ active_face_const_iterator Mesh::begin_active_faces() const
 
 void Mesh::coarsen_cells()
 {
-  if ( n_cells() == n_active_cells() )  // no need to clear
+  if ( n_cells_total() == n_active_cells() )  // no need to clear
     return;
 
   // find all deleted cells

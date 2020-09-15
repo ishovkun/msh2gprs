@@ -10,7 +10,7 @@ DoFNumbering * GridEntityNumberingManager::get_numbering()
 {
   DoFNumbering * pdn = new DoFNumbering;
   // cell numbering
-  pdn->m_cells.resize( _grid.n_cells(), pdn->m_unmarked );
+  pdn->m_cells.resize( _grid.n_cells_total(), pdn->m_unmarked );
   size_t icell = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell, ++icell)
     pdn->m_cells[cell->index()] = icell;

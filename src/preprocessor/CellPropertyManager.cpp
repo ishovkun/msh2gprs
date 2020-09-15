@@ -10,7 +10,7 @@ CellPropertyManager(const CellPropertyConfig & cell_properties,
                     const std::vector<DomainConfig> & domain_configs,
                     SimData & data)
     : config(cell_properties), m_data(data), domains(domain_configs),
-      m_shift(config.n_default_vars()), m_n_unrefined_cells(data.grid.n_cells())
+      m_shift(config.n_default_vars()), m_n_unrefined_cells(data.grid.n_cells_total())
 {}
 
 void CellPropertyManager::generate_properties()
@@ -22,7 +22,7 @@ void CellPropertyManager::generate_properties()
   // set up container
   m_data.cell_properties.resize(n_variables);
   for (auto & property : m_data.cell_properties)
-    property.assign(m_data.grid.n_cells(), 0);
+    property.assign(m_data.grid.n_cells_total(), 0);
 
   // save variables name for output
   m_data.property_names.resize(n_variables - m_shift);
@@ -35,7 +35,7 @@ void CellPropertyManager::generate_properties()
   // loop various domain configs:
   // they may have different number of variables and expressions
   size_t n_matched_cells = 0;
-  m_data.coupling.resize( m_data.grid.n_cells(), false );
+  m_data.coupling.resize( m_data.grid.n_cells_total(), false );
   for (const auto & domain: domains)
   {
     const std::size_t n_expressions = domain.expressions.size();
@@ -266,7 +266,7 @@ void CellPropertyManager::map_mechanics_to_control_volumes(const discretization:
 void CellPropertyManager::downscale_properties()
 {
   const auto & grid = m_data.grid;
-  const size_t n_raw_cells = grid.n_cells();
+  const size_t n_raw_cells = grid.n_cells_total();
   for (std::size_t i = 0; i < m_data.property_names.size(); i++)
     m_data.cell_properties[i].resize( n_raw_cells );
 

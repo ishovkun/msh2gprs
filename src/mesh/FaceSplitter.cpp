@@ -8,7 +8,7 @@ namespace mesh {
 FaceSplitter::FaceSplitter(const Mesh & grid)
     : _grid(grid), _vertex_coord(_grid.vertices())
 {
-  _cell_vertices.resize(_grid.n_cells());
+  _cell_vertices.resize(_grid.n_cells_total());
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
     _cell_vertices[cell->index()] = cell->vertices();
 }

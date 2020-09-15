@@ -171,10 +171,10 @@ class Mesh
   inline const std::vector<Cell> & cells() const {return m_cells;}
   // true if vector of cells is empty
   bool empty() const {return m_cells.empty();}
-  // get number of cells
-  inline std::size_t n_cells() const {return m_cells.size();}
+  // get raw number of cells (including inactive)
+  inline std::size_t n_cells_total() const {return m_cells.size();}
   // get number of active cells
-  inline std::size_t n_active_cells() const { return n_cells() - _n_inactive_cells; }
+  inline std::size_t n_active_cells() const { return n_cells_total() - _n_inactive_cells; }
   // get number of vertices
   inline std::size_t n_vertices() const {return m_vertices.size();}
   // get number of faces

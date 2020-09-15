@@ -13,7 +13,7 @@ DoFManager::DoFManager(mesh::Mesh & grid,
 std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs()
 {
   std::shared_ptr<DoFNumbering> p_dofs = std::make_shared<DoFNumbering>();
-  p_dofs->m_cells.resize(m_grid.n_cells());
+  p_dofs->m_cells.resize(m_grid.n_cells_total());
   p_dofs->m_faces.reserve(m_grid.n_faces());
 
   size_t dof = 0;
@@ -60,7 +60,7 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_unsplit_dofs()
         p_dofs->m_faces[face->index()] = dof++;
 
   // reservoir cells
-  p_dofs->m_cells.resize(grid.n_cells());
+  p_dofs->m_cells.resize(grid.n_cells_total());
   // NOTE: raw iterator
   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
     if (cell->parent() == *cell)  // skip refined cells here

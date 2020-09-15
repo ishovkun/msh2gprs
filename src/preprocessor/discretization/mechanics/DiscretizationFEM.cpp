@@ -41,7 +41,7 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   // }
 
   _face_data.resize( _grid.n_faces() );
-  _cell_data.resize( _grid.n_cells() );
+  _cell_data.resize( _grid.n_cells_total() );
   _frac_data.resize( _grid.n_faces() );
   logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
   angem::Basis<3, double> face_basis;

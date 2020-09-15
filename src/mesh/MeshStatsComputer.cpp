@@ -12,7 +12,7 @@ MeshStatsComputer::MeshStatsComputer(const mesh::Mesh & grid)
 void MeshStatsComputer::compute_totals_()
 {
   _n_active_cells = _grid.n_active_cells();
-  _n_cells = _grid.n_cells();
+  _n_cells = _grid.n_cells_total();
   _n_inactive_cells = _n_cells - _n_active_cells;
   _n_faces = _grid.n_faces();
   _n_inactive_faces = _n_faces - _n_active_faces;

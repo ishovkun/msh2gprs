@@ -15,7 +15,8 @@ namespace gprs_data {
    void map_cell(size_t cell_index);
    // return search grid
    const UniformCartesianGrid & get_search_grid() const {return _cartesian;};
-   const std::list<size_t> & mapping(size_t search_cell) const;
+   const std::list<size_t> & mapping(size_t search_cell);
+   void update_mapping();
 
   private:
    UniformCartesianGrid build_grid_() const;
@@ -23,6 +24,7 @@ namespace gprs_data {
    const mesh::Mesh & _grid;
    UniformCartesianGrid _cartesian;
    std::vector<std::list<size_t>> _mapping;
+   size_t _num_cells_cached;
  };
 
 

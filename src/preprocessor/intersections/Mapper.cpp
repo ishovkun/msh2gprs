@@ -8,7 +8,7 @@ namespace gprs_data {
 using Location = std::array<int, 3>;
 
 Mapper::Mapper(const mesh::Mesh & grid)
-    : _grid(grid), _cartesian(build_grid_())
+    : _grid(grid), _cartesian(build_grid_()), _num_cells_cached(_grid.n_cells_total())
 {
   _cartesian.log_stats();
   _mapping.resize(_cartesian.n_cells());
@@ -82,11 +82,20 @@ UniformCartesianGrid Mapper::build_grid_() const
   return UniformCartesianGrid(glob_min, stepping, dims);
 }
 
-const std::list<size_t> & Mapper::mapping(size_t search_cell) const
+const std::list<size_t> & Mapper::mapping(size_t search_cell)
 {
+  if (_num_cells_cached < _grid.n_cells_total())
+    update_mapping();
   if (search_cell < _mapping.size())
     return _mapping[search_cell];
   else throw std::invalid_argument("invalid cell " + std::to_string(search_cell));
+}
+
+void Mapper::update_mapping()
+{
+  for (size_t icell = _num_cells_cached; icell < _grid.n_cells_total(); ++icell)
+    map_cell(icell);
+  _num_cells_cached = _grid.n_cells_total();
 }
 
 

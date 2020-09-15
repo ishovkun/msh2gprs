@@ -22,7 +22,7 @@ MultiScaleDataMSRSB::MultiScaleDataMSRSB(mesh::Mesh  & grid,
   auto & layer = layers.emplace_back();
   layer.index = 0;
   layer.n_blocks = n_blocks;
-  layer.n_cells = grid.n_cells();
+  layer.n_cells = grid.n_cells_total();
 }
 
 

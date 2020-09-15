@@ -37,7 +37,7 @@ MultiScaleDataMech::
 build_cell_block_neighbors(const std::unordered_map<size_t, size_t> & map_boundary_face_ghost_block) const
 {
   const auto & layer = active_layer();
-  vector<unordered_set<size_t>> cell_block_neighbors(grid.n_cells());
+  vector<unordered_set<size_t>> cell_block_neighbors(grid.n_cells_total());
 
   for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
   {
