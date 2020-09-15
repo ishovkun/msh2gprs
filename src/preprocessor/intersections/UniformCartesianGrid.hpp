@@ -9,6 +9,18 @@ class UniformCartesianGrid {
   UniformCartesianGrid(const angem::Point<3,double> &origin,
                        const angem::Point<3,double> &stepping,
                        const std::array<size_t,3> &dims);
+  size_t nx() const noexcept { return _dims[0]; }
+  size_t ny() const noexcept { return _dims[1]; }
+  size_t nz() const noexcept { return _dims[2]; }
+  double hx() const noexcept { return _stepping[0]; }
+  double hy() const noexcept { return _stepping[1]; }
+  double hz() const noexcept { return _stepping[2]; }
+  angem::Point<3,double> stepping() const noexcept {return _stepping;}
+  double stepping(const size_t dir) const;
+  angem::Point<3,double> origin() const noexcept {return _origin;}
+  std::array<size_t,3> dims() const noexcept {return _dims;}
+  angem::Hexahedron<double> get_bounding_box() const noexcept;
+
   size_t n_cells() const noexcept;
   size_t n_vertices() const noexcept;
   size_t cell_index(int i, int j, int k) const;

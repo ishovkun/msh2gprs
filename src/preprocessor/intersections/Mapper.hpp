@@ -12,8 +12,10 @@ namespace gprs_data {
  class Mapper {
   public:
    Mapper(const mesh::Mesh & grid);
-   std::array<int, 3> index(const angem::Point<3,double> & p) const;
    void map_cell(size_t cell_index);
+   // return search grid
+   const UniformCartesianGrid & get_search_grid() const {return _cartesian;};
+   const std::list<size_t> & mapping(size_t search_cell) const;
 
   private:
    UniformCartesianGrid build_grid_() const;

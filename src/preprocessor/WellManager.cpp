@@ -43,11 +43,12 @@ void WellManager::setup_simple_well_(Well & well)
   std::unordered_set<size_t> processed_cells;
   // well assigned with a single coordinate
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    if (cell->ultimate_parent() != *cell || _edfm_method == EDFMMethod::compartmental )
+    if (cell->ultimate_parent() == *cell || _edfm_method == EDFMMethod::compartmental )
     {
       const bool intersection_found = setup_simple_well_matrix_(well, cell->index());
       if (intersection_found)
       {
+        std::cout << "cell->index() = " << cell->index() << std::endl;
         setup_simple_well_to_fracture_(well, cell->index());
       }
     }
@@ -62,6 +63,18 @@ void WellManager::setup_simple_well_(Well & well)
     }
   if ( well.segment_data.empty() )
     throw std::invalid_argument("Well " + well.name + " has no connected volumes");
+
+  if (_data.grid_searcher)
+  {
+    const auto & searcher = *_data.grid_searcher;
+    auto p1 = well.coordinate, p2 = well.coordinate;
+    p1[2] = searcher.top();
+    p2[2] = searcher.bottom();
+    angem::LineSegment<double> segment(p1, p2);
+    for (const size_t icell : searcher.collision(segment))
+      std::cout << "icell = " << icell << std::endl;
+  }
+  exit(0);
 }
 
 void WellManager::setup_segmented_well_(Well & well)
@@ -192,7 +205,7 @@ bool WellManager::setup_simple_well_matrix_(Well & well, size_t cell_index)
 
   std::vector<Point> section_data;
   const double tol = 1e-6*fabs(p1.z()-p2.z());
-  if (angem::collision(p1, p2, *p_poly_cell, section_data, tol))
+  if (angem::collision(angem::LineSegment<double>(p1, p2), *p_poly_cell, section_data, tol))
   {
     assert( section_data.size() == 2 );
     const double segment_length = section_data[0].distance(section_data[1]);

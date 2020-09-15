@@ -4,6 +4,7 @@
 #include "discretization/flow/ControlVolumeData.hpp"      // provides discretization::ControlVolumeData
 #include "discretization/flow/ConnectionData.hpp"         // provides discretization::ConnectionData
 #include "discretization/mechanics/FiniteElementData.hpp" // provides FiniteElementData
+#include "intersections/GridIntersectionSearcher.hpp"     // provides GridIntersectionSearcher
 #include "mesh/Mesh.hpp"                                  // provides mesh::Mesh
 #include "Well.hpp"                                       // provides Well
 #include "MultiScaleOutputData.hpp"                       // provides multiscale::MultiScaleOutputData
@@ -104,6 +105,8 @@ struct SimData
   // ----------------------- Other ---------------------- //
   std::vector<std::vector<size_t>> gmcell_to_flowcells; // Geomechanics cell -> Flow cells in each geomech cell.
   std::vector<std::vector<size_t>> gmcell_to_SDA_flowcells; // Geomechanics cell in EDFM -> Flow cells in each geomech cell in EDFM.
+  // Helps to search iintersections fast
+  std::unique_ptr<GridIntersectionSearcher> grid_searcher;
   // --------------------- Methods --------------------------------- //
   angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
   {

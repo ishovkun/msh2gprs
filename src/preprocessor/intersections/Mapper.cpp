@@ -82,4 +82,12 @@ UniformCartesianGrid Mapper::build_grid_() const
   return UniformCartesianGrid(glob_min, stepping, dims);
 }
 
+const std::list<size_t> & Mapper::mapping(size_t search_cell) const
+{
+  if (search_cell < _mapping.size())
+    return _mapping[search_cell];
+  else throw std::invalid_argument("invalid cell " + std::to_string(search_cell));
+}
+
+
 }  // end namespace gprs_data
