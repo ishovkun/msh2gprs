@@ -132,7 +132,9 @@ void CartesianMeshBuilder::setup_cells_(Mesh & grid) const
         const size_t v5 = vertex_index(i+1, j,   k+1);
         const size_t v6 = vertex_index(i+1, j+1, k+1);
         const size_t v7 = vertex_index(i,   j+1, k+1);
-        const std::vector<size_t> cell_vertices = {v0, v1, v2, v3, v4, v5, v6, v7};
+        std::vector<size_t> cell_vertices = {v0, v1, v2, v3, v4, v5, v6, v7};
+        // prevent negative jacobian
+        if (_data.dz[k] < 0) cell_vertices = {v4, v5, v6, v7, v0, v1, v2, v3};
         grid.insert_cell(cell_vertices, angem::HexahedronID, domain_marker );
         if (i == 0)
           grid.insert_face({v0, v4, v7, v3}, angem::QuadrangleID, left_boundary);
