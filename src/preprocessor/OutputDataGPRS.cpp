@@ -22,7 +22,8 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   _output_path = output_path;
   // save flow data
   save_flow_data_(_output_path + "/" + _config.flow_cv_file,
-                  _output_path + "/" + _config.flow_connection_file);
+                  _output_path + "/" + _config.flow_connection_file,
+                  _output_path + "/" + _config.mech_trans_update_file);
 
   if (_data.has_mechanics)
     save_geomechanics_data_();
@@ -51,7 +52,8 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   //   saveMechMultiScaleData(output_path + data.config.mech_ms_file);
 }
 
-void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::string con_file) const
+void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::string con_file,
+                                     const std::string trans_update_file) const
 {
   {  // Write cell data
     std::ofstream out;
@@ -65,6 +67,13 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     out.open(con_file.c_str());
     logging::log() << "saving flow Connection data: " << con_file << std::endl;
     save_trans_data_(out);
+    // write transmissibility update formulas
+    out.close();
+  }
+  {  // write transmissibility update formulas
+    std::ofstream out;
+    out.open(trans_update_file.c_str());
+    logging::log() << "saving transmissibility update formulas data: " << con_file << std::endl;
     save_trans_update_formulas_(out);
     // write transmissibility update formulas
     out.close();

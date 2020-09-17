@@ -28,7 +28,8 @@ public:
 
  private:
   // save data related to flow in the reservoir (but not wells)
-  void save_flow_data_(const std::string cv_file, const std::string con_file) const;
+  void save_flow_data_(const std::string cv_file, const std::string con_file,
+                       const std::string trans_update_file) const;
   // save flow CV data
   void save_control_volume_data_(std::ofstream & out) const;
   // dave transmissibilities
