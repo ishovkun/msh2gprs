@@ -37,8 +37,7 @@ void EmbeddedFractureManager::split_cells()
     while (!find_edfm_cells_fast_(*frac.body, cells_to_split))
     {
       cells_to_split.clear();
-      if (++iter > 100)
-        throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
+      if (++iter > 100) throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
     }
     if (cells_to_split.empty())
       throw std::invalid_argument("embedded fracture "+std::to_string(i) + " intersects zero cells");

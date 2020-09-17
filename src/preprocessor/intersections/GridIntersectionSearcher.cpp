@@ -148,7 +148,7 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
   const int start_k = sg.get_ijk(sg.find_cell(bot))[2];
   const int end_k = sg.get_ijk(sg.find_cell(top))[2];
   std::unordered_set<size_t> result;
-  for (size_t k = start_k; k < end_k; ++k)
+  for (size_t k = start_k; k <= end_k; ++k)
   {
     // z-center of the layer
     const double z = sg.origin()[2] + sg.stepping(2) * (k + 0.5);
