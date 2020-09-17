@@ -111,12 +111,12 @@ void CartesianMeshBuilder::setup_vertices_(Mesh & grid) const
 void CartesianMeshBuilder::setup_cells_(Mesh & grid) const
 {
   const int domain_marker = 0;
-  const int left_boundary = 0;
-  const int right_boundary = 1;
-  const int front_boundary = 2;
-  const int back_boundary = 3;
-  const int bottom_boundary = 4;
-  const int top_boundary = 5;
+  const int left_boundary = 1;
+  const int right_boundary = 2;
+  const int front_boundary = 3;
+  const int back_boundary = 4;
+  const int bottom_boundary = 5;
+  const int top_boundary = 6;
 
   grid.cells().reserve(n_cells());
   for (size_t k = 0; k < nz(); ++k)
