@@ -4,6 +4,8 @@
 #include "Mesh.hpp"
 #include <fstream>
 
+namespace mesh {
+
 namespace IO
 {
 
@@ -113,3 +115,5 @@ void VTKWriter::write(const angem::Polyhedron<T> & polyhedron, const std::string
 }
 
 }  // end namespace
+
+}  // end namespace mesh

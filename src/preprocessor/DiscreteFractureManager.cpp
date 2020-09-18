@@ -1,5 +1,5 @@
 #include "DiscreteFractureManager.hpp"
-#include "VTKWriter.hpp"
+#include "mesh/io/VTKWriter.hpp"
 
 namespace gprs_data {
 

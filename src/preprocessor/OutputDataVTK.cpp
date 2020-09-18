@@ -32,8 +32,8 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
   logging::log() << "writing " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_geometry(m_flow_grid, out);
-  IO::VTKWriter::enter_section_cell_data(m_flow_grid.n_active_cells(), out);
+  mesh::IO::VTKWriter::write_geometry(m_flow_grid, out);
+  mesh::IO::VTKWriter::enter_section_cell_data(m_flow_grid.n_active_cells(), out);
 
   const auto & grid = m_flow_grid;
   // save grid markers
@@ -43,7 +43,7 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
     size_t cell_index = 0;
     for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
       property[cell_index++] = cell->marker();
-    IO::VTKWriter::add_data(property, keyword, out);
+    mesh::IO::VTKWriter::add_data(property, keyword, out);
   }
   // save porosity
   {
@@ -54,7 +54,7 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
     for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
       property[cell_index++] = _data.cell_properties[prop_key][cell->index()];
 
-    IO::VTKWriter::add_data(property, keyword, out);
+    mesh::IO::VTKWriter::add_data(property, keyword, out);
   }
 
   // save custom keywords
@@ -67,7 +67,7 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
     for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
       property[cell_index++] = _data.cell_properties[prop_key][cell->index()];
 
-    IO::VTKWriter::add_data(property, keyword, out);
+    mesh::IO::VTKWriter::add_data(property, keyword, out);
   }
 
   // // save multiscale flow data
@@ -121,7 +121,7 @@ void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) co
     for (const auto &vertex : _data.grid_vertices_after_face_split)
       out << vertex << "\n";
 
-  const size_t n_entries_total = IO::VTKWriter::count_number_of_cell_entries_(grid);
+  const size_t n_entries_total = mesh::IO::VTKWriter::count_number_of_cell_entries_(grid);
 
   out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << "\n";
   if (_data.grid_vertices_after_face_split.empty())
@@ -136,7 +136,7 @@ void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) co
       }
       else
       {
-        out << IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
+        out << mesh::IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
         const auto & faces = cell->faces();
         out << faces.size() << "\n";
         for (const auto & face : faces)
@@ -163,7 +163,7 @@ void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) co
       }
       else
       {
-        out << IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
+        out << mesh::IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
         const auto & faces = cell->faces();
         out << faces.size() << "\n";
         for (const auto & face : faces)
@@ -231,16 +231,16 @@ void OutputDataVTK::save_dfm_data(const std::string & fname) const
   std::ofstream out;
   out.open(fname.c_str());
   const auto & grid = _data.fracture_grid;
-  IO::VTKWriter::write_surface_geometry(grid.get_vertices(), grid.get_polygons(), out);
+  mesh::IO::VTKWriter::write_surface_geometry(grid.get_vertices(), grid.get_polygons(), out);
 
   // save face markers
-  IO::VTKWriter::enter_section_cell_data(grid.n_polygons(), out);
+  mesh::IO::VTKWriter::enter_section_cell_data(grid.n_polygons(), out);
   {
     std::vector<double> property(grid.n_polygons());
     const std::string keyword = "Marker";
     for (auto face = grid.begin_polygons(); face != grid.end_polygons(); ++face)
       property[face.index()] = face.marker();
-    IO::VTKWriter::add_data(property, keyword, out);
+    mesh::IO::VTKWriter::add_data(property, keyword, out);
   }
 
   out.close();
@@ -341,7 +341,7 @@ void OutputDataVTK::save_edfm_data(const std::string & fname) const
 void OutputDataVTK::save_wells_(const std::string & fname) const
 {
   logging::log() << "writing " << fname << std::endl;
-  IO::VTKWriter::write_well_trajectory(_data.well_vertices.points, _data.well_vertex_indices, fname);
+  mesh::IO::VTKWriter::write_well_trajectory(_data.well_vertices.points, _data.well_vertex_indices, fname);
 }
 
 }

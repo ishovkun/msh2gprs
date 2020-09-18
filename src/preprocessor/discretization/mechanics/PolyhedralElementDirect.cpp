@@ -4,7 +4,7 @@
 #include "mesh/Subdivision.hpp"  // provides mesh::Subdivision
 #include "FeValues.hpp"          // provides discretization::FeValues
 #include "EdgeComparison.hpp"
-#include "VTKWriter.hpp"         // debugging, provides io::VTKWriter
+#include "mesh/io/VTKWriter.hpp"         // debugging, provides io::VTKWriter
 #include "FEMFaceDoFManager.hpp" // provides discretization::FEMFaceDoFManager
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
@@ -333,9 +333,9 @@ void PolyhedralElementDirect::debug_save_boundary_face_solution(const std::strin
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_subgrid, out);
+  mesh::IO::VTKWriter::write_geometry(_subgrid, out);
   const size_t nv = _subgrid.n_vertices();
-  IO::VTKWriter::enter_section_point_data(nv, out);
+  mesh::IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
 
@@ -348,7 +348,7 @@ void PolyhedralElementDirect::debug_save_boundary_face_solution(const std::strin
       output[v] = _support_boundary_values[j][iv];
     }
 
-    IO::VTKWriter::add_data(output, "support-" + std::to_string(j), out);
+    mesh::IO::VTKWriter::add_data(output, "support-" + std::to_string(j), out);
   }
   out.close();
 }
@@ -447,9 +447,9 @@ void PolyhedralElementDirect::save_face_domains_(std::string fname)
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_subgrid, out);
+  mesh::IO::VTKWriter::write_geometry(_subgrid, out);
   const size_t nv = _subgrid.n_vertices();
-  IO::VTKWriter::enter_section_point_data(nv, out);
+  mesh::IO::VTKWriter::enter_section_point_data(nv, out);
 
   std::vector<double> output(nv, 0);
   for (auto face = _subgrid.begin_faces(); face != _subgrid.end_faces(); ++face)
@@ -458,7 +458,7 @@ void PolyhedralElementDirect::save_face_domains_(std::string fname)
       for (auto v : face->vertices())
         output[v] = face->marker();
     }
-  IO::VTKWriter::add_data(output, "marker", out);
+  mesh::IO::VTKWriter::add_data(output, "marker", out);
 
 }
 

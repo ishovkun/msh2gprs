@@ -3,7 +3,7 @@
 #include "angem/CollisionGJK.hpp"  // collision_gjk algorithm
 #include "angem/Collisions.hpp"  // point_inside_surface
 #include "mesh/SurfaceMesh.hpp"  // to store support bounding surface
-#include "VTKWriter.hpp" // debug bounding region
+#include "mesh/io/VTKWriter.hpp" // debug bounding region
 
 #include <unordered_set>
 #include <chrono>  // for high_resolution_clock debug timing
@@ -588,7 +588,7 @@ void MultiScaleDataMSRSB::build_support_region(const std::size_t block)
   // auto SS = std::chrono::high_resolution_clock::now();
   // debug output bounding surface vtk
   const std::string fname = "support_surface-" + std::to_string(block) + ".vtk";
-  IO::VTKWriter::write_surface_geometry(bounding_surface.get_vertices(),
+  mesh::IO::VTKWriter::write_surface_geometry(bounding_surface.get_vertices(),
                                         bounding_surface.get_polygons(), fname);
 
   // Next we find the internal points of the support region

@@ -1,7 +1,7 @@
 #include "PolyhedralElementBase.hpp"
 #include "gmsh_interface/GmshInterface.hpp"  // provides gprs_data::GmshInterface
 #include "mesh/Subdivision.hpp"              // provides mesh::Subdivision
-#include "VTKWriter.hpp"                     // provides VTKWriter
+#include "mesh/io/VTKWriter.hpp"                     // provides VTKWriter
 #include "PFEM_integration/TributaryRegion2dFaces.hpp"
 #include "PFEM_integration/TributaryRegion3dFaces.hpp"
 #include "PFEM_integration/TributaryRegion2dVertices.hpp"
@@ -74,9 +74,9 @@ void PolyhedralElementBase::save_shape_functions(const std::string fname) const
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_subgrid, out);
+  mesh::IO::VTKWriter::write_geometry(_subgrid, out);
   const size_t nv = _subgrid.n_vertices();
-  IO::VTKWriter::enter_section_point_data(nv, out);
+  mesh::IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
   for (std::size_t j=0; j<n_parent_vertices; ++j)
@@ -84,7 +84,7 @@ void PolyhedralElementBase::save_shape_functions(const std::string fname) const
     std::vector<double> output(nv, 0.0);
     for (size_t i = 0; i < nv; ++i)
       output[i] = _basis_functions[j][i];
-    IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
+    mesh::IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
   }
   out.close();
 }

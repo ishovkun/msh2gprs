@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <utility>                 // provides std::pair
 #include <fstream>                 // debug
-#include "VTKWriter.hpp"
+#include "mesh/io/VTKWriter.hpp"
 
 
 namespace gprs_data {

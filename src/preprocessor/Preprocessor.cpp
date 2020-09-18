@@ -3,6 +3,7 @@
 #include "gmsh_interface/GmshInterface.hpp"
 #include "mesh/CartesianMeshBuilder.hpp"
 #include "mesh/io/VTKReader.hpp"
+#include "mesh/RefinementAspectRatio.hpp"
 #include "BoundaryConditionManager.hpp"
 #include "discretization/mechanics/DiscretizationFEM.hpp"
 #include "discretization/flow/DiscretizationTPFA.hpp"
@@ -70,6 +71,10 @@ void Preprocessor::run()
   logging::important() << "Splitting cells..." << std::flush;
   pm_edfm_mgr->split_cells();
   logging::important() << "Finished splitting cells" << std::endl << std::flush;
+
+  logging::important() << "Peforming Grid Refinement" << std::endl;
+  mesh::RefinementAspectRatio refinement(data.grid, 2, 5);
+  logging::important() << "Finished Grid Refinement" << std::endl;
 
   logging::important() << "Building flow discretization" << "\n";
   build_flow_discretization_();

@@ -8,7 +8,7 @@
 #include "StandardFiniteElement.hpp"
 #include "MeshStatsComputer.hpp"
 #include "logger/ProgressBar.hpp"  // provides ProgressBar
-#include "VTKWriter.hpp"                                       // debugging, provides io::VTKWriter
+#include "mesh/io/VTKWriter.hpp"   // debugging, provides io::VTKWriter
 
 
 namespace discretization
@@ -57,7 +57,7 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
     }
     catch (std::runtime_error & error)
     {
-      IO::VTKWriter::write_geometry(_grid, *cell, "geometry-" + std::to_string(cell->index()) + ".vtk");
+      mesh::IO::VTKWriter::write_geometry(_grid, *cell, "geometry-" + std::to_string(cell->index()) + ".vtk");
       throw std::runtime_error(error.what());
     }
 
@@ -113,7 +113,7 @@ void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)
     std::cout << std::endl;
   }
 
-  IO::VTKWriter::write_geometry(_grid, cell, "output/geometry-" + std::to_string(cell.index()) + ".vtk");
+  mesh::IO::VTKWriter::write_geometry(_grid, cell, "output/geometry-" + std::to_string(cell.index()) + ".vtk");
 
 #ifdef WITH_EIGEN
   PolyhedralElementDirect de(cell, _grid, _config);

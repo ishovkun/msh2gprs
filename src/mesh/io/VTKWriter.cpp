@@ -1,7 +1,8 @@
-#include <VTKWriter.hpp>
+#include "VTKWriter.hpp"
 
 #include <fstream>  // stringstream
 
+namespace mesh {
 
 namespace IO
 {
@@ -339,3 +340,5 @@ void VTKWriter::write_geometry(const std::vector<angem::Point<3,double>>  &verti
 }
 
 }  // end namespace
+
+}  // end namespace mehs

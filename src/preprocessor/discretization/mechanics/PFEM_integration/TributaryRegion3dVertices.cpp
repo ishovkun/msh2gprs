@@ -1,6 +1,5 @@
 #ifdef WITH_EIGEN
 #include "TributaryRegion3dVertices.hpp"
-#include "VTKWriter.hpp"      // provides IO::VTKWriter
 #include "../EdgeComparison.hpp"  // provides Edge and EdgeComparison
 #include <algorithm>              // iota
 

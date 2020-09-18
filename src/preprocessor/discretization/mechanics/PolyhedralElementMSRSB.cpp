@@ -8,7 +8,7 @@
 #include "PFEM_integration/IntegrationRule3dAverage.hpp"
 #include "PFEM_integration/IntegrationRule2dAverage.hpp"
 #include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationRuleFacesFractures
-#include "VTKWriter.hpp"
+#include "mesh/io/VTKWriter.hpp"
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
 
@@ -82,9 +82,9 @@ void PolyhedralElementMSRSB::save_support_edges_()
 
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_geometry(_subgrid, out);
+  mesh::IO::VTKWriter::write_geometry(_subgrid, out);
   const size_t nv = _subgrid.n_vertices();
-  IO::VTKWriter::enter_section_point_data(nv, out);
+  mesh::IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
   for (std::size_t j=0; j<n_parent_vertices; ++j)
@@ -96,7 +96,7 @@ void PolyhedralElementMSRSB::save_support_edges_()
       const double value = _support_edge_values[j][iv];
       output[v] = value;
     }
-    IO::VTKWriter::add_data(output, "support-"+std::to_string(j), out);
+    mesh::IO::VTKWriter::add_data(output, "support-"+std::to_string(j), out);
   }
   // save bnd markers
   std::vector<double> output(nv, 0);
@@ -108,7 +108,7 @@ void PolyhedralElementMSRSB::save_support_edges_()
         output[v] = face->marker();
     }
   }
-  IO::VTKWriter::add_data(output, "bnd-marker", out);
+  mesh::IO::VTKWriter::add_data(output, "bnd-marker", out);
   out.close();
 }
 
@@ -119,9 +119,9 @@ void PolyhedralElementMSRSB::save_support_boundaries_()
 
   std::ofstream out;
   out.open(fname.c_str());
-  IO::VTKWriter::write_geometry(_subgrid, out);
+  mesh::IO::VTKWriter::write_geometry(_subgrid, out);
   const size_t nv = _subgrid.n_vertices();
-  IO::VTKWriter::enter_section_point_data(nv, out);
+  mesh::IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
   for (std::size_t j=0; j<n_parent_vertices; ++j)
@@ -129,7 +129,7 @@ void PolyhedralElementMSRSB::save_support_boundaries_()
     std::vector<double> output(nv, 0);
     for (const size_t v : _support_boundaries[j])
       output[v] = 1;
-    IO::VTKWriter::add_data(output, "support-"+std::to_string(j), out);
+    mesh::IO::VTKWriter::add_data(output, "support-"+std::to_string(j), out);
   }
   // save bnd markers
   std::vector<double> output(nv, 0);
@@ -141,7 +141,7 @@ void PolyhedralElementMSRSB::save_support_boundaries_()
         output[v] = face->marker();
     }
   }
-  IO::VTKWriter::add_data(output, "bnd-marker", out);
+  mesh::IO::VTKWriter::add_data(output, "bnd-marker", out);
   out.close();
 }
 
@@ -327,9 +327,9 @@ void PolyhedralElementMSRSB::debug_save_shape_functions_(const std::string fname
   std::ofstream out;
   out.open(fname.c_str());
 
-  IO::VTKWriter::write_geometry(_subgrid, out);
+  mesh::IO::VTKWriter::write_geometry(_subgrid, out);
   const size_t nv = _subgrid.n_vertices();
-  IO::VTKWriter::enter_section_point_data(nv, out);
+  mesh::IO::VTKWriter::enter_section_point_data(nv, out);
 
   const size_t n_parent_vertices = _parent_cell.vertices().size();
   for (std::size_t j=0; j<n_parent_vertices; ++j)
@@ -337,7 +337,7 @@ void PolyhedralElementMSRSB::debug_save_shape_functions_(const std::string fname
     std::vector<double> output(nv, 0.0);
     for (size_t i = 0; i < nv; ++i)
       output[i] = _basis_functions[j][i];
-    IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
+    mesh::IO::VTKWriter::add_data(output, "basis-"+std::to_string(j), out);
   }
   out.close();
 }

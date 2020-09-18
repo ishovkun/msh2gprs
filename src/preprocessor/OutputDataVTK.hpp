@@ -1,8 +1,8 @@
 #pragma once
 
 #include "SimData.hpp"
-#include "mesh/Mesh.hpp"
-#include "VTKWriter.hpp"
+#include "mesh/Mesh.hpp"         // mesh::Mesh
+#include "mesh/io/VTKWriter.hpp"  // VTKWriter
 
 namespace gprs_data
 {

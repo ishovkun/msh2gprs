@@ -18,7 +18,9 @@ ADD_LIBRARY(mesh
   FractureTip.cpp
   MeshStatsComputer.cpp
   CartesianMeshBuilder.cpp
+  RefinementAspectRatio.cpp
   io/VTKReader.cpp
+  io/VTKWriter.cpp
 )
 
 SET_TARGET_PROPERTIES (

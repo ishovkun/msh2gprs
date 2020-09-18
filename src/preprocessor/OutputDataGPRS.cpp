@@ -1,5 +1,5 @@
 #include "OutputDataGPRS.hpp"
-#include "VTKWriter.hpp"     // provides IO::VTKWriter
+#include "mesh/io/VTKWriter.hpp"     // provides IO::VTKWriter
 #include "logger/Logger.hpp"  // provides logging::log
 
 
