@@ -38,14 +38,16 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
   }
   // the actual geometry happens here
   const std::unique_ptr<angem::Polyhedron<double>> polyhedron = cell.polyhedron();
+  const double h = cell.center().distance(cell.vertex_coordinates().front());
 
   // which polygons in split belong to which faces
   std::vector<size_t> polygroup_polygon_parents;
-  angem::split(*polyhedron, plane, split, polygroup_polygon_parents,
+  const bool success = angem::split(*polyhedron, plane, split, polygroup_polygon_parents,
                constants::marker_below_splitting_plane,
                constants::marker_above_splitting_plane,
                constants::marker_splitting_plane,
-               /* tol = */ 1e-4);
+               /* tol = */ 1e-4*h);
+  if (!success) return;
 
   const std::vector<Face*> & cell_faces = cell.faces();
 
