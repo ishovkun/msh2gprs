@@ -3,6 +3,7 @@
 #include "mesh/Mesh.hpp"
 #include "angem/VTK_ID.hpp"
 #include "angem/Tensor2.hpp"
+#include "logger/Logger.hpp"
 
 namespace discretization {
 
@@ -424,7 +425,8 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,ElementTraits<vtk_
   for (size_t i=0; i < ElementTraits<vtk_id>::n_vertices; ++i)
   {
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
-    assert( std::fabs(loc_coord[i][2]) < 1e-12 );
+    if ( std::fabs(loc_coord[i][2]) > 1e-10 )
+      logging::warning() << "non-planar face or basis is set for non-planar surfaces" << std::endl;
   }
 
   // dx_j / du_i = \sum_k (d psi_k / du_j) * x_k_i
