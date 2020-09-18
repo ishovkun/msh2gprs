@@ -13,16 +13,11 @@ using std::vector;
 using Point = angem::Point<3,double>;
 using std::pair;
 
-EmbeddedFractureManager::EmbeddedFractureManager(
-    std::vector<EmbeddedFractureConfig> &config, const EDFMMethod edfm_method,
-    const double min_dist_to_node, SimData &data)
-    : config(config), m_method(edfm_method),
-      _min_dist_to_node(min_dist_to_node), m_data(data), m_grid(data.grid),
-      _splitter(m_grid)
-{
-  if (_min_dist_to_node < 1e-10)
-    throw std::invalid_argument("EDFM min distance to node is too small");
-}
+EmbeddedFractureManager::EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
+                                                 const EDFMSettings & settings,
+                                                 SimData & data)
+    : config(config), _settings(settings), m_data(data), m_grid(data.grid), _splitter(m_grid)
+{}
 
 void EmbeddedFractureManager::split_cells()
 {
@@ -30,14 +25,15 @@ void EmbeddedFractureManager::split_cells()
   for (std::size_t i=0; i<config.size(); ++i)
   {
     auto & frac = config[i];
-    std::vector<size_t> cells_to_split;
     // iteratively shift fracture if it collides with any grid vertices
+    std::vector<size_t> cells_to_split;
     size_t iter = 0;
     // while (!find_edfm_cells_(*frac.body, cells_to_split))
     while (!find_edfm_cells_fast_(*frac.body, cells_to_split))
     {
       cells_to_split.clear();
       if (++iter > 100) throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
+      std::cout << "iter = " << iter << std::endl;
     }
     if (cells_to_split.empty())
       throw std::invalid_argument("embedded fracture "+std::to_string(i) + " intersects zero cells");
@@ -46,14 +42,6 @@ void EmbeddedFractureManager::split_cells()
     m_marker_config.insert({ face_marker, i });
     face_marker++;
   }
-  // std::cout << "active cells: ";
-  // int cnt = 0;
-  // for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
-  // {
-  //   std::cout << cell->index() << "("<<cnt<<") ";
-  //   if ((++cnt) % 10 == 0)
-  //     std::cout << std::endl;
-  // }
 }
 
 void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
@@ -86,7 +74,7 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
       for (const Point & vertex : vertices)
       {
         const double h = polyhedron->center().distance(vertex);
-        const double min_dist = h * _min_dist_to_node;
+        const double min_dist = h * _settings.min_dist_to_node;
         if ( std::fabs( fracture.plane().signed_distance(vertex)) < min_dist )
         {
           const Point shift = h/50 * fracture.plane().normal();
@@ -103,6 +91,7 @@ bool EmbeddedFractureManager::find_edfm_cells_(angem::Polygon<double> & fracture
 bool EmbeddedFractureManager::find_edfm_cells_fast_(angem::Polygon<double> & fracture, std::vector<size_t> & cells)
 {
   angem::CollisionGJK<double> collision;
+  double global_min_dist = std::numeric_limits<double>::max();
   for (const size_t cell_index : m_data.grid_searcher->collision(fracture))
   {
     const auto & cell = m_grid.cell(cell_index);

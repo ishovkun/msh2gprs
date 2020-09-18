@@ -60,8 +60,8 @@ void Preprocessor::run()
   // create discrete fracture manager
   logging::log() << "Initializing Fracture managers" << std::endl;
   pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(config.discrete_fractures, data);
-  pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures, config.edfm_method,
-                                                          config.edfm_min_dist_to_node, data);
+  pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures,
+                                                          config.edfm_settings, data);
 
   // copy geomechanics grid since base grid will be split
   data.geomechanics_grid = data.grid;
@@ -94,7 +94,7 @@ void Preprocessor::run()
   data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
   // remove fine cells
-  if (config.edfm_method != EDFMMethod::compartmental)
+  if (config.edfm_settings.method != EDFMMethod::compartmental)
   {
     data.grid.coarsen_cells();
     // pm_property_mgr->coarsen_cells();
@@ -235,10 +235,11 @@ void Preprocessor::build_flow_discretization_()
 
   // build edfm discretization from mixed dfm-edfm discretization
   discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
-                                                data.flow_connection_data, edfm_markers, config.edfm_method);
+                                                data.flow_connection_data, edfm_markers,
+                                                config.edfm_settings.method);
   // if we do cedfm use the split matrix dof numbering
   // else use unsplit matrix dofs
-  if ( config.edfm_method == EDFMMethod::compartmental )
+  if ( config.edfm_settings.method == EDFMMethod::compartmental )
     data.flow_numbering = p_split_dofs;
   else
     data.flow_numbering = p_unsplit_dofs;
@@ -250,12 +251,12 @@ void Preprocessor::build_flow_discretization_()
   if (!config.wells.empty())
   {
     logging::log() << "setup wells" << std::endl;
-    WellManager well_mgr(config.wells, data, *data.flow_numbering, config.edfm_method);
+    WellManager well_mgr(config.wells, data, *data.flow_numbering, config.edfm_settings.method);
     well_mgr.setup();
   }
 
   // used for coupling later on
-  if ( config.edfm_method != EDFMMethod::compartmental )
+  if ( config.edfm_settings.method != EDFMMethod::compartmental )
     pm_dfm_mgr->distribute_properties();
 }
 
@@ -309,7 +310,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
   // split geomechanics DFM faces
   logging::log() << "Splitting faces of DFM fractures" << std::endl;
-  p_frac_mgr->split_faces(data.geomechanics_grid);
+  // p_frac_mgr->split_faces(data.geomechanics_grid);
 
   // build mechanics boundary conditions
   logging::log() << "Building mechanics boundary conditions" << std::endl;

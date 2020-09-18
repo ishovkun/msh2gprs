@@ -51,7 +51,15 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   {
     progress.set_progress(item++);
 
-    const std::unique_ptr<FiniteElementBase> p_discr = build_element(*cell);
+    std::unique_ptr<FiniteElementBase> p_discr;
+    try {
+      p_discr = build_element(*cell);
+    }
+    catch (std::runtime_error & error)
+    {
+      IO::VTKWriter::write_geometry(_grid, *cell, "geometry-" + std::to_string(cell->index()) + ".vtk");
+      throw std::runtime_error(error.what());
+    }
 
     FiniteElementData cell_fem_data = p_discr->get_cell_data();
     cell_fem_data.element_index = cell->index();

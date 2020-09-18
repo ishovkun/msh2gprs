@@ -144,6 +144,18 @@ struct GPRSOutputConfig
   std::string fem_file               = "gm_fem.txt";
 };
 
+enum class FracturePlacement
+{
+  move_fracture, move_grid
+};
+
+struct EDFMSettings
+{
+  double min_dist_to_node = 1e-4; // minimum distance to grid vertices relative to cell size
+  FracturePlacement placement = FracturePlacement::move_fracture;
+  EDFMMethod method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
+};
+
 struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  embedded_fractures;  //  embedded  fractures
@@ -152,9 +164,9 @@ struct PreprocessorConfig
   std::vector<BCConfig>                bc_nodes;
   std::vector<WellConfig>              wells;
 
-  EDFMMethod edfm_method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
   FiniteElementConfig fem;
-  double edfm_min_dist_to_node = 1e-4;               // minimum distance to grid vertices relative to cell size
+  EDFMSettings edfm_settings;
+  // double edfm_min_dist_to_node = 1e-4;               // minimum distance to grid vertices relative to cell size
   // global container for all cell properties
   CellPropertyConfig cell_properties;
   // vector of cell properties for each subdomain

@@ -65,11 +65,11 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     {
       const std::string str_method = it->second.as<std::string>();
       if (str_method == "simple")
-        config.edfm_method = EDFMMethod::simple;
+        config.edfm_settings.method = EDFMMethod::simple;
       else if (str_method == "projection")
-        config.edfm_method = EDFMMethod::projection;
+        config.edfm_settings.method = EDFMMethod::projection;
       else if (str_method == "compartmental")
-        config.edfm_method = EDFMMethod::compartmental;
+        config.edfm_settings.method = EDFMMethod::compartmental;
       else
         throw std::invalid_argument(str_method);
     }
@@ -115,7 +115,16 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     }
     else if (key == "min_distance_to_vertices")
     {
-      config.edfm_min_dist_to_node = it->second.as<double>();
+      config.edfm_settings.min_dist_to_node = it->second.as<double>();
+    }
+    else if (key == "placement")
+    {
+      const auto value = it->second.as<std::string>();
+      if ( value == "move_fracture" )
+        config.edfm_settings.placement = FracturePlacement::move_fracture;
+      else if ( value == "move_grid" )
+        config.edfm_settings.placement = FracturePlacement::move_grid;
+      else throw std::invalid_argument("wrong edfm placing strategy");
     }
     else if (key == "solver")
     {
@@ -129,7 +138,7 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
       config.fem.solver_tolerance = values.second;
     }
     else
-      std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
+      throw std::invalid_argument( "\t\tattribute " + key + " unknown: skipping");
   }
 }
 
