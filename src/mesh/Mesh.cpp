@@ -331,5 +331,17 @@ void Mesh::validate_vertex_(size_t v) const
     throw std::invalid_argument("invalid vertex index " + std::to_string(v));
 }
 
+std::vector<const Face*>  Mesh::vertex_faces(size_t vertex_index) const
+{
+  validate_vertex_(vertex_index);
+  std::vector<const Face*> result;
+  for (const size_t face_index : m_vertex_faces[vertex_index])
+  {
+    const auto & face = m_faces[face_index];
+    if (face.is_active())
+      result.push_back(&face);
+  }
+  return result;
+}
 
 }  // end namespace mesh
