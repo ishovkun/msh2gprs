@@ -103,19 +103,29 @@ bool EmbeddedFractureManager::find_edfm_cells_fast_(angem::Polygon<double> & fra
       // check if some vertices are too close to the fracture
       // and if so move a fracture a little bit
       const std::vector<Point> & vertices = polyhedron->get_points();
-      for (const Point & vertex : vertices)
+      // for (const Point & vertex : vertices)
+      for (const size_t v : cell.vertices())
       {
+        const auto & vertex = m_grid.vertex(v);
         const double h = polyhedron->center().distance(vertex);
-        const double min_dist = h * _min_dist_to_node;
-        if ( std::fabs( fracture.plane().signed_distance(vertex)) < min_dist )
+        const double threshold = h * _settings.min_dist_to_node;
+        const double dist_to_frac =  std::fabs(fracture.plane().signed_distance(vertex));
+        global_min_dist = std::min(global_min_dist, dist_to_frac);
+        if (dist_to_frac < threshold)
         {
-          const Point shift = h/50 * fracture.plane().normal();
-          fracture.move(shift);
-          return false;
+          if ( _settings.placement == FracturePlacement::move_fracture )
+          {
+            const Point shift = h/50 * fracture.plane().normal();
+            fracture.move(shift);
+            return false;
+          }
+          // else vertex = fracture.plane().project_point(vertex);
+          else move_vertex_(v, fracture);
         }
       }
     }
   }
+  std::cout << "\nmin_dist = " << global_min_dist << std::endl;
   return true;
 }
 
@@ -252,5 +262,57 @@ size_t EmbeddedFractureManager::fracture_index_(const int face_marker) const
   return m_marker_config.find(face_marker)->second;
 }
 
+void EmbeddedFractureManager::move_vertex_(size_t v, const angem::Polygon<double> & fracture)
+{
+  // move vertex:
+  // (1) the the direcction ⟂ fracture if no constraints
+  // (2) within the boundary plane if a boundary vertex
+  // this prevents distorting the grid bounding box and faulty boundary conditions
+  std::vector<const mesh::Face*> constraints;
+   for (const auto * face : m_grid.vertex_faces(v))
+     if (face->neighbors().size() == 1)
+       constraints.push_back(face);
+
+   // determine_move_direction_(v, fracture, constraints);
+   auto & vertex = m_grid.vertex(v);
+  switch (constraints.size())
+  {
+    case 1:
+      {
+        auto dir  =  fracture.plane().project_point(vertex) - vertex;
+        const auto constraint_plane = constraints.front()->polygon().plane();
+        dir = constraint_plane.project_vector(dir);
+        const angem::Line<3, double> moving_axis(vertex, dir);
+        angem::collision(moving_axis, fracture.plane(), vertex);
+        break;
+      }
+    case 2:
+      {
+        const auto n1 = constraints[0]->polygon().plane().normal();
+        const auto n2 = constraints[1]->polygon().plane().normal();
+        const auto dir = n1.cross(n2);
+        const angem::Line<3, double> moving_axis(vertex, dir);
+        angem::collision(moving_axis, fracture.plane(), vertex);
+        break;
+      }
+    default:  // zero and more constrains
+      // there is no direction to move vertex without distorting the bounding box
+      {
+        vertex = fracture.plane().project_point(vertex);
+        break;
+      }
+  }
+}
+
+// angem::Point<3,double> EmbeddedFractureManager::
+// determine_move_direction_(size_t v, const angem::Polygon<double> & fracture,
+//                           const std::vector<angem::Point<3,double>> & constraints)
+// {
+//   switch  constraints.size())
+//   {
+//     case 0:
+//       return
+//   }
+// }
 
 }  // end namespace gprs_data

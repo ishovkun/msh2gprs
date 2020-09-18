@@ -145,6 +145,9 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
   if (top[2] > this->top()) top[2] = this->top();
   top[2] -= 1e-2 * std::fabs(sg.stepping(2));
 
+  if (!(sg.in_bounds(bot) && sg.in_bounds(top)))
+    return std::vector<size_t>();
+
   const int start_k = sg.get_ijk(sg.find_cell(bot))[2];
   const int end_k = sg.get_ijk(sg.find_cell(top))[2];
   std::unordered_set<size_t> result;
