@@ -156,6 +156,11 @@ struct EDFMSettings
   EDFMMethod method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
 };
 
+struct DFMSettings
+{
+  bool split_mech_vertices = true;
+};
+
 struct PreprocessorConfig
 {
   std::vector<EmbeddedFractureConfig>  embedded_fractures;  //  embedded  fractures
@@ -166,6 +171,7 @@ struct PreprocessorConfig
 
   FiniteElementConfig fem;
   EDFMSettings edfm_settings;
+  DFMSettings dfm_settings;
   // double edfm_min_dist_to_node = 1e-4;               // minimum distance to grid vertices relative to cell size
   // global container for all cell properties
   CellPropertyConfig cell_properties;

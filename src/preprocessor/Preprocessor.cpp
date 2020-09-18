@@ -301,16 +301,13 @@ void Preprocessor::build_geomechanics_discretization_()
 
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
   data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>(mech_numbering_mgr.get_numbering());
-  // for (auto cell = data.geomechanics_grid.begin_active_cells(); cell != data.geomechanics_grid.end_active_cells(); ++cell)
-  //   if (data.mech_numbering->cell_dof(cell->index()) == 750)
-  //   {
-  //     std::cout << "yay " << cell->index() << " " << data.mech_numbering->cell_dof(cell->index()) << std::endl;
-  //     exit(0);
-  //   }
 
   // split geomechanics DFM faces
-  logging::log() << "Splitting faces of DFM fractures" << std::endl;
-  // p_frac_mgr->split_faces(data.geomechanics_grid);
+  if (config.dfm_settings.split_mech_vertices)
+  {
+    logging::log() << "Splitting faces of DFM fractures" << std::endl;
+    p_frac_mgr->split_faces(data.geomechanics_grid);
+  }
 
   // build mechanics boundary conditions
   logging::log() << "Building mechanics boundary conditions" << std::endl;

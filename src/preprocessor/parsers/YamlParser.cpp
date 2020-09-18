@@ -164,6 +164,8 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
     }
     else if (key == "file")
       config.gprs_output.discrete_frac_file = it->second.as<std::string>();
+    else if (key == "split_vertices")
+      config.dfm_settings.split_mech_vertices = it->second.as<bool>();
     else
       std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
