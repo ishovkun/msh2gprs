@@ -72,9 +72,14 @@ void Preprocessor::run()
   pm_edfm_mgr->split_cells();
   logging::important() << "Finished splitting cells" << std::endl << std::flush;
 
-  logging::important() << "Peforming Grid Refinement" << std::endl;
-  mesh::RefinementAspectRatio refinement(data.grid, 2, 5);
-  logging::important() << "Finished Grid Refinement" << std::endl;
+  if (config.mesh_config.refinement.type != RefinementType::none)
+  {
+    logging::important() << "Peforming Grid Refinement" << std::endl;
+    if (config.mesh_config.refinement.type == RefinementType::aspect_ratio)
+      mesh::RefinementAspectRatio refinement(data.grid, config.mesh_config.refinement.aspect_ratio,
+                                             config.mesh_config.refinement.max_level);
+    logging::important() << "Finished Grid Refinement" << std::endl;
+  }
 
   logging::important() << "Building flow discretization" << "\n";
   build_flow_discretization_();

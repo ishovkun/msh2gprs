@@ -30,6 +30,7 @@ class YamlParser
   void boundary_conditions_faces(const YAML::Node & node);
   void boundary_conditions_nodes(const YAML::Node & node);
   void subsection_cartesian_grid(const YAML::Node & node);
+  void subsection_refinement(const YAML::Node & node);
   // subsections
   void embedded_fracture(const YAML::Node       & node,
                          EmbeddedFractureConfig & conf);

@@ -241,4 +241,16 @@ std::vector<vertex_pair> Cell::edges() const noexcept
   return std::vector<vertex_pair> (sedges.begin(), sedges.end());
 }
 
+size_t Cell::level() const noexcept
+{
+  size_t cnt = 0;
+  const Cell * cur = this;
+  while (cur->index() != cur->parent().index())
+  {
+    cur = &cur->parent();
+    cnt++;
+  }
+  return cnt;
+}
+
 }  // end namespace

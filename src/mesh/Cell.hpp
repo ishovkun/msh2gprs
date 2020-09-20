@@ -43,6 +43,8 @@ class Cell
   inline std::vector<std::size_t> & vertices() { return m_vertices; }
   // get const vector of vertex indices
   inline const std::vector<std::size_t> & vertices() const { return m_vertices; }
+  // get cell level of refinement (number of steps to original cell in parent chain)
+  size_t level() const noexcept;
   // get the coordinates of cell vertices
   std::vector<Point> vertex_coordinates() const;
   // get vector of neighbors

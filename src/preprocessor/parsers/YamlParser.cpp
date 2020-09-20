@@ -684,6 +684,10 @@ void YamlParser::section_mesh(const YAML::Node & node)
       conf.type = MeshType::cartesian;
       subsection_cartesian_grid(it->second);
     }
+    else if (key == "refinement")
+    {
+      subsection_refinement(it->second);
+    }
     else throw std::invalid_argument("Unknown key " + key);
   }
 }
@@ -712,6 +716,29 @@ void YamlParser::subsection_cartesian_grid(const YAML::Node & node)
   conf.dy.assign(dimens[1], diff[1] / dimens[1]);
   conf.dz.assign(dimens[2], diff[2] / dimens[2]);
   conf.origin = origin;
+}
+
+void YamlParser::subsection_refinement(const YAML::Node & node)
+{
+  auto & conf  = config.mesh_config.refinement;
+  for (auto it = node.begin(); it!=node.end(); ++it)
+  {
+    const std::string key = it->first.as<std::string>();
+    std::cout << "\t\treading key: " << key << std::endl;
+    if (key == "type")
+    {
+      const std::string value = it->second.as<std::string>();
+      if (value == "aspect_ratio")
+        conf.type = RefinementType::aspect_ratio;
+      else throw std::invalid_argument("invalid refinement type");
+    }
+    else if (key == "aspect_ratio")
+      conf.aspect_ratio = it->second.as<double>();
+    else if (key == "max_level")
+      conf.max_level = it->second.as<size_t>();
+    else throw std::invalid_argument("invalid refinement key");
+  }
+
 }
 
 }  // end namespace

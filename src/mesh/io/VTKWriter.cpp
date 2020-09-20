@@ -33,10 +33,7 @@ void VTKWriter::write_surface_geometry(const std::vector<Point>    & vertices,
   for (const auto & cell : cells)
     vind_size_total += cell.size();
 
-  out << "CELLS" << "\t"
-      << n_cells << "\t"
-      << vind_size_total + n_cells
-      << std::endl;
+  out << "CELLS" << "\t" << n_cells << "\t" << vind_size_total + n_cells << std::endl;
 
   for (const auto & cell : cells)
   {
@@ -56,13 +53,6 @@ void VTKWriter::write_surface_geometry(const std::vector<Point>    & vertices,
       out << 5 << std::endl;
     else
       out << 7 << std::endl;
-    // else if (cell.size() == 5 || cell.size() == 6)  // polygon
-    //   out << 7 << std::endl;
-    // else
-    // {
-    //   std::cout << "unknown cell type : " << cell.size() << " vertices" << std::endl;
-    //   exit(-1);
-    // }
   }
 
 }
@@ -338,6 +328,8 @@ void VTKWriter::write_geometry(const std::vector<angem::Point<3,double>>  &verti
   for (const int type : cell_types)
     out << type << std::endl;
 }
+
+
 
 }  // end namespace
 

@@ -57,6 +57,9 @@ class VTKWriter
   template <typename T>
   static void write(const angem::Polyhedron<T> & polyhedron, const std::string & fname);
 
+  template <typename T>
+  static void write(const angem::Polygon<T> & polygon, const std::string & fname);
+
  protected:
   static void write_geometry_classic_(const Mesh & grid, std::ofstream & out);
   static void write_geometry_face_based_(const Mesh & grid, std::ofstream & out);
@@ -111,6 +114,46 @@ void VTKWriter::write(const angem::Polyhedron<T> & polyhedron, const std::string
   out << "CELL_TYPES" << "\t" << 1 << "\n";
   out << angem::GeneralPolyhedronID << "\n";
 
+  out.close();
+}
+
+template <typename T>
+void VTKWriter::write(const angem::Polygon<T> & polygon, const std::string & fname)
+{
+  std::ofstream out;
+  out.open(fname.c_str());
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Fractures \n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  const std::size_t n_points = polygon.get_points().size();
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+
+  for (const auto & p : polygon.get_points())
+    out << p << std::endl;
+
+  const size_t nv= polygon.get_points().size();
+  out << "CELLS" << "\t" << 1 << "\t" << 1 + nv << std::endl;
+  out << nv << "\t";
+  for (size_t i = 0; i < nv; ++i)
+    out << i << " ";
+  out << "\n\n";
+
+  out << "CELL_TYPES" << "\t" << 1 << std::endl;
+  switch (nv)
+  {
+    case 3:
+      out << angem::TriangleID;  //  triangle
+      break;
+    case 4:
+      out << angem::QuadrangleID;  //  vtk_quad
+      break;
+    default:
+      out << angem::GeneralPolygonID;  //  vtk_polygon
+      break;
+  }
+  out <<"\n";
   out.close();
 }
 
