@@ -52,19 +52,12 @@ void DiscretizationPEDFM::build_non_neighboring_connections_()
         {
           const size_t neighbor_cell = other_cell_(*frac_face, *isolating_face);
           if (neighbor_cell == host_cell) continue;
-          std::cout << "\nneighbor_cell = " << neighbor_cell << std::endl;
-          std::cout << "host_cell = " << host_cell << std::endl;
           const size_t cell_dof1 = m_dofs.cell_dof(host_cell);
           const size_t cell_dof2 = m_dofs.cell_dof(neighbor_cell);
           const size_t frac_dof = m_dofs.face_dof(frac_face->index());
           // if already cleared, then skip
           if (!_cleared_connections.contains(cell_dof1, cell_dof2))
           {
-            // const auto projection_points =
-            //     angem::project(_edfm_mgr.fracture_shape(frac_face->marker()),
-            //                    isolating_face->polygon(), 1e-6);
-            // if (projection_points.size() < 3) continue; // no real projection
-            // const angem::Polygon<double> projection(projection_points);
             const auto projection = project_(_edfm_mgr.fracture_shape(frac_face->marker()),
                                              isolating_face->polygon());
             if (projection.first)
@@ -228,15 +221,10 @@ void DiscretizationPEDFM::build_fracture_matrix_(size_t frac_dof, size_t cell_do
   const auto &n = con.normal;
   // projection point
   const double t =  (cf - c1).dot(n) / (c2 - c1).dot(n);
-  std::cout << "c1 = " << c1 << std::endl;
-  std::cout << "c2 = " << c2 << std::endl;
-  std::cout << "c2 - c1 " << (c2 - c1) << " n " << n << std::endl;
-  std::cout << "t = " << t << std::endl;
   const auto cp = c1 + t*(c2 - c1);
   // project permeability
   const double & Kp1 = frac.permeability(0, 0);;
   const auto & K2 = cell.permeability;
-  std::cout << "cp = " << cp << std::endl;
   const double Kp2 = (K2 * (c2 - cp).normalize()).norm();
   // cell-face transmissibility
   const double face_area = con.area;
@@ -253,7 +241,7 @@ void DiscretizationPEDFM::build_fracture_matrix_(size_t frac_dof, size_t cell_do
 
 void DiscretizationPEDFM::finalize_connections_()
 {
-  // copy to condata
+  // copy to output vector while avoiding to copy cleared connections condata
   m_con_data.reserve(m_con_map.size());
   for (auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
     if (!_cleared_connections.contains(it.elements()))
