@@ -101,9 +101,7 @@ bool EmbeddedFractureManager::find_edfm_cells_fast_(angem::Polygon<double> & fra
       cells.push_back(cell.index());
 
       // check if some vertices are too close to the fracture
-      // and if so move a fracture a little bit
       const std::vector<Point> & vertices = polyhedron->get_points();
-      // for (const Point & vertex : vertices)
       for (const size_t v : cell.vertices())
       {
         const auto & vertex = m_grid.vertex(v);
@@ -111,6 +109,7 @@ bool EmbeddedFractureManager::find_edfm_cells_fast_(angem::Polygon<double> & fra
         const double threshold = h * _settings.min_dist_to_node;
         const double dist_to_frac =  std::fabs(fracture.plane().signed_distance(vertex));
         global_min_dist = std::min(global_min_dist, dist_to_frac);
+        // if too close
         if (dist_to_frac < threshold)
         {
           if ( _settings.placement == FracturePlacement::move_fracture )
