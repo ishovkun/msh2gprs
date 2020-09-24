@@ -68,16 +68,14 @@ class EmbeddedFractureManager
    * @return {std::vector<int>}  : vector of unique face markers that describe split edfm cells
    */
   std::vector<int> get_face_markers() const;
-  /**
-   * Build edfm surface grid for vtk output
-   * This fills SimData::edfm_grid and SimData::edfm_cell_mapping
-   * @param  {discretization::DoFNumbering} dofs : flow degrees of freedom of edfm cells
-   */
-  // void build_edfm_grid(const discretization::DoFNumbering & dofs);
   // map SDA cells to edfm control volumes
   // do it only after coarsening the grid
   // and distribute mechanical properties
   void map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs);
+  // get fracture polyhedron
+  const angem::Polygon<double> & fracture_shape(int face_marker) const;
+  // get the number of embedded fractures
+  size_t n_fractures() const noexcept;
 
  private:
   bool find_edfm_cells_(angem::Polygon<double> & fracture, std::vector<size_t> & cells);

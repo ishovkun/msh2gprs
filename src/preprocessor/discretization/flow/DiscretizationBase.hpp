@@ -19,6 +19,8 @@ class DiscretizationBase
                      gprs_data::SimData & data,
                      std::vector<ControlVolumeData> & cv_data,
                      std::vector<ConnectionData> & connection_data);
+  virtual ~DiscretizationBase() = default;
+
 
   // main method. build the discretization
   virtual void build() = 0;

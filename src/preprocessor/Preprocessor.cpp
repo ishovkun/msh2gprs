@@ -7,8 +7,9 @@
 #include "BoundaryConditionManager.hpp"
 #include "discretization/mechanics/DiscretizationFEM.hpp"
 #include "discretization/flow/DiscretizationTPFA.hpp"
-#include "discretization/flow/DiscretizationEDFM.hpp"
 #include "discretization/flow/DiscretizationDFM.hpp"
+#include "discretization/flow/DiscretizationEDFM.hpp"
+#include "discretization/flow/DiscretizationPEDFM.hpp"
 #include "GridEntityNumberingManager.hpp"
 #include "MultiScaleDataMech.hpp"
 #include "DoFManager.hpp"
@@ -243,10 +244,28 @@ void Preprocessor::build_flow_discretization_()
   std::shared_ptr<DoFNumbering> p_split_dofs = dof_manager.distribute_dofs();
   std::shared_ptr<DoFNumbering> p_unsplit_dofs = dof_manager.distribute_unsplit_dofs();
 
+  using namespace discretization;
+  std::unique_ptr<DiscretizationBase> flow_discr;
+  switch (config.edfm_settings.method)
+  {
+    case (EDFMMethod::simple):
+      flow_discr = std::make_unique<DiscretizationEDFM>
+          (*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
+           data.flow_connection_data, edfm_markers);
+      break;
+    case (EDFMMethod::projection):
+      flow_discr = std::make_unique<DiscretizationPEDFM>
+          (*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
+           data.flow_connection_data, *pm_edfm_mgr);
+    break;
+    case (EDFMMethod::compartmental):
+      flow_discr = std::make_unique<DiscretizationDFM>
+          (*p_split_dofs, data, data.cv_data, data.flow_connection_data);
+    break;
+  }
   // build edfm discretization from mixed dfm-edfm discretization
-  discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
-                                                data.flow_connection_data, edfm_markers,
-                                                config.edfm_settings.method);
+  // discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
+  //                                               data.flow_connection_data, edfm_markers);
   // if we do cedfm use the split matrix dof numbering
   // else use unsplit matrix dofs
   if ( config.edfm_settings.method == EDFMMethod::compartmental )
@@ -255,7 +274,8 @@ void Preprocessor::build_flow_discretization_()
     data.flow_numbering = p_unsplit_dofs;
 
   logging::debug() << "invoke discretization class" << std::endl;
-  discr_edfm.build();
+  // discr_edfm.build();
+  flow_discr->build();
 
   // setup wells
   if (!config.wells.empty())

@@ -19,6 +19,8 @@ class DiscretizationTPFA : public DiscretizationBase
                      std::vector<ControlVolumeData> & cv_data,
                      std::vector<ConnectionData> & connection_data);
 
+  virtual ~DiscretizationTPFA() = default;
+
   virtual void build() override;
   static void build_mo(ConnectionData & connection,
                        const ControlVolumeData & cell1,

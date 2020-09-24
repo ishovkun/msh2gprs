@@ -52,6 +52,8 @@ class ConnectionMap
   std::size_t index(const std::size_t ielement, const std::size_t jelement) const;
   // returns true if the connection between elements exists
   bool contains(const std::size_t ielement, const std::size_t jelement) const;
+  // returns true if the connection between elements exists
+  bool contains(const std::pair<size_t,size_t> & elements) const;
   // get neighbors of the connection map element
   const std::vector<std::size_t> & get_neighbors(std::size_t ielement) const;
   // delete a connection between elements from the map
@@ -243,6 +245,11 @@ bool ConnectionMap<DataType>::contains(const std::size_t ielement,
     return true;
 }
 
+template <typename DataType>
+bool ConnectionMap<DataType>::contains(const std::pair<size_t,size_t> & elements) const
+{
+  return contains(elements.first, elements.second);
+}
 
 template <typename DataType>
 std::size_t ConnectionMap<DataType>::insert(const std::size_t ielement,

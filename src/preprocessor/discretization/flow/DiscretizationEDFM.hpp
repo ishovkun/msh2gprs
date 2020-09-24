@@ -18,8 +18,9 @@ class DiscretizationEDFM : public DiscretizationBase
                      gprs_data::SimData & data,
                      std::vector<ControlVolumeData> & cv_data,
                      std::vector<ConnectionData> & connection_data,
-                     const std::vector<int> & edfm_markers,
-                     const EDFMMethod method);
+                     const std::vector<int> & edfm_markers);
+
+  virtual ~DiscretizationEDFM() = default;
   virtual void build() override;
 
  protected:
@@ -44,7 +45,6 @@ class DiscretizationEDFM : public DiscretizationBase
   std::vector<ConnectionData> m_split_con;
   std::unordered_set<size_t> m_edfm_faces;
   std::unordered_set<int> m_edfm_markers;
-  const EDFMMethod m_method;
   hash_algorithms::ConnectionMap<ConnectionData> m_con_map;
 };
 

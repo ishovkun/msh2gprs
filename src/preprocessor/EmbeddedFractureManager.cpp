@@ -304,15 +304,15 @@ void EmbeddedFractureManager::move_vertex_(size_t v, const angem::Polygon<double
   }
 }
 
-// angem::Point<3,double> EmbeddedFractureManager::
-// determine_move_direction_(size_t v, const angem::Polygon<double> & fracture,
-//                           const std::vector<angem::Point<3,double>> & constraints)
-// {
-//   switch  constraints.size())
-//   {
-//     case 0:
-//       return
-//   }
-// }
+const angem::Polygon<double> & EmbeddedFractureManager::fracture_shape(int face_marker) const
+{
+  if (!is_fracture(face_marker)) throw std::out_of_range("face is not fracture");
+  return *(config[fracture_index_(face_marker)].body);
+}
+
+size_t EmbeddedFractureManager::n_fractures() const noexcept
+{
+  return config.size();
+}
 
 }  // end namespace gprs_data
