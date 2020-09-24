@@ -147,9 +147,11 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
 
   const auto & sg = _mapper.get_search_grid();
   auto bot = polygon.support({0, 0, -1});
+  if (bot[2] > this->top()) throw std::invalid_argument("fracture not in bounds");
   bot[2] = std::max(bot[2], bottom() + 1e-2 * std::fabs(sg.stepping(2)));
 
   auto top = polygon.support(vertical);
+  if (top[2] < bottom()) throw std::invalid_argument("fracture not in bounds");
   top[2] = std::min(top[2], this->top() - 1e-2 * std::fabs(sg.stepping(2)));
 
   if (!(sg.in_bounds(bot) && sg.in_bounds(top)))
@@ -168,6 +170,16 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
     const angem::Plane<double> section_plane(/*origin=*/{0, 0, z}, /*normal*/vertical);
     std::vector<angem::Point<3,double>> intersection;
     angem::collision(polygon, section_plane, intersection);
+    if (intersection.size() != 2)
+    {
+      std::cout << "z = " << z << std::endl;
+      std::cout << "poly" << std::endl;
+      for (auto p : polygon.get_points())
+        std::cout << p << std::endl;
+      std::cout << "section:" << std::endl;
+      for (auto p : intersection)
+        std::cout << p << std::endl;
+    }
     assert(intersection.size() == 2);
     angem::LineSegment<double> segment(intersection[0], intersection[1]);
     for (const size_t icell : collision(segment))
