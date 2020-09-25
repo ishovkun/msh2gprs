@@ -21,7 +21,7 @@ class DiscretizationEDFM : public DiscretizationBase
                      const std::vector<int> & edfm_markers);
 
   virtual ~DiscretizationEDFM() = default;
-  virtual void build() override;
+  void build() override;
 
  protected:
   void build_control_volume_data_();

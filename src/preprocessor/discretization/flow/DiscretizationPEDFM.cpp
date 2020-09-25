@@ -1,6 +1,7 @@
 #include "DiscretizationPEDFM.hpp"
 #include "DiscretizationDFM.hpp"
 #include "angem/Collisions.hpp"
+#include "Logger.hpp"
 
 namespace discretization {
 
@@ -32,11 +33,6 @@ void DiscretizationPEDFM::build()
   build_connection_data_();  // regular edfm
   build_non_neighboring_connections_();
   finalize_connections_();
-
-    // copy to condata
-  m_con_data.reserve(m_con_map.size());
-  for (auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
-    m_con_data.push_back(*it);
 }
 
 void DiscretizationPEDFM::build_non_neighboring_connections_()
@@ -46,30 +42,70 @@ void DiscretizationPEDFM::build_non_neighboring_connections_()
     if (_edfm_mgr.is_fracture(frac_face->marker()))
     {
       const auto isolating_faces = select_faces_(*frac_face);
-      const size_t host_cell = frac_face->neighbors()[0]->ultimate_parent().index();
+      const size_t host_cell = host_cell_index_(*frac_face);
       for (const auto * isolating_face : isolating_faces)
         if (non_branching_face_(*frac_face, *isolating_face))
         {
           const size_t neighbor_cell = other_cell_(*frac_face, *isolating_face);
-          if (neighbor_cell == host_cell) continue;
-          const size_t cell_dof1 = m_dofs.cell_dof(host_cell);
-          const size_t cell_dof2 = m_dofs.cell_dof(neighbor_cell);
-          const size_t frac_dof = m_dofs.face_dof(frac_face->index());
-          // if already cleared, then skip
-          if (!_cleared_connections.contains(cell_dof1, cell_dof2))
+          if (neighbor_cell != host_cell)
           {
-            const auto projection = project_(_edfm_mgr.fracture_shape(frac_face->marker()),
-                                             isolating_face->polygon());
-            if (projection.first)
+            const size_t cell_dof1 = m_dofs.cell_dof(host_cell);
+            const size_t cell_dof2 = m_dofs.cell_dof(neighbor_cell);
+            const size_t frac_dof = m_dofs.face_dof(frac_face->index());
+            // if already cleared, then skip
+            if (!_cleared_connections.contains(cell_dof1, cell_dof2))
             {
-              const double projection_area = projection.second->area();
-
-              build_matrix_matrix_(cell_dof1, cell_dof2, projection_area);
-              build_fracture_matrix_(m_dofs.face_dof(frac_face->index()), cell_dof2,
-                                     projection_area, projection.second->normal());
+              const auto projection = project_(_edfm_mgr.fracture_shape(frac_face->marker()),
+                                               isolating_face->ultimate_parent().polygon());
+              if (projection.first)
+              {
+                const double projection_area = projection.second->area();
+                std::cout << "modifying " << host_cell << "-"
+                          << neighbor_cell << ": ";
+                // if (host_cell == 25 && neighbor_cell == 26)
+                // {
+                //   std::cout << "projection_area = " << projection_area << std::endl;
+                //   std::cout << "face area = " << isolating_face->ultimate_parent().area() << std::endl;
+                //   std::cout << "projection polygon:" << std::endl;
+                //   for (auto p : projection.second->get_points())
+                //     std::cout << p << std::endl;
+                //   // exit(0);
+                // }
+                build_matrix_matrix_(cell_dof1, cell_dof2, projection_area);
+                build_fracture_matrix_(m_dofs.face_dof(frac_face->index()), cell_dof2,
+                                       projection_area, projection.second->normal());
+              }
             }
           }
         }
+        // else {
+        //   std::cout << "branching " << host_cell << "-"
+        //             << other_cell_(*frac_face, *isolating_face)
+        //             << std::endl;
+        //   std::cout << "share? " << have_common_vertices_(*frac_face, *isolating_face) << std::endl;
+        //   const auto poly_frac = frac_face->polygon();
+        //   const auto frac_plane = poly_frac.plane();
+        //   const auto cfrac = poly_frac.center();
+        //   const bool side = frac_plane.above(isolating_face->center());
+        //   for (const auto * neighbor : isolating_face->neighbors())
+        //   {
+        //     const auto neighbor_faces = neighbor->faces();
+        //     // check neighbor cell (that does not contain frac_face)
+        //     if ( std::find(neighbor_faces.begin(), neighbor_faces.end(), &*frac_face) == neighbor_faces.end() )
+        //     {
+        //       // a little generic and hard to understand
+        //       // neighbor can be a small sub-cell of a larger host cell
+        //       // we check all sub-cells of the host neighbor cell and divide in regions above and below frac
+        //       // if smaller region of the neighbor cell is on the opposite part of fracture
+        //       // then return true
+        //       if (smaller_cut_part_above_(neighbor, frac_plane) != side)
+        //         std::cout << "change side" << std::endl;
+        //       else std::cout << "same side" << std::endl;
+        //       break;
+        //     }
+        //   }
+
+        // }
     }
 }
 
@@ -94,7 +130,7 @@ std::list<const mesh::Face*> DiscretizationPEDFM::select_faces_(const mesh::Face
 bool DiscretizationPEDFM::non_branching_face_(const mesh::Face & frac_face, const mesh::Face & face) const
 {
   // 1. if face does not cross fracture (doesn't have common vertices), then it's not a branch
-  if (have_common_vertices_(frac_face, face))
+  if (!have_common_vertices_(frac_face, face))
     return true;
   // 2. if face crosses the fracture and if smaller neighbor is on opposite side of the frac, then
   // it's not a branch
@@ -120,7 +156,22 @@ bool DiscretizationPEDFM::non_branching_face_(const mesh::Face & frac_face, cons
     }
   }
 
-  throw std::runtime_error("should not be here");
+  // this sometimes happens in boundary cells, no idea why
+  logging::warning() << "problem in cell " << host_cell_index_(frac_face) << std::endl;
+  logging::warning() << "should not be here, it's a bug!" << std::endl;
+  // std::cout << "face->neighbors().size() = " << face.neighbors().size() << std::endl;
+  // for (const auto * neighbor : face.neighbors())
+  //   std::cout << neighbor->index() << " (" << neighbor->ultimate_parent().index() << std::endl;
+  // std::cout << "frac? " << _edfm_mgr.is_fracture(face.marker()) << std::endl;
+  // std::cout << "marker = " << face.marker() << std::endl;
+  // std::cout << "vertices" << std::endl;
+  // for (auto v : face.vertices())
+  //   std::cout << v << std::endl;
+  // // if (face.neighbors().size() == 1)  // skip domain boundaries
+  // //   return false;
+  // // else
+  // throw std::runtime_error("should not be here");
+  return false;
 }
 
 const mesh::Cell* DiscretizationPEDFM::smallest_neighbor_(const mesh::Face & face) const
@@ -129,7 +180,7 @@ const mesh::Cell* DiscretizationPEDFM::smallest_neighbor_(const mesh::Face & fac
   if (neighbors.size() < 2) throw std::invalid_argument("face has only one neighbor cell");
   if (neighbors[0]->volume() > neighbors[1]->volume())
     return neighbors[1];
-  return neighbors[0];
+  else return neighbors[0];
 }
 
 bool DiscretizationPEDFM::smaller_cut_part_above_(const mesh::Cell* cell,
@@ -139,7 +190,7 @@ bool DiscretizationPEDFM::smaller_cut_part_above_(const mesh::Cell* cell,
   for (const auto * subcell : cell->ultimate_parent().ultimate_children())
   {
     if (frac_plane.above(subcell->center())) vol_above += subcell->volume();
-    else                                     vol_above += subcell->volume();
+    else                                     vol_below += subcell->volume();
   }
 
   if (vol_above < vol_below) return true;
@@ -200,8 +251,13 @@ void DiscretizationPEDFM::build_matrix_matrix_(size_t dof1, size_t dof2, double 
   const double T1_init = con.area * Kp1 / c1.distance(cp);
   const double T2_init = con.area * Kp2 / c2.distance(cp);
   const double T_init = (T1_init + T2_init > 0) ? T1_init * T2_init / (T1_init + T2_init) : 0.0;
+  std::cout << T_new << "/" << T_init;
   if (T_new < 1e-6 * T_init)
+  {
+    std::cout << " clear";
     _cleared_connections.insert(dof1, dof2);
+  }
+  std::cout << std::endl;
 }
 
 void DiscretizationPEDFM::build_fracture_matrix_(size_t frac_dof, size_t cell_dof,
@@ -212,6 +268,8 @@ void DiscretizationPEDFM::build_fracture_matrix_(size_t frac_dof, size_t cell_do
   auto & con = m_con_map.get_data(con_idx);
   con.normal = normal;
   con.area = projection_area;
+  con.elements = {frac_dof, cell_dof};
+
   const auto & frac = m_cv_data[frac_dof];
   const auto & cell = m_cv_data[cell_dof];
 
@@ -262,11 +320,15 @@ DiscretizationPEDFM::project_(const angem::Polygon<double> & poly1, const angem:
   const auto projected_frac_vertices = poly2.plane().project_points(poly1.get_points());
   const angem::Polygon<double> proj_poly(projected_frac_vertices);
   std::vector<angem::Point<3,double>> intersection;
-  if (!angem::collision(proj_poly, poly2, intersection, tol))
-    result.first = false;
-  else result.second = std::make_unique<angem::Polygon<double>>(intersection);
+  result.first = angem::collision(proj_poly, poly2, intersection, tol);
+  if (result.first)
+    result.second = std::make_unique<angem::Polygon<double>>(intersection);
 
   return result;
 }
+
+size_t DiscretizationPEDFM::host_cell_index_(const mesh::Face & frac_face) const
+{
+  return frac_face.neighbors()[0]->ultimate_parent().index();}
 
 }  // end namespace discretization

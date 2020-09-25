@@ -59,7 +59,7 @@ class DiscreteFractureManager
   const std::vector<DiscreteFractureConfig> & m_config;
   mesh::Mesh & m_grid; // grid
   SimData & m_data; // output data container
-  std:: set<int> m_dfm_markers;  // set of dfm markers
+  std::set<int> m_dfm_markers;  // set of dfm markers
 };
 
 }  // end namespace gprs_data

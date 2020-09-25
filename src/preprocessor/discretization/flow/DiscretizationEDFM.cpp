@@ -26,32 +26,25 @@ void DiscretizationEDFM::build()
 {
   DiscretizationDFM discr_dfm(m_split_dofs, m_data, m_split_cv, m_split_con);
   discr_dfm.build();
-  // if (m_method != EDFMMethod::compartmental)
+
+  identify_edfm_faces_();
+  if (m_edfm_faces.empty())
   {
-    identify_edfm_faces_();
-    if (m_edfm_faces.empty())
-    {
-      m_cv_data = std::move(m_split_cv);
-      m_con_data = std::move(m_split_con);
-      return;
-    }
-
-    build_control_volume_data_();
-    build_connection_data_();
-
-    // if (m_method == EDFMMethod::projection)
-    //   build_pedfm_();
-
-    // copy to condata
-    m_con_data.reserve(m_con_map.size());
-    for (auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
-      m_con_data.push_back(*it);
+    m_cv_data = std::move(m_split_cv);
+    m_con_data = std::move(m_split_con);
+    return;
   }
-  // else
-  // {
-  //   m_cv_data = std::move(m_split_cv);
-  //   m_con_data = std::move(m_split_con);
-  // }
+
+  build_control_volume_data_();
+  build_connection_data_();
+
+  // if (m_method == EDFMMethod::projection)
+  //   build_pedfm_();
+
+  // copy to condata
+  m_con_data.reserve(m_con_map.size());
+  for (auto it = m_con_map.begin(); it != m_con_map.end(); ++it)
+    m_con_data.push_back(*it);
 }
 
 void DiscretizationEDFM::build_control_volume_data_()

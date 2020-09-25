@@ -123,14 +123,6 @@ void DiscreteFractureManager::split_faces(mesh::Mesh & grid)
 
   m_data.parent_to_child_vertices = splitter.get_child_vertices();
 
-  // for (size_t icell : {35, 26, 34, 25, 28, 31, 33})
-  // {
-  //   std::cout << "save " <<  icell << std::endl;
-  //   IO::VTKWriter::write_geometry(grid, grid.cell(icell), "output1/cell_geom-"+std::to_string(icell) + ".vtk");
-  // }
-  // exit(0);
-
-
   // if (grid.n_vertices() != n_faces_old)
   //   std::cout << "Split " << grid.n_vertices() - n_vertices_old
   //             << " vertices for dfm fractures"
@@ -190,6 +182,7 @@ std::vector<size_t> DiscreteFractureManager::map_dfm_grid_to_flow_dofs(const mes
                                                                        const discretization::DoFNumbering & dofs) const
 {
   std::vector<size_t> result;
+  result.reserve(m_data.dfm_faces.size());
 
   for (auto & it : m_data.dfm_faces)
   {
@@ -197,16 +190,12 @@ std::vector<size_t> DiscreteFractureManager::map_dfm_grid_to_flow_dofs(const mes
     // infer if it is coupled based on neighbors
     const auto neighbors = face.neighbors();
     if (m_data.coupling[neighbors[0]->index()])
-    {
       it.second.coupled = true;
-      result.push_back( dofs.face_dof(face.index()) );
-    }
-    else
-    {
-      it.second.coupled = false;
-      result.push_back( dofs.face_dof(face.index()) );
-    }
+    else it.second.coupled = false;
+
+    result.push_back( dofs.face_dof(face.index()) );
   }
+
   return result;
 }
 

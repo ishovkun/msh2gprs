@@ -14,7 +14,7 @@ class DiscretizationPEDFM : public DiscretizationEDFM {
                       const gprs_data::EmbeddedFractureManager & edfm_mgr);
   virtual ~DiscretizationPEDFM() = default;
 
-  virtual void build() override;
+  void build() override;
 
  private:
   void build_non_neighboring_connections_();
@@ -28,6 +28,7 @@ class DiscretizationPEDFM : public DiscretizationEDFM {
   void build_fracture_matrix_(size_t dof1, size_t dof2, double projection_area,
                               const angem::Point<3,double> & normal);
   void finalize_connections_();
+  size_t host_cell_index_(const mesh::Face & frac_face) const;
 
   std::pair<bool, std::unique_ptr<angem::Polygon<double>>>
   project_(const angem::Polygon<double> & poly1, const angem::Polygon<double> & poly2) const;

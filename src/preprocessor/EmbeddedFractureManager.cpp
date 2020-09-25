@@ -5,6 +5,7 @@
 #include <utility>                 // provides std::pair
 #include <fstream>                 // debug
 #include "mesh/io/VTKWriter.hpp"
+#include "Logger.hpp"
 
 
 namespace gprs_data {
@@ -119,7 +120,11 @@ bool EmbeddedFractureManager::find_edfm_cells_fast_(angem::Polygon<double> & fra
             return false;
           }
           // else vertex = fracture.plane().project_point(vertex);
-          else move_vertex_(v, fracture);
+          else
+          {
+            logging::debug() << "moving vertex " << v << "\n";
+            move_vertex_(v, fracture);
+          }
         }
       }
     }

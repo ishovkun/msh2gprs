@@ -263,9 +263,6 @@ void Preprocessor::build_flow_discretization_()
           (*p_split_dofs, data, data.cv_data, data.flow_connection_data);
     break;
   }
-  // build edfm discretization from mixed dfm-edfm discretization
-  // discretization::DiscretizationEDFM discr_edfm(*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
-  //                                               data.flow_connection_data, edfm_markers);
   // if we do cedfm use the split matrix dof numbering
   // else use unsplit matrix dofs
   if ( config.edfm_settings.method == EDFMMethod::compartmental )
@@ -274,7 +271,6 @@ void Preprocessor::build_flow_discretization_()
     data.flow_numbering = p_unsplit_dofs;
 
   logging::debug() << "invoke discretization class" << std::endl;
-  // discr_edfm.build();
   flow_discr->build();
 
   // setup wells
@@ -286,8 +282,8 @@ void Preprocessor::build_flow_discretization_()
   }
 
   // used for coupling later on
-  if ( config.edfm_settings.method != EDFMMethod::compartmental )
-    pm_dfm_mgr->distribute_properties();
+  // if ( config.edfm_settings.method != EDFMMethod::compartmental )
+  //   pm_dfm_mgr->distribute_properties();
 }
 
 void Preprocessor::build_geomechanics_discretization_()
