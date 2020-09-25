@@ -78,6 +78,7 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
   const size_t child_cell_index1 = _grid.insert_cell_(cell_above_faces, tmp_faces, cell.marker());
   const size_t child_cell_index2 = _grid.insert_cell_(cell_below_faces, tmp_faces, cell.marker());
   _grid._n_inactive_cells++;
+  if (_verbose)
   std::cout << "split " << parent_cell_index << " (parent "
             << _grid.cell(parent_cell_index).parent().index()
             << " ult " << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
@@ -199,6 +200,7 @@ void CellSplitter::insert_hanging_node_(const Cell parent, const vertex_pair edg
   _grid.cell(child_cell_index).m_parent = parent_cell_index;
   _grid.cell(parent_cell_index).m_children = {child_cell_index};
   _grid._n_inactive_cells++;
+  if (_verbose)
   std::cout << "insert hanging into " << parent_cell_index << " "
             << "(" << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
             << child_cell_index
@@ -255,6 +257,7 @@ void CellSplitter::split_face_in_cell_(const Cell parent, const vertex_pair new_
     _grid.cell(child_cell_index).m_parent = parent_index;
     _grid.cell(parent_index).m_children = {child_cell_index};
     _grid._n_inactive_cells++;
+    if (_verbose)
     std::cout << "split neighbor face in "
               << parent_index << "(par "
               << _grid.cell(parent_index).parent().index() << ", ult "

@@ -146,22 +146,16 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
     throw std::invalid_argument("Horizontal fractures not supported");
 
   const auto & sg = _mapper.get_search_grid();
-  auto bot = polygon.support({0, 0, -1});
-  if (bot[2] > this->top()) throw std::invalid_argument("fracture not in bounds");
-  bot[2] = std::max(bot[2], bottom() + 1e-2 * std::fabs(sg.stepping(2)));
+  double bot = polygon.support({0, 0, -1})[2];
+  if (bot > this->top()) throw std::invalid_argument("fracture not in bounds");
+  bot = std::max(bot, bottom() + 1e-2 * std::fabs(sg.stepping(2)));
 
-  auto top = polygon.support(vertical);
-  if (top[2] < bottom()) throw std::invalid_argument("fracture not in bounds");
-  top[2] = std::min(top[2], this->top() - 1e-2 * std::fabs(sg.stepping(2)));
+  double top = polygon.support(vertical)[2];
+  if (top < bottom()) throw std::invalid_argument("fracture not in bounds");
+  top = std::min(top, this->top() - 1e-2 * std::fabs(sg.stepping(2)));
 
-  if (!(sg.in_bounds(bot) && sg.in_bounds(top)))
-  {
-    logging::debug() << "not in bounds, exiting\n";
-    return std::vector<size_t>();
-  }
-
-  const int start_k = sg.get_ijk(sg.find_cell(bot))[2];
-  const int end_k = sg.get_ijk(sg.find_cell(top))[2];
+  const int start_k = std::max<int>((bot - bottom()) / sg.stepping(2), int(0));
+  const int end_k = std::min<int>((top - this->top()) / sg.stepping(2), sg.nz()-1);
   std::unordered_set<size_t> result;
   for (size_t k = start_k; k <= end_k; ++k)
   {

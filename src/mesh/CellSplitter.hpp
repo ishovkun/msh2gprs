@@ -47,6 +47,7 @@ class CellSplitter {
   Mesh & _grid;
   angem::PointSet<3, double> _new_vertex_coord;
   std::vector<size_t> _new_vertices;
+  const bool _verbose = false;
 };
 
 }  // end namespace mesh
