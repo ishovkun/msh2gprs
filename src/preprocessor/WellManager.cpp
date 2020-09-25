@@ -44,6 +44,7 @@ void WellManager::setup_simple_well_fast_(Well & well)
     throw std::runtime_error("Method is not supported without a valid grid searcher");
   auto & searcher = *_data.grid_searcher;
   auto p1 = well.coordinate, p2 = well.coordinate;
+  well.reference_depth = -well.coordinate.z();
   p1[2] = searcher.top();
   p2[2] = searcher.bottom();
   angem::LineSegment<double> segment(p1, p2);
