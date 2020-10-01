@@ -147,25 +147,30 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
 
   const auto & sg = _mapper.get_search_grid();
   double bot = polygon.support({0, 0, -1})[2];
+  const double hz = sg.stepping(2);
+  const double eps_z = 1e-2 * std::fabs(sg.stepping(2));
+
   if (bot > this->top()) throw std::invalid_argument("fracture not in bounds");
-  bot = std::max(bot, bottom() + 1e-2 * std::fabs(sg.stepping(2)));
+  bot = std::max(bot, bottom() + eps_z);
 
   double top = polygon.support(vertical)[2];
   if (top < bottom()) throw std::invalid_argument("fracture not in bounds");
-  top = std::min(top, this->top() - 1e-2 * std::fabs(sg.stepping(2)));
+  top = std::min(top, this->top() - eps_z);
 
-  const int start_k = std::max<int>((bot - bottom()) / sg.stepping(2), int(0));
-  const int end_k = std::min<int>((top - this->bottom()) / sg.stepping(2), sg.nz()-1);
+  const int start_k = std::max<int>((bot - bottom()) / hz, int(0));
+  const int end_k = std::min<int>((top - this->bottom()) / hz, sg.nz()-1);
   std::unordered_set<size_t> result;
   for (size_t k = start_k; k <= end_k; ++k)
   {
     // z-center of the layer
-    const double z = sg.origin()[2] + sg.stepping(2) * (k + 0.5);
+    // avoid stepping beyond the polygon top
+    const double z = std::min(sg.origin()[2] + hz * (k + 0.5), top - eps_z);
     const angem::Plane<double> section_plane(/*origin=*/{0, 0, z}, /*normal*/vertical);
     std::vector<angem::Point<3,double>> intersection;
     angem::collision(polygon, section_plane, intersection);
     if (intersection.size() != 2)
     {
+      std::cout << "k = " << k << std::endl;
       std::cout << "z = " << z << std::endl;
       std::cout << "poly" << std::endl;
       for (auto p : polygon.get_points())
