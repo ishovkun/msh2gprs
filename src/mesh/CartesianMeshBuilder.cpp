@@ -71,8 +71,9 @@ size_t CartesianMeshBuilder::cell_index(size_t i, size_t j, size_t k) const
 
 size_t CartesianMeshBuilder::vertex_index(size_t i, size_t j, size_t k) const
 {
-  if (k >= nvx() || j >= nvy() || k >= nvz())
-    throw std::invalid_argument("Wrong vertex index");
+  if (i >= nvx() || j >= nvy() || k >= nvz())
+    throw std::invalid_argument("Wrong vertex index " + std::to_string(i) +
+                                " " + std::to_string(j) + " " + std::to_string(k));
   return nvy()*nvx()*k + nvx()*j + i;
 }
 
@@ -123,6 +124,7 @@ void CartesianMeshBuilder::setup_cells_(Mesh & grid) const
     for (size_t j = 0; j < ny(); ++j)
       for (size_t i = 0; i < nx(); ++i)
       {
+        // std::cout << k << " " << j << " " << i << std::endl;
         // create a hex: VTK vertex numbering
         const size_t v0 = vertex_index(i,   j,   k);
         const size_t v1 = vertex_index(i+1, j,   k);
