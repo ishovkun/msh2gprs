@@ -60,17 +60,6 @@ void DiscretizationPEDFM::build_non_neighboring_connections_()
               if (projection.first)
               {
                 const double projection_area = projection.second->area();
-                std::cout << "modifying " << host_cell << "-"
-                          << neighbor_cell << ": ";
-                // if (host_cell == 25 && neighbor_cell == 26)
-                // {
-                //   std::cout << "projection_area = " << projection_area << std::endl;
-                //   std::cout << "face area = " << isolating_face->ultimate_parent().area() << std::endl;
-                //   std::cout << "projection polygon:" << std::endl;
-                //   for (auto p : projection.second->get_points())
-                //     std::cout << p << std::endl;
-                //   // exit(0);
-                // }
                 build_matrix_matrix_(cell_dof1, cell_dof2, projection_area);
                 build_fracture_matrix_(m_dofs.face_dof(frac_face->index()), cell_dof2,
                                        projection_area, projection.second->normal());
@@ -78,34 +67,6 @@ void DiscretizationPEDFM::build_non_neighboring_connections_()
             }
           }
         }
-        // else {
-        //   std::cout << "branching " << host_cell << "-"
-        //             << other_cell_(*frac_face, *isolating_face)
-        //             << std::endl;
-        //   std::cout << "share? " << have_common_vertices_(*frac_face, *isolating_face) << std::endl;
-        //   const auto poly_frac = frac_face->polygon();
-        //   const auto frac_plane = poly_frac.plane();
-        //   const auto cfrac = poly_frac.center();
-        //   const bool side = frac_plane.above(isolating_face->center());
-        //   for (const auto * neighbor : isolating_face->neighbors())
-        //   {
-        //     const auto neighbor_faces = neighbor->faces();
-        //     // check neighbor cell (that does not contain frac_face)
-        //     if ( std::find(neighbor_faces.begin(), neighbor_faces.end(), &*frac_face) == neighbor_faces.end() )
-        //     {
-        //       // a little generic and hard to understand
-        //       // neighbor can be a small sub-cell of a larger host cell
-        //       // we check all sub-cells of the host neighbor cell and divide in regions above and below frac
-        //       // if smaller region of the neighbor cell is on the opposite part of fracture
-        //       // then return true
-        //       if (smaller_cut_part_above_(neighbor, frac_plane) != side)
-        //         std::cout << "change side" << std::endl;
-        //       else std::cout << "same side" << std::endl;
-        //       break;
-        //     }
-        //   }
-
-        // }
     }
 }
 

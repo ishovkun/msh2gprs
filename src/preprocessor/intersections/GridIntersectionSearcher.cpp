@@ -155,7 +155,7 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
   top = std::min(top, this->top() - 1e-2 * std::fabs(sg.stepping(2)));
 
   const int start_k = std::max<int>((bot - bottom()) / sg.stepping(2), int(0));
-  const int end_k = std::min<int>((top - this->top()) / sg.stepping(2), sg.nz()-1);
+  const int end_k = std::min<int>((top - this->bottom()) / sg.stepping(2), sg.nz()-1);
   std::unordered_set<size_t> result;
   for (size_t k = start_k; k <= end_k; ++k)
   {
