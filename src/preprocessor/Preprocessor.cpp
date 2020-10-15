@@ -282,8 +282,9 @@ void Preprocessor::build_flow_discretization_()
   }
 
   // used for coupling later on
-  // if ( config.edfm_settings.method != EDFMMethod::compartmental )
-  //   pm_dfm_mgr->distribute_properties();
+  // replace cedfm properties by pure DFM properties
+  if ( config.edfm_settings.method != EDFMMethod::compartmental )
+    pm_dfm_mgr->distribute_properties();
 }
 
 void Preprocessor::build_geomechanics_discretization_()
