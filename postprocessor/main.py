@@ -30,8 +30,9 @@ def main(argv):
         case_path = os.getcwd() + "/"
     elif len(argv) == 2:        # use argument
         case_path = argv[1]
+        if case_path[-1] != "/":
+            case_path += "/"
         print(case_path)
-        exit(0)
     else:
         print ("Wrong number of arguments.\n")
         print (usage_msg)
