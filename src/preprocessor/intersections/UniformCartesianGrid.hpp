@@ -28,14 +28,13 @@ class UniformCartesianGrid {
   size_t vertex_index(int i, int j, int k) const;
   bool is_valid_cell(int i, int j, int k) const noexcept;
   angem::Hexahedron<double> get_voxel(size_t idx) const;
-  std::vector<size_t> neighbors(size_t search_cell) const;
   bool in_bounds(const angem::Point<3,double> & p) const noexcept;
   void log_stats() const noexcept;
   size_t find_cell(const angem::Point<3,double> & p) const;
   angem::Point<3,double> vertex(size_t v)  const;
   angem::Point<3,double> vertex(int i, int j, int k)  const;
   bool is_valid_vertex(int i, int j, int k) const noexcept;
-  std::vector<size_t> neighbors(size_t cell_idx);
+  std::vector<size_t> neighbors(size_t search_cell) const;
 
  private:
   void add_neighbor_(int i, int j, int k, std::vector<size_t> & dst) const;

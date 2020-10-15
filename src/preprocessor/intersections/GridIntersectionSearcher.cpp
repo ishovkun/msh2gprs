@@ -56,6 +56,7 @@ GridIntersectionSearcher::collision(const angem::LineSegment<double> & segment)
     const double t_stop = std::min(get_t_(segment, segment.second()),
                                    get_t_(segment, start_end.second));
     int nit = 0;
+    size_t prev_cell;
     while (t <= t_stop)
     {
       const size_t search_cell = sg.find_cell(cur);
@@ -103,11 +104,15 @@ double GridIntersectionSearcher::get_t_(const angem::LineSegment<double> & segme
 void GridIntersectionSearcher::process_(const size_t search_cell,
                                         std::unordered_set<size_t> & result)
 {
-  for (const size_t cell_index : _mapper.mapping(search_cell) )
-    if (_grid.cell(cell_index).is_active())
-    {
-      result.insert(cell_index);
-    }
+  std::vector<size_t> duals_to_check;
+  // check search cell neighbors just to be safe
+  duals_to_check = _mapper.get_search_grid().neighbors(search_cell);
+  duals_to_check.push_back(search_cell);
+
+  for (const size_t dual : duals_to_check)
+    for (const size_t cell_index : _mapper.mapping(dual) )
+      if (_grid.cell(cell_index).is_active())
+        result.insert(cell_index);
 }
 
 double GridIntersectionSearcher::step_(size_t search_cell,
@@ -136,6 +141,7 @@ double GridIntersectionSearcher::step_(size_t search_cell,
       t_new = std::min(t_new, t_trial);
     }
   }
+
   return t_new;
 }
 
@@ -162,6 +168,7 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
   std::unordered_set<size_t> result;
   for (size_t k = start_k; k <= end_k; ++k)
   {
+    std::cout << "\n searching layer " << k << std::endl;
     // z-center of the layer
     // avoid stepping beyond the polygon top
     const double z = std::min(sg.origin()[2] + hz * (k + 0.5), top - eps_z);
@@ -184,6 +191,12 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
     for (const size_t icell : collision(segment))
       result.insert(icell);
   }
+  std::cout << "result" << std::endl;
+  for (auto cell : result)
+    std::cout << cell << " ";
+  std::cout << std::endl;
+  std::cout << "exiting" << std::endl;
+  // exit(0);
   return std::vector<size_t>(result.begin(), result.end());
 }
 

@@ -59,10 +59,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/PFEM_integration/FaceSorter.cpp
 )
 
-SET_TARGET_PROPERTIES (
-    preprocessor
-    PROPERTIES LINKER_LANGUAGE CXX
-)
+SET_TARGET_PROPERTIES (preprocessor PROPERTIES LINKER_LANGUAGE CXX)
 
 set(preprocessor_libs ${preprocessor_libs} angem muparser mesh yaml-cpp logger)
 

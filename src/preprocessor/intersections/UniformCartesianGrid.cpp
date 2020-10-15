@@ -116,7 +116,7 @@ bool UniformCartesianGrid::is_valid_vertex(int i, int j, int k) const noexcept
   else return false;
 }
 
-std::vector<size_t> UniformCartesianGrid::neighbors(size_t cell_idx)
+std::vector<size_t> UniformCartesianGrid::neighbors(size_t cell_idx) const
 {
   std::vector<size_t> result;
   result.reserve(6);

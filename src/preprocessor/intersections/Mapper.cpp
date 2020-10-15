@@ -32,7 +32,7 @@ void Mapper::map_cell(size_t cell_index)
    if (collision.check(*cell_poly, search_poly))
    {
      _mapping[search_cell].push_back(cell_index);
-     for (size_t neighbor : _cartesian.neighbors(search_cell))
+     for (size_t const neighbor : _cartesian.neighbors(search_cell))
        if (touched.find(neighbor) == touched.end())
        {
          touched.insert(neighbor);
