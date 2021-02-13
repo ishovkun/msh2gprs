@@ -120,18 +120,7 @@ bool DiscretizationPEDFM::non_branching_face_(const mesh::Face & frac_face, cons
   // this sometimes happens in boundary cells, no idea why
   logging::warning() << "problem in cell " << host_cell_index_(frac_face) << std::endl;
   logging::warning() << "should not be here, it's a bug!" << std::endl;
-  // std::cout << "face->neighbors().size() = " << face.neighbors().size() << std::endl;
-  // for (const auto * neighbor : face.neighbors())
-  //   std::cout << neighbor->index() << " (" << neighbor->ultimate_parent().index() << std::endl;
-  // std::cout << "frac? " << _edfm_mgr.is_fracture(face.marker()) << std::endl;
-  // std::cout << "marker = " << face.marker() << std::endl;
-  // std::cout << "vertices" << std::endl;
-  // for (auto v : face.vertices())
-  //   std::cout << v << std::endl;
-  // // if (face.neighbors().size() == 1)  // skip domain boundaries
-  // //   return false;
-  // // else
-  // throw std::runtime_error("should not be here");
+
   return false;
 }
 
