@@ -149,11 +149,18 @@ enum class FracturePlacement
   move_fracture, move_grid
 };
 
+enum class EDFMSearchAlgorithm
+{
+  robust, fast
+};
+
 struct EDFMSettings
 {
   double min_dist_to_node = 1e-4; // minimum distance to grid vertices relative to cell size
+  double vertex_split_tolerance = 2e-4;  // relative tolerance for merging diplicate vertices during split
   FracturePlacement placement = FracturePlacement::move_fracture;
   EDFMMethod method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
+  EDFMSearchAlgorithm algorithm = EDFMSearchAlgorithm::robust;
 };
 
 struct DFMSettings

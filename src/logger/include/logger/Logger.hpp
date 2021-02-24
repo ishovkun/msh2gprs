@@ -33,6 +33,8 @@ class Logger {
   void set_verbosity(const LogLevel verbosity);
   /* Set the level of the subsequent message */
   void set_message_level(const LogLevel level);
+  /* Get the current verbosity level */
+  LogLevel verbosity() const { return _verbosity; }
   /* write the log */
   template <typename T>
   // output operator

@@ -3,11 +3,11 @@
 
 namespace mesh {
 
-CellSplitter::CellSplitter(Mesh & grid)
-    : _grid(grid)
+CellSplitter::CellSplitter(Mesh & grid, double tol)
+    : _grid(grid), _tol(tol)
 {}
 
-void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
+bool CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
                               const int splitting_face_marker)
 {
   if (!_grid.cell(cell.index()).is_active())
@@ -17,9 +17,11 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
     assert ( children.size() == 1 );
     return split_cell(*children[0], plane, splitting_face_marker);
   }
-  // std::cout << splitting_face_marker<< "-split " << cell.index() << " (parent "
-  //           << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"
-  //           << std::endl << std::flush;
+
+  if (_os)
+    (*_os) << splitting_face_marker<< "-split " << cell.index() << " (parent "
+           << cell.m_parent << " ult " << cell.ultimate_parent().index() << ")"
+           << std::endl << std::flush;
   assert (cell.is_active());
   const size_t parent_cell_index = cell.index();
 
@@ -43,11 +45,11 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
   // which polygons in split belong to which faces
   std::vector<size_t> polygroup_polygon_parents;
   const bool success = angem::split(*polyhedron, plane, split, polygroup_polygon_parents,
-               constants::marker_below_splitting_plane,
-               constants::marker_above_splitting_plane,
-               constants::marker_splitting_plane,
-               /* tol = */ 1e-4*h);
-  if (!success) return;
+                                    constants::marker_below_splitting_plane,
+                                    constants::marker_above_splitting_plane,
+                                    constants::marker_splitting_plane,
+                                    /* tol = */ _tol * h);
+  if (!success) return false;
 
   const std::vector<Face*> & cell_faces = cell.faces();
 
@@ -78,13 +80,13 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
   const size_t child_cell_index1 = _grid.insert_cell_(cell_above_faces, tmp_faces, cell.marker());
   const size_t child_cell_index2 = _grid.insert_cell_(cell_below_faces, tmp_faces, cell.marker());
   _grid._n_inactive_cells++;
-  if (_verbose)
-  std::cout << "split " << parent_cell_index << " (parent "
-            << _grid.cell(parent_cell_index).parent().index()
-            << " ult " << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
-            << child_cell_index1 << " " << child_cell_index2
-            << std::endl << std::flush;
 
+  if (_os)
+    (*_os) << "split " << parent_cell_index << " (parent "
+           << _grid.cell(parent_cell_index).parent().index()
+           << " ult " << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
+           << child_cell_index1 << " " << child_cell_index2
+           << std::endl << std::flush;
 
   // handle parent/child cell dependencies
   _grid.cell(parent_cell_index).m_children = {child_cell_index1, child_cell_index2};
@@ -97,9 +99,10 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
     for ( const auto icell : _grid.neighbors_indices_(it_edge.first) )
       if (icell != parent_cell_index && icell != child_cell_index1 && icell != child_cell_index2)
       {
-        // std::cout << "insert hanging into " << _grid.cell(icell).index()
-        //           << "(" << _grid.cell(icell).ultimate_parent().index() << ")"
-        //           << std::endl;
+        if (_os)
+          (*_os) << "insert hanging into " << _grid.cell(icell).index()
+                 << " (" << _grid.cell(icell).ultimate_parent().index() << ")"
+                 << std::endl;
         const auto & neighbor = _grid.cell(icell);
         if (!neighbor.has_vertex(it_edge.second))
           insert_hanging_node_(neighbor, it_edge.first, it_edge.second);
@@ -119,13 +122,15 @@ void CellSplitter::split_cell(Cell cell, const angem::Plane<double> & plane,
         const auto & neighbor = _grid.cell(icell);
         if (!neighbor.has_edge(split_edge))
         {
-          // std::cout << "split neighbor face " << neighbor.index() << "("
-          //           << neighbor.ultimate_parent().index() << std::endl;
+          if (_os)
+            (*_os) << "split neighbor face " << neighbor.index() << " ("
+                   << neighbor.ultimate_parent().index() << ")" << std::endl;
           split_face_in_cell_(neighbor, split_edge);
         }
 
       }
   }
+  return true;
 }
 
 std::vector<std::size_t>
@@ -200,11 +205,11 @@ void CellSplitter::insert_hanging_node_(const Cell parent, const vertex_pair edg
   _grid.cell(child_cell_index).m_parent = parent_cell_index;
   _grid.cell(parent_cell_index).m_children = {child_cell_index};
   _grid._n_inactive_cells++;
-  if (_verbose)
-  std::cout << "insert hanging into " << parent_cell_index << " "
-            << "(" << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
-            << child_cell_index
-            << std::endl;
+  if (_os)
+    (*_os) << "insert hanging into " << parent_cell_index << " "
+           << "(" << _grid.cell(parent_cell_index).ultimate_parent().index() << "): "
+           << child_cell_index
+           << std::endl;
 }
 
 void CellSplitter::split_face_in_cell_(const Cell parent, const vertex_pair new_edge)
@@ -257,13 +262,13 @@ void CellSplitter::split_face_in_cell_(const Cell parent, const vertex_pair new_
     _grid.cell(child_cell_index).m_parent = parent_index;
     _grid.cell(parent_index).m_children = {child_cell_index};
     _grid._n_inactive_cells++;
-    if (_verbose)
-    std::cout << "split neighbor face in "
-              << parent_index << "(par "
-              << _grid.cell(parent_index).parent().index() << ", ult "
-              << _grid.cell(parent_index).ultimate_parent().index() << "): "
-              << child_cell_index
-              << std::endl;
+    if (_os)
+      (*_os) << "split neighbor face in "
+            << parent_index << "(par "
+            << _grid.cell(parent_index).parent().index() << ", ult "
+            << _grid.cell(parent_index).ultimate_parent().index() << "): "
+            << child_cell_index
+            << std::endl;
   }
 }
 
@@ -282,10 +287,11 @@ void CellSplitter::track_new_vertices_(std::vector<size_t> & global_vertex_indic
       _new_vertex_coord.insert( split.vertices[i] );
       _new_vertices.push_back(new_vertex_index);
       new_vertices.push_back(new_vertex_index);
+      if (_os) (*_os) << "inserting vertex " << _grid.n_vertices() << std::endl;
       _grid.insert_vertex(split.vertices[i]);
     }
-    else
-      new_vertex_index = _new_vertices[split_v_index];
+    else new_vertex_index = _new_vertices[split_v_index];
+
     global_vertex_indices.push_back(new_vertex_index);
   }
 }

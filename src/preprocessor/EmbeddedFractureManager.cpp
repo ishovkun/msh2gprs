@@ -17,7 +17,8 @@ using std::pair;
 EmbeddedFractureManager::EmbeddedFractureManager(std::vector<EmbeddedFractureConfig> &config,
                                                  const EDFMSettings & settings,
                                                  SimData & data)
-    : config(config), _settings(settings), m_data(data), m_grid(data.grid), _splitter(m_grid)
+    : config(config), _settings(settings), m_data(data), m_grid(data.grid),
+      _splitter(m_grid, _settings.vertex_split_tolerance)
 {}
 
 void EmbeddedFractureManager::split_cells()
@@ -30,7 +31,11 @@ void EmbeddedFractureManager::split_cells()
     std::vector<size_t> cells_to_split;
     size_t iter = 0;
     // while (!find_edfm_cells_(*frac.body, cells_to_split))
-    while (!find_edfm_cells_fast_(*frac.body, cells_to_split))
+    // while (!find_edfm_cells_fast_(*frac.body, cells_to_split))
+    while(  ( _settings.algorithm == EDFMSearchAlgorithm::robust &&
+              !find_edfm_cells_(*frac.body, cells_to_split) ) ||
+            ( _settings.algorithm == EDFMSearchAlgorithm::fast &&
+              !find_edfm_cells_fast_(*frac.body, cells_to_split) ) )
     {
       cells_to_split.clear();
       if (++iter > 100) throw std::runtime_error("Cannot move fracture to avoid collision with vertices");
@@ -49,11 +54,16 @@ void EmbeddedFractureManager::split_cells_(angem::Polygon<double> & fracture,
                                            std::vector<size_t> & cells,
                                            const int face_marker)
 {
+  std::ostringstream os;
+  if (logging::Logger::ref().verbosity() == logging::LogLevel::Debug)
+    _splitter.set_debug_output(&os);
+
   const auto & plane = fracture.plane();
   for (const size_t icell : cells)
   {
     mesh::Cell & old_cell = m_grid.cell(icell);
     _splitter.split_cell(old_cell, plane, face_marker);
+    logging::debug() << os.str();
   }
 }
 

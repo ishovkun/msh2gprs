@@ -77,10 +77,8 @@ find_first_and_last_location_(const angem::LineSegment<double> & segment) const
   std::vector<angem::Point<3,double>> intersection;
   angem::collision(segment, sg.get_bounding_box(), intersection);
   std::sort(intersection.begin(), intersection.end(),
-  // auto loc = *std::min_element(intersection.begin(), intersection.end(),
                           [segment](const angem::Point<3,double> & p1, const angem::Point<3,double> & p2)
                           {
-                            // return segment.first().distance(p1) < segment.second().distance(p2);
                             return segment.first().distance(p1) < segment.first().distance(p2);
                           });
   if (!sg.in_bounds(intersection[0]))  // might be slightly off due to roundoff

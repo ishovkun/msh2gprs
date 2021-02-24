@@ -82,6 +82,10 @@ void Preprocessor::run()
     logging::important() << "Finished Grid Refinement" << std::endl;
   }
 
+  // leave this line commented out while not debugging,
+  // this is helpful when I debug :-)
+  // mesh::IO::VTKWriter::write_geometry(data.grid, "debug.vtk");
+
   logging::important() << "Building flow discretization" << "\n";
   build_flow_discretization_();
   logging::important() << "Finished flow discretization" << std::endl;

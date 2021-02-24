@@ -117,6 +117,10 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     {
       config.edfm_settings.min_dist_to_node = it->second.as<double>();
     }
+    else if (key == "relative_vertex_tolerance")
+    {
+      config.edfm_settings.vertex_split_tolerance = it->second.as<double>();
+    }
     else if (key == "placement")
     {
       const auto value = it->second.as<std::string>();

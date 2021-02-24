@@ -10,13 +10,24 @@ namespace mesh {
  */
 class CellSplitter {
  public:
-  /* Constructor */
-  CellSplitter(Mesh & grid);
+
+  /* Constructor:
+   * \param[in] grid : a reference to the grid object to be split
+   * \param[in] tol  : relative geometric tolerance to distinguish new split vertices
+   */
+  CellSplitter(Mesh & grid, double tol = 1e-4);
+
   /* Split a cell by cutting it with a plane. New cell indices are appended
    * at the back, so it is safe to split multiple cells in a row.
+   *
+   * Returns true if the split occurred
+   *
    * Note: cell is copied since inserting new cells invalidates the pointers. */
-  void split_cell(Cell cell, const angem::Plane<double> & plane,
+  bool split_cell(Cell cell, const angem::Plane<double> & plane,
                   const int splitting_face_marker = constants::marker_splitting_plane);
+
+  /* Set sink for debug output */
+  void set_debug_output(std::ostream * os) {_os = os;}
 
  protected:
   /* get a vector of polygon global vertex indices given a vector with
@@ -45,9 +56,10 @@ class CellSplitter {
                            std::vector<FaceTmpData> & tmp_faces);
 
   Mesh & _grid;
+  double const _tol;
   angem::PointSet<3, double> _new_vertex_coord;
   std::vector<size_t> _new_vertices;
-  const bool _verbose = false;
+  std::ostream * _os{nullptr};  // pointer to debug output stream
 };
 
 }  // end namespace mesh
