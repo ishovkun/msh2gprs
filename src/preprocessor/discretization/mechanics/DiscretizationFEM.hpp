@@ -41,14 +41,23 @@ class DiscretizationFEM
   const angem::Basis<3, double>& get_basis_(const mesh::Face & face,
                                             FaceOrientation &orientation) noexcept;
 
+  // build shape function gradients within the cell
+  void build_cell_data_(FiniteElementBase & discr, mesh::Cell const & cell);
+  // build shape function values and gradients on cell faces
+  void build_face_data_(FiniteElementBase & discr, mesh::Cell const & cell);
+  // check if a similar element has been processed already
+  bool known_element_(mesh::Cell const & cell) const;
+
+  /* ------ ATTRIBUTES ----- */
+
   const mesh::Mesh & _grid;
   const FiniteElementConfig & _config;
   std::unordered_map<int, FaceOrientation> _fracture_face_orientation;
   std::unordered_map<int, FaceOrientation> _neumann_face_orientation;
-  // std::unordered_set<int> _fracture_face_markers;
-  // std::unordered_set<int> _neumann_face_markers;
   std::vector<FiniteElementData> _cell_data, _face_data;
   std::vector<std::vector<FiniteElementData>> _frac_data;
+  std::unordered_map<size_t, std::vector<FiniteElementDataTopology>> _cell_data_compressed;
+  angem::Basis<3, double> _face_basis;
 };
 
 }  // end namepsace discretization

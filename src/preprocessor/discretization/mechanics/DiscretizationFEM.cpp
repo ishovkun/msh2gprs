@@ -9,6 +9,7 @@
 #include "MeshStatsComputer.hpp"
 #include "logger/ProgressBar.hpp"  // provides ProgressBar
 #include "mesh/io/VTKWriter.hpp"   // debugging, provides io::VTKWriter
+#include "Isomorphism.hpp"         // provides isomorphism
 
 
 namespace discretization
@@ -44,58 +45,89 @@ DiscretizationFEM::DiscretizationFEM(const mesh::Mesh & grid, const FiniteElemen
   _cell_data.resize( _grid.n_cells_total() );
   _frac_data.resize( _grid.n_faces() );
   logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
-  angem::Basis<3, double> face_basis;
-  // std::cout << std::endl;
   size_t item = 0;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
     progress.set_progress(item++);
-
-    std::unique_ptr<FiniteElementBase> p_discr;
-    try {
-      p_discr = build_element(*cell);
-    }
-    catch (std::runtime_error & error)
+    if ( known_element_(*cell) )
     {
-      mesh::IO::VTKWriter::write_geometry(_grid, *cell, "geometry-" + std::to_string(cell->index()) + ".vtk");
-      throw std::runtime_error(error.what());
+      throw std::runtime_error("Awesome");
     }
-
-    FiniteElementData cell_fem_data = p_discr->get_cell_data();
-    cell_fem_data.element_index = cell->index();
-    _cell_data[cell->index()] = std::move(cell_fem_data);
-
-    size_t iface = 0;
-    for ( const mesh::Face * face : cell->faces() )
+    else
     {
-      const size_t face_index = face->index();
-      const bool is_fracture = _fracture_face_orientation.find( face->marker() ) !=
-                               _fracture_face_orientation.end();
-      const bool is_neumann = _neumann_face_orientation.find( face->marker() ) !=
-                              _neumann_face_orientation.end();
-      if (is_fracture)
-        face_basis = get_basis_(*face, _fracture_face_orientation.find(face->marker())->second);
-      else if (is_neumann)
-        face_basis = get_basis_(*face, _neumann_face_orientation.find(face->marker())->second);
+      std::unique_ptr<FiniteElementBase> p_discr;
+      try {
+        p_discr = build_element(*cell);
+      } catch (std::runtime_error &error) {
+        mesh::IO::VTKWriter::write_geometry(
+            _grid, *cell, "geometry-" + std::to_string(cell->index()) + ".vtk");
+        throw std::runtime_error(error.what());
+      }
 
-      if (is_neumann || is_fracture)
-        if ( _face_data[face->index()].points.empty() )
-        {
-          _face_data[face_index] = p_discr->get_face_data(iface, face_basis);
-          _face_data[face_index].element_index = face_index;
-        }
-
-      if (is_fracture)
-        {
-          _frac_data[face_index].push_back(p_discr->get_fracture_data(iface, face_basis));
-          _frac_data[face_index].back().element_index = cell->index();
-        }
-
-      iface++;
+      build_cell_data_(*p_discr, *cell);
+      build_face_data_(*p_discr, *cell);
     }
   }
 
   progress.finalize();
+}
+
+bool DiscretizationFEM::known_element_(mesh::Cell const & cell) const
+{
+  size_t const hsh = cell.n_vertices();
+  if (_cell_data_compressed.count(hsh))
+  {
+    auto it = _cell_data_compressed.find(hsh);
+    return Isomorphism::check( *(it->second.front().topology), *cell.polyhedron());
+  }
+  else return false;
+}
+
+void DiscretizationFEM::build_cell_data_(FiniteElementBase & discr,
+                                         mesh::Cell const & cell)
+{
+  FiniteElementData cell_fem_data = discr.get_cell_data();
+  cell_fem_data.element_index = cell.index();
+  _cell_data[cell.index()] = std::move(cell_fem_data);
+  // std::unordered_map<size_t, FiniteElementData> _cell_data_compressed;
+  auto & it = _cell_data_compressed[cell.n_vertices()];
+  it.emplace_back();
+  auto & saved = it.back();
+  saved.data = _cell_data[cell.index()];
+  saved.topology = cell.polyhedron();
+}
+
+void DiscretizationFEM::build_face_data_(FiniteElementBase & discr,
+                                         mesh::Cell const & cell)
+{
+  size_t iface = 0;
+  for ( const mesh::Face * face : cell.faces() )
+  {
+    const size_t face_index = face->index();
+    const bool is_fracture = _fracture_face_orientation.find( face->marker() ) !=
+        _fracture_face_orientation.end();
+    const bool is_neumann = _neumann_face_orientation.find( face->marker() ) !=
+        _neumann_face_orientation.end();
+    if (is_fracture)
+      _face_basis = get_basis_(*face, _fracture_face_orientation.find(face->marker())->second);
+    else if (is_neumann)
+      _face_basis = get_basis_(*face, _neumann_face_orientation.find(face->marker())->second);
+
+    if (is_neumann || is_fracture)
+      if ( _face_data[face->index()].points.empty() )
+      {
+        _face_data[face_index] = discr.get_face_data(iface, _face_basis);
+        _face_data[face_index].element_index = face_index;
+      }
+
+    if (is_fracture)
+    {
+      _frac_data[face_index].push_back(discr.get_fracture_data(iface, _face_basis));
+      _frac_data[face_index].back().element_index = cell.index();
+    }
+
+    iface++;
+  }
 }
 
 void DiscretizationFEM::analyze_cell_(const mesh::Cell & cell)

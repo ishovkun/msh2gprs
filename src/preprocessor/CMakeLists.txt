@@ -57,6 +57,8 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/PFEM_integration/IntegrationRuleFractureFull.cpp
   discretization/mechanics/PFEM_integration/IntegrationRule3dPointwise.cpp
   discretization/mechanics/PFEM_integration/FaceSorter.cpp
+  discretization/mechanics/Graph.cpp
+  discretization/mechanics/Isomorphism.cpp
 )
 
 SET_TARGET_PROPERTIES (preprocessor PROPERTIES LINKER_LANGUAGE CXX)
