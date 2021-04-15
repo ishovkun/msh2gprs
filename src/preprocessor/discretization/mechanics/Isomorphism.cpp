@@ -1,5 +1,5 @@
 #include "Isomorphism.hpp"
-#include <bitset>  // for debugging
+// #include <bitset>  // for debugging
 
 namespace discretization {
 
@@ -28,7 +28,10 @@ Isomorphism::check(angem::Polyhedron<double> const &p1,
     auto c2 = compress_(g2, perm);
     if ( c1 == c2 )
     {
-      std::cout << "success" << std::endl;
+      std::cout << "success: " << std::endl;
+      for (auto x: perm)
+        std::cout << x << " ";
+      std::cout << std::endl;
       return {true, perm};
     }
 
@@ -54,10 +57,10 @@ std::vector<uint64_t> Isomorphism::compress_(Graph const & g,
     for (size_t w : g.adj(v))
       c[perm[v]] |= (1 << perm[w]);  // set w'th bit to 1 in row v
 
-  for (auto row : c)
-  {
-    std::cout << std::bitset<64>(row) << std::endl;
-  }
+  // for (auto row : c)
+  // {
+  //   std::cout << std::bitset<64>(row) << std::endl;
+  // }
 
   return c;
 }

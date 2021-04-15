@@ -34,7 +34,7 @@ class DiscretizationFEMBase {
                         const std::vector<int> & fracture_face_markers,
                         const std::vector<int> & neumann_face_markers);
   virtual void build_(mesh::Cell & cell) = 0;
-  void build_cell_data_(mesh::Cell const & cell);
+  virtual void build_cell_data_(mesh::Cell const & cell);
   void build_face_data_(mesh::Cell const & cell);
   const angem::Basis<3, double>& get_basis_(const mesh::Face & face,
                                             FaceOrientation &orientation) noexcept;
@@ -46,7 +46,7 @@ class DiscretizationFEMBase {
   std::unordered_map<int, FaceOrientation> _neumann_face_orientation;
   std::vector<FiniteElementData> _cell_data, _face_data;
   std::vector<std::vector<FiniteElementData>> _frac_data;
-  std::unordered_map<size_t, std::vector<FiniteElementDataTopology>> _cell_data_compressed;
+  std::unordered_map<size_t, std::vector<FiniteElementData>> _cell_data_compressed;
   angem::Basis<3, double> _face_basis;
   std::unique_ptr<FiniteElementBase> _element;
 };

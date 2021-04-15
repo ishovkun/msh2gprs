@@ -255,6 +255,7 @@ void FeValues<vtk_id>::update_()
   _shape_values.resize( _qpoints.size() );
   _determinants.assign(_qpoints.size(), 0.0);
   _shape_grads.resize(_qpoints.size());
+
   // update data in integration points
   for (std::size_t q = 0; q < _qpoints.size(); ++q)
     update_(_qpoints[q], _shape_values[q], _shape_grads[q], _determinants[q]);
@@ -398,9 +399,9 @@ compute_detJ_and_invert_cell_jacobian_(const std::array<Point,ElementTraits<vtk_
   // see Becker E., Carey G., Oden J. Finite elements. An Introduction Volume 1 1981
   // Eq. 5.3.6
   angem::Tensor2<3, double> dx_du;
-  for (size_t i=0; i<3; ++i)
-    for (size_t j=0; j<3; ++j)
-      for (size_t v=0; v<ElementTraits<vtk_id>::n_vertices; ++v)
+  for (size_t i = 0; i < 3; ++i)
+    for (size_t j = 0; j < 3; ++j)
+      for (size_t v = 0; v < ElementTraits<vtk_id>::n_vertices; ++v)
         dx_du( i, j ) += ref_grad[v][j] * _vertex_coord[v][i];
   // compute the determinant of transformation jacobian
   detJ = det(dx_du);

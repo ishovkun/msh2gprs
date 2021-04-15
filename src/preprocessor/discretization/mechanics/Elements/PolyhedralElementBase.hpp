@@ -37,6 +37,9 @@ class PolyhedralElementBase : public FiniteElementBase
   virtual FiniteElementData get_fracture_data(const size_t iface,
                                               const angem::Basis<3,double> basis) override;
 
+  // enforce cell 3d FE data
+  void set_face_cell_data(FiniteElementData const & data) {_cell_data = data;}
+
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,
                         const mesh::Mesh & parent_grid,
@@ -68,7 +71,6 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
   std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
-  // std::vector<std::vector<angem::Polygon<double>>> _tributary_2d;      // face tributary regions
   std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;
 
   friend class TributaryRegion3dFaces;

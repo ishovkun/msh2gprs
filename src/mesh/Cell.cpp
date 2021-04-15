@@ -258,7 +258,7 @@ void Cell::reorder_vertices(std::vector<size_t> const & order)
   if (order.size() != n_vertices())
     throw std::invalid_argument("angem: number of vertices does not match");
 
-  std::vector<size_t> copy(n_vertices());
+  std::vector<size_t> copy(m_vertices);
   for (size_t i = 0; i < order.size(); ++i)
     m_vertices[order[i]] = copy[i];
 }
