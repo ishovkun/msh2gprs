@@ -88,6 +88,9 @@ class Cell
   void set_marker(const int marker) {m_marker = marker;}
   // vector of unique cell edges
   std::vector<vertex_pair> edges() const noexcept;
+  // reorder vertices in the cell
+  // @NOTE: the size of new_order must match the number of cell vertices
+  void reorder_vertices(std::vector<size_t> const & new_order);
 
  protected:
   // recursive part of the public ultimate_children() method

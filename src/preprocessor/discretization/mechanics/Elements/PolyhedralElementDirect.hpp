@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PolyhedralElementBase.hpp" // provides PolyhedralElementBase
-#include "../flow/DoFNumbering.hpp"         // provides DoFNumbering
+#include "../../flow/DoFNumbering.hpp"         // provides DoFNumbering
 #include <Eigen/Sparse>                     // provides SparseMatrix
 
 namespace discretization {

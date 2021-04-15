@@ -12,7 +12,8 @@ class FEMFaceDoFManager
 {
  public:
   FEMFaceDoFManager() {};
-  DoFNumbering build(const mesh::Mesh & grid, const std::vector<size_t> & face_indices) const;
+  DoFNumbering build(const mesh::Mesh & grid,
+                     const std::vector<size_t> & face_indices) const;
 };
 
 }  // end namespace discretization

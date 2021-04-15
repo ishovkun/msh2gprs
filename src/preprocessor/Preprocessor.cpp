@@ -5,7 +5,9 @@
 #include "mesh/io/VTKReader.hpp"
 #include "mesh/RefinementAspectRatio.hpp"
 #include "BoundaryConditionManager.hpp"
-#include "discretization/mechanics/DiscretizationFEM.hpp"
+// #include "discretization/mechanics/DiscretizationMechanics.hpp"
+#include "discretization/mechanics/DiscretizationStandardFEM.hpp"
+#include "discretization/mechanics/DiscretizationPolyhedralFEM.hpp"
 #include "discretization/flow/DiscretizationTPFA.hpp"
 #include "discretization/flow/DiscretizationDFM.hpp"
 #include "discretization/flow/DiscretizationEDFM.hpp"
@@ -346,11 +348,23 @@ void Preprocessor::build_geomechanics_discretization_()
 
   logging::log() << "Building FEM discretization" << std::endl;
   dfm_markers = p_frac_mgr->get_face_markers();
-  discretization::DiscretizationFEM fem_discr(data.geomechanics_grid, config.fem, dfm_markers,
-                                              bc_mgr.get_neumann_face_markers());
-  data.fe_cell_data = fem_discr.get_cell_data();
-  data.fe_face_data = fem_discr.get_face_data();
-  data.fe_frac_data = fem_discr.get_fracture_data();
+
+  using namespace discretization;
+  std::unique_ptr<DiscretizationFEMBase> p_discr;
+  if (config.fem.method == FEMMethod::strong_discontinuity)
+    p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, config.fem,
+                                                          dfm_markers,
+                                                          bc_mgr.get_neumann_face_markers());
+  else if (config.fem.method == FEMMethod::polyhedral_finite_element)
+    p_discr = std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid, config.fem,
+                                                            dfm_markers,
+                                                            bc_mgr.get_neumann_face_markers());
+  else throw std::invalid_argument("mechanics discretization is unknown");
+
+  p_discr->build();
+  data.fe_cell_data = p_discr->get_cell_data();
+  data.fe_face_data = p_discr->get_face_data();
+  data.fe_frac_data = p_discr->get_fracture_data();
 }
 
 

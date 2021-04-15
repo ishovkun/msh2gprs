@@ -3,7 +3,7 @@
 #include "discretization/flow/DoFNumbering.hpp"           // provides discretization::DoFNumbering
 #include "discretization/flow/ControlVolumeData.hpp"      // provides discretization::ControlVolumeData
 #include "discretization/flow/ConnectionData.hpp"         // provides discretization::ConnectionData
-#include "discretization/mechanics/FiniteElementData.hpp" // provides FiniteElementData
+#include "discretization/mechanics/Elements/FiniteElementData.hpp" // provides FiniteElementData
 #include "intersections/GridIntersectionSearcher.hpp"     // provides GridIntersectionSearcher
 #include "mesh/Mesh.hpp"                                  // provides mesh::Mesh
 #include "Well.hpp"                                       // provides Well

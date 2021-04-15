@@ -31,32 +31,35 @@ ADD_LIBRARY(preprocessor
   intersections/GridIntersectionSearcher.cpp
   intersections/UniformCartesianGrid.cpp
   intersections/Mapper.cpp
-  discretization/mechanics/DiscretizationFEM.cpp
-  discretization/mechanics/PolyhedralElementBase.cpp
-  discretization/mechanics/PolyhedralElementMSRSB.cpp
-  discretization/mechanics/JacobiPreconditioner.cpp
-  discretization/mechanics/PolyhedralElementDirect.cpp
-  discretization/mechanics/StandardFiniteElement.cpp
+  discretization/mechanics/DiscretizationFEMBase.cpp
+  discretization/mechanics/DiscretizationPolyhedralFEM.cpp
+  discretization/mechanics/DiscretizationPolyhedralFEMOptimized.cpp
+  discretization/mechanics/DiscretizationStandardFEM.cpp
+  discretization/mechanics/Elements/PolyhedralElementBase.cpp
+  discretization/mechanics/Elements/PolyhedralElementMSRSB.cpp
+  discretization/mechanics/Elements/JacobiPreconditioner.cpp
+  discretization/mechanics/Elements/PolyhedralElementDirect.cpp
+  discretization/mechanics/Elements/StandardFiniteElement.cpp
   discretization/mechanics/FEMFaceDoFManager.cpp
-  discretization/mechanics/FeValuesTriangle.cpp
-  discretization/mechanics/FeValuesWedge.cpp
-  discretization/mechanics/FeValuesTetrahedron.cpp
-  discretization/mechanics/FeValuesHexahedron.cpp
-  discretization/mechanics/FeValuesQuadrangle.cpp
-  discretization/mechanics/PFEM_integration/TributaryRegion3dBase.cpp
-  discretization/mechanics/PFEM_integration/TributaryRegion3dFaces.cpp
-  discretization/mechanics/PFEM_integration/TributaryRegion3dVertices.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRule3dFull.cpp
-  discretization/mechanics/PFEM_integration/TributaryRegion2dFaces.cpp
-  discretization/mechanics/PFEM_integration/TributaryRegion2dVertices.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRule3dAverage.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRule2dAverage.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRule2dPointwise.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRule2dFull.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRuleFractureAverage.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRuleFractureFull.cpp
-  discretization/mechanics/PFEM_integration/IntegrationRule3dPointwise.cpp
-  discretization/mechanics/PFEM_integration/FaceSorter.cpp
+  discretization/mechanics/Elements/FeValuesTriangle.cpp
+  discretization/mechanics/Elements/FeValuesWedge.cpp
+  discretization/mechanics/Elements/FeValuesTetrahedron.cpp
+  discretization/mechanics/Elements/FeValuesHexahedron.cpp
+  discretization/mechanics/Elements/FeValuesQuadrangle.cpp
+  discretization/mechanics/Elements/PFEM_integration/TributaryRegion3dBase.cpp
+  discretization/mechanics/Elements/PFEM_integration/TributaryRegion3dFaces.cpp
+  discretization/mechanics/Elements/PFEM_integration/TributaryRegion3dVertices.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRule3dFull.cpp
+  discretization/mechanics/Elements/PFEM_integration/TributaryRegion2dFaces.cpp
+  discretization/mechanics/Elements/PFEM_integration/TributaryRegion2dVertices.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRule3dAverage.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRule2dAverage.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRule2dPointwise.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRule2dFull.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRuleFractureAverage.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRuleFractureFull.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRule3dPointwise.cpp
+  discretization/mechanics/Elements/PFEM_integration/FaceSorter.cpp
   discretization/mechanics/Graph.cpp
   discretization/mechanics/Isomorphism.cpp
 )

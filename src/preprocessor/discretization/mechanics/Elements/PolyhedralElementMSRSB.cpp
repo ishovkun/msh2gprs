@@ -1,7 +1,6 @@
 #ifdef WITH_EIGEN
 #include "PolyhedralElementMSRSB.hpp"
 #include "EdgeComparison.hpp"
-// #include "PFEM_integration/IntegrationRuleFacesAverage.hpp" // provides IntegrationRuleFacesAverage
 #include "FeValues.hpp"  // provides FeValues
 #include "PFEM_integration/TributaryRegion2dFaces.hpp"
 #include "PFEM_integration/TributaryRegion3dFaces.hpp"

@@ -1,11 +1,11 @@
 #ifdef WITH_EIGEN
 #include "PolyhedralElementDirect.hpp"
-#include "EdgeComparison.hpp"  // provides Edge and EdgeComparison
-#include "mesh/Subdivision.hpp"  // provides mesh::Subdivision
-#include "FeValues.hpp"          // provides discretization::FeValues
+#include "EdgeComparison.hpp"       // provides Edge and EdgeComparison
+#include "mesh/Subdivision.hpp"     // provides mesh::Subdivision
+#include "FeValues.hpp"             // provides discretization::FeValues
 #include "EdgeComparison.hpp"
-#include "mesh/io/VTKWriter.hpp"         // debugging, provides io::VTKWriter
-#include "FEMFaceDoFManager.hpp" // provides discretization::FEMFaceDoFManager
+#include "mesh/io/VTKWriter.hpp"    // debugging, provides io::VTKWriter
+#include "../FEMFaceDoFManager.hpp" // provides discretization::FEMFaceDoFManager
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>
 
