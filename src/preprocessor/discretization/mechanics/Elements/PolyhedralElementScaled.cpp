@@ -19,21 +19,35 @@ void PolyhedralElementScaled::build_fe_cell_data_()
   size_t const nq = master_data.points.size();
   _cell_data.resize(nv, nq);
 
+  auto const vert_coord = _parent_cell.vertex_coordinates();
   angem::Tensor2<3, double> du_dx;
   for (size_t q = 0; q < nq; ++q) {
-    double detJ;
-    compute_detJ_and_invert_cell_jacobian_(master_data.points[q].grads,
-                                           du_dx, detJ,
-                                           _parent_cell.vertex_coordinates());
-
-    _cell_data.points[q].weight = detJ * master_data.points[q].weight;
-    _cell_data.points[q].values = master_data.points[q].values;
-
-    if (detJ <= 0) throw std::runtime_error("Transformation det(J) is negative " + std::to_string(detJ));
-    update_shape_grads_(master_data.points[q].grads, du_dx,
-                        _cell_data.points[q].grads);
+    build_fe_point_data_(vert_coord, master_data.points[q],
+                         _cell_data.points[q], du_dx);
   }
+
+  build_fe_point_data_(vert_coord, master_data.center,
+                       _cell_data.center, du_dx);
 }
+
+void PolyhedralElementScaled::
+build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
+                     FEPointData const & master,
+                     FEPointData & target,
+                     angem::Tensor2<3, double> & du_dx) const
+{
+  double detJ;
+  compute_detJ_and_invert_cell_jacobian_(master.grads,
+                                         du_dx, detJ,
+                                         _parent_cell.vertex_coordinates());
+
+  target.weight = detJ * master.weight;
+  target.values = master.values;
+
+  if (detJ <= 0) throw std::runtime_error("Transformation det(J) is negative " + std::to_string(detJ));
+  update_shape_grads_(master.grads, du_dx, target.grads);
+}
+
 
 void PolyhedralElementScaled::
 update_shape_grads_(std::vector<angem::Point<3,double>> const & ref_grads,

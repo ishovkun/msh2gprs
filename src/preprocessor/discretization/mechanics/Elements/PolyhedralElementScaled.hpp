@@ -35,6 +35,11 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
 
  protected:
   void build_fe_cell_data_() override;
+  void build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
+                            FEPointData const & master,
+                            FEPointData & current,
+                            angem::Tensor2<3, double> & du_dx) const;
+
   void compute_detJ_and_invert_cell_jacobian_(const std::vector<angem::Point<3,double>> & ref_grad,
                                               angem::Tensor2<3, double> & du_dx,
                                               double & detJ,
