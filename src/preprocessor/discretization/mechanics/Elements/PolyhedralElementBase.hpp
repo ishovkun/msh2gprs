@@ -30,8 +30,7 @@ class PolyhedralElementBase : public FiniteElementBase
   }
 
   // get FE data for surface integration
-  virtual FiniteElementData get_face_data(const size_t iface,
-                                          const angem::Basis<3,double> basis) override;
+  FiniteElementData get_face_data(size_t iface, const angem::Basis<3,double> basis) override;
   // get FE data of cell shape functions at face integration points.
   // This is needed for modeling discrete fractures
   virtual FiniteElementData get_fracture_data(const size_t iface,
@@ -48,6 +47,7 @@ class PolyhedralElementBase : public FiniteElementBase
                         const mesh::Mesh & parent_grid,
                         const FiniteElementConfig & config,
                         const bool sort_faces = false);
+  // build subgrid of the cell element
   void build_triangulation_();
   // identify child faces that belong to each face parent
   std::vector<std::vector<size_t>> create_face_domains_();

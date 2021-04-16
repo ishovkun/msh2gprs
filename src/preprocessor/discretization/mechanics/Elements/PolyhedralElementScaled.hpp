@@ -30,7 +30,9 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
   // Destructor
   virtual ~PolyhedralElementScaled() = default;
 
-  //
+  // get face data
+  FiniteElementData get_face_data(size_t iface,
+                                  const angem::Basis<3,double> basis) override;
 
 
  protected:

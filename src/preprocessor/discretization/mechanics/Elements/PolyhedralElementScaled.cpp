@@ -85,5 +85,31 @@ compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
   du_dx = invert(dx_du);
 }
 
+FiniteElementData PolyhedralElementScaled::
+get_face_data(size_t iface, const angem::Basis<3,double> basis)
+{
+  auto const master_data = _master.get_face_data(iface, basis);
+  size_t const nv = _parent_cell.n_vertices();
+  size_t const nq = master_data.points.size();
+
+  // check for the right numbering
+  if ( nv != master_data.center.values.size())
+    throw std::runtime_error("You need to renumber faces of the current polyhedron to match master");
+
+  FiniteElementData face_data(nv, nq);
+  auto const vert_coord = _parent_cell.faces()[iface]->vertex_coordinates();
+
+  angem::Tensor2<3, double> du_dx;
+  for (size_t q = 0; q < nq; ++q) {
+    build_fe_point_data_(vert_coord, master_data.points[q],
+                         face_data.points[q], du_dx);
+  }
+
+  build_fe_point_data_(vert_coord, master_data.center,
+                       face_data.center, du_dx);
+
+  return face_data;
+}
+
 
 }  // end namespace discretization
