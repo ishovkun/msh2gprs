@@ -26,41 +26,28 @@ Isomorphism::check(angem::Polyhedron<double> const &p1,
   std::iota(perm.begin(), perm.end(), 0);
   do {
     auto c2 = compress_(g2, perm);
-    if ( c1 == c2 )
-    {
-      std::cout << "success: " << std::endl;
-      for (auto x: perm)
-        std::cout << x << " ";
-      std::cout << std::endl;
-      return {true, perm};
-    }
-
+    if ( c1 == c2 ) return {true, perm};
   } while (std::next_permutation(perm.begin(), perm.end()));
 
-  std::cout << "fail" << std::endl;
   return {false, std::vector<size_t>()};
 }
 
 std::vector<uint64_t> Isomorphism::compress_(Graph const & g,
                                              std::vector<size_t> const & perm)
 {
-  /* Must have less vertices than 64! in a polyhedron in order for this to work
-     idea: jam colums of a 2D matrix into a single number, e.g.
-     Example:
-     | 1 0 0 1 0 |
-     | 0 0 1 0 1 |  --> [10010, 00101, 11100] (in binary)
-     | 1 1 1 0 0 |
+  /*Idea: jam colums of a 2D matrix into a single number, e.g.
+    NOTE: Must have less vertices than 64 in a polyhedron in order for this to work
+    Example:
+    | 1 0 0 1 0 |
+    | 0 0 1 0 1 |  --> [10010, 00101, 11100] (in binary)
+    | 1 1 1 0 0 |
   */
-  assert( g.size() < 64 );
+  assert( g.size() < 64 && "Cannot compress polyhedrons with >= 64 vertices");
+
   std::vector<uint64_t> c(g.size(), 0u);
   for (size_t v = 0; v < g.size(); ++v)
     for (size_t w : g.adj(v))
       c[perm[v]] |= (1 << perm[w]);  // set w'th bit to 1 in row v
-
-  // for (auto row : c)
-  // {
-  //   std::cout << std::bitset<64>(row) << std::endl;
-  // }
 
   return c;
 }

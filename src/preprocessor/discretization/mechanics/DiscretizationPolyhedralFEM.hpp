@@ -10,6 +10,8 @@ class DiscretizationPolyhedralFEM : public DiscretizationFEMBase {
                               const std::vector<int> & fracture_face_markers,
                               const std::vector<int> & neumann_face_markers);
   virtual ~DiscretizationPolyhedralFEM() = default;
+
+
  protected:
   void build_(mesh::Cell & cell) override;
 };

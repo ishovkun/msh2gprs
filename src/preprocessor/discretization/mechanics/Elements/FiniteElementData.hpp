@@ -15,8 +15,14 @@ struct FEPointData
 
   FEPointData() {}
 
-  FEPointData(size_t n_vertices)
-      : values(n_vertices, 0.f), grads(n_vertices), weight(0.f) {}
+  FEPointData(size_t n_vertices) {resize(n_vertices);}
+
+  void resize(size_t n_vertices)
+  {
+    values.assign(n_vertices, 0.f);
+    grads.assign(n_vertices, {0.f, 0.f, 0.f});
+    weight = 0.f;
+  }
 };
 
 struct FiniteElementData
@@ -24,14 +30,17 @@ struct FiniteElementData
   std::vector<FEPointData> points;  // gauss integration points
   FEPointData              center;  // values in cell center
   size_t                   element_index;
-  std::shared_ptr<angem::Polyhedron<double>> topology;
 
   FiniteElementData() {}
 
   explicit FiniteElementData(size_t n_vertices, size_t n_points)
-      : points(n_points, FEPointData(n_vertices)),
-        center(n_vertices)
-  {}
+  { resize(n_vertices, n_points); }
+
+  void resize(size_t n_vertices, size_t n_points)
+  {
+    points.assign(n_points, FEPointData(n_vertices));
+    center.resize(n_vertices);
+  }
 };
 
 }  // end namespace discretization

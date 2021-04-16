@@ -40,6 +40,9 @@ class PolyhedralElementBase : public FiniteElementBase
   // enforce cell 3d FE data
   void set_face_cell_data(FiniteElementData const & data) {_cell_data = data;}
 
+  // return the polohedron for the parent cell
+  std::unique_ptr<angem::Polyhedron<double>> host_topology() const {return _parent_cell.polyhedron();}
+
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,
                         const mesh::Mesh & parent_grid,
@@ -52,7 +55,7 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<std::list<size_t>> map_parent_vertices_to_parent_faces_();
   // compute shape function values, gradients, and weights in the
   // integration points in cells
-  void build_fe_cell_data_();
+  virtual void build_fe_cell_data_();
   // compute shape function values, gradients, and weights in the
   // integration points in faces
   void build_fe_face_data_();

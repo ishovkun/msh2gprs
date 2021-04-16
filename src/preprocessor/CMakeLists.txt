@@ -39,6 +39,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/Elements/PolyhedralElementMSRSB.cpp
   discretization/mechanics/Elements/JacobiPreconditioner.cpp
   discretization/mechanics/Elements/PolyhedralElementDirect.cpp
+  discretization/mechanics/Elements/PolyhedralElementScaled.cpp
   discretization/mechanics/Elements/StandardFiniteElement.cpp
   discretization/mechanics/FEMFaceDoFManager.cpp
   discretization/mechanics/Elements/FeValuesTriangle.cpp

@@ -1,6 +1,8 @@
 #pragma once
 #include "DiscretizationPolyhedralFEM.hpp"
+#include "Elements/PolyhedralElementBase.hpp"
 #include "angem/Tensor2.hpp"
+#include <memory>  // shared_ptr
 
 namespace discretization {
 
@@ -16,22 +18,18 @@ class DiscretizationPolyhedralFEMOptimized : public DiscretizationPolyhedralFEM 
 
  protected:
   void build_(mesh::Cell & cell) override;
-  void build_cell_data_(mesh::Cell const & cell) override;
+  // void build_cell_data_(mesh::Cell const & cell) override;
 
-  bool known_element_(mesh::Cell const & cell,
-                      std::vector<size_t> & order,
-                      FiniteElementData const *& p_master) const;
-  void scale_cell_fem_data_(mesh::Cell const & cell,
-                            FiniteElementData const & data);
-  void compute_detJ_and_invert_cell_jacobian_(const std::vector<angem::Point<3,double>> & ref_grad,
-                                              angem::Tensor2<3, double> & du_dx,
-                                              double & detJ,
-                                              std::vector<angem::Point<3,double>> const & vertex_coord) const;
-  void update_shape_grads_(std::vector<angem::Point<3,double>> const & ref_grads,
-                           angem::Tensor2<3, double> const & du_dx,
-                           std::vector<angem::Point<3,double>> &shape_grads) const;
+  // returns master if found; otherwise returns nullptr
+  std::shared_ptr<PolyhedralElementBase>
+  known_element_(mesh::Cell const & cell, std::vector<size_t> & order) const;
 
-  std::unordered_map<size_t, std::vector<FiniteElementData>> _cell_data_compressed;
+  FiniteElementData scale_cell_fem_data_(mesh::Cell const & cell,
+                                         FiniteElementData const & master_data);
+
+  // *********** ATTRIBUTES ***********
+
+  std::unordered_map<size_t, std::vector<std::shared_ptr<PolyhedralElementBase>>> _masters;
 };
 
 }  // end namespace discretization

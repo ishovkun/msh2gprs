@@ -22,19 +22,19 @@ DiscretizationFEMBase::DiscretizationFEMBase(mesh::Mesh & grid,
 
 void DiscretizationFEMBase::build()
 {
-  // logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
+  logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
 
   size_t item = 0;
   std::vector<size_t> order;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
-    // progress.set_progress(item++);
+    progress.set_progress(item++);
     build_(*cell);
     build_cell_data_(*cell);
     build_face_data_(*cell);
   }
 
-  // progress.finalize();
+  progress.finalize();
 }
 
 void DiscretizationFEMBase::build_cell_data_(mesh::Cell const & cell)

@@ -9,8 +9,6 @@ namespace discretization {
 
 using angem::VTK_ID;
 using Point = angem::Point<3,double>;
-// template<VTK_ID id> constexpr size_t N_ELEMENT_VERTICES;
-// template<VTK_ID id> constexpr size_t ELEMENT_DIM;
 template<VTK_ID id>
 struct ElementTraits
 {

@@ -13,15 +13,14 @@ DiscretizationPolyhedralFEM::DiscretizationPolyhedralFEM(mesh::Mesh & grid,
     : DiscretizationFEMBase::DiscretizationFEMBase(grid, config,
                                                    fracture_face_markers,
                                                    neumann_face_markers)
-{
-}
+{}
 
 void DiscretizationPolyhedralFEM::build_(mesh::Cell & cell)
 {
   if (_config.solver == SolverType::direct || _config.solver == SolverType::cg)
-    _element = std::make_unique<PolyhedralElementDirect>(cell, _grid, _config);
+    _element = std::make_shared<PolyhedralElementDirect>(cell, _grid, _config);
   else if (_config.solver == SolverType::msrsb)
-    _element = std::make_unique<PolyhedralElementMSRSB>(cell, _grid, _config);
+    _element = std::make_shared<PolyhedralElementMSRSB>(cell, _grid, _config);
 }
 
 }  // end namespace discretization
