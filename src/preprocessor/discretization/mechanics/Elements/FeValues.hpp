@@ -424,8 +424,13 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,ElementTraits<vtk_
   for (size_t i=0; i < ElementTraits<vtk_id>::n_vertices; ++i)
   {
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
-    if ( std::fabs(loc_coord[i][2]) > 1e-10 )
-      logging::warning() << "non-planar face or basis is set for non-planar surfaces" << std::endl;
+    if ( std::fabs(loc_coord[i][2]) > 1e-8 * _vertex_coord[0].distance(_vertex_coord[1] ) )
+    {
+      std::cout << loc_coord[i] << std::endl;
+      logging::warning() << "non-planar face or basis is "
+          "set for non-planar surfaces" << std::endl;
+    }
+
   }
 
   // dx_j / du_i = \sum_k (d psi_k / du_j) * x_k_i
@@ -472,7 +477,6 @@ Point  FeValues<vtk_id>::map_real_to_local_(const Point & x) const
     for (size_t v = 0; v < ElementTraits<vtk_id>::n_vertices; ++v)
       R += _vertex_coord[v] * eval_(xi, v);
     R -= x;
-    // std::cout << "R.norm() = " << R.norm() << " xi = " << xi  << std::endl;
 
     if (R.norm() < 1e-8)  // converged
       return xi;

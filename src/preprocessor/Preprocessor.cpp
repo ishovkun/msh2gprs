@@ -1,4 +1,5 @@
 #include "Preprocessor.hpp"
+#include "GlobalOpts.hpp"
 #include "parsers/YamlParser.hpp"
 #include "gmsh_interface/GmshInterface.hpp"
 #include "mesh/CartesianMeshBuilder.hpp"
@@ -355,11 +356,14 @@ void Preprocessor::build_geomechanics_discretization_()
     p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, config.fem,
                                                           dfm_markers,
                                                           bc_mgr.get_neumann_face_markers());
-  else if (config.fem.method == FEMMethod::polyhedral_finite_element)
-    // p_discr = std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid, config.fem,
-    p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(data.geomechanics_grid, config.fem,
-                                                            dfm_markers,
-                                                            bc_mgr.get_neumann_face_markers());
+  else if (config.fem.method == FEMMethod::polyhedral_finite_element) {
+    // p_discr =
+    // std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid,
+    // config.fem,
+    p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(
+        data.geomechanics_grid, config.fem, dfm_markers,
+        bc_mgr.get_neumann_face_markers());
+  }
   else throw std::invalid_argument("mechanics discretization is unknown");
 
   p_discr->build();

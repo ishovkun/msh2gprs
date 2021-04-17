@@ -18,7 +18,8 @@ class DiscretizationPolyhedralFEMOptimized : public DiscretizationPolyhedralFEM 
 
  protected:
   void build_(mesh::Cell & cell) override;
-  // void build_cell_data_(mesh::Cell const & cell) override;
+  void reorder_faces_(mesh::Cell & dst, mesh::Cell const & src) const;
+  std::vector<uint64_t> compress_faces_(mesh::Cell const & cell) const;
 
   // returns master if found; otherwise returns nullptr
   std::shared_ptr<PolyhedralElementBase>

@@ -35,12 +35,12 @@ class PolyhedralElementBase : public FiniteElementBase
   // This is needed for modeling discrete fractures
   virtual FiniteElementData get_fracture_data(const size_t iface,
                                               const angem::Basis<3,double> basis) override;
-
   // enforce cell 3d FE data
   void set_face_cell_data(FiniteElementData const & data) {_cell_data = data;}
-
   // return the polohedron for the parent cell
   std::unique_ptr<angem::Polyhedron<double>> host_topology() const {return _parent_cell.polyhedron();}
+  // returns the reference to the host cell
+  mesh::Cell const & host_cell() const { return _parent_cell; }
 
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,

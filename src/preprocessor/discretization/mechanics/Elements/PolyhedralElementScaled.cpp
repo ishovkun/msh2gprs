@@ -1,4 +1,5 @@
 #include "PolyhedralElementScaled.hpp"
+#include "logger/Logger.hpp"
 
 namespace discretization {
 
@@ -37,14 +38,24 @@ build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
                      angem::Tensor2<3, double> & du_dx) const
 {
   double detJ;
-  compute_detJ_and_invert_cell_jacobian_(master.grads,
-                                         du_dx, detJ,
-                                         _parent_cell.vertex_coordinates());
+  compute_detJ_and_invert_cell_jacobian_(master.grads, du_dx, detJ, vertex_coord);
 
   target.weight = detJ * master.weight;
   target.values = master.values;
 
-  if (detJ <= 0) throw std::runtime_error("Transformation det(J) is negative " + std::to_string(detJ));
+  if (detJ <= 0)
+  {
+    // std::cout << "vertex coord:" << std::endl;
+    // for (auto x : vertex_coord)
+    //   std::cout << x << std::endl;
+
+    // std::cout << "master grads:" << std::endl;
+    // for ( auto x : master.grads ) std::cout << x << std::endl;
+
+    // std::cout << "detJ = " << detJ << std::endl;
+    throw std::runtime_error("Transformation det(J) is negative " +
+                             std::to_string(detJ));
+  }
   update_shape_grads_(master.grads, du_dx, target.grads);
 }
 
@@ -88,9 +99,23 @@ compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
 FiniteElementData PolyhedralElementScaled::
 get_face_data(size_t iface, const angem::Basis<3,double> basis)
 {
-  auto const master_data = _master.get_face_data(iface, basis);
-  size_t const nv = _parent_cell.n_vertices();
+  FiniteElementData const master_data = _master.get_face_data(iface, basis);
+  auto const * const face = _parent_cell.faces()[iface];
+  auto verts = face->vertices();
+  size_t const nv = verts.size();
   size_t const nq = master_data.points.size();
+
+  // we might have to invert vertex order because the normal
+  // must be oriented the same way as in the master
+  // std::vector<size_t> order(nv);
+  // std::iota(order.begin(), order.end(), 0);
+  // bool reverse = false;
+  // if (face->normal().dot( basis(2) ) < 0 )
+  // {
+  //   reverse = true;
+  //   std::reverse(verts.begin(), verts.end());
+  //   // std::reverse(order.begin(), order.end());
+  // }
 
   // check for the right numbering
   if ( nv != master_data.center.values.size())
@@ -99,17 +124,70 @@ get_face_data(size_t iface, const angem::Basis<3,double> basis)
   FiniteElementData face_data(nv, nq);
   auto const vert_coord = _parent_cell.faces()[iface]->vertex_coordinates();
 
-  angem::Tensor2<3, double> du_dx;
-  for (size_t q = 0; q < nq; ++q) {
-    build_fe_point_data_(vert_coord, master_data.points[q],
-                         face_data.points[q], du_dx);
-  }
-
-  build_fe_point_data_(vert_coord, master_data.center,
-                       face_data.center, du_dx);
-
-  return face_data;
+   angem::Tensor2<3, double> du_dx;
+   for (size_t q = 0; q < nq; ++q) {
+     build_fe_face_point_data_(vert_coord, master_data.points[q],
+                               face_data.points[q], du_dx, basis);
+   }
+   build_fe_face_point_data_(vert_coord, master_data.center,
+                             face_data.center, du_dx, basis);
+   // if ( reverse )
+   // {
+   //   for (size_t q = 0; q < nq; ++q)
+   //   {
+   //     std::reverse( face_data.points[q].values.begin(),
+   //                   face_data.points[q].values.end());
+   //     std::reverse( face_data.points[q].grads.begin(),
+   //                   face_data.points[q].grads.end());
+   //   }
+   //   std::reverse( face_data.center.values.begin(),
+   //                 face_data.center.values.end());
+   //   std::reverse( face_data.center.grads.begin(),
+   //                 face_data.center.grads.end());
+   // }
+   return face_data;
 }
 
+void PolyhedralElementScaled::
+build_fe_face_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
+                          FEPointData const & master,
+                          FEPointData & current,
+                          angem::Tensor2<3, double> & du_dx,
+                          const angem::Basis<3,double> & basis) const
+{
+
+  double detJ;
+  compute_detJ_and_invert_face_jacobian_(master.grads, du_dx, detJ, vertex_coord, basis);
+  if ( detJ <= 0 ) throw std::runtime_error("Transformation det(J) is negative " + std::to_string(detJ));
+  update_shape_grads_(master.grads, du_dx, current.grads);
+}
+
+void PolyhedralElementScaled::
+compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>> & ref_grad,
+                                       angem::Tensor2<3, double> & J_inv,
+                                       double & detJ,
+                                       std::vector<angem::Point<3,double>> const & vertex_coord,
+                                       const angem::Basis<3,double> & basis) const
+{
+  angem::Plane<double> plane(vertex_coord[0], vertex_coord[1], vertex_coord[2]);
+  plane.set_basis(basis);
+  size_t const nv = vertex_coord.size();
+  std::vector<Point> loc_coord(nv);
+  for (size_t v = 0; v < nv; ++v)
+  {
+    loc_coord[v] = plane.local_coordinates(vertex_coord[v]);
+    if ( std::fabs(loc_coord[v][2]) > 1e-10 )
+      logging::warning() << "non-planar face or basis is set for non-planar surfaces" << std::endl;
+  }
+
+  angem::Tensor2<3, double> J;
+  for (size_t i = 0; i < 2; ++i)
+    for (size_t j = 0; j < 2; ++j)
+      for (size_t v = 0; v < nv; ++v)
+        J(i, j) += ref_grad[v][j] * loc_coord[v][i];
+  J(2, 2) = 1;
+  J_inv = invert(J);
+  detJ = det(J);
+}
 
 }  // end namespace discretization

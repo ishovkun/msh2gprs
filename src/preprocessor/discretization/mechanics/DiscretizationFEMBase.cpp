@@ -1,6 +1,6 @@
 #include "DiscretizationFEMBase.hpp"
 #include "logger/ProgressBar.hpp"  // provides ProgressBar
-
+#include "GlobalOpts.hpp"
 
 namespace discretization {
 
@@ -22,19 +22,21 @@ DiscretizationFEMBase::DiscretizationFEMBase(mesh::Mesh & grid,
 
 void DiscretizationFEMBase::build()
 {
-  logging::ProgressBar progress("Build Finite Elements", _grid.n_active_cells());
+  std::unique_ptr<logging::ProgressBar> progress = nullptr;
+  if (gprs_data::GlobalOpts::ref().print_progressbar)
+    progress = std::make_unique<logging::ProgressBar>("Build Finite Elements",
+                                                      _grid.n_active_cells());
 
   size_t item = 0;
-  std::vector<size_t> order;
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
-    progress.set_progress(item++);
+    if (progress) progress->set_progress(item++);
     build_(*cell);
     build_cell_data_(*cell);
     build_face_data_(*cell);
   }
 
-  progress.finalize();
+  if (progress) progress->finalize();
 }
 
 void DiscretizationFEMBase::build_cell_data_(mesh::Cell const & cell)

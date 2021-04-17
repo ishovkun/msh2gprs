@@ -111,21 +111,20 @@ if (CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra")
 endif()
 
-# libraries for linking
-# last flag for std::filesystem
-set(msh2gprs_libs ${msh2gprs_libs} preprocessor yaml-cpp mesh -lstdc++fs)
-
 # memory leak debugging
-
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
   message("-- Debug build")
   set(msh2gprs_libs ${msh2gprs_libs} -lasan)
   set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined")
-ELSEIF(CMAKE_BUILD_TYPE MATCHES Release)
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
   message("-- Release build")
-ELSE()
+else()
   message("-- Build type unknown")
-ENDIF()
+endif()
+
+# libraries for linking
+set(msh2gprs_libs ${msh2gprs_libs} preprocessor yaml-cpp mesh -lstdc++fs)
+
 TARGET_LINK_LIBRARIES(msh2gprs ${msh2gprs_libs})
 
 

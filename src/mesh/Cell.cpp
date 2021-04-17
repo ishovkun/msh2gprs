@@ -255,12 +255,18 @@ size_t Cell::level() const noexcept
 
 void Cell::reorder_vertices(std::vector<size_t> const & order)
 {
-  if (order.size() != n_vertices())
-    throw std::invalid_argument("angem: number of vertices does not match");
-
+  assert( order.size() == n_vertices() && "number of vertices must match" );
   std::vector<size_t> copy(m_vertices);
   for (size_t i = 0; i < order.size(); ++i)
     m_vertices[order[i]] = copy[i];
+}
+
+void Cell::reorder_faces(std::vector<size_t> const & order)
+{
+  assert( order.size() == m_faces.size() && "number of faces must match" );
+  std::vector<size_t> copy(m_faces);
+  for (size_t i = 0; i < order.size(); ++i)
+    m_faces[order[i]] = copy[i];
 }
 
 

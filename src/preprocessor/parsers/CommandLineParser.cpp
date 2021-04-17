@@ -22,6 +22,10 @@ CommandLineParser::CommandLineParser(int argc, char *argv[])
       ("i,input", "Input config file path", value<string>())
       ("d,debug", "Log level debug", value<bool>()->default_value("true")) // a bool parameter
       ("no_progressbar", "do not draw progressbars", value<bool>()->default_value("false"))
+      ("o,optimized", "Use optimized yet unreliable algorithms",
+       value<bool>()->default_value("false"))
+      ("e,experimental", "Use features that are currently under development",
+       value<bool>()->default_value("false"))
   ;
 
   _options.parse_positional({"input"});

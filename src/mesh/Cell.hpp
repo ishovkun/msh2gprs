@@ -91,6 +91,9 @@ class Cell
   // reorder vertices in the cell
   // @NOTE: the size of new_order must match the number of cell vertices
   void reorder_vertices(std::vector<size_t> const & new_order);
+  // reorder faces in the cell
+  // @NOTE: the size of new_order must match the number of cell faces
+  void reorder_faces(std::vector<size_t> const & new_order);
 
  protected:
   // recursive part of the public ultimate_children() method
