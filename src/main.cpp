@@ -1,7 +1,9 @@
 #include "preprocessor/Preprocessor.hpp"
+#include "preprocessor/GlobalOpts.hpp"
+#include "preprocessor/parsers/CommandLineParser.hpp"
+#include "logger/Logger.hpp"
 #include <iostream>
 #include <string>
-#include "logger/Logger.hpp"
 #include <experimental/filesystem>
 
 namespace filesystem = std::experimental::filesystem;
@@ -9,36 +11,15 @@ using Path = filesystem::path;
 
 int main(int argc, char *argv[])
 {
-  // process cmd arguments
-  if (argc < 2)
-  {
-    std::cout << "please specify a config file."
-              << std::endl
-              << "Example: "
-              << "msh2gprs config.json"
-              << std::endl
-              << "an example config is distributed with this code"
-              << std::endl;
-    return 0;
-  }
-  if (argc > 2)
-  {
-    std::cout << "Please provide only a single input argument" << std::endl;
-    return 1;
-  }
-
-  // config file
-  const std::string fname_config = argv[1];
-  const Path path_config(fname_config);
-
+  Parsers::CommandLineParser cmd(argc, argv);
+  auto const & opts = gprs_data::GlobalOpts::ref();
   auto & logger = logging::Logger::ref();
-  const Path log_file_path = path_config.parent_path() / "log.txt";
-  logger.set_file(log_file_path.filename());
-  logger.set_verbosity(logging::LogLevel::Debug);
+  logger.set_file(opts.log_file);
+  logger.set_verbosity(opts.log_level);
 
   try {
     // read stuff
-    gprs_data::Preprocessor preprocessor(path_config);
+    gprs_data::Preprocessor preprocessor(opts.config_file_path);
     // let the fun begin
     preprocessor.run();
   }

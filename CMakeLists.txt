@@ -74,6 +74,10 @@ endif (TARGET Eigen3::Eigen)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/angem)
 ADD_SUBDIRECTORY(external/angem)
 INCLUDE_DIRECTORIES(${angem_include_dirs})
+# Command line parser
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/cxxopts)
+ADD_SUBDIRECTORY(external/cxxopts)
+INCLUDE_DIRECTORIES(external/cxxopts/include)
 # mesh
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/mesh)
 ADD_SUBDIRECTORY(src/mesh)

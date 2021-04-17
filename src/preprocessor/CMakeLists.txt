@@ -2,7 +2,9 @@
 
 ADD_LIBRARY(preprocessor
   Preprocessor.cpp
+  GlobalOpts.cpp
   parsers/YamlParser.cpp
+  parsers/CommandLineParser.cpp
   gmsh_interface/GmshInterface.cpp
   gmsh_interface/element_types.cpp
   utils.cpp
