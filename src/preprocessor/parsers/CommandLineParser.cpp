@@ -17,28 +17,50 @@ CommandLineParser::CommandLineParser(int argc, char *argv[])
 {
   _options
       .set_tab_expansion()
-      .allow_unrecognised_options()
+      // .allow_unrecognised_options()
+      .positional_help("/path/to/input/file.yaml")
       .add_options()
       ("i,input", "Input config file path", value<string>())
+      //
       ("d,debug", "Log level debug", value<bool>()->default_value("true")) // a bool parameter
-      ("no_progressbar", "do not draw progressbars", value<bool>()->default_value("false"))
-      ("o,optimized", "Use optimized yet unreliable algorithms",
-       value<bool>()->default_value("false"))
+      //
       ("e,experimental", "Use features that are currently under development",
        value<bool>()->default_value("false"))
+      //
+      ("o,optimized", "Use optimized yet unreliable algorithms",
+       value<bool>()->default_value("false"))
+      //
+      ("no_progressbar", "do not draw progressbars", value<bool>()->default_value("false"))
   ;
 
   _options.parse_positional({"input"});
 
   _result =_options.parse(argc, argv);
 
-  parse_paths_();
-  parse_logger_();
+  try
+  {
+    parse_paths_();
+    parse_logger_();
+  }
+  catch (option_has_no_value_exception const & e)
+  {
+    std::cout << _options.help() << std::endl;
+    throw e;
+  }
+  catch (std::runtime_error const & e)
+  {
+    std::cout << _options.help() << std::endl;
+    throw e;
+  }
+
 }
 
 void CommandLineParser::parse_paths_()
 {
   auto & opts = gprs_data::GlobalOpts::ref();
+  if (!_result.count("input"))
+    throw std::runtime_error("User must provide input file");
+
   const std::string fname_config = _result["i"].as<string>();
   opts.config_file_path = std::experimental::filesystem::path(fname_config);
   opts.log_file = (opts.config_file_path.parent_path() / "log.txt").filename();

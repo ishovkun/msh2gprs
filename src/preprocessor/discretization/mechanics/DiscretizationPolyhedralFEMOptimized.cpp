@@ -56,7 +56,6 @@ DiscretizationPolyhedralFEMOptimized::known_element_(mesh::Cell const & cell,
       }
     }
   }
-  std::cout << "nada" << std::endl;
   return nullptr;
 }
 

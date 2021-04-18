@@ -4,20 +4,17 @@
 #include "logger/Logger.hpp"
 #include <iostream>
 #include <string>
-#include <experimental/filesystem>
-
-namespace filesystem = std::experimental::filesystem;
-using Path = filesystem::path;
 
 int main(int argc, char *argv[])
 {
-  Parsers::CommandLineParser cmd(argc, argv);
-  auto const & opts = gprs_data::GlobalOpts::ref();
-  auto & logger = logging::Logger::ref();
-  logger.set_file(opts.log_file);
-  logger.set_verbosity(opts.log_level);
-
   try {
+    Parsers::CommandLineParser cmd(argc, argv);
+
+    auto const & opts = gprs_data::GlobalOpts::ref();
+    auto & logger = logging::Logger::ref();
+    logger.set_file(opts.log_file);
+    logger.set_verbosity(opts.log_level);
+
     // read stuff
     gprs_data::Preprocessor preprocessor(opts.config_file_path);
     // let the fun begin
