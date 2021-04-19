@@ -11,7 +11,17 @@ PolyhedralElementScaled::PolyhedralElementScaled(const mesh::Cell & cell,
                                                  const FiniteElementConfig & config)
     : PolyhedralElementBase(cell, parent_grid, config, true),
       _master(master)
-{}
+{
+  map_vertices_to_master_();
+}
+
+void PolyhedralElementScaled::map_vertices_to_master_()
+{
+  auto const & v_cur = _parent_cell.vertices();
+  auto const & v_master = _master.host_cell().vertices();
+  for (size_t v = 0; v < _parent_cell.n_vertices(); ++v)
+    _vertex_mapping[v_cur[v]] = v_master[v];
+}
 
 void PolyhedralElementScaled::build_fe_cell_data_()
 {
@@ -97,38 +107,28 @@ compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
 }
 
 FiniteElementData PolyhedralElementScaled::
-get_face_data(size_t iface, const angem::Basis<3,double> basis)
+get_face_data(size_t iface, angem::Basis<3,double> basis)
 {
-  FiniteElementData const master_data = _master.get_face_data(iface, basis);
   auto const * const face = _parent_cell.faces()[iface];
-  auto verts = face->vertices();
-  size_t const nv = verts.size();
+  auto const * const master_face = _master.host_cell().faces()[iface];
+  auto vert_coord = _parent_cell.faces()[iface]->vertex_coordinates();
+  reorder_face_vertices_(*face, *master_face, vert_coord);
+
+  auto master_basis = get_face_basis_(*master_face, _master.host_cell());
+  FiniteElementData const master_data = _master.get_face_data(iface, master_basis);
+  size_t const nv = vert_coord.size();
   size_t const nq = master_data.points.size();
 
-  // we might have to invert vertex order because the normal
-  // must be oriented the same way as in the master
-  // std::vector<size_t> order(nv);
-  // std::iota(order.begin(), order.end(), 0);
-  // bool reverse = false;
-  // if (face->normal().dot( basis(2) ) < 0 )
-  // {
-  //   reverse = true;
-  //   std::reverse(verts.begin(), verts.end());
-  //   // std::reverse(order.begin(), order.end());
-  // }
-
   // check for the right numbering
-  if ( nv != master_data.center.values.size())
+  if ( nv != master_data.center.values.size() )
     throw std::runtime_error("You need to renumber faces of the current polyhedron to match master");
 
   FiniteElementData face_data(nv, nq);
-  auto const vert_coord = _parent_cell.faces()[iface]->vertex_coordinates();
 
    angem::Tensor2<3, double> du_dx;
-   for (size_t q = 0; q < nq; ++q) {
+   for (size_t q = 0; q < nq; ++q)
      build_fe_face_point_data_(vert_coord, master_data.points[q],
                                face_data.points[q], du_dx, basis);
-   }
    build_fe_face_point_data_(vert_coord, master_data.center,
                              face_data.center, du_dx, basis);
    // if ( reverse )
@@ -169,13 +169,18 @@ compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>>
                                        std::vector<angem::Point<3,double>> const & vertex_coord,
                                        const angem::Basis<3,double> & basis) const
 {
-  angem::Plane<double> plane(vertex_coord[0], vertex_coord[1], vertex_coord[2]);
+  angem::Plane<double> plane(vertex_coord);
+  {
+    std::cout << "basis.norm = " << basis(2)  << std::endl;
+    std::cout << "face.norm  = " << plane.normal()  << std::endl;
+  }
   plane.set_basis(basis);
   size_t const nv = vertex_coord.size();
   std::vector<Point> loc_coord(nv);
   for (size_t v = 0; v < nv; ++v)
   {
     loc_coord[v] = plane.local_coordinates(vertex_coord[v]);
+    std::cout << "loc_coord[" << v << "] = " << loc_coord[v] << std::endl;
     if ( std::fabs(loc_coord[v][2]) > 1e-10 )
       logging::warning() << "non-planar face or basis is set for non-planar surfaces" << std::endl;
   }
@@ -189,5 +194,44 @@ compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>>
   J_inv = invert(J);
   detJ = det(J);
 }
+
+void PolyhedralElementScaled::
+reorder_face_vertices_(mesh::Face const & target,
+                       mesh::Face const & master,
+                       std::vector<angem::Point<3,double>> & coords)
+{
+  auto verts = target.vertices();
+  auto master_verts = master.vertices();
+  std::vector<size_t> order(verts.size());
+  for (size_t v = 0; v < verts.size(); ++v)
+  {
+    size_t const mapped = _vertex_mapping[verts[v]];
+    auto it = std::find( master_verts.begin(), master_verts.end(), mapped);
+    if (it == master_verts.end())
+      throw std::runtime_error("something's wrong I can feel it");
+    order[v] = std::distance(master_verts.begin(), it);
+  }
+
+  std::cout << "order: ";
+  for (auto x : order) std::cout << x << " ";
+  std::cout << std::endl;
+
+  auto const copy = coords;
+  for (size_t v = 0; v < verts.size(); ++v)
+    coords[v] = copy[order[v]];
+}
+
+angem::Basis<3,double>
+PolyhedralElementScaled::get_face_basis_(mesh::Face const & face,
+                                         mesh::Cell const & cell) const
+{
+  angem::Plane plane(face.vertex_coordinates());
+  auto fc = face.center();
+  auto cc = cell.center();
+  if (plane.normal().dot( fc - cc ) < 0)
+    plane.get_basis()[2] *= -1;
+  return plane.get_basis();
+}
+
 
 }  // end namespace discretization

@@ -32,7 +32,7 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
 
   // get face data
   FiniteElementData get_face_data(size_t iface,
-                                  const angem::Basis<3,double> basis) override;
+                                  angem::Basis<3,double> basis) override;
 
 
  protected:
@@ -59,10 +59,15 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
   void update_shape_grads_(std::vector<angem::Point<3,double>> const & ref_grads,
                            angem::Tensor2<3, double> const & du_dx,
                            std::vector<angem::Point<3,double>> &shape_grads) const;
-
-
+  void reorder_face_vertices_(mesh::Face const & target,
+                              mesh::Face const & master,
+                              std::vector<angem::Point<3,double>> & coords);
+  void map_vertices_to_master_();
+  angem::Basis<3,double> get_face_basis_(mesh::Face const & face,
+                                         mesh::Cell const & cell) const;
 
   PolyhedralElementBase & _master;
+  std::unordered_map<size_t, size_t> _vertex_mapping;
 
 };
 }  // end namespace discretization

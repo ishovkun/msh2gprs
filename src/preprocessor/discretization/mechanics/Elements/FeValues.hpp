@@ -277,7 +277,7 @@ void FeValues<vtk_id>::update_(const Point & p,
   else  // dim == 2
     compute_detJ_and_invert_face_jacobian_(ref_grad, du_dx, determinant);
   // must be positive
-  if ( determinant <= 0 ) throw std::runtime_error("Transformation det(J) is negative " + std::to_string(determinant));
+  if ( determinant <= 0 ) throw std::runtime_error("FeValues: Transformation det(J) is negative " + std::to_string(determinant));
   // compute the true shape function gradients
   update_shape_grads_(ref_grad, du_dx, shape_grads);
 }
@@ -426,7 +426,7 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,ElementTraits<vtk_
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
     if ( std::fabs(loc_coord[i][2]) > 1e-8 * _vertex_coord[0].distance(_vertex_coord[1] ) )
     {
-      std::cout << loc_coord[i] << std::endl;
+      std::cout << "Fe_values: loc_coord = " << loc_coord[i] << std::endl;
       logging::warning() << "non-planar face or basis is "
           "set for non-planar surfaces" << std::endl;
     }

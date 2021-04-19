@@ -30,7 +30,7 @@ class PolyhedralElementBase : public FiniteElementBase
   }
 
   // get FE data for surface integration
-  FiniteElementData get_face_data(size_t iface, const angem::Basis<3,double> basis) override;
+  FiniteElementData get_face_data(size_t iface, angem::Basis<3,double> basis) override;
   // get FE data of cell shape functions at face integration points.
   // This is needed for modeling discrete fractures
   virtual FiniteElementData get_fracture_data(const size_t iface,

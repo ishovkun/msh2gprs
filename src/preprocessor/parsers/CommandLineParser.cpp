@@ -41,6 +41,7 @@ CommandLineParser::CommandLineParser(int argc, char *argv[])
   {
     parse_paths_();
     parse_logger_();
+    gprs_data::GlobalOpts::ref().enable_experimental = _result["e"].as<bool>();
   }
   catch (option_has_no_value_exception const & e)
   {

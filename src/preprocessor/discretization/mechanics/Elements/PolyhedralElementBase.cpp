@@ -148,7 +148,7 @@ void PolyhedralElementBase::build_fe_cell_data_()
 }
 
 FiniteElementData PolyhedralElementBase::
-get_face_data(size_t iface, const angem::Basis<3,double> basis)
+get_face_data(size_t iface, angem::Basis<3,double> basis)
 {
   build_tributary_2d_(iface);
 
