@@ -38,6 +38,7 @@ void IntegrationRule2dAverage::compute_fe_values_(const std::vector<size_t> &fac
   for (const size_t iface : faces)
   {
     const mesh::Face & face = grid.face(iface);
+    // std::cout << "updating face " << iface << std::endl;
     fe_values.update(face);
     const std::vector<size_t> & face_verts = face.vertices();
 

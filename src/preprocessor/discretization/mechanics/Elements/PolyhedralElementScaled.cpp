@@ -115,6 +115,7 @@ get_face_data(size_t iface, angem::Basis<3,double> basis)
   reorder_face_vertices_(*face, *master_face, vert_coord);
 
   auto master_basis = get_face_basis_(*master_face, _master.host_cell());
+  basis = get_face_basis_(*face, host_cell());
   FiniteElementData const master_data = _master.get_face_data(iface, master_basis);
   size_t const nv = vert_coord.size();
   size_t const nq = master_data.points.size();
@@ -174,6 +175,7 @@ compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>>
     std::cout << "basis.norm = " << basis(2)  << std::endl;
     std::cout << "face.norm  = " << plane.normal()  << std::endl;
   }
+
   plane.set_basis(basis);
   size_t const nv = vertex_coord.size();
   std::vector<Point> loc_coord(nv);
@@ -229,7 +231,7 @@ PolyhedralElementScaled::get_face_basis_(mesh::Face const & face,
   auto fc = face.center();
   auto cc = cell.center();
   if (plane.normal().dot( fc - cc ) < 0)
-    plane.get_basis()[2] *= -1;
+    plane.get_basis().invert();
   return plane.get_basis();
 }
 

@@ -313,6 +313,7 @@ void FeValues<vtk_id>::update_vertex_coord_(const std::vector<Point> & vertex_co
     if (_basis_set)
     {
       angem::Plane<double> plane (_vertex_coord[0], _vertex_coord[1], _vertex_coord[2]);
+      // std::cout << "face renum product: " <<  plane.normal() * _face_basis[2]  << std::endl;
       if ( plane.normal() * _face_basis[2] < 0)
       {
         // reorder vertices
@@ -328,7 +329,6 @@ double FeValues<vtk_id>::value(const size_t shape_index, const size_t qpoint) co
 {
   assert( qpoint < _qpoints.size() && "qpoint too large" );
   assert( shape_index < ElementTraits<vtk_id>::n_vertices && "shape_index too large");
-  // return _shape_values[qpoint][shape_index];
   return _shape_values[qpoint][_vertex_ordering[shape_index]];
 }
 
@@ -419,25 +419,26 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,ElementTraits<vtk_
     plane.set_origin(_vertex_coord[0]);
     plane.set_basis(_face_basis);
   }
+
   // get vertex coordinates in 2d face basis
   std::array<Point,ElementTraits<vtk_id>::n_vertices> loc_coord;
   for (size_t i=0; i < ElementTraits<vtk_id>::n_vertices; ++i)
   {
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
+    // std::cout << "Fe_values: loc_coord = " << loc_coord[i] << std::endl;
     if ( std::fabs(loc_coord[i][2]) > 1e-8 * _vertex_coord[0].distance(_vertex_coord[1] ) )
     {
       std::cout << "Fe_values: loc_coord = " << loc_coord[i] << std::endl;
       logging::warning() << "non-planar face or basis is "
-          "set for non-planar surfaces" << std::endl;
+                            "set for non-planar surfaces" << std::endl;
     }
-
   }
 
-  // dx_j / du_i = \sum_k (d psi_k / du_j) * x_k_i
+  // dxⱼ / duᵢ = Σₖ (dΨₖ / duⱼ) * xₖᵢ
   angem::Tensor2<3, double> J;
   for (std::size_t i=0; i<2; ++i)
     for (std::size_t j=0; j<2; ++j)
-      for (std::size_t v=0; v<ElementTraits<vtk_id>::n_vertices; ++v)
+      for (std::size_t v = 0; v < ElementTraits<vtk_id>::n_vertices; ++v)
         J(i, j) += ref_grad[v][j] * loc_coord[v][i];
   J(2, 2) = 1;
   J_inv = invert(J);
