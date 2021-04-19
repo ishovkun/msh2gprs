@@ -12,6 +12,7 @@ struct GlobalOpts
   std::string log_file;
   logging::LogLevel log_level = logging::LogLevel::Debug;
   bool print_progressbar = true;
+  bool enable_experimental = false;
 
   static GlobalOpts & ref()
   {

@@ -357,12 +357,15 @@ void Preprocessor::build_geomechanics_discretization_()
                                                           dfm_markers,
                                                           bc_mgr.get_neumann_face_markers());
   else if (config.fem.method == FEMMethod::polyhedral_finite_element) {
-    // p_discr =
-    // std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid,
-    // config.fem,
-    p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(
-        data.geomechanics_grid, config.fem, dfm_markers,
-        bc_mgr.get_neumann_face_markers());
+    auto const & opts = GlobalOpts::ref();
+    if (opts.enable_experimental)
+      p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(
+          data.geomechanics_grid, config.fem, dfm_markers,
+          bc_mgr.get_neumann_face_markers());
+    else
+      p_discr =
+          std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid,
+          config.fem, dfm_markers, bc_mgr.get_neumann_face_markers());
   }
   else throw std::invalid_argument("mechanics discretization is unknown");
 
