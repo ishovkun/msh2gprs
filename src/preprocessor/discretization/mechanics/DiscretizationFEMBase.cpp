@@ -58,13 +58,13 @@ void DiscretizationFEMBase::build_face_data_(mesh::Cell const & cell)
         _neumann_face_orientation.end();
     if (is_fracture)
       _face_basis = get_basis_(*face, _fracture_face_orientation.find(face->marker())->second);
-    else if (is_neumann)
-      _face_basis = get_basis_(*face, _neumann_face_orientation.find(face->marker())->second);
+    // else if (is_neumann)
+    //   _face_basis = get_basis_(*face, _neumann_face_orientation.find(face->marker())->second);
 
     if (is_neumann || is_fracture)
       if ( _face_data[face->index()].points.empty() )
       {
-        _face_data[face_index] = _element->get_face_data(iface, _face_basis);
+        _face_data[face_index] = _element->get_face_data(iface);
         _face_data[face_index].element_index = face_index;
       }
 

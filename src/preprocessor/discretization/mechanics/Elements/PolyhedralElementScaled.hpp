@@ -31,8 +31,7 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
   virtual ~PolyhedralElementScaled() = default;
 
   // get face data
-  FiniteElementData get_face_data(size_t iface,
-                                  angem::Basis<3,double> basis) override;
+  FiniteElementData get_face_data(size_t iface) override;
 
 
  protected:
@@ -63,8 +62,6 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
                               mesh::Face const & master,
                               std::vector<angem::Point<3,double>> & coords);
   void map_vertices_to_master_();
-  angem::Basis<3,double> get_face_basis_(mesh::Face const & face,
-                                         mesh::Cell const & cell) const;
 
   PolyhedralElementBase & _master;
   std::unordered_map<size_t, size_t> _vertex_mapping;

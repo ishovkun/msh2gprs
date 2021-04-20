@@ -147,10 +147,10 @@ void PolyhedralElementBase::build_fe_cell_data_()
   }
 }
 
-FiniteElementData PolyhedralElementBase::
-get_face_data(size_t iface, angem::Basis<3,double> basis)
+FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)
 {
   build_tributary_2d_(iface);
+  auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
 
   if (_basis_functions.empty())
     throw std::runtime_error("should be initialized");

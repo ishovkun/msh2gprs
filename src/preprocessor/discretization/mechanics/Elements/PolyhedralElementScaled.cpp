@@ -106,17 +106,15 @@ compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
   du_dx = invert(dx_du);
 }
 
-FiniteElementData PolyhedralElementScaled::
-get_face_data(size_t iface, angem::Basis<3,double> basis)
+FiniteElementData PolyhedralElementScaled::get_face_data(size_t iface)
 {
   auto const * const face = _parent_cell.faces()[iface];
   auto const * const master_face = _master.host_cell().faces()[iface];
   auto vert_coord = _parent_cell.faces()[iface]->vertex_coordinates();
   reorder_face_vertices_(*face, *master_face, vert_coord);
 
-  auto master_basis = get_face_basis_(*master_face, _master.host_cell());
-  basis = get_face_basis_(*face, host_cell());
-  FiniteElementData const master_data = _master.get_face_data(iface, master_basis);
+  auto basis = get_face_basis_(*face, host_cell());
+  FiniteElementData const master_data = _master.get_face_data(iface);
   size_t const nv = vert_coord.size();
   size_t const nq = master_data.points.size();
 
@@ -222,18 +220,5 @@ reorder_face_vertices_(mesh::Face const & target,
   for (size_t v = 0; v < verts.size(); ++v)
     coords[v] = copy[order[v]];
 }
-
-angem::Basis<3,double>
-PolyhedralElementScaled::get_face_basis_(mesh::Face const & face,
-                                         mesh::Cell const & cell) const
-{
-  angem::Plane plane(face.vertex_coordinates());
-  auto fc = face.center();
-  auto cc = cell.center();
-  if (plane.normal().dot( fc - cc ) < 0)
-    plane.get_basis().invert();
-  return plane.get_basis();
-}
-
 
 }  // end namespace discretization

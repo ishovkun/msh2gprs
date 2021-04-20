@@ -313,7 +313,6 @@ void FeValues<vtk_id>::update_vertex_coord_(const std::vector<Point> & vertex_co
     if (_basis_set)
     {
       angem::Plane<double> plane (_vertex_coord[0], _vertex_coord[1], _vertex_coord[2]);
-      // std::cout << "face renum product: " <<  plane.normal() * _face_basis[2]  << std::endl;
       if ( plane.normal() * _face_basis[2] < 0)
       {
         // reorder vertices

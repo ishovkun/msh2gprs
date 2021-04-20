@@ -37,6 +37,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/DiscretizationPolyhedralFEM.cpp
   discretization/mechanics/DiscretizationPolyhedralFEMOptimized.cpp
   discretization/mechanics/DiscretizationStandardFEM.cpp
+  discretization/mechanics/Elements/FiniteElementBase.cpp
   discretization/mechanics/Elements/PolyhedralElementBase.cpp
   discretization/mechanics/Elements/PolyhedralElementMSRSB.cpp
   discretization/mechanics/Elements/JacobiPreconditioner.cpp

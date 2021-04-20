@@ -60,7 +60,7 @@ FiniteElementData StandardFiniteElement::get_fracture_data(const size_t iface,
   FiniteElementData data;   // FEM values and gradients in face integration points
 
   const auto face_qpoints = compute_face_qpoint_coordinates(faces[iface]->vertex_coordinates(),
-                                                            get_face_data(iface, basis));
+                                                            get_face_data(iface));
 
   const VTK_ID cell_id = static_cast<VTK_ID>(_cell.vtk_id());
     switch (cell_id)
@@ -93,13 +93,13 @@ FiniteElementData StandardFiniteElement::get_fracture_data(const size_t iface,
     return data;
 }
 
-FiniteElementData StandardFiniteElement::get_face_data(const size_t iface,
-                                                       const angem::Basis<3,double> basis)
+FiniteElementData StandardFiniteElement::get_face_data(const size_t iface)
 {
   const auto faces = _cell.faces();
   FiniteElementData data;
 
   const mesh::Face* face = faces[iface];
+  auto const basis = get_face_basis_(*face, _cell);
 
   const VTK_ID id = static_cast<VTK_ID>(face->vtk_id());
   switch (id)
