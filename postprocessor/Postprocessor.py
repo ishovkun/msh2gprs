@@ -16,6 +16,7 @@ class Postprocessor:
     Main class of the program
     """
     def __init__(self, case_path):
+        print( "Initializing postprocessor with path: '" + case_path + "'" )
         self.case_path = case_path
         self.config_file_name = "postprocessor_config.yaml"
         self.matrix_flow_grid_reader = vtk.vtkDataSetReader()
@@ -174,25 +175,25 @@ class Postprocessor:
         '''
         Checks if mech vtk output directory exists
         '''
-        # if (not os.path.isdir(self.case_path)):
-        if os.path.isdir( self.case_path + "/OUTPUT.vtk_output" ):
-            print("Mechanics vtk file found")
+        mechanics_dir =  os.path.join(self.case_path, "OUTPUT.vtk_output")
+        if os.path.isdir(mechanics_dir):
+            print("Mechanics directory found: " + mechanics_dir)
             return True
         else:
-            print("No mechanics since vtk file found")
+            print("No geomechanics directory found: " +  mechanics_dir )
             return False
 
     def readMechVTKData(self, fname):
         reader = self.matrix_mech_vtk_ouput_reader
-        if (self.output_file_number == 0):
-            fnum_str = "%09d"%(self.output_file_number)
-            # fnum_str = "%09d"%(self.output_file_number + 1)
-        else:
-            fnum_str = "%09d"%(self.output_file_number - 1)
 
-        vtk_file_path = self.case_path + "/OUTPUT.vtk_output/" + fname + \
-                        "." + fnum_str + ".vtk"
-        # print("reading ", vtk_file_path)
+        if (self.output_file_number == 0):
+            fnum_str = "%09d"%(self.output_file_number + 1)
+        else:
+            fnum_str = "%09d"%(self.output_file_number)
+
+        mechanics_dir =  os.path.join(self.case_path, "OUTPUT.vtk_output")
+        mech_filename = fname + "." + fnum_str + ".vtk"
+        vtk_file_path = os.path.join(mechanics_dir, mech_filename)
         reader.SetFileName(vtk_file_path)
         reader.ReadAllScalarsOn()       # without this vtk reads only one array
         reader.Update()

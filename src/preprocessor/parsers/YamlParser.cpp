@@ -78,7 +78,7 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
       const std::string str_method = it->second.as<std::string>();
       if (str_method == "strong discontinuity")
         config.fem.method = FEMMethod::strong_discontinuity;
-      else if (str_method == "discrete")
+      else if (str_method == "discrete" || str_method == "pfem")
         config.fem.method = FEMMethod::polyhedral_finite_element;
       else if (str_method == "mixed")
         config.fem.method = FEMMethod::mixed;
