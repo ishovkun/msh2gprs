@@ -62,12 +62,11 @@ DiscretizationPolyhedralFEMOptimized::known_element_(mesh::Cell const & cell,
   if (_masters.count(hsh)) {
     auto it = _masters.find(hsh);
     for (auto master : it->second) {
-      auto result = Isomorphism::check(*master->host_topology(),
-                                       *cell.polyhedron());
-      if (result.first)
+      Isomorphism isomorphism(*master->host_topology(),
+                              *cell.polyhedron());
+      if (isomorphism.check())
       {
-        order = std::move(result.second);
-        std::cout << "done permuting" << std::endl;
+        // order = std::move(result.second);
         return master;
       }
     }

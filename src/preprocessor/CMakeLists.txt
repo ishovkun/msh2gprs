@@ -66,6 +66,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/Elements/PFEM_integration/FaceSorter.cpp
   discretization/mechanics/Graph.cpp
   discretization/mechanics/Isomorphism.cpp
+  discretization/mechanics/EdgePath.cpp
 )
 
 SET_TARGET_PROPERTIES (preprocessor PROPERTIES LINKER_LANGUAGE CXX)
