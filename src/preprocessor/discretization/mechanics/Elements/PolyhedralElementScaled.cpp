@@ -54,18 +54,8 @@ build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
   target.values = master.values;
 
   if (detJ <= 0)
-  {
-    // std::cout << "vertex coord:" << std::endl;
-    // for (auto x : vertex_coord)
-    //   std::cout << x << std::endl;
-
-    // std::cout << "master grads:" << std::endl;
-    // for ( auto x : master.grads ) std::cout << x << std::endl;
-
-    // std::cout << "detJ = " << detJ << std::endl;
-    throw std::runtime_error("Transformation det(J) is negative " +
+    throw std::runtime_error("Cell Transformation det(J) is negative " +
                              std::to_string(detJ));
-  }
   update_shape_grads_(master.grads, du_dx, target.grads);
 }
 
@@ -157,7 +147,7 @@ build_fe_face_point_data_(std::vector<angem::Point<3,double>> const & vertex_coo
 
   double detJ;
   compute_detJ_and_invert_face_jacobian_(master.grads, du_dx, detJ, vertex_coord, basis);
-  if ( detJ <= 0 ) throw std::runtime_error("Transformation det(J) is negative " + std::to_string(detJ));
+  if ( detJ <= 0 ) throw std::runtime_error("Face Transformation det(J) is negative " + std::to_string(detJ));
   update_shape_grads_(master.grads, du_dx, current.grads);
 }
 

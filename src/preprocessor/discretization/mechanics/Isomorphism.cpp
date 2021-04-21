@@ -1,7 +1,47 @@
 #include "Isomorphism.hpp"
+#include "angem/utils.hpp"
 // #include <bitset>  // for debugging
 
 namespace discretization {
+
+using Point = angem::Point<3,double>;
+using Polyhedron = angem::Polyhedron<double>;
+using std::vector;
+
+inline double dot_product_plane_basis_normal(angem::Point<3,double> const & t1,
+                                             angem::Point<3,double> const & t2,
+                                             angem::Point<3,double> const & n)
+{
+  return t1.cross(t2).dot(n) > 0;
+}
+
+vector<size_t> uncompress(std::vector<uint64_t> const & c, size_t row)
+{
+  size_t const nv = c.size();
+  vector<size_t> uc;
+  size_t x = c[row];
+  for (size_t i = 0; i < nv; ++i)
+    if ( x & (1 << i) ) uc.push_back(i);
+  return uc;
+}
+
+bool check_orientation(Polyhedron const & p1,
+                       Polyhedron const & p2,
+                       std::vector<size_t> order,
+                       std::vector<uint64_t> const & c)
+{
+  auto const & v1 = p1.get_points();
+  auto v2 = p2.get_points();
+  angem::reorder(v2, order);
+  std::vector<size_t> adj = uncompress(c, 0);
+  double const d1 = dot_product_plane_basis_normal(v1[adj[0]] - v1[0],
+                                                   v1[adj[1]] - v1[0],
+                                                   v1[adj[2]] - v1[0]);
+  double const d2 = dot_product_plane_basis_normal(v2[adj[0]] - v2[0],
+                                                   v2[adj[1]] - v2[0],
+                                                   v2[adj[2]] - v2[0]);
+  return d1 * d2 > 0;
+}
 
 std::pair<bool, std::vector<size_t>>
 Isomorphism::check(angem::Polyhedron<double> const &p1,
@@ -26,7 +66,11 @@ Isomorphism::check(angem::Polyhedron<double> const &p1,
   std::iota(perm.begin(), perm.end(), 0);
   do {
     auto c2 = compress_(g2, perm);
-    if ( c1 == c2 ) return {true, perm};
+    if ( c1 == c2 && check_orientation(p1, p2, perm, c1))
+    {
+      return {true, perm};
+    }
+
   } while (std::next_permutation(perm.begin(), perm.end()));
 
   return {false, std::vector<size_t>()};
@@ -62,6 +106,5 @@ Graph Isomorphism::build_edge_graph_(angem::Polyhedron<double> const &poly)
   }
   return g;
 }
-
 
 }  // end namespace discretization

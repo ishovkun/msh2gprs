@@ -20,11 +20,26 @@ DiscretizationPolyhedralFEMOptimized(mesh::Mesh & grid,
 
 void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
 {
+  std::cout << "\nbuilding cell " << cell.index()
+            << " (nv = " << cell.n_vertices() << ")" << std::endl;
   std::vector<size_t> order;  // vertex ordering in case we need to reorder
-  if ( auto master = known_element_(cell, order) )
-  {
+  if ( auto master = known_element_(cell, order) ) {
     std::cout << "found similar element " <<  cell.index() << std::endl;
+
+    // std::cout << "pre-order: ";
+    // for (auto x : cell.vertices()) std::cout << x << " ";
+    // std::cout << std::endl;
+
     cell.reorder_vertices(order);
+
+    // std::cout << "pre-order: ";
+    // for (auto x : cell.vertices()) std::cout << x << " ";
+    // std::cout << std::endl;
+
+    // std::cout << "Master order: " << std::endl;
+    // for (auto x : master->host_cell().vertices()) std::cout << x << " ";
+    // std::cout << std::endl;
+
     reorder_faces_(cell, master->host_cell());
     _element = std::make_shared<PolyhedralElementScaled>( cell, _grid, *master, _config );
   }
@@ -42,20 +57,22 @@ DiscretizationPolyhedralFEMOptimized::known_element_(mesh::Cell const & cell,
                                                      std::vector<size_t> & order) const
 {
   size_t const hsh = cell.n_vertices();
-  if (_masters.count(hsh))
-  {
+  std::cout << "permuting" << std::endl;
+
+  if (_masters.count(hsh)) {
     auto it = _masters.find(hsh);
-    for (auto master : it->second)
-    {
+    for (auto master : it->second) {
       auto result = Isomorphism::check(*master->host_topology(),
                                        *cell.polyhedron());
       if (result.first)
       {
-        order = result.second;
+        order = std::move(result.second);
+        std::cout << "done permuting" << std::endl;
         return master;
       }
     }
   }
+  std::cout << "done permuting" << std::endl;
   return nullptr;
 }
 

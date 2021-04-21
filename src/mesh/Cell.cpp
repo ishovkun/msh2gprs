@@ -1,5 +1,6 @@
 #include "Cell.hpp"
 #include "angem/PolyhedronFactory.hpp"
+#include "angem/utils.hpp"
 
 namespace mesh
 {
@@ -253,20 +254,14 @@ size_t Cell::level() const noexcept
   return cnt;
 }
 
-void Cell::reorder_vertices(std::vector<size_t> const & order)
+void Cell::reorder_vertices(std::vector<size_t> & order)
 {
-  assert( order.size() == n_vertices() && "number of vertices must match" );
-  std::vector<size_t> copy(m_vertices);
-  for (size_t i = 0; i < order.size(); ++i)
-    m_vertices[order[i]] = copy[i];
+  angem::reorder<size_t, size_t>(m_vertices, order);
 }
 
-void Cell::reorder_faces(std::vector<size_t> const & order)
+void Cell::reorder_faces(std::vector<size_t> & order)
 {
-  assert( order.size() == m_faces.size() && "number of faces must match" );
-  std::vector<size_t> copy(m_faces);
-  for (size_t i = 0; i < order.size(); ++i)
-    m_faces[order[i]] = copy[i];
+  angem::reorder<size_t, size_t>(m_faces, order);
 }
 
 
