@@ -30,7 +30,9 @@ void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
     // for (auto x : cell.vertices()) std::cout << x << " ";
     // std::cout << std::endl;
 
-    cell.reorder_vertices(order);
+    auto & verts = cell.vertices();
+    angem::reorder_to(verts, order);
+    // cell.reorder_vertices(order);
 
     // std::cout << "pre-order: ";
     // for (auto x : cell.vertices()) std::cout << x << " ";
@@ -57,32 +59,32 @@ DiscretizationPolyhedralFEMOptimized::known_element_(mesh::Cell const & cell,
                                                      std::vector<size_t> & order) const
 {
   size_t const hsh = cell.n_vertices();
-  std::cout << "permuting" << std::endl;
+  // std::cout << "permuting" << std::endl;
 
   if (_masters.count(hsh)) {
     auto it = _masters.find(hsh);
     for (auto master : it->second) {
 
-      std::cout << "cell 1 : ";
-      for (auto v : master->host_cell().vertices())
-        std::cout << v << " ";
-      std::cout << std::endl;
-      std::cout << "cell 2 : ";
-      for (auto v : cell.vertices())
-        std::cout << v << " ";
-      std::cout << std::endl;
+      // std::cout << "cell 1 : ";
+      // for (auto v : master->host_cell().vertices())
+      //   std::cout << v << " ";
+      // std::cout << std::endl;
+      // std::cout << "cell 2 : ";
+      // for (auto v : cell.vertices())
+      //   std::cout << v << " ";
+      // std::cout << std::endl;
 
 
       Isomorphism isomorphism(*master->host_topology(),
                               *cell.polyhedron());
       if (isomorphism.check())
       {
-        // order = std::move(result.second);
+        order = isomorphism.ordering();
         return master;
       }
     }
   }
-  std::cout << "done permuting" << std::endl;
+
   return nullptr;
 }
 
@@ -102,12 +104,20 @@ reorder_faces_(mesh::Cell & dst, mesh::Cell const & src) const
   for (size_t f = 0; f < nf; ++f)
     order[f] = src_map[ dst_faces[f] ];
 
-  dst.reorder_faces(order);
+  auto faces = dst.face_indices();
+  angem::reorder_to(faces, order);
 }
 
 std::vector<uint64_t> DiscretizationPolyhedralFEMOptimized::
 compress_faces_(mesh::Cell const & cell) const
 {
+  // Build face-vertex adjacency matrix
+  // instead of using a proper adjacency matrix
+  // we save up on storage by jamming matrix rows
+  // into 64-bit integers
+  //
+  assert( cell.n_vertices() < 64 );
+
   // vertices: global index to local cell index
   std::unordered_map<size_t, size_t> global_to_local;
   auto const verts = cell.vertices();

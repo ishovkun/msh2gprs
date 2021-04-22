@@ -55,6 +55,8 @@ class Cell
   std::vector<Face*> faces();
   // get vector of cell faces
   std::vector<const Face*> faces() const;
+  // get reference to face indices
+  std::vector<size_t> & face_indices() {return m_faces;}
   // convenience methods
   // get the number of cell vertices
   inline std::size_t n_vertices() const { return m_vertices.size(); }
@@ -88,12 +90,6 @@ class Cell
   void set_marker(const int marker) {m_marker = marker;}
   // vector of unique cell edges
   std::vector<vertex_pair> edges() const noexcept;
-  // reorder vertices in the cell
-  // @NOTE: the size of new_order must match the number of cell vertices
-  void reorder_vertices(std::vector<size_t> & new_order);
-  // reorder faces in the cell
-  // @NOTE: the size of new_order must match the number of cell faces
-  void reorder_faces(std::vector<size_t> & new_order);
 
  protected:
   // recursive part of the public ultimate_children() method

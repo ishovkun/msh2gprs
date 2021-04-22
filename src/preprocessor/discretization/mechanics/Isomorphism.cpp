@@ -49,19 +49,12 @@ Isomorphism::Isomorphism(angem::Polyhedron<double> const &p1,
       algorithms::EdgePath path2(start, ie, g2, p2, path1);
       // algorithms::EdgePath path2(start, ie, g1, p1, path1);
       if (path2.exist()) {
-        std::cout << "fuck yeah" << std::endl;
         build_ordering_(path1.get_vertex_path(),
                         path2.get_vertex_path());
-        exit(0);
         return;
       }
-      // else std::cout << "fuck no" << std::endl;
     }
   }
-
-  std::cout << "fuck no" << std::endl;
-
-  exit(0);
 }
 
 
@@ -77,13 +70,10 @@ Graph Isomorphism::build_vertex_graph_(Polyhedron const &p)
 void Isomorphism::build_ordering_(std::vector<size_t> const & path1,
                                   std::vector<size_t> const & path2)
 {
-  std::cout << "path1 = ";
-  for (auto i : path1) std::cout << i << " ";
-  std::cout << std::endl;
-  std::cout << "path2 = ";
-  for (auto i : path2) std::cout << i << " ";
-  std::cout << std::endl;
   assert( path1.size() == path2.size() );
+  _ordering.resize( _p1.get_points().size() );
+  for (size_t i = 0; i < path1.size(); ++i)
+    _ordering[path2[i]] = path1[i];
 }
 
 

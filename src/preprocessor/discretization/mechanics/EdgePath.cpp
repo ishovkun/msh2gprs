@@ -17,7 +17,7 @@ EdgePath::EdgePath(size_t source, size_t start_edge,
   _visited.resize(_g.ne(), false);
   _c = poly.center();
 
-  size_t start_edge_global = _g.adj_idx(_s)[_se];
+  size_t start_edge_global = _g.adj(_s)[_se];
   dfs_(_s, start_edge_global);
 
   _exists = std::all_of(_visited.begin(), _visited.end(),
@@ -33,7 +33,7 @@ EdgePath::EdgePath(size_t source, size_t start_edge, Graph & g,
   _basises.resize(_g.nv(), nullptr);
   _visited.resize(_g.ne(), false);
   _c = poly.center();
-  size_t const start_edge_global = _g.adj_idx(_s)[_se];
+  size_t const start_edge_global = _g.adj(_s)[_se];
   _exists = dfs_follow_(_s, start_edge_global, 0);
   _exists &= std::all_of(_visited.begin(), _visited.end(),
                          [](bool i) {return i;});
@@ -76,7 +76,7 @@ void EdgePath::dfs_(size_t v, size_t incoming)
     sort_edges_ccw_(v);
   }
 
-  auto const edge_indices = _g.adj_idx(v);
+  auto const edge_indices = _g.adj(v);
   for (size_t ie = 0; ie < _g.degree(v); ++ie)
     if (!_visited[edge_indices[ie]])
     {
@@ -113,7 +113,7 @@ bool EdgePath::dfs_follow_(size_t v, size_t incoming, size_t path_idx)
     sort_edges_ccw_(v);
   }
 
-  auto const edge_indices = _g.adj_idx(v);
+  auto const & edge_indices = _g.adj(v);
   int step = _path[path_idx];
   bool goback = step < 0;
   int ie = abs(step) - 1;  // local_edge_index
@@ -156,7 +156,7 @@ void EdgePath::sort_edges_ccw_(size_t v)
   auto const plane = _basises[v];
   auto edges = _g.adj(v);
   for (size_t i = 0; i < _g.degree(v); ++i)
-    neighbor_vertices[i] = _verts[ edges[i]->other(v) ];
+    neighbor_vertices[i] = _verts[ _g.edge(edges[i]).other(v) ];
   auto order = angem::Polygon<double>::order_ccw(neighbor_vertices, *plane);
   // std::cout << "order ";
   // for (auto i : order) std::cout << i << " ";
@@ -172,7 +172,7 @@ void EdgePath::sort_edges_ccw_(size_t v)
   //   pts.push_back( _verts[_g.edge(e).other(v)] );
   // print_angles(pts, *_basises[v], 1e-8);
 
-  _g.reorder_vertex_edges(v, order);
+  angem::reorder_from(_g.adj(v), order);
 
   // std::cout << "post-order ";
   // for (auto i : _g.adj_idx(v)) std::cout << i << " ";

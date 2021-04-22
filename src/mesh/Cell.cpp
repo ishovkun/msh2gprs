@@ -254,15 +254,4 @@ size_t Cell::level() const noexcept
   return cnt;
 }
 
-void Cell::reorder_vertices(std::vector<size_t> & order)
-{
-  angem::reorder<size_t, size_t>(m_vertices, order);
-}
-
-void Cell::reorder_faces(std::vector<size_t> & order)
-{
-  angem::reorder<size_t, size_t>(m_faces, order);
-}
-
-
 }  // end namespace
