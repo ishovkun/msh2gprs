@@ -27,9 +27,10 @@ class Graph
  public:
   Graph(const size_t nv);
   void add(const size_t v1,  const size_t v2);
-  std::vector<Edge const*> adj(const size_t v) const;
-  std::vector<size_t> const & adj_idx(const size_t) const;
+  std::vector<Edge const*> adj(size_t v) const;
+  std::vector<size_t> const & adj_idx(size_t) const;
   Edge & edge(const size_t idx);
+  void reorder_vertex_edges(size_t v, std::vector<size_t> & order);
 
   size_t nv() const {return _adj.size();}
   size_t ne() const {return _edges.size();}

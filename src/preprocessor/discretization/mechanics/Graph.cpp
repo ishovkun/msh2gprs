@@ -1,4 +1,5 @@
 #include "Graph.hpp"
+#include "angem/utils.hpp"
 #include <cassert>
 
 namespace algorithms {
@@ -41,5 +42,11 @@ Edge & Graph::edge(const size_t e)
   assert( e < ne() && "Invalid edge index" );
   return _edges[e];
 }
+
+void Graph::reorder_vertex_edges(size_t v, std::vector<size_t> & order)
+{
+  angem::reorder<size_t, size_t>(_adj[v], order);
+}
+
 
 }  // end namespace algorithms
