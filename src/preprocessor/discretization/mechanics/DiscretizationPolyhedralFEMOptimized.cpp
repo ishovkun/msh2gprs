@@ -62,6 +62,17 @@ DiscretizationPolyhedralFEMOptimized::known_element_(mesh::Cell const & cell,
   if (_masters.count(hsh)) {
     auto it = _masters.find(hsh);
     for (auto master : it->second) {
+
+      std::cout << "cell 1 : ";
+      for (auto v : master->host_cell().vertices())
+        std::cout << v << " ";
+      std::cout << std::endl;
+      std::cout << "cell 2 : ";
+      for (auto v : cell.vertices())
+        std::cout << v << " ";
+      std::cout << std::endl;
+
+
       Isomorphism isomorphism(*master->host_topology(),
                               *cell.polyhedron());
       if (isomorphism.check())

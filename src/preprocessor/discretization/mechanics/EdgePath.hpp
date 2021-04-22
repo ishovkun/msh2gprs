@@ -30,9 +30,11 @@ class EdgePath {
   virtual ~EdgePath() = default;
 
  protected:
-  void build_basis_(size_t v, Edge const & first_edge);
+  void build_basis_(size_t v, size_t edge_to);
   void dfs_(size_t v);
-  bool dfs_follow_(size_t v, size_t cur_edge);
+  void dfs_(size_t v, size_t edge_to);
+  // bool dfs_follow_(size_t v, size_t cur_edge);
+  bool dfs_follow_(size_t v, size_t incoming, size_t path_idx);
   void sort_edges_ccw_(size_t v);
 
   Graph _g;
