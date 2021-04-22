@@ -32,9 +32,9 @@ EdgePath::EdgePath(size_t source, size_t start_edge, Graph & g,
   _basises.resize(_g.nv(), nullptr);
   _visited.resize(_g.ne(), false);
   _c = poly.center();
-  std::cout << "following path starting from  s = "
-            << _s << " se = " << _se
-            << std::endl;
+  // std::cout << "following path starting from  s = "
+  //           << _s << " se = " << _se
+  //           << std::endl;
   size_t start_edge_global = _g.adj_idx(_s)[_se];
   _exists = dfs_follow_(_s, start_edge_global, 0);
   _exists &= std::all_of(_visited.begin(), _visited.end(),
@@ -69,11 +69,11 @@ void print_angles(std::vector<Point> const & points,
 
 void EdgePath::dfs_(size_t v, size_t incoming)
 {
-  std::cout << "\nvisiting vertex " << v << " ";
-  if (!(!_visited[incoming] && v == _s))  // skip first
-    std::cout << "from vertex " << _g.edge(incoming).other(v)
-              << " by edge " << incoming;
-  std::cout << std::endl;
+  // std::cout << "visiting ";
+  // if (!(!_visited[incoming] && v == _s))  // skip first
+  //   std::cout << _g.edge(incoming).other(v) << "-" << v;
+  // else std::cout << v;
+  // std::cout << std::endl;
 
   if (!_basises[v])
   {
@@ -82,18 +82,6 @@ void EdgePath::dfs_(size_t v, size_t incoming)
   }
 
   auto const edge_indices = _g.adj_idx(v);
-  // if (incoming != edge_indices[0])
-  // {
-  //   std::cout << "incoming = " << incoming
-  //             << ", front = " << edge_indices[0] << std::endl;
-
-  //   std::vector<Point> pts;
-  //   for (auto e : edge_indices)
-  //     pts.push_back( _verts[_g.edge(e).other(v)] );
-  //   print_angles(pts, *_basises[v], 1e-8);
-  //   throw std::runtime_error("invalid numbering");
-  // }
-
   for (size_t ie = 0; ie < _g.degree(v); ++ie)
     if (!_visited[edge_indices[ie]])
     {
@@ -114,31 +102,36 @@ void EdgePath::dfs_(size_t v, size_t incoming)
 
 bool EdgePath::dfs_follow_(size_t v, size_t incoming, size_t path_idx)
 {
-  std::cout << "visiting vertex " << v << " ";
-  if (!(!_visited[incoming] && v == _s))  // skip first
-    std::cout << "from vertex " << _g.edge(incoming).other(v);
-  std::cout << std::endl;
+  if (path_idx == _path.size())  // base case
+    return true;
+
+  // if (!(!_visited[incoming] && v == _s))  // skip first
+  //   std::cout << "visiting " << _g.edge(incoming).other(v) << "-" << v << std::endl;
+  // else std::cout << "visiting " << v << std::endl;
 
   if (!_basises[v])
   {
-    build_basis_(_s, incoming);
-    sort_edges_ccw_(_s);
+    build_basis_(v, incoming);
+    sort_edges_ccw_(v);
   }
 
   auto const edge_indices = _g.adj_idx(v);
   int step = _path[path_idx];
   bool goback = step < 0;
-  int ie = sign(step) * (abs(step) - 1);
-  std::cout << "follow " << step << " (" << edge_indices[ie] << ")" << std::endl;
+  int ie = abs(step) - 1;  // local_edge_index
+  // std::cout << "follow " << step << " (" << edge_indices[ie] << ") "
+  //           << "(path " <<  path_idx
+  //           << " out of " << _path.size() << ")"
+  //           << std::endl;
 
   if (ie >= _g.degree(v)) {
-    std::cout << "invalid edge "  << std::endl;
+    // std::cout << "invalid edge "  << std::endl;
     return false;
   }
 
   size_t e = edge_indices[ie];
   if (_visited[e] && !goback) {
-    std::cout << "already visited" << std::endl;
+    // std::cout << "already visited" << std::endl;
     return false;
   }
 

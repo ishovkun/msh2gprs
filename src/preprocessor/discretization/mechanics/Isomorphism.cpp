@@ -22,11 +22,11 @@ Isomorphism::Isomorphism(angem::Polyhedron<double> const &p1,
   // algorithms::EdgePath path3(/*source */ 0, /*edge */ 1, g1, p1);
   // exit(0);
   //
-  std::cout << "found path: ";
-  for ( auto e : path1.get() )
-    std::cout << e << " ";
-  std::cout << "(total edges = " << g1.ne()
-            << ", path length = " << path1.get().size() << ")"<< std::endl;
+  // std::cout << "found path: ";
+  // for ( auto e : path1.get() )
+  //   std::cout << e << " ";
+  // std::cout << "(total edges = " << g1.ne()
+  //           << ", path length = " << path1.get().size() << ")"<< std::endl;
   assert( path1.exists() );
 
   // exit(0);
@@ -41,23 +41,20 @@ Isomorphism::Isomorphism(angem::Polyhedron<double> const &p1,
 
   //
   Graph g2 = build_vertex_graph_(p2);
-  // for (size_t start = 0; start < g2.nv(); ++start) {
-  {
-    size_t start = 1;
+  for (size_t start = 0; start < g2.nv(); ++start) {
     for (size_t ie = 0; ie < g2.degree(start); ++ie) {
-      std::cout << "\n=============================\n"
-                << "trying numeration v = " << start << " e = " << ie
-                << std::endl;
+      // std::cout << "\n=============================\n"
+      //           << "trying numeration v = " << start << " e = " << ie
+      //           << std::endl;
       algorithms::EdgePath path2(start, ie, g2, p2, path1);
       // algorithms::EdgePath path2(start, ie, g1, p1, path1);
       if (path2.exist()) {
         std::cout << "fuck yeah" << std::endl;
         exit(0);
-        break;
+        return;
       }
       // else std::cout << "fuck no" << std::endl;
     }
-      exit(0);
   }
 
   std::cout << "fuck no" << std::endl;
