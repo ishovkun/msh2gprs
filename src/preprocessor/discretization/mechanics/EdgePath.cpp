@@ -27,26 +27,19 @@ EdgePath::EdgePath(size_t source, size_t start_edge,
 EdgePath::EdgePath(size_t source, size_t start_edge, Graph & g,
                    angem::Polyhedron<double> const & poly,
                    EdgePath const & follow)
-    : _g(g), _s(source), _se(start_edge), _verts(poly.get_points()), _path(follow.get())
+    : _g(g), _s(source), _se(start_edge), _verts(poly.get_points()),
+      _path(follow.get_local_edge_path())
 {
   _basises.resize(_g.nv(), nullptr);
   _visited.resize(_g.ne(), false);
   _c = poly.center();
-  // std::cout << "following path starting from  s = "
-  //           << _s << " se = " << _se
-  //           << std::endl;
-  size_t start_edge_global = _g.adj_idx(_s)[_se];
+  size_t const start_edge_global = _g.adj_idx(_s)[_se];
   _exists = dfs_follow_(_s, start_edge_global, 0);
   _exists &= std::all_of(_visited.begin(), _visited.end(),
                          [](bool i) {return i;});
 }
 
-int sign(int val)
-{
-  if (std::signbit(val)) return -1;
-  else return +1;
-}
-
+// for debug
 void print_angles(std::vector<Point> const & points,
                   Plane const & plane, double eps)
 {
@@ -75,6 +68,8 @@ void EdgePath::dfs_(size_t v, size_t incoming)
   // else std::cout << v;
   // std::cout << std::endl;
 
+  _vertex_path.push_back(v);
+
   if (!_basises[v])
   {
     build_basis_(v, incoming);
@@ -102,6 +97,9 @@ void EdgePath::dfs_(size_t v, size_t incoming)
 
 bool EdgePath::dfs_follow_(size_t v, size_t incoming, size_t path_idx)
 {
+  if (path_idx == 0 || (path_idx > 0 && _path[path_idx-1] >= 0))
+    _vertex_path.push_back(v);
+
   if (path_idx == _path.size())  // base case
     return true;
 
@@ -140,48 +138,6 @@ bool EdgePath::dfs_follow_(size_t v, size_t incoming, size_t path_idx)
   size_t w = _g.edge(e).other(v);
   return dfs_follow_(w, e, path_idx + 1);
 }
-
-// bool EdgePath::dfs_follow_(size_t v, size_t cur)
-// {
-//   std::cout << "visiting vertex " << v << " ";
-//   if (cur >= _path.size()) return true;
-
-//   int const ie = (_path[cur] > 0) ? _path[cur] - 1 : _path[cur] + 1;
-
-//   if (std::abs(ie) > _g.degree(v)) {
-//     std::cout << "edge not present " << ie << std::endl;
-//     return false;
-//   }
-
-//   auto edges = _g.adj_idx(v);
-//   size_t e = edges[std::abs(ie)];
-//   auto const & edge = _g.edge(e);
-
-//   std::cout << "following edge " << _path[cur] << " (" << e << ") "
-//             << "to vertex " << edge.other(v) << " ";
-
-//   if (ie >= 0 && _visited[e])
-//   {
-//     std::cout << "already visited" << std::endl;
-//     return false;
-//   }
-//   else if (ie < 0 && !_visited[e])
-//   {
-//     std::cout << "backward edge not visited" << std::endl;
-//     return false;
-//   }
-//   std::cout << std::endl;
-
-//   _visited[e] = true;
-
-//   size_t const w = edge.other(v);
-//   if (!_basises[w]) {
-//     build_basis_(w, e);
-//     sort_edges_ccw_(w);
-//   }
-
-//   return dfs_follow_(w, cur+1);
-// }
 
 void EdgePath::build_basis_(size_t v, size_t edge_to)
 {

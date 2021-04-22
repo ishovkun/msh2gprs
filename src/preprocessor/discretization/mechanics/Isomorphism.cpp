@@ -27,7 +27,7 @@ Isomorphism::Isomorphism(angem::Polyhedron<double> const &p1,
   //   std::cout << e << " ";
   // std::cout << "(total edges = " << g1.ne()
   //           << ", path length = " << path1.get().size() << ")"<< std::endl;
-  assert( path1.exists() );
+  assert( path1.exist() );
 
   // exit(0);
 
@@ -50,6 +50,8 @@ Isomorphism::Isomorphism(angem::Polyhedron<double> const &p1,
       // algorithms::EdgePath path2(start, ie, g1, p1, path1);
       if (path2.exist()) {
         std::cout << "fuck yeah" << std::endl;
+        build_ordering_(path1.get_vertex_path(),
+                        path2.get_vertex_path());
         exit(0);
         return;
       }
@@ -72,11 +74,17 @@ Graph Isomorphism::build_vertex_graph_(Polyhedron const &p)
   return g;
 }
 
-bool Isomorphism::check() const
+void Isomorphism::build_ordering_(std::vector<size_t> const & path1,
+                                  std::vector<size_t> const & path2)
 {
-  return false;
+  std::cout << "path1 = ";
+  for (auto i : path1) std::cout << i << " ";
+  std::cout << std::endl;
+  std::cout << "path2 = ";
+  for (auto i : path2) std::cout << i << " ";
+  std::cout << std::endl;
+  assert( path1.size() == path2.size() );
 }
-
 
 
 }  // end namespace discretization
