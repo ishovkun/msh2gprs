@@ -30,6 +30,7 @@ class DiscretizationPolyhedralFEMOptimized : public DiscretizationPolyhedralFEM 
 
   // *********** ATTRIBUTES ***********
 
+  // a container for reference elements FEM data
   std::unordered_map<size_t, std::vector<std::shared_ptr<PolyhedralElementBase>>> _masters;
 };
 
