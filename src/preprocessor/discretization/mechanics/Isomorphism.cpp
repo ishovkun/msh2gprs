@@ -27,7 +27,7 @@ Isomorphism::Isomorphism(angem::Polyhedron<double> const &p1,
   //   std::cout << e << " ";
   // std::cout << "(total edges = " << g1.ne()
   //           << ", path length = " << path1.get().size() << ")"<< std::endl;
-  assert( path1.exist() );
+  if ( !path1.exist() ) throw std::runtime_error("Cannot build primary path on the reference element");
 
   // exit(0);
 

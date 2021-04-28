@@ -22,6 +22,7 @@
 #include "OutputDataPostprocessor.hpp"
 #include "logger/Logger.hpp"
 #include <string>
+#include <chrono>  // timing
 
 namespace gprs_data {
 
@@ -352,24 +353,32 @@ void Preprocessor::build_geomechanics_discretization_()
 
   using namespace discretization;
   std::unique_ptr<DiscretizationFEMBase> p_discr;
+  auto const start_time = std::chrono::high_resolution_clock::now();
   if (config.fem.method == FEMMethod::strong_discontinuity)
     p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, config.fem,
                                                           dfm_markers,
-                                                          bc_mgr.get_neumann_face_markers());
+                                                          data.neumann_face_indices);
   else if (config.fem.method == FEMMethod::polyhedral_finite_element) {
     auto const & opts = GlobalOpts::ref();
     if (opts.enable_experimental)
       p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(
           data.geomechanics_grid, config.fem, dfm_markers,
-          bc_mgr.get_neumann_face_markers());
+          data.neumann_face_indices);
     else
       p_discr =
           std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid,
-          config.fem, dfm_markers, bc_mgr.get_neumann_face_markers());
+          config.fem, dfm_markers, data.neumann_face_indices);
   }
   else throw std::invalid_argument("mechanics discretization is unknown");
 
   p_discr->build();
+
+  using namespace std::chrono;
+  auto const end_time = high_resolution_clock::now();
+  logging::debug() << "Time to build geomech discretization: "
+                   << (duration_cast<milliseconds>(end_time - start_time)).count()
+                   << " [ms]" << std::endl;
+
   data.fe_cell_data = p_discr->get_cell_data();
   data.fe_face_data = p_discr->get_face_data();
   data.fe_frac_data = p_discr->get_fracture_data();

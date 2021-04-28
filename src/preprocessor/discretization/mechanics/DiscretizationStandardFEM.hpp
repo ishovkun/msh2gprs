@@ -8,7 +8,7 @@ class DiscretizationStandardFEM : public DiscretizationFEMBase {
   DiscretizationStandardFEM(mesh::Mesh & grid,
                             const FiniteElementConfig & config,
                             const std::vector<int> & fracture_face_markers,
-                            const std::vector<int> & neumann_face_markers);
+                            const std::vector<size_t> & neumann_face_indices);
   virtual ~DiscretizationStandardFEM() = default;
 
  protected:

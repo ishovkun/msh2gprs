@@ -32,7 +32,7 @@ class DiscretizationFEMBase {
  protected:
   DiscretizationFEMBase(mesh::Mesh & grid, const FiniteElementConfig & config,
                         const std::vector<int> & fracture_face_markers,
-                        const std::vector<int> & neumann_face_markers);
+                        const std::vector<size_t> & neumann_face_indices);
   virtual void build_(mesh::Cell & cell) = 0;
   virtual void build_cell_data_(mesh::Cell const & cell);
   void build_face_data_(mesh::Cell const & cell);
@@ -43,7 +43,7 @@ class DiscretizationFEMBase {
   mesh::Mesh & _grid;  // non-constant since there could be local vertex reordering
   const FiniteElementConfig & _config;
   std::unordered_map<int, FaceOrientation> _fracture_face_orientation;
-  std::unordered_map<int, FaceOrientation> _neumann_face_orientation;
+  std::unordered_set<size_t> _neumann_faces;
   std::vector<FiniteElementData> _cell_data, _face_data;
   std::vector<std::vector<FiniteElementData>> _frac_data;
   angem::Basis<3, double> _face_basis;

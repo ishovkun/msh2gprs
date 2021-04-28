@@ -5,10 +5,9 @@ namespace discretization {
 
 class DiscretizationPolyhedralFEM : public DiscretizationFEMBase {
  public:
-  DiscretizationPolyhedralFEM(mesh::Mesh & grid,
-                              const FiniteElementConfig & config,
+  DiscretizationPolyhedralFEM(mesh::Mesh & grid, const FiniteElementConfig & config,
                               const std::vector<int> & fracture_face_markers,
-                              const std::vector<int> & neumann_face_markers);
+                              const std::vector<size_t> & neumann_face_indices);
   virtual ~DiscretizationPolyhedralFEM() = default;
 
 

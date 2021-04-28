@@ -1,6 +1,7 @@
 #include "DiscretizationPolyhedralFEMOptimized.hpp"
 #include "Elements/PolyhedralElementScaled.hpp"
 #include "Isomorphism.hpp"         // provides isomorphism
+#include "logger/Logger.hpp"
 #include <unordered_map>
 
 namespace discretization {
@@ -11,43 +12,30 @@ DiscretizationPolyhedralFEMOptimized::
 DiscretizationPolyhedralFEMOptimized(mesh::Mesh & grid,
                                      const FiniteElementConfig & config,
                                      const std::vector<int> & fracture_face_markers,
-                                     const std::vector<int> & neumann_face_markers)
-    : DiscretizationPolyhedralFEM::DiscretizationPolyhedralFEM(grid, config,
-                                                               fracture_face_markers,
-                                                               neumann_face_markers)
+                                     const std::vector<size_t> & neumann_face_indices)
+    : DiscretizationPolyhedralFEM::DiscretizationPolyhedralFEM(grid, config, fracture_face_markers,
+                                                               neumann_face_indices)
 
 {}
 
 void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
 {
-  std::cout << "\nbuilding cell " << cell.index()
-            << " (nv = " << cell.n_vertices() << ")" << std::endl;
+  // std::cout << "\nbuilding cell " << cell.index()
+  //           << " (nv = " << cell.n_vertices() << ")" << std::endl;
   std::vector<size_t> order;  // vertex ordering in case we need to reorder
   if ( auto master = known_element_(cell, order) ) {
-    std::cout << "found similar element " <<  cell.index() << std::endl;
-
-    // std::cout << "pre-order: ";
-    // for (auto x : cell.vertices()) std::cout << x << " ";
-    // std::cout << std::endl;
+    // logging::debug() << "found similar element " <<  cell.index() << std::endl;
 
     auto & verts = cell.vertices();
     angem::reorder_to(verts, order);
-    // cell.reorder_vertices(order);
-
-    // std::cout << "pre-order: ";
-    // for (auto x : cell.vertices()) std::cout << x << " ";
-    // std::cout << std::endl;
-
-    // std::cout << "Master order: " << std::endl;
-    // for (auto x : master->host_cell().vertices()) std::cout << x << " ";
-    // std::cout << std::endl;
 
     reorder_faces_(cell, master->host_cell());
     _element = std::make_shared<PolyhedralElementScaled>( cell, _grid, *master, _config );
   }
   else {
-    std::cout << "new element topology " <<  cell.index() << std::endl;
+    logging::debug() << "new element topology, cell " <<  cell.index() << std::endl;
     DiscretizationPolyhedralFEM::build_(cell);
+
     // remember topology for future re-use
     _masters[cell.n_vertices()].push_back(
         std::dynamic_pointer_cast<PolyhedralElementBase>(_element ));
@@ -59,22 +47,10 @@ DiscretizationPolyhedralFEMOptimized::known_element_(mesh::Cell const & cell,
                                                      std::vector<size_t> & order) const
 {
   size_t const hsh = cell.n_vertices();
-  // std::cout << "permuting" << std::endl;
 
   if (_masters.count(hsh)) {
     auto it = _masters.find(hsh);
     for (auto master : it->second) {
-
-      // std::cout << "cell 1 : ";
-      // for (auto v : master->host_cell().vertices())
-      //   std::cout << v << " ";
-      // std::cout << std::endl;
-      // std::cout << "cell 2 : ";
-      // for (auto v : cell.vertices())
-      //   std::cout << v << " ";
-      // std::cout << std::endl;
-
-
       Isomorphism isomorphism(*master->host_topology(),
                               *cell.polyhedron());
       if (isomorphism.check())
@@ -102,9 +78,12 @@ reorder_faces_(mesh::Cell & dst, mesh::Cell const & src) const
 
   std::vector<size_t> order(nf, 0);
   for (size_t f = 0; f < nf; ++f)
-    order[f] = src_map[ dst_faces[f] ];
+  {
+    assert(src_map.count(dst_faces[f]) );
+    order[f] = src_map[dst_faces[f]];
+  }
 
-  auto faces = dst.face_indices();
+  auto & faces = dst.face_indices();
   angem::reorder_to(faces, order);
 }
 
@@ -115,7 +94,6 @@ compress_faces_(mesh::Cell const & cell) const
   // instead of using a proper adjacency matrix
   // we save up on storage by jamming matrix rows
   // into 64-bit integers
-  //
   assert( cell.n_vertices() < 64 );
 
   // vertices: global index to local cell index

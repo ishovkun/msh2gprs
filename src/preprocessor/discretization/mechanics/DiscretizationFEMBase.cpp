@@ -4,16 +4,14 @@
 
 namespace discretization {
 
-DiscretizationFEMBase::DiscretizationFEMBase(mesh::Mesh & grid,
-                                             const FiniteElementConfig & config,
+DiscretizationFEMBase::DiscretizationFEMBase(mesh::Mesh & grid, const FiniteElementConfig & config,
                                              const std::vector<int> & fracture_face_markers,
-                                             const std::vector<int> & neumann_face_markers)
-    : _grid(grid), _config( config )
+                                             const std::vector<size_t> & neumann)
+    : _grid(grid), _config( config ),
+      _neumann_faces(neumann.begin(), neumann.end())
 {
   for (const int marker : fracture_face_markers)
     _fracture_face_orientation[marker] = {angem::Basis<3, double>(), false};
-  for (const int marker : neumann_face_markers)
-    _neumann_face_orientation[marker] = {angem::Basis<3, double>(), false};
 
   _face_data.resize( _grid.n_faces() );
   _cell_data.resize( _grid.n_cells_total() );
@@ -31,6 +29,7 @@ void DiscretizationFEMBase::build()
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
     if (progress) progress->set_progress(item++);
+    // std::cout << "building cell " << cell->index() << std::endl;
     build_(*cell);
     build_cell_data_(*cell);
     build_face_data_(*cell);
@@ -52,21 +51,16 @@ void DiscretizationFEMBase::build_face_data_(mesh::Cell const & cell)
   for ( const mesh::Face * face : cell.faces() )
   {
     const size_t face_index = face->index();
-    const bool is_fracture = _fracture_face_orientation.find( face->marker() ) !=
-        _fracture_face_orientation.end();
-    const bool is_neumann = _neumann_face_orientation.find( face->marker() ) !=
-        _neumann_face_orientation.end();
+    const bool is_fracture = _fracture_face_orientation.find( face->marker() ) != _fracture_face_orientation.end();
+    const bool is_neumann = _neumann_faces.find( face->index() ) != _neumann_faces.end();
     if (is_fracture)
       _face_basis = get_basis_(*face, _fracture_face_orientation.find(face->marker())->second);
-    // else if (is_neumann)
-    //   _face_basis = get_basis_(*face, _neumann_face_orientation.find(face->marker())->second);
 
-    if (is_neumann || is_fracture)
-      if ( _face_data[face->index()].points.empty() )
-      {
-        _face_data[face_index] = _element->get_face_data(iface);
-        _face_data[face_index].element_index = face_index;
-      }
+    if ( (is_neumann || is_fracture) && _face_data[face->index()].points.empty() )
+    {
+      _face_data[face_index] = _element->get_face_data(iface);
+      _face_data[face_index].element_index = face_index;
+    }
 
     if (is_fracture)
     {

@@ -159,10 +159,10 @@ compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>>
                                        const angem::Basis<3,double> & basis) const
 {
   angem::Plane<double> plane(vertex_coord);
-  {
-    std::cout << "basis.norm = " << basis(2)  << std::endl;
-    std::cout << "face.norm  = " << plane.normal()  << std::endl;
-  }
+  // {
+  //   std::cout << "basis.norm = " << basis(2)  << std::endl;
+  //   std::cout << "face.norm  = " << plane.normal()  << std::endl;
+  // }
 
   plane.set_basis(basis);
   size_t const nv = vertex_coord.size();
@@ -170,7 +170,6 @@ compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>>
   for (size_t v = 0; v < nv; ++v)
   {
     loc_coord[v] = plane.local_coordinates(vertex_coord[v]);
-    std::cout << "loc_coord[" << v << "] = " << loc_coord[v] << std::endl;
     if ( std::fabs(loc_coord[v][2]) > 1e-10 )
       logging::warning() << "non-planar face or basis is set for non-planar surfaces" << std::endl;
   }
@@ -190,21 +189,29 @@ reorder_face_vertices_(mesh::Face const & target,
                        mesh::Face const & master,
                        std::vector<angem::Point<3,double>> & coords)
 {
-  auto verts = target.vertices();
-  auto master_verts = master.vertices();
-  std::vector<size_t> order(verts.size());
+  auto const & verts = target.vertices();
+  auto const & master_verts = master.vertices();
+  std::vector<size_t> order(verts.size(), 0u);
   for (size_t v = 0; v < verts.size(); ++v)
   {
     size_t const mapped = _vertex_mapping[verts[v]];
     auto it = std::find( master_verts.begin(), master_verts.end(), mapped);
     if (it == master_verts.end())
+    {
+      std::cout << "cannot find mapped vertex " << verts[v] << " (mapped as "
+                << _vertex_mapping[ verts[v] ] << ")" << std::endl;
+      std::cout << "mapping: " << std::endl;
+      for (auto it1 : _vertex_mapping)
+          std::cout << it1.first << "-" << it1.second << std::endl;
+      std::cout << "master verts" << std::endl;
+      for (auto v : master_verts)
+        std::cout << v << " ";
+      std::cout << std::endl;
       throw std::runtime_error("something's wrong I can feel it");
+    }
+
     order[v] = std::distance(master_verts.begin(), it);
   }
-
-  std::cout << "order: ";
-  for (auto x : order) std::cout << x << " ";
-  std::cout << std::endl;
 
   auto const copy = coords;
   for (size_t v = 0; v < verts.size(); ++v)
