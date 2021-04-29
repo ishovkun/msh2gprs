@@ -118,8 +118,9 @@ FiniteElementData PolyhedralElementScaled::get_face_data(size_t iface)
    for (size_t q = 0; q < nq; ++q)
      build_fe_face_point_data_(vert_coord, master_data.points[q],
                                face_data.points[q], du_dx, basis);
-   build_fe_face_point_data_(vert_coord, master_data.center,
-                             face_data.center, du_dx, basis);
+
+   build_fe_face_point_data_(vert_coord, master_data.center, face_data.center,
+                             du_dx, basis);
    // if ( reverse )
    // {
    //   for (size_t q = 0; q < nq; ++q)
@@ -149,6 +150,8 @@ build_fe_face_point_data_(std::vector<angem::Point<3,double>> const & vertex_coo
   compute_detJ_and_invert_face_jacobian_(master.grads, du_dx, detJ, vertex_coord, basis);
   if ( detJ <= 0 ) throw std::runtime_error("Face Transformation det(J) is negative " + std::to_string(detJ));
   update_shape_grads_(master.grads, du_dx, current.grads);
+  current.values = master.values;
+  current.weight = master.weight  * detJ;
 }
 
 void PolyhedralElementScaled::

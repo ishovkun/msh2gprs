@@ -7,25 +7,12 @@
 namespace discretization {
 
 IntegrationRule2dAverage::IntegrationRule2dAverage(PolyhedralElementBase & element,
-                           const TributaryRegion2dBase & tributary,
-                           const size_t parent_face,
-                           const angem::Basis<3, double> & basis)
+                                                   const TributaryRegion2dBase & tributary,
+                                                   const size_t parent_face,
+                                                   const angem::Basis<3, double> & basis)
     : IntegrationRule2dBase(element, parent_face, basis), _tributary(tributary)
 {
   assert( tributary.size() > 0 );
-}
-
-void IntegrationRule2dAverage::setup_storage_(FiniteElementData & data) const
-{
-  const size_t n_vertices = compute_n_parent_vertices_();
-  data.points.resize( _tributary.size() );
-  for (size_t q=0; q<data.points.size(); ++q)
-  {
-    data.points[q].values.resize(n_vertices);
-    data.points[q].grads.resize(n_vertices);
-  }
-  data.center.values.resize(n_vertices);
-  data.center.grads.resize(n_vertices);
 }
 
 void IntegrationRule2dAverage::compute_fe_values_(const std::vector<size_t> &faces, FEPointData &dst) const
@@ -66,8 +53,7 @@ void IntegrationRule2dAverage::compute_fe_values_(const std::vector<size_t> &fac
 
 FiniteElementData IntegrationRule2dAverage::get() const
 {
-  FiniteElementData face_data;
-  setup_storage_(face_data);
+  FiniteElementData face_data(compute_n_parent_vertices_(), _tributary.size());
 
   for (size_t region = 0; region < _tributary.size(); ++region)
   {

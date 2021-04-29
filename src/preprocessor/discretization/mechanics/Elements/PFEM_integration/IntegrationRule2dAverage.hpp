@@ -21,7 +21,6 @@ class IntegrationRule2dAverage : public IntegrationRule2dBase
   virtual FiniteElementData get() const override;
  
  protected:
-  void setup_storage_(FiniteElementData & data) const;
   void compute_fe_values_(const std::vector<size_t> &faces, FEPointData &dst) const;
 
   const TributaryRegion2dBase & _tributary;
