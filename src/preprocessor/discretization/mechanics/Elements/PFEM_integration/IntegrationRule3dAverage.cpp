@@ -32,16 +32,13 @@ void IntegrationRule3dAverage::compute_fe_values_(const std::vector<size_t> &cel
     const auto & cell = grid.cell(icell);
     const std::vector<size_t> & cell_verts = cell.vertices();
     fe_values.update(cell);
+
     for (size_t parent_vertex = 0; parent_vertex < n_parent_vertices; ++parent_vertex) {
       for (size_t v = 0; v < nv; ++v) {
-        double const parent_shape_value =
-            _element._basis_functions[parent_vertex][cell_verts[v]];
-
+        double const parent_shape_value = _element._basis_functions[parent_vertex][cell_verts[v]];
         for (size_t q = 0; q < fe_values.n_integration_points(); ++q) {
-          dst.values[parent_vertex] +=
-              fe_values.value(v, q) * parent_shape_value * fe_values.JxW(q);
-          dst.grads[parent_vertex] +=
-              fe_values.grad(v, q) * parent_shape_value * fe_values.JxW(q);
+          dst.values[parent_vertex] += fe_values.value(v, q) * parent_shape_value * fe_values.JxW(q);
+          dst.grads[parent_vertex]  += fe_values.grad(v, q)  * parent_shape_value * fe_values.JxW(q);
         }
       }
     }

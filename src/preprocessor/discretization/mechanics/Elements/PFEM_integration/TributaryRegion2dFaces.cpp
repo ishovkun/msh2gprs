@@ -16,11 +16,10 @@ void TributaryRegion2dFaces::build_tributary_shapes_face_(const size_t iface, co
   const angem::Point<3,double> center = face_poly.center();
   const std::vector<angem::Point<3,double>> & vertices = face_poly.get_points();
   std::vector<angem::Point<3,double>> result;
-  for (size_t i=0; i<vertices.size(); ++i)
+  for (size_t i = 0; i < vertices.size(); ++i)
   {
-    size_t v1 = i, v2;
-    if ( i <  vertices.size() - 1) v2 = i + 1;
-    else                           v2 = 0;
+    size_t const v1 = i;
+    size_t const v2 = (i+1) % vertices.size();
     std::vector<angem::Point<3,double>> triangle_vertices = {vertices[v1], vertices[v2], center};
     angem::Polygon<double> triangle(triangle_vertices);
     _tributary.push_back(triangle);
@@ -41,9 +40,7 @@ void TributaryRegion2dFaces::mark_faces_()
     const auto c = face.center();
     for (size_t region=0; region < _tributary.size(); ++region)  // tributary regions
       if (_tributary[region].point_inside(c))
-      {
         _faces[region].push_back(iface);
-      }
   }
   _faces_center.resize( face_indices.size() );
   std::copy( face_indices.begin(), face_indices.end(), _faces_center.begin() );

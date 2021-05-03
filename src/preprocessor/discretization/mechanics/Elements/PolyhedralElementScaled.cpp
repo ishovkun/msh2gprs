@@ -47,8 +47,7 @@ build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
                      FEPointData & target,
                      angem::Tensor2<3, double> & du_dx) const
 {
-  double detJ;
-  compute_detJ_and_invert_cell_jacobian_(master.grads, du_dx, detJ, vertex_coord);
+  double const detJ = compute_detJ_and_invert_cell_jacobian_(master.grads, du_dx, vertex_coord);
 
   target.weight = detJ * master.weight;
   target.values = master.values;
@@ -69,21 +68,33 @@ update_shape_grads_(std::vector<angem::Point<3,double>> const & ref_grads,
     grads[vertex] = {0.0, 0.0, 0.0};
 
   // compute the true shape function gradients
-  for (size_t vertex = 0; vertex < grads.size(); ++vertex)
+  // i, j - component indices
+  // k - vertex index
+  // ξ - coordinate in master element
+  // x - coordinate in current basis
+  // φ = φ(x) current element shape function
+  // Ψ = Ψ(ξ) master element shape function
+  // ∂φₖ / ∂xᵢ = Σⱼ (∂Ψₖ / d ξⱼ) * (∂ξⱼ / dxᵢ)
+  for (size_t k = 0; k < grads.size(); ++k)
     for (size_t i = 0; i < 3; ++i)
       for (size_t j = 0; j < 3; ++j)
-        // d phi_vert / dx_i = (d phi_vert / d u_j) * (d u_j / d x_i)
-        grads[vertex][i] += ref_grads[vertex][j] * du_dx(j, i);
+        grads[k][i] += ref_grads[k][j] * du_dx(j, i);
 }
 
-void PolyhedralElementScaled::
+double PolyhedralElementScaled::
 compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
                                        angem::Tensor2<3, double> & du_dx,
-                                       double & detJ,
                                        std::vector<Point> const & vertex_coord) const
 {
-  // need to compute du/dx.
-  // first compute dx/du = du/dξ * x
+  // compute the true shape function gradients
+  // i, j - component indices
+  // k - vertex index
+  // ξ - coordinate in master element
+  // x - coordinate in current basis
+  // Ψ = Ψ(ξ) master element shape function
+
+  // first compute ∂xᵢ/dξⱼ = Σⱼ∂Ψₖ/∂ξⱼ * xₖᵢ
+  // xₖᵢ - i-component of kth vertex coordinate
   angem::Tensor2<3, double> dx_du;
   for (size_t i=0; i<3; ++i)
     for (size_t j=0; j<3; ++j)
@@ -91,9 +102,10 @@ compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
         dx_du( i, j ) += ref_grad[v][j] * vertex_coord[v][i];
 
   // compute the determinant of transformation jacobian
-  detJ = det(dx_du);
-  // invert the jacobian to compute shape function gradients
+  double const detJ = det(dx_du);
+  // invert the jacobian to compute shape function gradients ∂ξᵢ/∂xⱼ = (∂xᵢ/dξⱼ)⁻¹
   du_dx = invert(dx_du);
+  return detJ;
 }
 
 FiniteElementData PolyhedralElementScaled::get_face_data(size_t iface)
@@ -121,6 +133,7 @@ FiniteElementData PolyhedralElementScaled::get_face_data(size_t iface)
 
    build_fe_face_point_data_(vert_coord, master_data.center, face_data.center,
                              du_dx, basis);
+   // FIXME: we reordered vertices, so should probably reorder the resulting values back
    // if ( reverse )
    // {
    //   for (size_t q = 0; q < nq; ++q)
@@ -149,9 +162,9 @@ build_fe_face_point_data_(std::vector<angem::Point<3,double>> const & vertex_coo
   double detJ;
   compute_detJ_and_invert_face_jacobian_(master.grads, du_dx, detJ, vertex_coord, basis);
   if ( detJ <= 0 ) throw std::runtime_error("Face Transformation det(J) is negative " + std::to_string(detJ));
-  update_shape_grads_(master.grads, du_dx, current.grads);
   current.values = master.values;
-  current.weight = master.weight  * detJ;
+  current.weight = master.weight * detJ;
+  update_shape_grads_(master.grads, du_dx, current.grads);
 }
 
 void PolyhedralElementScaled::
@@ -162,11 +175,6 @@ compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>>
                                        const angem::Basis<3,double> & basis) const
 {
   angem::Plane<double> plane(vertex_coord);
-  // {
-  //   std::cout << "basis.norm = " << basis(2)  << std::endl;
-  //   std::cout << "face.norm  = " << plane.normal()  << std::endl;
-  // }
-
   plane.set_basis(basis);
   size_t const nv = vertex_coord.size();
   std::vector<Point> loc_coord(nv);
@@ -199,7 +207,7 @@ reorder_face_vertices_(mesh::Face const & target,
   {
     size_t const mapped = _vertex_mapping[verts[v]];
     auto it = std::find( master_verts.begin(), master_verts.end(), mapped);
-    if (it == master_verts.end())
+    if (it == master_verts.end())  // just debugging
     {
       std::cout << "cannot find mapped vertex " << verts[v] << " (mapped as "
                 << _vertex_mapping[ verts[v] ] << ")" << std::endl;

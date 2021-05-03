@@ -46,10 +46,9 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
                                  angem::Tensor2<3, double> & du_dx,
                                  const angem::Basis<3,double> & basis) const;
 
-  void compute_detJ_and_invert_cell_jacobian_(const std::vector<angem::Point<3,double>> & ref_grad,
-                                              angem::Tensor2<3, double> & du_dx,
-                                              double & detJ,
-                                              std::vector<angem::Point<3,double>> const & vertex_coord) const;
+  double compute_detJ_and_invert_cell_jacobian_(const std::vector<angem::Point<3,double>> & ref_grad,
+                                                angem::Tensor2<3, double> & du_dx,
+                                                std::vector<angem::Point<3,double>> const & vertex_coord) const;
   void compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>> & ref_grad,
                                               angem::Tensor2<3, double> & du_dx,
                                               double & detJ,

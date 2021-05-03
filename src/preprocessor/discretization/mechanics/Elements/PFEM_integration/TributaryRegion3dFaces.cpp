@@ -32,12 +32,8 @@ TributaryRegion3dFaces::create_pyramid_(const std::vector<size_t> & face,
   std::vector<std::vector<size_t>> pyramid_faces;
   for (size_t iv=0; iv<face.size(); ++iv)
   {
-    size_t v1, v2;
-    v1 = face[iv];
-    if ( iv < face.size() - 1 )
-      v2 = face[iv+1];
-    else
-      v2 = face[0];
+    size_t const v1 = face[iv];
+    size_t const v2 = face[(iv+1) % face.size()];
     pyramid_faces.push_back( {v1, v2, vertex_center} );
   }
   pyramid_faces.push_back( face );  // base
