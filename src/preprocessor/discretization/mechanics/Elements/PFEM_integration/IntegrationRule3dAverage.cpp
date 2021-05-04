@@ -15,9 +15,9 @@ IntegrationRule3dAverage(PolyhedralElementBase & element, const TributaryRegion3
   element._cell_data.resize( element._basis_functions.size(), tributary.size() );
   // compute fe data in gauss points
   for (size_t iregion = 0; iregion < tributary.size(); ++iregion)
-    compute_fe_values_(tributary.get(iregion), _element._cell_data.points[iregion]);
+    compute_fe_values_(tributary.get_indices(iregion), _element._cell_data.points[iregion]);
   // compute fe data center
-  compute_fe_values_(tributary.get_center(), _element._cell_data.center);
+  compute_fe_values_(tributary.get_indices(), _element._cell_data.center);
 }
 
 void IntegrationRule3dAverage::compute_fe_values_(const std::vector<size_t> &cells,

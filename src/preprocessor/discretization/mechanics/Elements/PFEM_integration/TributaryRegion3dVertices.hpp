@@ -14,7 +14,7 @@ class TributaryRegion3dVertices : public TributaryRegion3dBase
   virtual double volume(const size_t region_index) const override {return _vol_tot / _n_parent_vertices ;}
   // returns the number of tributary regions
   virtual size_t size() const noexcept override {return _cells.size();}
-  virtual double volume_center() const override {return _vol_tot;}
+  virtual double volume() const override {return _vol_tot;}
  protected:
   void mark_cells_();
 

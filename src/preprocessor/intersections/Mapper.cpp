@@ -51,7 +51,7 @@ UniformCartesianGrid Mapper::build_grid_() const
   angem::Point<3,double> loc_min, loc_max, glob_min, glob_max, stepping;
   glob_min[0] = glob_min[1] = glob_min[2] = max_double;
   glob_max[0] = glob_max[1] = glob_max[2] = min_double;
-  stepping = {0,0,0};
+  stepping.set_zero();
   for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   {
     loc_min[0] = loc_min[1] = loc_min[2] = max_double;

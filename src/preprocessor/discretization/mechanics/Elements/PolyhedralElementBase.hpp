@@ -41,6 +41,9 @@ class PolyhedralElementBase : public FiniteElementBase
   std::unique_ptr<angem::Polyhedron<double>> host_topology() const {return _parent_cell.polyhedron();}
   // returns the reference to the host cell
   mesh::Cell const & host_cell() const { return _parent_cell; }
+  // returns raw vectors of basis functions
+  std::vector<Eigen::VectorXd> const & get_basis_functions() const noexcept {return _basis_functions;}
+
 
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,
@@ -62,20 +65,22 @@ class PolyhedralElementBase : public FiniteElementBase
   // compute shape function values, gradients, and weights in the
   // integration points in fractures
   void build_fe_fracture_data_();
-  //
+  // build face tributary regions
   void build_tributary_2d_(const size_t parent_face);
 
-  const mesh::Cell & _parent_cell;                             // reference to the discretized cell
-  const mesh::Mesh & _parent_grid;                             // grid the discrefized cell belongs to
-  const FiniteElementConfig & _config;
-  const bool _sort_faces;
-  mesh::Mesh _subgrid;                                    // triangulation of the discretized cell
-  std::vector<Eigen::VectorXd> _basis_functions;               // numerical shape function values
-  std::vector<std::vector<size_t>> _face_domains;              // child face indices for each parent face
-  std::vector<angem::Point<3,double>> _cell_gauss_points;      // FEM gauss points
+  const mesh::Cell & _parent_cell;                                     // reference to the discretized cell
+  const mesh::Mesh & _parent_grid;                                     // grid the discrefized cell belongs to
+  const FiniteElementConfig & _config;                                 // configuration
+  const bool _sort_faces;                                              // not sure if I need that any more
+  mesh::Mesh _subgrid;                                                 // triangulation of the discretized cell
+  std::vector<Eigen::VectorXd> _basis_functions;                       // numerical shape function values
+  std::vector<std::vector<size_t>> _face_domains;                      // child face indices for each parent face
+  std::vector<angem::Point<3,double>> _cell_gauss_points;              // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
-  std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;
+  std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;   // 2d tributary region for each face
+  // std::shared_ptr<TributaryRegion2dBase> _tributary_3d;                // 3d tributary regions
 
+  // buddies
   friend class TributaryRegion3dFaces;
   friend class TributaryRegion3dVertices;
   friend class TributaryRegion2dFaces;
@@ -89,6 +94,7 @@ class PolyhedralElementBase : public FiniteElementBase
   friend class IntegrationRule3dPointwise;
   friend class IntegrationRuleFractureFull;
   friend class IntegrationRule3dFull;
+  friend class IntegrationRule3dAverageScaling;
 };
 
 }  // end namespace discretization

@@ -52,7 +52,7 @@ void DiscretizationEDFM::build_control_volume_data_()
   for (auto & cv : m_cv_data)
   {
     cv.volume = 0;
-    cv.center = {0.0, 0.0, 0.0};
+    cv.center.set_zero();
     cv.aperture = 0;
   }
 

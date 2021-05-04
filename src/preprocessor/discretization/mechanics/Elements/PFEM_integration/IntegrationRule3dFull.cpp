@@ -8,9 +8,11 @@ namespace discretization {
 IntegrationRule3dFull::IntegrationRule3dFull(PolyhedralElementBase & element)
     : _element(element)
 {
-  setup_storage_();
-
+  // setup_storage_();
   const size_t n_parents = element._basis_functions.size();
+  _element._cell_data.resize(_element._parent_cell.vertices().size(), _element._subgrid.n_active_cells());
+
+
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
   const auto & grid = element._subgrid;
   const Point parent_center = element._parent_cell.center();
