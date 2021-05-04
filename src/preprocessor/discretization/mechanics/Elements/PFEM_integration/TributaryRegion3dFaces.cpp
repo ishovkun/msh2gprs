@@ -9,18 +9,42 @@ using Point = angem::Point<3,double>;
 TributaryRegion3dFaces::TributaryRegion3dFaces(PolyhedralElementBase & element)
     : TributaryRegion3dBase(element)
 {
-  /* Split a parent cell into tributary regions (pyramids) */
-  const auto polyhedron = _element._parent_cell.polyhedron();
-  std::vector<Point> vertices = polyhedron->get_points();
-  vertices.push_back(_element._parent_cell.center());
-  _element._cell_gauss_points.clear();
-  for (const auto & face : polyhedron->get_faces())
+  if (element._config.subdivision_method == PolyhedralFEMSubdivision::refinement &&
+      element._config.order == 0)
   {
-    _tributary.push_back(create_pyramid_(face, vertices));
-    _element._cell_gauss_points.push_back( _tributary.back().center() );
+    // optimization for level 0 subdivision
+    auto const & grid = element.get_grid();
+    size_t const n_regions = element.host_cell().faces().size();
+    _cells.resize(n_regions);
+    for (auto face = grid.begin_active_faces(); face != grid.end_active_faces(); ++face)
+    {
+      auto const neibs = face->neighbors();
+      if (face->marker() > 0 && face->neighbors().size() == 1){
+        const size_t region = static_cast<size_t>(face->marker() - 1);
+        _cells[region].push_back( face->neighbors().front()->index() );
+      }
+    }
+
+    _cells_center.reserve( grid.n_active_cells() );
+    std::transform(grid.begin_active_cells(), grid.end_active_cells(),
+                   std::back_inserter(_cells_center),
+                   [](const auto cell) {return cell.index();});
+  }
+  else  // generic function
+  {
+    /* Split a parent cell into tributary regions (pyramids) */
+    const auto polyhedron = _element._parent_cell.polyhedron();
+    std::vector<Point> vertices = polyhedron->get_points();
+    vertices.push_back(_element._parent_cell.center());
+    _element._cell_gauss_points.clear();
+    for (const auto &face : polyhedron->get_faces()) {
+      _tributary.push_back(create_pyramid_(face, vertices));
+      _element._cell_gauss_points.push_back(_tributary.back().center());
+    }
+
+    mark_cells_();
   }
 
-  mark_cells_();
 }
 
 angem::Polyhedron<double>

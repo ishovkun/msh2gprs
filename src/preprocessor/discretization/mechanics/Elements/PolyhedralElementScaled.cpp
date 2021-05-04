@@ -29,11 +29,7 @@ void PolyhedralElementScaled::map_vertices_to_master_()
 
 void PolyhedralElementScaled::build_fe_cell_data_()
 {
-  // FiniteElementData const & master_data = _master.get_cell_data();
-  size_t const npv = _parent_cell.n_vertices();
-  // size_t const nq = master_data.points.size();
-  // _cell_data.resize(npv, nq);
-
+  // size_t const npv = _parent_cell.n_vertices();
   auto const vert_coord = _parent_cell.vertex_coordinates();
   auto const & rule = _master.integration_rule3();
   _cell_data = rule.integrate(_parent_cell.vertex_coordinates());

@@ -46,12 +46,8 @@ void IntegrationRule3d::build_region_(PolyhedralElementBase const & element,
       {
         double const parent_shape_value = sf[pv][cell_verts[v]];
         for (size_t q = 0; q < fe_values.n_integration_points(); ++q) {
-          _data[qg].values[pv] += fe_values.value(v, q) *
-                                     parent_shape_value *
-                                     fe_values.JxW(q);
-          _data[qg].grads[pv] += fe_values.grad(v, q) *
-                                    parent_shape_value *
-                                    fe_values.JxW(q);
+          _data[qg].values[pv] += fe_values.value(v, q) * parent_shape_value;
+          _data[qg].grads[pv]  += fe_values.grad(v, q)  * parent_shape_value;
         }
       }
     }
@@ -74,7 +70,22 @@ integrate(std::vector<angem::Point<3,double>> const & vertices) const
     else
       build_fe_point_data_(vertices, _data[q], result.center, du_dx);
   }
+
+  for (size_t region = 0; region < _nregions; ++region)
+    scale_data_(result.points[region]);
+  scale_data_(result.center);
+
   return result;
+}
+
+void IntegrationRule3d::scale_data_(FEPointData & data) const
+{
+  size_t const npv = data.values.size();
+  for (size_t pv = 0; pv < npv; ++pv)
+  {
+    data.values[pv] /= data.weight;
+    data.grads[pv] /= data.weight;
+  }
 }
 
 
@@ -87,7 +98,9 @@ build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
   double const detJ = compute_detJ_and_invert_cell_jacobian_(master.grads, du_dx, vertex_coord);
   if (detJ <= 0)
     throw std::runtime_error("Cell Transformation det(J) is negative " + std::to_string(detJ));
+
   target.weight += detJ * master.weight;
+
   for (size_t v = 0; v < vertex_coord.size(); ++v)
   {
     target.values[v] += master.values[v] * detJ * master.weight;
