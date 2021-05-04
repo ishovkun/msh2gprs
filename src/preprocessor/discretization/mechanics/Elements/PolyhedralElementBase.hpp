@@ -8,6 +8,7 @@
 
 namespace discretization {
 
+class IntegrationRule3d;
 class IntegrationRuleFacesAverage;
 class TributaryRegion2dBase;
 
@@ -43,7 +44,10 @@ class PolyhedralElementBase : public FiniteElementBase
   mesh::Cell const & host_cell() const { return _parent_cell; }
   // returns raw vectors of basis functions
   std::vector<Eigen::VectorXd> const & get_basis_functions() const noexcept {return _basis_functions;}
-
+  // returns the number of vertices in the host cell
+  size_t n_vertices() const {return _parent_cell.n_vertices();}
+  // returns the integration scheme
+  IntegrationRule3d const & integration_rule3() const {return *_integration_rule3d;}
 
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,
@@ -79,6 +83,7 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
   std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;   // 2d tributary region for each face
   // std::shared_ptr<TributaryRegion2dBase> _tributary_3d;                // 3d tributary regions
+  std::shared_ptr<IntegrationRule3d> _integration_rule3d;
 
   // buddies
   friend class TributaryRegion3dFaces;
@@ -93,8 +98,7 @@ class PolyhedralElementBase : public FiniteElementBase
   friend class IntegrationRuleFractureAverage;
   friend class IntegrationRule3dPointwise;
   friend class IntegrationRuleFractureFull;
-  friend class IntegrationRule3dFull;
-  friend class IntegrationRule3dAverageScaling;
+  // friend class IntegrationRule3dFull;
 };
 
 }  // end namespace discretization

@@ -1,9 +1,9 @@
 #include "PolyhedralElementScaled.hpp"
 #include "logger/Logger.hpp"
 // debug
-#include "PFEM_integration/TributaryRegion3dFaces.hpp"
-#include "PFEM_integration/IntegrationRule3dAverage.hpp"
-#include "PFEM_integration/IntegrationRule3dFull.hpp"
+// #include "PFEM_integration/TributaryRegion3dFaces.hpp"
+// #include "PFEM_integration/IntegrationRule3dAverage.hpp"
+#include "PFEM_integration/IntegrationRule3d.hpp"
 
 namespace discretization {
 
@@ -35,6 +35,8 @@ void PolyhedralElementScaled::build_fe_cell_data_()
   // _cell_data.resize(npv, nq);
 
   auto const vert_coord = _parent_cell.vertex_coordinates();
+  auto const & rule = _master.integration_rule3();
+  _cell_data = rule.integrate(_parent_cell.vertex_coordinates());
 
   // // new shit
   // _subgrid =  _master.get_grid();
@@ -53,43 +55,43 @@ void PolyhedralElementScaled::build_fe_cell_data_()
   // IntegrationRule3dAverage rule_cell(*this, tributary3d);
 
   // version 2
-  IntegrationRule3dFull rule(_master);
-  TributaryRegion3dFaces tributary3d(_master);
-  size_t nq = tributary3d.size();
-  FiniteElementData const & master_data = _master.get_cell_data();
-  _cell_data.resize(npv, nq);
-  angem::Tensor2<3, double> du_dx;
-  for (size_t q = 0; q < nq; ++q)
-  {
-    // std::cout << "q = " << q << std::endl;
-    // std::cout << "master_data.points.size() = " << master_data.points.size() << std::endl;
-    // std::cout << "_cell_data.points.size() = " << _cell_data.points.size() << std::endl;
-    // std::cout << "indices: ";
-    // for (size_t icell : tributary3d.get_indices(q))
-    //   std::cout << icell << " ";
-    // std::cout << std::endl;
-    for (size_t icell : tributary3d.get_indices(q))
-    {
-      // std::cout << "icell = " << icell << std::endl;
-      icell = icell - 1;  // active cell indices shifted by 1
-      build_fe_point_data_append_(vert_coord, master_data.points[icell], _cell_data.points[q], du_dx);
-      build_fe_point_data_append_(vert_coord, master_data.points[icell], _cell_data.center, du_dx);
-    }
+  // IntegrationRule3dFull rule(_master);
+  // TributaryRegion3dFaces tributary3d(_master);
+  // size_t nq = tributary3d.size();
+  // FiniteElementData const & master_data = _master.get_cell_data();
+  // _cell_data.resize(npv, nq);
+  // angem::Tensor2<3, double> du_dx;
+  // for (size_t q = 0; q < nq; ++q)
+  // {
+  //   // std::cout << "q = " << q << std::endl;
+  //   // std::cout << "master_data.points.size() = " << master_data.points.size() << std::endl;
+  //   // std::cout << "_cell_data.points.size() = " << _cell_data.points.size() << std::endl;
+  //   // std::cout << "indices: ";
+  //   // for (size_t icell : tributary3d.get_indices(q))
+  //   //   std::cout << icell << " ";
+  //   // std::cout << std::endl;
+  //   for (size_t icell : tributary3d.cells(q))
+  //   {
+  //     // std::cout << "icell = " << icell << std::endl;
+  //     icell = icell - 1;  // active cell indices shifted by 1
+  //     build_fe_point_data_append_(vert_coord, master_data.points[icell], _cell_data.points[q], du_dx);
+  //     build_fe_point_data_append_(vert_coord, master_data.points[icell], _cell_data.center, du_dx);
+  //   }
+
+  //   // scale
+  //   for (size_t pv = 0; pv < npv; ++pv)
+  //   {
+  //    _cell_data.points[q].values[pv] /= _cell_data.points[q].weight;
+  //    _cell_data.points[q].grads[pv] /= _cell_data.points[q].weight;
+  //   }
+  // }
 
     // scale
-    for (size_t pv = 0; pv < npv; ++pv)
-    {
-     _cell_data.points[q].values[pv] /= _cell_data.points[q].weight;
-     _cell_data.points[q].grads[pv] /= _cell_data.points[q].weight;
-    }
-  }
-
-    // scale
-    for (size_t pv = 0; pv < npv; ++pv)
-    {
-     _cell_data.center.values[pv] /= _cell_data.center.weight;
-     _cell_data.center.grads[pv] /= _cell_data.center.weight;
-    }
+    // for (size_t pv = 0; pv < npv; ++pv)
+    // {
+    //  _cell_data.center.values[pv] /= _cell_data.center.weight;
+    //  _cell_data.center.grads[pv] /= _cell_data.center.weight;
+    // }
 
   // angem::Tensor2<3, double> du_dx;
   // for (size_t q = 0; q < nq; ++q) {

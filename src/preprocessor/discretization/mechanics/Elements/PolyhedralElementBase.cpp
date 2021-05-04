@@ -6,15 +6,15 @@
 #include "PFEM_integration/TributaryRegion3dFaces.hpp"
 #include "PFEM_integration/TributaryRegion2dVertices.hpp"
 #include "PFEM_integration/TributaryRegion3dVertices.hpp"
-#include "PFEM_integration/IntegrationRule3dAverage.hpp"
-#include "PFEM_integration/IntegrationRule3dFull.hpp"
-#include "PFEM_integration/IntegrationRule3dPointwise.hpp"
+#include "PFEM_integration/TributaryRegion3dFull.hpp"
+#include "PFEM_integration/IntegrationRule3d.hpp"
 #include "PFEM_integration/IntegrationRule2dAverage.hpp"
 #include "PFEM_integration/IntegrationRule2dPointwise.hpp"
 #include "PFEM_integration/IntegrationRule2dFull.hpp"
 #include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
 #include "PFEM_integration/IntegrationRuleFractureFull.hpp"  // provides IntegrationFractureFull
 #include "PFEM_integration/FaceSorter.hpp"  // provides Facesorter
+#include <memory>
 
 
 #ifdef WITH_EIGEN
@@ -111,29 +111,32 @@ std::vector<std::list<size_t>> PolyhedralElementBase::map_parent_vertices_to_par
 
 void PolyhedralElementBase::build_fe_cell_data_()
 {
+  std::unique_ptr<TributaryRegion3dBase> regions = nullptr;
   switch (_config.integration_rule)
   {
     case PolyhedronIntegrationRule::Full:
       {
-        IntegrationRule3dFull rule_cell(*this);
+        throw 2;
+        regions = std::make_unique<TributaryRegion3dFull>(*this);
         break;
       }
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        TributaryRegion3dFaces tributary3d(*this);
-        IntegrationRule3dAverage rule_cell(*this, tributary3d);
+        // TributaryRegion3dFaces tributary3d(*this);
+        regions = std::make_unique<TributaryRegion3dFaces>(*this);
+        // IntegrationRule3dAverage rule_cell(*this, tributary3d);
         break;
       }
-    case PolyhedronIntegrationRule::FacesPointwise:
-      {
-        TributaryRegion3dFaces tributary3d(*this);
-        IntegrationRule3dPointwise rule_cell(*this, tributary3d);
-        break;
-      }
+    // case PolyhedronIntegrationRule::FacesPointwise:
+    //   {
+    //     regions = std::make_unique<TributaryRegion3dFaces>(*this);
+    //     TributaryRegion3dFaces tributary3d(*this);
+    //     IntegrationRule3dPointwise rule_cell(*this, tributary3d);
+    //     break;
+    //   }
     case PolyhedronIntegrationRule::VerticesAverage:
       {
-        TributaryRegion3dVertices tributary3d(*this);
-        IntegrationRule3dAverage rule_cell(*this, tributary3d);
+        regions = std::make_unique<TributaryRegion3dVertices>(*this);
         break;
       }
     // case PolyhedronIntegrationRule::VerticesPointwise:
@@ -145,6 +148,10 @@ void PolyhedralElementBase::build_fe_cell_data_()
     default:
       throw std::invalid_argument("Integration rule unknown");
   }
+
+  _integration_rule3d = std::make_shared<IntegrationRule3d>(*this, *regions);
+  _cell_data = _integration_rule3d->integrate(_parent_cell.vertex_coordinates());
+  // IntegrationRule3d rule(*this, *regions);
 }
 
 FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)

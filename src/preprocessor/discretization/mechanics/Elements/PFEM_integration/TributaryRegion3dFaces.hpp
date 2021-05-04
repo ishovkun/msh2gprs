@@ -15,6 +15,9 @@ class TributaryRegion3dFaces : public TributaryRegion3dBase
   angem::Polyhedron<double> create_pyramid_(const std::vector<size_t> & face,
                                             const std::vector<angem::Point<3,double>> & vertices) const;
   void mark_cells_();
+
+  // shapes that represent tributary regions
+  std::vector<angem::Polyhedron<double>> _tributary;
 };
 
 }  // end namespace discretization
