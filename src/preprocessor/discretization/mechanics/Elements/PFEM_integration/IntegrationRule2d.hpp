@@ -34,9 +34,11 @@ class IntegrationRule2d {
                                    angem::Basis<3, double>             const & basis,
                                    angem::Tensor2<3, double> & J_inv) const;
   void scale_data_(FEPointData & data) const;
+  void compute_parent_vertices_(mesh::Cell const & cell, size_t parent_face);
 
   size_t _nregions;
   size_t _npv;  // number of parent vertices
+  std::vector<size_t> _parent_vertices;  // indices of face vertices in cell::vertices
   std::vector<size_t> _region;
   std::vector<FEPointData> _data;
 };

@@ -157,19 +157,20 @@ void PolyhedralElementBase::build_fe_cell_data_()
 
 FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)
 {
-  if ( _integration_rules2d.empty() )
-    _integration_rules2d.resize(_parent_cell.faces().size(), nullptr);
+  auto const faces = _parent_cell.faces();
 
-  auto const * face = _parent_cell.faces()[iface];
-  auto const basis = get_face_basis_(*face, _parent_cell);
+  if ( _integration_rules2d.empty() )  // lazy initialize
+    _integration_rules2d.resize(faces.size(), nullptr);
 
-  if (!_integration_rules2d[iface])
+  auto const basis = get_face_basis_(*faces[iface], _parent_cell);
+
+  if (!_integration_rules2d[iface])  // lazy evaluate and store
   {
     auto const tributary_region = build_tributary_2d_(iface);
     _integration_rules2d[iface] = std::make_shared<IntegrationRule2d>(*this, *tributary_region, iface, basis);
   }
 
-  return _integration_rules2d[iface]->integrate(face->vertex_coordinates(), basis);
+  return _integration_rules2d[iface]->integrate(faces[iface]->vertex_coordinates(), basis);
   // build_tributary_2d_(iface);
   // auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
 
