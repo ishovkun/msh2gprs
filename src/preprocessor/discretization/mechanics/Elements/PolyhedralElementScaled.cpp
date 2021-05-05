@@ -29,108 +29,10 @@ void PolyhedralElementScaled::map_vertices_to_master_()
 
 void PolyhedralElementScaled::build_fe_cell_data_()
 {
-  // size_t const npv = _parent_cell.n_vertices();
   auto const vert_coord = _parent_cell.vertex_coordinates();
   auto const & rule = _master.integration_rule3();
   _cell_data = rule.integrate(_parent_cell.vertex_coordinates());
-
-  // // new shit
-  // _subgrid =  _master.get_grid();
-  // _basis_functions = _master.get_basis_functions();
-
-  // // move vertices
-  // for (size_t v = 0; v < _subgrid.n_vertices(); ++v)
-  // {
-  //    _subgrid.vertex(v).set_zero();
-  //   for (size_t pv = 0; pv < npv; ++pv) {
-  //     _subgrid.vertex(v) += vert_coord[pv] * _basis_functions[pv][v];
-  //   }
-  // }
-
-  // TributaryRegion3dFaces tributary3d(*this);
-  // IntegrationRule3dAverage rule_cell(*this, tributary3d);
-
-  // version 2
-  // IntegrationRule3dFull rule(_master);
-  // TributaryRegion3dFaces tributary3d(_master);
-  // size_t nq = tributary3d.size();
-  // FiniteElementData const & master_data = _master.get_cell_data();
-  // _cell_data.resize(npv, nq);
-  // angem::Tensor2<3, double> du_dx;
-  // for (size_t q = 0; q < nq; ++q)
-  // {
-  //   // std::cout << "q = " << q << std::endl;
-  //   // std::cout << "master_data.points.size() = " << master_data.points.size() << std::endl;
-  //   // std::cout << "_cell_data.points.size() = " << _cell_data.points.size() << std::endl;
-  //   // std::cout << "indices: ";
-  //   // for (size_t icell : tributary3d.get_indices(q))
-  //   //   std::cout << icell << " ";
-  //   // std::cout << std::endl;
-  //   for (size_t icell : tributary3d.cells(q))
-  //   {
-  //     // std::cout << "icell = " << icell << std::endl;
-  //     icell = icell - 1;  // active cell indices shifted by 1
-  //     build_fe_point_data_append_(vert_coord, master_data.points[icell], _cell_data.points[q], du_dx);
-  //     build_fe_point_data_append_(vert_coord, master_data.points[icell], _cell_data.center, du_dx);
-  //   }
-
-  //   // scale
-  //   for (size_t pv = 0; pv < npv; ++pv)
-  //   {
-  //    _cell_data.points[q].values[pv] /= _cell_data.points[q].weight;
-  //    _cell_data.points[q].grads[pv] /= _cell_data.points[q].weight;
-  //   }
-  // }
-
-    // scale
-    // for (size_t pv = 0; pv < npv; ++pv)
-    // {
-    //  _cell_data.center.values[pv] /= _cell_data.center.weight;
-    //  _cell_data.center.grads[pv] /= _cell_data.center.weight;
-    // }
-
-  // angem::Tensor2<3, double> du_dx;
-  // for (size_t q = 0; q < nq; ++q) {
-  //   build_fe_point_data_(vert_coord, master_data.points[q], _cell_data.points[q], du_dx);
-  // }
-
-  // build_fe_point_data_(vert_coord, master_data.center, _cell_data.center, du_dx);
 }
-
-void PolyhedralElementScaled::
-build_fe_point_data_append_(std::vector<angem::Point<3,double>> const & vertex_coord,
-                            FEPointData const & master,
-                            FEPointData & target,
-                            angem::Tensor2<3, double> & du_dx) const
-{
-  double const detJ = compute_detJ_and_invert_cell_jacobian_(master.grads, du_dx, vertex_coord);
-  if (detJ <= 0)
-    throw std::runtime_error("Cell Transformation det(J) is negative " + std::to_string(detJ));
-
-  target.weight += detJ * master.weight;
-  for (size_t v = 0; v < vertex_coord.size(); ++v)
-  {
-    target.values[v] += master.values[v] * detJ * master.weight;
-    for (size_t i = 0; i < 3; ++i)
-      for (size_t j = 0; j < 3; ++j)
-        target.grads[v][i] += master.grads[v][j] * du_dx(j, i) * detJ * master.weight;
-  }
-}
-
-void PolyhedralElementScaled::
-build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
-                     FEPointData const & master,
-                     FEPointData & target,
-                     angem::Tensor2<3, double> & du_dx) const
-{
-  double const detJ = compute_detJ_and_invert_cell_jacobian_(master.grads, du_dx, vertex_coord);
-  if (detJ <= 0) throw std::runtime_error("Cell Transformation det(J) is negative " + std::to_string(detJ));
-
-  target.weight = detJ * master.weight;
-  target.values = master.values;
-  update_shape_grads_(master.grads, du_dx, target.grads);
-}
-
 
 void PolyhedralElementScaled::
 update_shape_grads_(std::vector<angem::Point<3,double>> const & ref_grads,
@@ -151,33 +53,6 @@ update_shape_grads_(std::vector<angem::Point<3,double>> const & ref_grads,
     for (size_t i = 0; i < 3; ++i)
       for (size_t j = 0; j < 3; ++j)
         grads[k][i] += ref_grads[k][j] * du_dx(j, i);
-}
-
-double PolyhedralElementScaled::
-compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
-                                       angem::Tensor2<3, double> & du_dx,
-                                       std::vector<Point> const & vertex_coord) const
-{
-  // compute the true shape function gradients
-  // i, j - component indices
-  // k - vertex index
-  // ξ - coordinate in master element
-  // x - coordinate in current basis
-  // Ψ = Ψ(ξ) master element shape function
-
-  // first compute ∂xᵢ/dξⱼ = Σⱼ∂Ψₖ/∂ξⱼ * xₖᵢ
-  // xₖᵢ - i-component of kth vertex coordinate
-  angem::Tensor2<3, double> dx_du;
-  for (size_t i=0; i<3; ++i)
-    for (size_t j=0; j<3; ++j)
-      for (size_t v=0; v < vertex_coord.size(); ++v)
-        dx_du( i, j ) += ref_grad[v][j] * vertex_coord[v][i];
-
-  // compute the determinant of transformation jacobian
-  double const detJ = det(dx_du);
-  // invert the jacobian to compute shape function gradients ∂ξᵢ/∂xⱼ = (∂xᵢ/dξⱼ)⁻¹
-  du_dx = invert(dx_du);
-  return detJ;
 }
 
 FiniteElementData PolyhedralElementScaled::get_face_data(size_t iface)

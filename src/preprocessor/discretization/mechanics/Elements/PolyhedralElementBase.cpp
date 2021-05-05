@@ -8,9 +8,10 @@
 #include "PFEM_integration/TributaryRegion3dVertices.hpp"
 #include "PFEM_integration/TributaryRegion3dFull.hpp"
 #include "PFEM_integration/IntegrationRule3d.hpp"
-#include "PFEM_integration/IntegrationRule2dAverage.hpp"
-#include "PFEM_integration/IntegrationRule2dPointwise.hpp"
-#include "PFEM_integration/IntegrationRule2dFull.hpp"
+#include "PFEM_integration/IntegrationRule2d.hpp"
+// #include "PFEM_integration/IntegrationRule2dAverage.hpp"
+// #include "PFEM_integration/IntegrationRule2dPointwise.hpp"
+// #include "PFEM_integration/IntegrationRule2dFull.hpp"
 #include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
 #include "PFEM_integration/IntegrationRuleFractureFull.hpp"  // provides IntegrationFractureFull
 #include "PFEM_integration/FaceSorter.hpp"  // provides Facesorter
@@ -156,42 +157,55 @@ void PolyhedralElementBase::build_fe_cell_data_()
 
 FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)
 {
-  build_tributary_2d_(iface);
-  auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
+  if ( _integration_rules2d.empty() )
+    _integration_rules2d.resize(_parent_cell.faces().size(), nullptr);
 
-  if (_basis_functions.empty())
-    throw std::runtime_error("should be initialized");
+  auto const * face = _parent_cell.faces()[iface];
+  auto const basis = get_face_basis_(*face, _parent_cell);
 
-  switch (_config.integration_rule)
+  if (!_integration_rules2d[iface])
   {
-    // case PolyhedronIntegrationRule::VerticesPointwise:
-    //   {
-    //     // IntegrationRule2dPointwise rule(*this, _tributary_2d, iface);
-    //     // return rule.get();
-    //     break;
-      // }
-    case PolyhedronIntegrationRule::VerticesAverage:
-    case PolyhedronIntegrationRule::FacesAverage:
-      {
-        IntegrationRule2dAverage rule(*this, *_tributary_2d[iface], iface, basis);
-        return rule.get();
-        break;
-      }
-    case PolyhedronIntegrationRule::Full:
-      {
-        IntegrationRule2dFull rule(*this, iface, basis);
-        return rule.get();
-        break;
-      }
-    default:
-      throw std::invalid_argument("Integration rule unknown");
+    auto const tributary_region = build_tributary_2d_(iface);
+    _integration_rules2d[iface] = std::make_shared<IntegrationRule2d>(*this, *tributary_region, iface, basis);
   }
+
+  return _integration_rules2d[iface]->integrate(face->vertex_coordinates(), basis);
+  // build_tributary_2d_(iface);
+  // auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
+
+  // if (_basis_functions.empty())
+  //   throw std::runtime_error("should be initialized");
+
+  // switch (_config.integration_rule)
+  // {
+  //   // case PolyhedronIntegrationRule::VerticesPointwise:
+  //   //   {
+  //   //     // IntegrationRule2dPointwise rule(*this, _tributary_2d, iface);
+  //   //     // return rule.get();
+  //   //     break;
+  //     // }
+  //   case PolyhedronIntegrationRule::VerticesAverage:
+  //   case PolyhedronIntegrationRule::FacesAverage:
+  //     {
+  //       IntegrationRule2dAverage rule(*this, *_tributary_2d[iface], iface, basis);
+  //       return rule.get();
+  //       break;
+  //     }
+  //   case PolyhedronIntegrationRule::Full:
+  //     {
+  //       IntegrationRule2dFull rule(*this, iface, basis);
+  //       return rule.get();
+  //       break;
+  //     }
+  //   default:
+  //     throw std::invalid_argument("Integration rule unknown");
+  // }
 }
 
 FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
                                                            const angem::Basis<3,double> basis)
 {
-  build_tributary_2d_(iface);
+  auto trib = build_tributary_2d_(iface);
 
   switch (_config.integration_rule)
   {
@@ -204,7 +218,7 @@ FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
     case PolyhedronIntegrationRule::VerticesAverage:
     case PolyhedronIntegrationRule::FacesAverage:
       {
-        IntegrationRuleFractureAverage rule(*this, *_tributary_2d[iface], iface, basis);
+        IntegrationRuleFractureAverage rule(*this, *trib, iface, basis);
         return rule.get();
         break;
       }
@@ -213,31 +227,26 @@ FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
   }
 }
 
-void PolyhedralElementBase::build_tributary_2d_(const size_t parent_face)
+std::unique_ptr<TributaryRegion2dBase> PolyhedralElementBase::build_tributary_2d_(const size_t parent_face)
 {
-  if ( _tributary_2d.empty() )
-    _tributary_2d.resize( _parent_cell.faces().size(), nullptr );
-
-  if (!_tributary_2d[parent_face])
-    switch (_config.integration_rule)
-    {
-      // case PolyhedronIntegrationRule::VerticesPointwise:
-      //   {
-      //     TributaryRegion2dVertices tributary2d(*this);
-      //     _tributary_2d = tributary2d.get();
-      //   break;
-      // }
-      case PolyhedronIntegrationRule::FacesAverage:
-        _tributary_2d[parent_face] = std::make_shared<TributaryRegion2dFaces>(*this, parent_face);
-        break;
-      case PolyhedronIntegrationRule::VerticesAverage:
-        _tributary_2d[parent_face] = std::make_shared<TributaryRegion2dVertices>(*this, parent_face);
-        break;
-      case PolyhedronIntegrationRule::Full:
-        break;
-      default:
-        throw std::invalid_argument("Tributary region not implemented");
-    }
+  switch (_config.integration_rule)
+  {
+    // case PolyhedronIntegrationRule::VerticesPointwise:
+    //   {
+    //     TributaryRegion2dVertices tributary2d(*this);
+    //     _tributary_2d = tributary2d.get();
+    //   break;
+    // }
+    case PolyhedronIntegrationRule::FacesAverage:
+      return std::make_unique<TributaryRegion2dFaces>(*this, parent_face);
+    case PolyhedronIntegrationRule::VerticesAverage:
+      return std::make_unique<TributaryRegion2dVertices>(*this, parent_face);
+    // case PolyhedronIntegrationRule::Full:
+    //   return nullptr;
+    //   break;
+    default:
+      throw std::invalid_argument("Tributary region not implemented");
+  }
 }
 
 }  // end namespace discretization

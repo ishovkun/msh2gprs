@@ -9,6 +9,7 @@
 namespace discretization {
 
 class IntegrationRule3d;
+class IntegrationRule2d;
 class IntegrationRuleFacesAverage;
 class TributaryRegion2dBase;
 
@@ -70,7 +71,7 @@ class PolyhedralElementBase : public FiniteElementBase
   // integration points in fractures
   void build_fe_fracture_data_();
   // build face tributary regions
-  void build_tributary_2d_(const size_t parent_face);
+  std::unique_ptr<TributaryRegion2dBase> build_tributary_2d_(const size_t parent_face);
 
   const mesh::Cell & _parent_cell;                                     // reference to the discretized cell
   const mesh::Mesh & _parent_grid;                                     // grid the discrefized cell belongs to
@@ -81,9 +82,10 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<std::vector<size_t>> _face_domains;                      // child face indices for each parent face
   std::vector<angem::Point<3,double>> _cell_gauss_points;              // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
-  std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;   // 2d tributary region for each face
+  // std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;   // 2d tributary region for each face
   // std::shared_ptr<TributaryRegion2dBase> _tributary_3d;                // 3d tributary regions
   std::shared_ptr<IntegrationRule3d> _integration_rule3d;
+  std::vector<std::shared_ptr<IntegrationRule2d>> _integration_rules2d;
 
   // buddies
   friend class TributaryRegion3dFaces;

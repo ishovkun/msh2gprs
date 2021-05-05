@@ -54,11 +54,11 @@ FiniteElementData IntegrationRuleFractureAverage::get() const
 
   for (size_t region = 0; region < _tributary.size(); ++region)
   {
-    compute_fe_values_(_tributary.get(region), face_data.points[region]);
+    compute_fe_values_(_tributary.faces(region), face_data.points[region]);
     face_data.points[region].weight = _tributary.area(region);
   }
 
-  compute_fe_values_(_tributary.get_center(), face_data.center);
+  compute_fe_values_(_tributary.faces_center(), face_data.center);
   face_data.center.weight = _tributary.area_total();
   return face_data;
 }

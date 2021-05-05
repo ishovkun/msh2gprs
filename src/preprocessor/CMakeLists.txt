@@ -55,6 +55,7 @@ ADD_LIBRARY(preprocessor
   discretization/mechanics/Elements/PFEM_integration/TributaryRegion3dVertices.cpp
   discretization/mechanics/Elements/PFEM_integration/TributaryRegion3dFull.cpp
   discretization/mechanics/Elements/PFEM_integration/IntegrationRule3d.cpp
+  discretization/mechanics/Elements/PFEM_integration/IntegrationRule2d.cpp
   # discretization/mechanics/Elements/PFEM_integration/IntegrationRule3dFull.cpp
   discretization/mechanics/Elements/PFEM_integration/TributaryRegion2dFaces.cpp
   discretization/mechanics/Elements/PFEM_integration/TributaryRegion2dVertices.cpp

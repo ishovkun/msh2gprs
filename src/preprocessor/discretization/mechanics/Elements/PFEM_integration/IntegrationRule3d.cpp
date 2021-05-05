@@ -7,13 +7,17 @@ IntegrationRule3d::IntegrationRule3d(PolyhedralElementBase const & element,
                                      TributaryRegion3dBase const  & tributary)
     : _nregions(tributary.size())
 {
+  // number of stored integration points
+  // this is different (larger of equal) from the number integration points
+  // that is used as output for Finite Elements
+  // first setup storage
   size_t nq = 0;
   for (size_t region = 0; region < _nregions; ++region)
     nq += tributary.cells(region).size();
   nq += tributary.cells_center().size();
   _region.resize(nq);
-
   _data.resize(nq, FEPointData(element.n_vertices()));
+  // then fill the storage
   nq = 0;
   for (size_t region = 0; region < _nregions; ++region)
   {
@@ -29,7 +33,7 @@ void IntegrationRule3d::build_region_(PolyhedralElementBase const & element,
                                       size_t region)
 {
   size_t const npv = element.n_vertices();
-  const size_t nv = ElementTraits<angem::TetrahedronID>::n_vertices;  // number of vertices in triangle
+  const size_t nv = ElementTraits<angem::TetrahedronID>::n_vertices;
   FeValues<angem::VTK_ID::TetrahedronID> fe_values;
   const auto & grid = element.get_grid();
   auto const & sf = element.get_basis_functions();
@@ -37,10 +41,15 @@ void IntegrationRule3d::build_region_(PolyhedralElementBase const & element,
   for (size_t icell = 0; icell < cells.size(); ++icell)
   {
     auto const & cell = grid.cell(cells[icell]);
-    size_t qg = offset + icell;
+    size_t const qg = offset + icell;  // global index of gauss point
     _region[qg] = region;
     const std::vector<size_t> & cell_verts = cell.vertices();
     fe_values.update(cell);
+
+    for (size_t q = 0; q < fe_values.n_integration_points(); ++q) {
+      _data[qg].weight += fe_values.JxW(q);
+    }
+
     for (size_t pv = 0; pv < npv; ++pv) {
       for (size_t v = 0; v < nv; ++v)
       {
@@ -52,9 +61,6 @@ void IntegrationRule3d::build_region_(PolyhedralElementBase const & element,
       }
     }
 
-    for (size_t q = 0; q < fe_values.n_integration_points(); ++q) {
-      _data[qg].weight += fe_values.JxW(q);
-    }
   }
 }
 
@@ -95,7 +101,7 @@ build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
                      FEPointData & target,
                      angem::Tensor2<3, double> & du_dx) const
 {
-  double const detJ = compute_detJ_and_invert_cell_jacobian_(master.grads, du_dx, vertex_coord);
+  double const detJ = compute_inverse_jacobian_(master.grads, du_dx, vertex_coord);
   if (detJ <= 0)
     throw std::runtime_error("Cell Transformation det(J) is negative " + std::to_string(detJ));
 
@@ -111,9 +117,9 @@ build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
 }
 
 double IntegrationRule3d::
-compute_detJ_and_invert_cell_jacobian_(const std::vector<Point> & ref_grad,
-                                       angem::Tensor2<3, double> & du_dx,
-                                       std::vector<Point> const & vertex_coord) const
+compute_inverse_jacobian_(const std::vector<Point> & ref_grad,
+                          angem::Tensor2<3, double> & du_dx,
+                          std::vector<Point> const & vertex_coord) const
 {
   // compute the true shape function gradients
   // i, j - component indices

@@ -17,18 +17,19 @@ class TributaryRegion2dBase {
     : _element(element), _parent_face(parent_face)
   {}
   virtual ~TributaryRegion2dBase() = default;
-  std::vector<angem::Polygon<double>> & get() {return _tributary;}
-  const std::vector<angem::Polygon<double>> & get() const {return _tributary;}
+  // std::vector<angem::Polygon<double>> & get() {return _tributary;}
+  // const std::vector<angem::Polygon<double>> & get() const {return _tributary;}
 
   // new api
-  virtual size_t size() const noexcept {return _tributary.size();}
-  inline const std::vector<std::size_t> & get(const size_t region_index) const noexcept
+  virtual size_t size() const noexcept {return _faces.size();}
+
+  inline const std::vector<std::size_t> & faces(const size_t region_index) const noexcept
   {
     assert( region_index < size() && "Vertex index must be less the the number of vertices");
     return _faces[region_index];
   }
 
-  inline const std::vector<std::size_t> & get_center() const noexcept
+  inline const std::vector<std::size_t> & faces_center() const noexcept
   {
     return _faces_center;
   }
