@@ -30,18 +30,28 @@ void TributaryRegion2dFaces::mark_faces_()
 {
   if (_element._face_domains.empty())
     _element._face_domains = _element.create_face_domains_();
+
   const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
   const auto & grid = _element._subgrid;
   _faces.resize(_tributary.size());
 
-  for (const size_t iface : face_indices)
-  {
-    const mesh::Face & face = grid.face(iface);
-    const auto c = face.center();
-    for (size_t region=0; region < _tributary.size(); ++region)  // tributary regions
-      if (_tributary[region].point_inside(c))
-        _faces[region].push_back(iface);
+  // optimization: in case of zero refinement level we have a full rule
+  if (_element._config.subdivision_method == PolyhedralFEMSubdivision::refinement &&
+      _element._config.order == 0) {
+    for (size_t f = 0; f < face_indices.size(); ++f)
+      _faces[f].push_back(face_indices[f]);
   }
+  else {  // generic case with geometric check
+    for (const size_t iface : face_indices)
+    {
+      const mesh::Face & face = grid.face(iface);
+      const auto c = face.center();
+      for (size_t region=0; region < _tributary.size(); ++region)  // tributary regions
+        if (_tributary[region].point_inside(c))
+          _faces[region].push_back(iface);
+    }
+  }
+
   _faces_center.resize( face_indices.size() );
   std::copy( face_indices.begin(), face_indices.end(), _faces_center.begin() );
 }
