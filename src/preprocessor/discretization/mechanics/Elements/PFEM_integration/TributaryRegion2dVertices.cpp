@@ -9,7 +9,7 @@ TributaryRegion2dVertices::TributaryRegion2dVertices(PolyhedralElementBase & ele
                                                      const size_t parent_face)
     : TributaryRegion2dBase(element, parent_face)
 {
-  const auto polyhedron = _element._parent_cell.polyhedron();
+  const auto polyhedron = _element.host_cell().polyhedron();
   const auto face_polygons = polyhedron->get_face_polygons();
   build_tributary_shapes_face_(parent_face, face_polygons[parent_face]);
   mark_faces_(polyhedron->get_faces()[parent_face]);
@@ -40,9 +40,9 @@ build_tributary_shapes_face_(const size_t iface, const angem::Polygon<double> & 
 
 void TributaryRegion2dVertices::mark_faces_(const std::vector<std::size_t> & parent_verts)
 {
-  const auto & grid = _element._subgrid;
+  const auto & grid = _element.get_grid();
   _faces.resize( _tributary.size() );
-  for (const size_t iface : _element._face_domains[_parent_face])
+  for (const size_t iface : _element.get_face_domains()[_parent_face])
   {
     const auto & face = grid.face(iface);
     bool found = false;
@@ -65,7 +65,7 @@ void TributaryRegion2dVertices::mark_faces_(const std::vector<std::size_t> & par
     }
   }
 
-  const auto & faces = _element._face_domains[_parent_face];
+  const auto & faces = _element.get_face_domains()[_parent_face];
   _faces_center.reserve( faces.size() );
   std::copy( faces.begin(), faces.end(),  std::back_inserter(_faces_center) );
 }

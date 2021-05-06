@@ -9,8 +9,8 @@ using Point = angem::Point<3,double>;
 TributaryRegion3dFaces::TributaryRegion3dFaces(PolyhedralElementBase & element)
     : TributaryRegion3dBase(element)
 {
-  if (element._config.subdivision_method == PolyhedralFEMSubdivision::refinement &&
-      element._config.order == 0)
+  if (element.get_config().subdivision_method == PolyhedralFEMSubdivision::refinement &&
+      element.get_config().order == 0)
   {
     // optimization for level 0 subdivision
     auto const & grid = element.get_grid();
@@ -33,13 +33,13 @@ TributaryRegion3dFaces::TributaryRegion3dFaces(PolyhedralElementBase & element)
   else  // generic function
   {
     /* Split a parent cell into tributary regions (pyramids) */
-    const auto polyhedron = _element._parent_cell.polyhedron();
+    const auto polyhedron = _element.host_cell().polyhedron();
     std::vector<Point> vertices = polyhedron->get_points();
-    vertices.push_back(_element._parent_cell.center());
-    _element._cell_gauss_points.clear();
+    vertices.push_back(_element.host_cell().center());
+    // _element._cell_gauss_points.clear();
     for (const auto &face : polyhedron->get_faces()) {
       _tributary.push_back(create_pyramid_(face, vertices));
-      _element._cell_gauss_points.push_back(_tributary.back().center());
+      // _element._cell_gauss_points.push_back(_tributary.back().center());
     }
 
     mark_cells_();
@@ -52,7 +52,7 @@ TributaryRegion3dFaces::create_pyramid_(const std::vector<size_t> & face,
                                         const std::vector<Point> & vertices) const
 {
   const size_t vertex_center = vertices.size() - 1;  // HACK: I just pushed it to this array
-  const auto c = _element._parent_cell.center();
+  const auto c = _element.host_cell().center();
   std::vector<std::vector<size_t>> pyramid_faces;
   for (size_t iv=0; iv<face.size(); ++iv)
   {
@@ -68,7 +68,7 @@ TributaryRegion3dFaces::create_pyramid_(const std::vector<size_t> & face,
 
 void TributaryRegion3dFaces::mark_cells_()
 {
-  const auto & grid = _element._subgrid;
+  const auto & grid = _element.get_grid();
   _cells.resize( _tributary.size() );
   for( auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell  )
   {

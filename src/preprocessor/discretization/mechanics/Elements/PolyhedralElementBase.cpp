@@ -9,6 +9,7 @@
 #include "PFEM_integration/TributaryRegion3dFull.hpp"
 #include "PFEM_integration/IntegrationRule3d.hpp"
 #include "PFEM_integration/IntegrationRule2d.hpp"
+#include "PFEM_integration/IntegrationRuleFracture.hpp"
 // #include "PFEM_integration/IntegrationRule2dAverage.hpp"
 // #include "PFEM_integration/IntegrationRule2dPointwise.hpp"
 // #include "PFEM_integration/IntegrationRule2dFull.hpp"
@@ -45,6 +46,13 @@ void PolyhedralElementBase::build_triangulation_()
     mesh::Subdivision subdivision(_parent_cell, _subgrid, _config.order);
   }
   else throw std::invalid_argument("unknown subdivision method");
+}
+
+std::vector<std::vector<size_t>> const & PolyhedralElementBase::get_face_domains()
+{
+  if (_face_domains.empty())
+    _face_domains = create_face_domains_();
+  return _face_domains;
 }
 
 std::vector<std::vector<size_t>> PolyhedralElementBase::create_face_domains_()
@@ -117,7 +125,6 @@ void PolyhedralElementBase::build_fe_cell_data_()
   {
     case PolyhedronIntegrationRule::Full:
       {
-        throw 2;
         regions = std::make_unique<TributaryRegion3dFull>(*this);
         break;
       }
@@ -152,7 +159,6 @@ void PolyhedralElementBase::build_fe_cell_data_()
 
   _integration_rule3d = std::make_shared<IntegrationRule3d>(*this, *regions);
   _cell_data = _integration_rule3d->integrate(_parent_cell.vertex_coordinates());
-  // IntegrationRule3d rule(*this, *regions);
 }
 
 FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)
@@ -171,61 +177,42 @@ FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)
   }
 
   return _integration_rules2d[iface]->integrate(faces[iface]->vertex_coordinates(), basis);
-  // build_tributary_2d_(iface);
-  // auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
-
-  // if (_basis_functions.empty())
-  //   throw std::runtime_error("should be initialized");
-
-  // switch (_config.integration_rule)
-  // {
-  //   // case PolyhedronIntegrationRule::VerticesPointwise:
-  //   //   {
-  //   //     // IntegrationRule2dPointwise rule(*this, _tributary_2d, iface);
-  //   //     // return rule.get();
-  //   //     break;
-  //     // }
-  //   case PolyhedronIntegrationRule::VerticesAverage:
-  //   case PolyhedronIntegrationRule::FacesAverage:
-  //     {
-  //       IntegrationRule2dAverage rule(*this, *_tributary_2d[iface], iface, basis);
-  //       return rule.get();
-  //       break;
-  //     }
-  //   case PolyhedronIntegrationRule::Full:
-  //     {
-  //       IntegrationRule2dFull rule(*this, iface, basis);
-  //       return rule.get();
-  //       break;
-  //     }
-  //   default:
-  //     throw std::invalid_argument("Integration rule unknown");
-  // }
 }
 
 FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
                                                            const angem::Basis<3,double> basis)
 {
-  auto trib = build_tributary_2d_(iface);
+  auto const faces = _parent_cell.faces();
 
-  switch (_config.integration_rule)
+  if ( _integration_rules_frac.empty() )  // lazy initialize
+    _integration_rules_frac.resize(faces.size(), nullptr);
+
+  if (  !_integration_rules_frac[iface]  )
   {
-    case PolyhedronIntegrationRule::Full:
-      {
-        IntegrationRuleFractureFull rule(*this, iface, basis);
-        return rule.get();
-        break;
-      }
-    case PolyhedronIntegrationRule::VerticesAverage:
-    case PolyhedronIntegrationRule::FacesAverage:
-      {
-        IntegrationRuleFractureAverage rule(*this, *trib, iface, basis);
-        return rule.get();
-        break;
-      }
-    default:
-      throw std::invalid_argument("Not implemented");
+    auto const trib = build_tributary_2d_(iface);
+    _integration_rules_frac[iface] = std::make_shared<IntegrationRuleFracture>(*this, *trib, iface, basis);
   }
+
+  return _integration_rules_frac[iface]->integrate(faces[iface]->vertex_coordinates(), basis);
+
+  // switch (_config.integration_rule)
+  // {
+  //   case PolyhedronIntegrationRule::Full:
+  //     {
+  //       IntegrationRuleFractureFull rule(*this, iface, basis);
+  //       return rule.get();
+  //       break;
+  //     }
+  //   case PolyhedronIntegrationRule::VerticesAverage:
+  //   case PolyhedronIntegrationRule::FacesAverage:
+  //     {
+  //       IntegrationRuleFractureAverage rule(*this, *trib, iface, basis);
+  //       return rule.get();
+  //       break;
+  //     }
+  //   default:
+  //     throw std::invalid_argument("Not implemented");
+  // }
 }
 
 std::unique_ptr<TributaryRegion2dBase> PolyhedralElementBase::build_tributary_2d_(const size_t parent_face)

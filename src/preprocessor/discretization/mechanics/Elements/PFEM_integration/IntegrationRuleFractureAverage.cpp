@@ -40,7 +40,6 @@ void get_face_integration_points(FeValues<angem::TriangleID> & fe_values,
   Point zero_point = {0,0,0};
   std::fill(integration_points.begin(), integration_points.end(), zero_point);
 
-  // const size_t nv = N_ELEMENT_VERTICES<angem::TriangleID>;  // number of vertices in triangle
   const size_t nv = ElementTraits<angem::TriangleID>::n_vertices;  // number of vertices in triangle
   for (size_t q = 0; q < fe_values.n_integration_points(); ++q)
     for (size_t v = 0; v < nv; ++v)
@@ -100,7 +99,6 @@ void IntegrationRuleFractureAverage::compute_fe_values_(const std::vector<size_t
               basis_functions[parent_vertex][cell_verts[v]] *
               fe_face_values.JxW(q);
         }
-
   }
 
   std::transform(dst.values.begin(), dst.values.end(), dst.values.begin(),

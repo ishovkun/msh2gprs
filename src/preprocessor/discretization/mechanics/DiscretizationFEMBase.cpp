@@ -47,9 +47,10 @@ void DiscretizationFEMBase::build_cell_data_(mesh::Cell const & cell)
 
 void DiscretizationFEMBase::build_face_data_(mesh::Cell const & cell)
 {
-  size_t iface = 0;
-  for ( const mesh::Face * face : cell.faces() )
+  auto const faces = cell.faces();
+  for ( size_t f = 0; f < faces.size(); ++f)
   {
+    auto const * face = faces[f];
     const size_t face_index = face->index();
     const bool is_fracture = _fracture_face_orientation.find( face->marker() ) != _fracture_face_orientation.end();
     const bool is_neumann = _neumann_faces.find( face->index() ) != _neumann_faces.end();
@@ -58,17 +59,15 @@ void DiscretizationFEMBase::build_face_data_(mesh::Cell const & cell)
 
     if ( (is_neumann || is_fracture) && _face_data[face->index()].points.empty() )
     {
-      _face_data[face_index] = _element->get_face_data(iface);
+      _face_data[face_index] = _element->get_face_data(f);
       _face_data[face_index].element_index = face_index;
     }
 
     if (is_fracture)
     {
-      _frac_data[face_index].push_back(_element->get_fracture_data(iface, _face_basis));
+      _frac_data[face_index].push_back(_element->get_fracture_data(f, _face_basis));
       _frac_data[face_index].back().element_index = cell.index();
     }
-
-    iface++;
   }
 }
 

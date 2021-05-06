@@ -13,6 +13,11 @@ TributaryRegion3dFull::TributaryRegion3dFull(PolyhedralElementBase & element)
   {
     _cells[region].push_back( cell->index() );
   }
+
+  _cells_center.reserve( grid.n_active_cells() );
+  std::transform(grid.begin_active_cells(), grid.end_active_cells(),
+                 std::back_inserter(_cells_center),
+                 [](const auto cell) {return cell.index();});
 }
 
 }  // end namespace discretization

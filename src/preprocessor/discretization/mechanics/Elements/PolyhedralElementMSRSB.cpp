@@ -2,11 +2,6 @@
 #include "PolyhedralElementMSRSB.hpp"
 #include "EdgeComparison.hpp"
 #include "FeValues.hpp"  // provides FeValues
-#include "PFEM_integration/TributaryRegion2dFaces.hpp"
-#include "PFEM_integration/TributaryRegion3dFaces.hpp"
-#include "PFEM_integration/IntegrationRule3dAverage.hpp"
-#include "PFEM_integration/IntegrationRule2dAverage.hpp"
-#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationRuleFacesFractures
 #include "mesh/io/VTKWriter.hpp"
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseLU>

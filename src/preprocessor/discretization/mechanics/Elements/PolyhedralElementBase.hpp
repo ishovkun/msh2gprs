@@ -10,7 +10,7 @@ namespace discretization {
 
 class IntegrationRule3d;
 class IntegrationRule2d;
-class IntegrationRuleFacesAverage;
+class IntegrationRuleFracture;
 class TributaryRegion2dBase;
 
 /**
@@ -49,6 +49,10 @@ class PolyhedralElementBase : public FiniteElementBase
   size_t n_vertices() const {return _parent_cell.n_vertices();}
   // returns the integration scheme
   IntegrationRule3d const & integration_rule3() const {return *_integration_rule3d;}
+  // returns reference to the current config
+  FiniteElementConfig const & get_config() const {return _config;}
+
+  std::vector<std::vector<size_t>> const & get_face_domains();
 
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,
@@ -86,20 +90,21 @@ class PolyhedralElementBase : public FiniteElementBase
   // std::shared_ptr<TributaryRegion2dBase> _tributary_3d;                // 3d tributary regions
   std::shared_ptr<IntegrationRule3d> _integration_rule3d;
   std::vector<std::shared_ptr<IntegrationRule2d>> _integration_rules2d;
+  std::vector<std::shared_ptr<IntegrationRuleFracture>> _integration_rules_frac;
 
   // buddies
-  friend class TributaryRegion3dFaces;
-  friend class TributaryRegion3dVertices;
-  friend class TributaryRegion2dFaces;
-  friend class TributaryRegion2dVertices;
-  friend class IntegrationRule3dAverage;
-  friend class IntegrationRule2dBase;
-  friend class IntegrationRule2dAverage;
-  friend class IntegrationRule2dPointwise;
-  friend class IntegrationRule2dFull;
-  friend class IntegrationRuleFractureAverage;
-  friend class IntegrationRule3dPointwise;
-  friend class IntegrationRuleFractureFull;
+  // friend class TributaryRegion3dFaces;
+  // friend class TributaryRegion3dVertices;
+  // friend class TributaryRegion2dFaces;
+  // friend class TributaryRegion2dVertices;
+  // friend class IntegrationRule3dAverage;
+  // friend class IntegrationRule2dBase;
+  // friend class IntegrationRule2dAverage;
+  // friend class IntegrationRule2dPointwise;
+  // friend class IntegrationRule2dFull;
+  // friend class IntegrationRuleFractureAverage;
+  // friend class IntegrationRule3dPointwise;
+  // friend class IntegrationRuleFractureFull;
   // friend class IntegrationRule3dFull;
 };
 

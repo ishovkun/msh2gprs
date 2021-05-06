@@ -6,7 +6,7 @@ namespace discretization {
 TributaryRegion2dFaces::TributaryRegion2dFaces(PolyhedralElementBase & element, const size_t parent_face)
     : TributaryRegion2dBase(element, parent_face)
 {
-  const auto face_polygons = _element._parent_cell.polyhedron()->get_face_polygons();
+  const auto face_polygons = _element.host_cell().polyhedron()->get_face_polygons();
   build_tributary_shapes_face_(parent_face, face_polygons[parent_face]);
   mark_faces_();
 }
@@ -28,16 +28,13 @@ void TributaryRegion2dFaces::build_tributary_shapes_face_(const size_t iface, co
 
 void TributaryRegion2dFaces::mark_faces_()
 {
-  if (_element._face_domains.empty())
-    _element._face_domains = _element.create_face_domains_();
-
-  const std::vector<size_t> & face_indices = _element._face_domains[_parent_face];
-  const auto & grid = _element._subgrid;
+  const std::vector<size_t> & face_indices = _element.get_face_domains()[_parent_face];
+  const auto & grid = _element.get_grid();
   _faces.resize(_tributary.size());
 
   // optimization: in case of zero refinement level we have a full rule
-  if (_element._config.subdivision_method == PolyhedralFEMSubdivision::refinement &&
-      _element._config.order == 0) {
+  if (_element.get_config().subdivision_method == PolyhedralFEMSubdivision::refinement &&
+      _element.get_config().order == 0) {
     for (size_t f = 0; f < face_indices.size(); ++f)
       _faces[f].push_back(face_indices[f]);
   }

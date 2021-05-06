@@ -15,8 +15,8 @@ TributaryRegion3dVertices::TributaryRegion3dVertices(PolyhedralElementBase & ele
 
 void TributaryRegion3dVertices::mark_cells_()
 {
-  const size_t npv = _element._parent_cell.n_vertices();
-  const auto & grid = _element._subgrid;
+  const size_t npv = _element.host_cell().n_vertices();
+  const auto & grid = _element.get_grid();
   _cells.resize( npv );
   std::vector<size_t> pv(npv);
   std::iota(pv.begin(), pv.end(), 0);
@@ -43,7 +43,7 @@ void TributaryRegion3dVertices::mark_cells_()
                  [](const auto cell) {return cell.index();});
 
   _n_parent_vertices = npv;
-  _vol_tot = _element._parent_cell.volume();
+  _vol_tot = _element.host_cell().volume();
 }
 
 

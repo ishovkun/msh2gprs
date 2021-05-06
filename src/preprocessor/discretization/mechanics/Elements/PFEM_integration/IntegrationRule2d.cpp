@@ -116,7 +116,6 @@ double IntegrationRule2d::compute_inverse_jacobian_(std::vector<angem::Point<3,d
   for (size_t v = 0; v < _npv; ++v)
   {
     loc_coord[v] = plane.local_coordinates(vertex_coord[v]);
-    // std::cout << "loc coord (" << v << ") = " << loc_coord[v] << std::endl;
     if ( std::fabs(loc_coord[v][2]) > 1e-10 )
       logging::warning() << "non-planar face or basis is set for non-planar surfaces" << std::endl;
   }
@@ -128,12 +127,6 @@ double IntegrationRule2d::compute_inverse_jacobian_(std::vector<angem::Point<3,d
         J(i, j) += ref_grad[v][j] * loc_coord[v][i];
   J(2, 2) = 1;
   J_inv = invert(J);
-  // std::cout << "ref grad: ";
-  // for (size_t v = 0; v <  _npv; ++v)
-  //   std::cout << v << " " << ref_grad[v] << std::endl;
-
-  // std::cout << "J = " << J << std::endl;
-  // std::cout << "J_1 = " << J_inv << std::endl;
   return det(J);
 }
 
@@ -150,13 +143,6 @@ void IntegrationRule2d::compute_parent_vertices_(mesh::Cell const & cell, size_t
   _parent_vertices.resize(_npv);
   for (size_t v = 0; v < _npv; ++v)
     _parent_vertices[v] = mp[ fv[v] ];
-
-  // const auto face = _element._parent_cell.faces()[_parent_face];
-    // for (size_t v=0; v < npv; ++v)
-    //   _parent_vertices[v] =
-    //       std::distance(parent_cell_vertices.begin(),
-    //                     std::find( parent_cell_vertices.begin(), parent_cell_vertices.end(),
-    //                                face->vertices()[v]));
 }
 
 void IntegrationRule2d::scale_data_(FEPointData & data) const
