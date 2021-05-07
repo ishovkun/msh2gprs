@@ -80,7 +80,7 @@ void IntegrationRuleFracture::build_region_(PolyhedralElementBase const & elemen
 
   for (size_t iface = 0; iface < faces.size(); ++iface)
   {
-    mesh::Face const & face = grid.face(iface);
+    mesh::Face const & face = grid.face(faces[iface]);
     mesh::Cell const & cell = *face.neighbors()[0];  // face only has one neighbor
     std::vector<size_t> const & cell_verts = cell.vertices();
     size_t const qg = offset + iface;
@@ -153,7 +153,7 @@ double IntegrationRuleFracture::compute_face_scaling_(std::vector<angem::Point<3
                                                       std::vector<angem::Point<3,double>> const & vertex_coord,
                                                       angem::Basis<3, double>             const & basis) const
 {
-  angem::Plane<double> plane(vertex_coord);
+  angem::Plane<double> plane(vertex_coord[_parent_vertices[0]], basis(2));
   plane.set_basis(basis);
   std::vector<angem::Point<3,double>> loc_coord(_npfv);
   for (size_t v = 0; v < _npfv; ++v)

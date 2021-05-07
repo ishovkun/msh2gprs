@@ -193,7 +193,8 @@ FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
     _integration_rules_frac[iface] = std::make_shared<IntegrationRuleFracture>(*this, *trib, iface, basis);
   }
 
-  return _integration_rules_frac[iface]->integrate(faces[iface]->vertex_coordinates(), basis);
+  // return _integration_rules_frac[iface]->integrate(faces[iface]->vertex_coordinates(), basis);
+  return _integration_rules_frac[iface]->integrate(_parent_cell.vertex_coordinates(), basis);
 
   // switch (_config.integration_rule)
   // {
