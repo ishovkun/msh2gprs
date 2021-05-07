@@ -337,13 +337,6 @@ void Preprocessor::build_geomechanics_discretization_()
   GridEntityNumberingManager mech_numbering_mgr(data.geomechanics_grid);
   data.mech_numbering = std::shared_ptr<discretization::DoFNumbering>(mech_numbering_mgr.get_numbering());
 
-  // split geomechanics DFM faces
-  if (config.dfm_settings.split_mech_vertices)
-  {
-    logging::log() << "Splitting faces of DFM fractures" << std::endl;
-    p_frac_mgr->split_faces(data.geomechanics_grid);
-  }
-
   // build mechanics boundary conditions
   logging::log() << "Building mechanics boundary conditions" << std::endl;
   BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
@@ -353,6 +346,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
   using namespace discretization;
   std::unique_ptr<DiscretizationFEMBase> p_discr;
+  // WARNING: this part of code can reorder grid vertices
   auto const start_time = std::chrono::high_resolution_clock::now();
   if (config.fem.method == FEMMethod::strong_discontinuity)
     p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, config.fem,
@@ -372,6 +366,15 @@ void Preprocessor::build_geomechanics_discretization_()
   else throw std::invalid_argument("mechanics discretization is unknown");
 
   p_discr->build();
+
+  // split geomechanics DFM faces
+  // This part must go after building discretization since
+  // the discretization might do vertex renumbering
+  if (config.dfm_settings.split_mech_vertices)
+  {
+    logging::log() << "Splitting faces of DFM fractures" << std::endl;
+    p_frac_mgr->split_faces(data.geomechanics_grid);
+  }
 
   using namespace std::chrono;
   auto const end_time = high_resolution_clock::now();

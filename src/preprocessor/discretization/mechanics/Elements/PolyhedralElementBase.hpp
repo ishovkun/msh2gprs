@@ -51,8 +51,14 @@ class PolyhedralElementBase : public FiniteElementBase
   IntegrationRule3d const & integration_rule3() const {return *_integration_rule3d;}
   // returns reference to the current config
   FiniteElementConfig const & get_config() const {return _config;}
-
+  // get map: parent cell faces to subgrid faces
   std::vector<std::vector<size_t>> const & get_face_domains();
+  // get integration rule for cell face iface
+  IntegrationRule2d const & integration_rule2(size_t face_local_index);
+  // {return *_integration_rules2d[face_local_index];}
+  // get integration rule for cell face iface
+  IntegrationRuleFracture const & integration_rule_frac(size_t face_local_index);
+  // {return *_integration_rules_frac[face_local_index];}
 
  protected:
   PolyhedralElementBase(const mesh::Cell & cell,
@@ -76,6 +82,7 @@ class PolyhedralElementBase : public FiniteElementBase
   void build_fe_fracture_data_();
   // build face tributary regions
   std::unique_ptr<TributaryRegion2dBase> build_tributary_2d_(const size_t parent_face);
+  // get integration rule used to compute cell fe values
 
   const mesh::Cell & _parent_cell;                                     // reference to the discretized cell
   const mesh::Mesh & _parent_grid;                                     // grid the discrefized cell belongs to
@@ -86,26 +93,9 @@ class PolyhedralElementBase : public FiniteElementBase
   std::vector<std::vector<size_t>> _face_domains;                      // child face indices for each parent face
   std::vector<angem::Point<3,double>> _cell_gauss_points;              // FEM gauss points
   std::vector<std::vector<angem::Point<3,double>>> _face_gauss_points; // FEM face gauss points
-  // std::vector<std::shared_ptr<TributaryRegion2dBase>> _tributary_2d;   // 2d tributary region for each face
-  // std::shared_ptr<TributaryRegion2dBase> _tributary_3d;                // 3d tributary regions
   std::shared_ptr<IntegrationRule3d> _integration_rule3d;
   std::vector<std::shared_ptr<IntegrationRule2d>> _integration_rules2d;
   std::vector<std::shared_ptr<IntegrationRuleFracture>> _integration_rules_frac;
-
-  // buddies
-  // friend class TributaryRegion3dFaces;
-  // friend class TributaryRegion3dVertices;
-  // friend class TributaryRegion2dFaces;
-  // friend class TributaryRegion2dVertices;
-  // friend class IntegrationRule3dAverage;
-  // friend class IntegrationRule2dBase;
-  // friend class IntegrationRule2dAverage;
-  // friend class IntegrationRule2dPointwise;
-  // friend class IntegrationRule2dFull;
-  // friend class IntegrationRuleFractureAverage;
-  // friend class IntegrationRule3dPointwise;
-  // friend class IntegrationRuleFractureFull;
-  // friend class IntegrationRule3dFull;
 };
 
 }  // end namespace discretization

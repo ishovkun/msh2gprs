@@ -131,9 +131,9 @@ compute_inverse_jacobian_(const std::vector<Point> & ref_grad,
   // first compute ∂xᵢ/dξⱼ = Σⱼ∂Ψₖ/∂ξⱼ * xₖᵢ
   // xₖᵢ - i-component of kth vertex coordinate
   angem::Tensor2<3, double> dx_du;
-  for (size_t i=0; i<3; ++i)
-    for (size_t j=0; j<3; ++j)
-      for (size_t v=0; v < vertex_coord.size(); ++v)
+  for (size_t i = 0; i < 3; ++i)
+    for (size_t j = 0; j < 3; ++j)
+      for (size_t v = 0; v < vertex_coord.size(); ++v)
         dx_du( i, j ) += ref_grad[v][j] * vertex_coord[v][i];
 
   // compute the determinant of transformation jacobian

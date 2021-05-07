@@ -33,6 +33,7 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
   // get face data
   FiniteElementData get_face_data(size_t iface) override;
 
+  FiniteElementData get_fracture_data(const size_t iface, const angem::Basis<3,double> basis) override;
 
  protected:
   void build_fe_cell_data_() override;
@@ -64,8 +65,8 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
                               mesh::Face const & master,
                               std::vector<angem::Point<3,double>> & coords);
   void map_vertices_to_master_();
-  angem::Polyhedron<double> create_pyramid_(const std::vector<size_t> & face,
-                                            const std::vector<angem::Point<3,double>> & vertices) const;
+  // angem::Polyhedron<double> create_pyramid_(const std::vector<size_t> & face,
+  //                                           const std::vector<angem::Point<3,double>> & vertices) const;
 
   PolyhedralElementBase & _master;
   std::unordered_map<size_t, size_t> _vertex_mapping;

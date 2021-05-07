@@ -10,11 +10,8 @@
 #include "PFEM_integration/IntegrationRule3d.hpp"
 #include "PFEM_integration/IntegrationRule2d.hpp"
 #include "PFEM_integration/IntegrationRuleFracture.hpp"
-// #include "PFEM_integration/IntegrationRule2dAverage.hpp"
-// #include "PFEM_integration/IntegrationRule2dPointwise.hpp"
-// #include "PFEM_integration/IntegrationRule2dFull.hpp"
-#include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
-#include "PFEM_integration/IntegrationRuleFractureFull.hpp"  // provides IntegrationFractureFull
+// #include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
+// #include "PFEM_integration/IntegrationRuleFractureFull.hpp"  // provides IntegrationFractureFull
 #include "PFEM_integration/FaceSorter.hpp"  // provides Facesorter
 #include <memory>
 
@@ -164,56 +161,15 @@ void PolyhedralElementBase::build_fe_cell_data_()
 FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)
 {
   auto const faces = _parent_cell.faces();
-
-  if ( _integration_rules2d.empty() )  // lazy initialize
-    _integration_rules2d.resize(faces.size(), nullptr);
-
-  auto const basis = get_face_basis_(*faces[iface], _parent_cell);
-
-  if (!_integration_rules2d[iface])  // lazy evaluate and store
-  {
-    auto const tributary_region = build_tributary_2d_(iface);
-    _integration_rules2d[iface] = std::make_shared<IntegrationRule2d>(*this, *tributary_region, iface, basis);
-  }
-
-  return _integration_rules2d[iface]->integrate(faces[iface]->vertex_coordinates(), basis);
+  auto const & rule = integration_rule2(iface);
+  auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
+  return rule.integrate(faces[iface]->vertex_coordinates(), basis);
 }
 
 FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
                                                            const angem::Basis<3,double> basis)
 {
-  auto const faces = _parent_cell.faces();
-
-  if ( _integration_rules_frac.empty() )  // lazy initialize
-    _integration_rules_frac.resize(faces.size(), nullptr);
-
-  if (  !_integration_rules_frac[iface]  )
-  {
-    auto const trib = build_tributary_2d_(iface);
-    _integration_rules_frac[iface] = std::make_shared<IntegrationRuleFracture>(*this, *trib, iface, basis);
-  }
-
-  // return _integration_rules_frac[iface]->integrate(faces[iface]->vertex_coordinates(), basis);
-  return _integration_rules_frac[iface]->integrate(_parent_cell.vertex_coordinates(), basis);
-
-  // switch (_config.integration_rule)
-  // {
-  //   case PolyhedronIntegrationRule::Full:
-  //     {
-  //       IntegrationRuleFractureFull rule(*this, iface, basis);
-  //       return rule.get();
-  //       break;
-  //     }
-  //   case PolyhedronIntegrationRule::VerticesAverage:
-  //   case PolyhedronIntegrationRule::FacesAverage:
-  //     {
-  //       IntegrationRuleFractureAverage rule(*this, *trib, iface, basis);
-  //       return rule.get();
-  //       break;
-  //     }
-  //   default:
-  //     throw std::invalid_argument("Not implemented");
-  // }
+  return integration_rule_frac(iface).integrate(_parent_cell.vertex_coordinates(), basis);
 }
 
 std::unique_ptr<TributaryRegion2dBase> PolyhedralElementBase::build_tributary_2d_(const size_t parent_face)
@@ -237,6 +193,35 @@ std::unique_ptr<TributaryRegion2dBase> PolyhedralElementBase::build_tributary_2d
       throw std::invalid_argument("Tributary region not implemented");
   }
 }
+
+IntegrationRule2d const & PolyhedralElementBase::integration_rule2(size_t iface)
+{
+  if ( _integration_rules2d.empty() )  // lazy initialize
+    _integration_rules2d.resize(_parent_cell.faces().size(), nullptr);
+
+  if (!_integration_rules2d[iface])  // lazy evaluate and store
+  {
+    auto const tributary_region = build_tributary_2d_(iface);
+    auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
+    _integration_rules2d[iface] = std::make_shared<IntegrationRule2d>(*this, *tributary_region, iface, basis);
+  }
+  return *_integration_rules2d[iface];
+}
+
+IntegrationRuleFracture const & PolyhedralElementBase::integration_rule_frac(size_t iface)
+{
+  if ( _integration_rules_frac.empty() )  // lazy initialize
+    _integration_rules_frac.resize(_parent_cell.faces().size(), nullptr);
+
+  if (  !_integration_rules_frac[iface]  )
+  {
+    auto const trib = build_tributary_2d_(iface);
+    auto const basis = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
+    _integration_rules_frac[iface] = std::make_shared<IntegrationRuleFracture>(*this, *trib, iface, basis);
+  }
+  return *_integration_rules_frac[iface];
+}
+
 
 }  // end namespace discretization
 

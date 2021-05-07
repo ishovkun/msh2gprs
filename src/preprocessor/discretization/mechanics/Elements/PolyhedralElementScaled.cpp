@@ -1,9 +1,8 @@
 #include "PolyhedralElementScaled.hpp"
 #include "logger/Logger.hpp"
-// debug
-// #include "PFEM_integration/TributaryRegion3dFaces.hpp"
-// #include "PFEM_integration/IntegrationRule3dAverage.hpp"
 #include "PFEM_integration/IntegrationRule3d.hpp"
+#include "PFEM_integration/IntegrationRule2d.hpp"
+#include "PFEM_integration/IntegrationRuleFracture.hpp"
 
 namespace discretization {
 
@@ -63,23 +62,10 @@ FiniteElementData PolyhedralElementScaled::get_face_data(size_t iface)
   reorder_face_vertices_(*face, *master_face, vert_coord);
 
   auto basis = get_face_basis_(*face, host_cell());
-  FiniteElementData const master_data = _master.get_face_data(iface);
-  size_t const nv = vert_coord.size();
-  size_t const nq = master_data.points.size();
+  auto const & rule = _master.integration_rule2(iface);
 
-  // check for the right numbering
-  if ( nv != master_data.center.values.size() )
-    throw std::runtime_error("You need to renumber faces of the current polyhedron to match master");
+  return rule.integrate( vert_coord, basis );
 
-  FiniteElementData face_data(nv, nq);
-
-   angem::Tensor2<3, double> du_dx;
-   for (size_t q = 0; q < nq; ++q)
-     build_fe_face_point_data_(vert_coord, master_data.points[q],
-                               face_data.points[q], du_dx, basis);
-
-   build_fe_face_point_data_(vert_coord, master_data.center, face_data.center,
-                             du_dx, basis);
    // FIXME: we reordered vertices, so should probably reorder the resulting values back
    // if ( reverse )
    // {
@@ -95,49 +81,11 @@ FiniteElementData PolyhedralElementScaled::get_face_data(size_t iface)
    //   std::reverse( face_data.center.grads.begin(),
    //                 face_data.center.grads.end());
    // }
-   return face_data;
 }
-
-void PolyhedralElementScaled::
-build_fe_face_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
-                          FEPointData const & master,
-                          FEPointData & current,
-                          angem::Tensor2<3, double> & du_dx,
-                          const angem::Basis<3,double> & basis) const
+FiniteElementData PolyhedralElementScaled::get_fracture_data(const size_t iface,
+                                                             const angem::Basis<3,double> basis)
 {
-
-  double const detJ = compute_detJ_and_invert_face_jacobian_(master.grads, du_dx, vertex_coord, basis);
-  if ( detJ <= 0 ) throw std::runtime_error("Face Transformation det(J) is negative " + std::to_string(detJ));
-  current.values = master.values;
-  current.weight = master.weight * detJ;
-  update_shape_grads_(master.grads, du_dx, current.grads);
-}
-
-double PolyhedralElementScaled::
-compute_detJ_and_invert_face_jacobian_(const std::vector<angem::Point<3,double>> & ref_grad,
-                                       angem::Tensor2<3, double> & J_inv,
-                                       std::vector<angem::Point<3,double>> const & vertex_coord,
-                                       const angem::Basis<3,double> & basis) const
-{
-  angem::Plane<double> plane(vertex_coord);
-  plane.set_basis(basis);
-  size_t const nv = vertex_coord.size();
-  std::vector<Point> loc_coord(nv);
-  for (size_t v = 0; v < nv; ++v)
-  {
-    loc_coord[v] = plane.local_coordinates(vertex_coord[v]);
-    if ( std::fabs(loc_coord[v][2]) > 1e-10 )
-      logging::warning() << "non-planar face or basis is set for non-planar surfaces" << std::endl;
-  }
-
-  angem::Tensor2<3, double> J;
-  for (size_t i = 0; i < 2; ++i)
-    for (size_t j = 0; j < 2; ++j)
-      for (size_t v = 0; v < nv; ++v)
-        J(i, j) += ref_grad[v][j] * loc_coord[v][i];
-  J(2, 2) = 1;
-  J_inv = invert(J);
-  return det(J);
+  return _master.integration_rule_frac(iface).integrate(_parent_cell.vertex_coordinates(), basis);
 }
 
 void PolyhedralElementScaled::
@@ -173,25 +121,5 @@ reorder_face_vertices_(mesh::Face const & target,
   for (size_t v = 0; v < verts.size(); ++v)
     coords[v] = copy[order[v]];
 }
-
-angem::Polyhedron<double>
-PolyhedralElementScaled::create_pyramid_(const std::vector<size_t> & face,
-                                         const std::vector<Point> & vertices) const
-{
-  const size_t vertex_center = vertices.size() - 1;  // HACK: I just pushed it to this array
-  const auto c = _parent_cell.center();
-  std::vector<std::vector<size_t>> pyramid_faces;
-  for (size_t iv=0; iv<face.size(); ++iv)
-  {
-    size_t const v1 = face[iv];
-    size_t const v2 = face[(iv+1) % face.size()];
-    pyramid_faces.push_back( {v1, v2, vertex_center} );
-  }
-  pyramid_faces.push_back( face );  // base
-
-  angem::Polyhedron<double> pyramid(vertices, pyramid_faces);
-  return pyramid;
-}
-
 
 }  // end namespace discretization
