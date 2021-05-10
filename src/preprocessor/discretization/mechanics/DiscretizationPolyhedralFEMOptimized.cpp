@@ -1,8 +1,10 @@
 #include "DiscretizationPolyhedralFEMOptimized.hpp"
 #include "Elements/PolyhedralElementScaled.hpp"
 #include "Isomorphism.hpp"         // provides isomorphism
+#include "mesh/io/VTKWriter.hpp"  // debug
 #include "logger/Logger.hpp"
 #include <unordered_map>
+
 
 namespace discretization {
 using Point = angem::Point<3,double>;
@@ -26,8 +28,26 @@ void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
   if ( auto master = known_element_(cell, order) ) {
     // logging::debug() << "found similar element " <<  cell.index() << std::endl;
 
+    // if ( cell.index() == 7843 )
+    // {
+    //   mesh::IO::VTKWriter::write_geometry(_grid, cell, "output/dst_before-" + std::to_string(cell.index()) + ".vtk");
+    //   std::cout << "order: ";
+    //   for (auto o : order) std::cout << o << " ";
+    //   std::cout << std::endl;
+    // }
+
     auto & verts = cell.vertices();
     angem::reorder_to(verts, order);
+
+    // if ( cell.index() == 7843 )
+    // {
+    //   mesh::IO::VTKWriter::write_geometry(_grid, cell, "output/dst_after-" + std::to_string(cell.index()) + ".vtk");
+    //   std::cout << "after reorder: ";
+    //   for (auto o : order) std::cout << o << " ";
+    //   std::cout << std::endl;
+    //   exit(0);
+    // }
+
 
     reorder_faces_(cell, master->host_cell());
     _element = std::make_shared<PolyhedralElementScaled>( cell, _grid, *master, _config );
@@ -51,8 +71,7 @@ DiscretizationPolyhedralFEMOptimized::known_element_(mesh::Cell const & cell,
   if (_masters.count(hsh)) {
     auto it = _masters.find(hsh);
     for (auto master : it->second) {
-      Isomorphism isomorphism(*master->host_topology(),
-                              *cell.polyhedron());
+      Isomorphism isomorphism(*master->host_topology(), *cell.polyhedron());
       if (isomorphism.check())
       {
         order = isomorphism.ordering();
@@ -79,7 +98,22 @@ reorder_faces_(mesh::Cell & dst, mesh::Cell const & src) const
   std::vector<size_t> order(nf, 0);
   for (size_t f = 0; f < nf; ++f)
   {
-    assert(src_map.count(dst_faces[f]) );
+    if ( src_map.count(dst_faces[f]) == 0 )
+    {
+    std::cout << "src faces: ";
+    for (auto c : src_faces) std::cout << c << " ";
+    std::cout << std::endl;
+    std::cout << "dst faces: ";
+    for (auto c : dst_faces) std::cout << c << " ";
+    std::cout << std::endl;
+      std::cout << "src map" << std::endl;
+      for (auto [c, ff] : src_map)
+        std::cout << ff << " " << c << std::endl;
+      std::cout << "dst face " << dst_faces[f] << std::endl;
+      mesh::IO::VTKWriter::write_geometry(_grid, dst, "output/dst-" + std::to_string(dst.index()) + ".vtk");
+      mesh::IO::VTKWriter::write_geometry(_grid, src, "output/src-" + std::to_string(src.index()) + ".vtk");
+    }
+    assert( src_map.count(dst_faces[f]) );
     order[f] = src_map[dst_faces[f]];
   }
 

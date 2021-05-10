@@ -40,8 +40,6 @@ class Isomorphism {
 
  private:
   algorithms::Graph build_vertex_graph_(angem::Polyhedron<double> const &poly);
-  void build_ordering_(std::vector<size_t> const & path1,
-                       std::vector<size_t> const & path2);
 
   angem::Polyhedron<double> const & _p1;
   angem::Polyhedron<double> const & _p2;

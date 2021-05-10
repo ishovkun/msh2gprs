@@ -61,7 +61,6 @@ void get_face_integration_points(FeValues<angem::TriangleID> & fe_values,
       integration_points[q] += fe_values.value(v, q) * master_qpoints[q];
 }
 
-
 void IntegrationRuleFracture::build_region_(PolyhedralElementBase const & element,
                                             std::vector<size_t> const & faces,
                                             const angem::Basis<3, double> & basis,
@@ -146,7 +145,6 @@ void IntegrationRuleFracture::build_fe_point_data_(std::vector<angem::Point<3,do
       for (size_t j = 0; j < 3; ++j)
         target.grads[v][i] += master.grads[v][j] * du_dx(j, i) * detJ_face * master.weight;
   }
-
 }
 
 double IntegrationRuleFracture::compute_face_scaling_(std::vector<angem::Point<3,double>> const & ref_grad,
@@ -187,9 +185,9 @@ compute_inverse_cell_jacobian_(std::vector<angem::Point<3,double>> const & ref_g
   // first compute ∂xᵢ/dξⱼ = Σⱼ∂Ψₖ/∂ξⱼ * xₖᵢ
   // xₖᵢ - i-component of kth vertex coordinate
   angem::Tensor2<3, double> dx_du;
-  for (size_t i=0; i<3; ++i)
-    for (size_t j=0; j<3; ++j)
-      for (size_t v=0; v < vertex_coord.size(); ++v)
+  for (size_t i = 0; i < 3; ++i)
+    for (size_t j = 0; j < 3; ++j)
+      for (size_t v = 0; v < vertex_coord.size(); ++v)
         dx_du( i, j ) += ref_grad[v][j] * vertex_coord[v][i];
 
   // compute the determinant of transformation jacobian
@@ -204,7 +202,7 @@ void IntegrationRuleFracture::scale_data_(FEPointData & data) const
   for (size_t pv = 0; pv < _npcv; ++pv)
   {
     data.values[pv] /= data.weight;
-    data.grads[pv] /= data.weight;
+    data.grads[pv]  /= data.weight;
   }
 }
 

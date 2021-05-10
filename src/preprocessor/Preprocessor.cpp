@@ -347,7 +347,6 @@ void Preprocessor::build_geomechanics_discretization_()
   using namespace discretization;
   std::unique_ptr<DiscretizationFEMBase> p_discr;
   // WARNING: this part of code can reorder grid vertices
-  auto const start_time = std::chrono::high_resolution_clock::now();
   if (config.fem.method == FEMMethod::strong_discontinuity)
     p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, config.fem,
                                                           dfm_markers,
@@ -365,7 +364,13 @@ void Preprocessor::build_geomechanics_discretization_()
   }
   else throw std::invalid_argument("mechanics discretization is unknown");
 
+  using namespace std::chrono;
+  auto const start_time = high_resolution_clock::now();
   p_discr->build();
+  auto const end_time = high_resolution_clock::now();
+  logging::debug() << "Time to build geomech discretization: "
+                   << (duration_cast<milliseconds>(end_time - start_time)).count()
+                   << " [ms]" << std::endl;
 
   // split geomechanics DFM faces
   // This part must go after building discretization since
@@ -375,12 +380,6 @@ void Preprocessor::build_geomechanics_discretization_()
     logging::log() << "Splitting faces of DFM fractures" << std::endl;
     p_frac_mgr->split_faces(data.geomechanics_grid);
   }
-
-  using namespace std::chrono;
-  auto const end_time = high_resolution_clock::now();
-  logging::debug() << "Time to build geomech discretization: "
-                   << (duration_cast<milliseconds>(end_time - start_time)).count()
-                   << " [ms]" << std::endl;
 
   data.fe_cell_data = p_discr->get_cell_data();
   data.fe_face_data = p_discr->get_face_data();
