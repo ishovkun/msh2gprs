@@ -22,8 +22,7 @@ void DiscretizationFEMBase::build()
 {
   std::unique_ptr<logging::ProgressBar> progress = nullptr;
   if (gprs_data::GlobalOpts::ref().print_progressbar)
-    progress = std::make_unique<logging::ProgressBar>("Build Finite Elements",
-                                                      _grid.n_active_cells());
+    progress = std::make_unique<logging::ProgressBar>("Build Finite Elements", _grid.n_active_cells());
 
   for (auto [cell, counter] = std::tuple( _grid.begin_active_cells(), 0 ); cell != _grid.end_active_cells(); ++cell, ++counter)
   {
