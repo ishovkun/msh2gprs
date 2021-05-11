@@ -18,7 +18,9 @@ DiscretizationPolyhedralFEMOptimized(mesh::Mesh & grid,
     : DiscretizationPolyhedralFEM::DiscretizationPolyhedralFEM(grid, config, fracture_face_markers,
                                                                neumann_face_indices)
 
-{}
+{
+
+}
 
 void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
 {
@@ -28,26 +30,8 @@ void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
   if ( auto master = known_element_(cell, order) ) {
     // logging::debug() << "found similar element " <<  cell.index() << std::endl;
 
-    // if ( cell.index() == 7843 )
-    // {
-    //   mesh::IO::VTKWriter::write_geometry(_grid, cell, "output/dst_before-" + std::to_string(cell.index()) + ".vtk");
-    //   std::cout << "order: ";
-    //   for (auto o : order) std::cout << o << " ";
-    //   std::cout << std::endl;
-    // }
-
     auto & verts = cell.vertices();
     angem::reorder_to(verts, order);
-
-    // if ( cell.index() == 7843 )
-    // {
-    //   mesh::IO::VTKWriter::write_geometry(_grid, cell, "output/dst_after-" + std::to_string(cell.index()) + ".vtk");
-    //   std::cout << "after reorder: ";
-    //   for (auto o : order) std::cout << o << " ";
-    //   std::cout << std::endl;
-    //   exit(0);
-    // }
-
 
     reorder_faces_(cell, master->host_cell());
     _element = std::make_shared<PolyhedralElementScaled>( cell, _grid, *master, _config );
