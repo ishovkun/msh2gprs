@@ -3,6 +3,8 @@
 #include "Isomorphism.hpp"         // provides isomorphism
 #include "mesh/io/VTKWriter.hpp"  // debug
 #include "logger/Logger.hpp"
+#include "logger/ProgressBar.hpp"  // provides ProgressBar
+#include "GlobalOpts.hpp"
 #include <unordered_map>
 #include <limits>
 
@@ -26,13 +28,20 @@ DiscretizationPolyhedralFEMOptimized(mesh::Mesh & grid,
 
 void DiscretizationPolyhedralFEMOptimized::enumerate_elements_()
 {
-  logging::log() << "Enumerating cell types...";
+  std::unique_ptr<logging::ProgressBar> progress = nullptr;
+  if (gprs_data::GlobalOpts::ref().print_progressbar)
+    progress = std::make_unique<logging::ProgressBar>("Enumerating cell types", _grid.n_active_cells());
+  else logging::log() << "Enumerating cell types...";
+
   _element_types.assign( _grid.n_cells_total(), UNASSIGNED );
 
   std::vector<size_t> order;  // vertex ordering in case we need to reorder
-  for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell) {
+  for (auto [cell, counter] = std::tuple( _grid.begin_active_cells(), 0 ); cell != _grid.end_active_cells(); ++cell, ++counter) {
+    if (progress) progress->set_progress(counter);
+
     auto poly = cell->polyhedron();
     size_t const type = known_element_(*poly, order);
+
     if ( type < _shapes.size() ) {
       // reorder cell vertices in order of master's vertices
       angem::reorder_to(cell->vertices(), order);
@@ -47,7 +56,9 @@ void DiscretizationPolyhedralFEMOptimized::enumerate_elements_()
     }
     _element_types[cell->index()] = type;
   }
-  logging::log() << "OK" << "   Various cell types = " << _element_types.size() << std::endl;
+
+  if (progress) progress->finalize();
+  else logging::log() << "OK" << "   Various cell types = " << _shapes.size() << std::endl;
 }
 
 void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
