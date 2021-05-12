@@ -384,6 +384,7 @@ void Preprocessor::build_geomechanics_discretization_()
   data.fe_cell_data = p_discr->get_cell_data();
   data.fe_face_data = p_discr->get_face_data();
   data.fe_frac_data = p_discr->get_fracture_data();
+  data.fe_cell_type = p_discr->get_cell_types();
 }
 
 

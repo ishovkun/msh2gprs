@@ -77,7 +77,7 @@ void VTKWriter::add_data(const std::vector<T> &     property,
   out << "SCALARS\t" << keyword << "\t";
   out << "float" << std::endl;
   out << "LOOKUP_TABLE HSV" << std::endl;
-  for (const double item : property)
+  for (T const & item : property)
     out << static_cast<double>(item)<< std::endl;
   out << std::endl;
 }

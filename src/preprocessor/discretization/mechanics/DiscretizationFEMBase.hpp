@@ -26,6 +26,8 @@ class DiscretizationFEMBase {
   const std::vector<FiniteElementData> & get_face_data() const { return _face_data; }
   // get vector fe-fracture data (vector[face][cell])
   const std::vector<std::vector<FiniteElementData>> & get_fracture_data() const { return _frac_data; }
+  // get vector of fem types for each cell
+  std::vector<int> const & get_cell_types() const {return _cell_types;}
   // destructor
   virtual ~DiscretizationFEMBase() = default;
 
@@ -36,8 +38,7 @@ class DiscretizationFEMBase {
   virtual void build_(mesh::Cell & cell) = 0;
   virtual void build_cell_data_(mesh::Cell const & cell);
   void build_face_data_(mesh::Cell const & cell);
-  const angem::Basis<3, double>& get_basis_(const mesh::Face & face,
-                                            FaceOrientation &orientation) noexcept;
+  const angem::Basis<3, double>& get_basis_(const mesh::Face & face, FaceOrientation &orientation) noexcept;
 
  protected:
   mesh::Mesh & _grid;  // non-constant since there could be local vertex reordering
@@ -48,6 +49,7 @@ class DiscretizationFEMBase {
   std::vector<std::vector<FiniteElementData>> _frac_data;
   angem::Basis<3, double> _face_basis;
   std::shared_ptr<FiniteElementBase> _element;
+  std::vector<int> _cell_types;
 };
 
 }  // end namespace discretization

@@ -38,7 +38,6 @@ class DiscretizationPolyhedralFEMOptimized : public DiscretizationPolyhedralFEM 
   // std::unordered_map<size_t, std::vector<std::shared_ptr<PolyhedralElementBase>>> _masters;
   std::unordered_map<size_t, std::vector<size_t>> _vertex_to_cell_types;
   std::vector<std::shared_ptr<angem::Polyhedron<double>>> _shapes;
-  std::vector<size_t> _element_types;
   std::vector<std::shared_ptr<PolyhedralElementBase>> _master_elements;
 };
 

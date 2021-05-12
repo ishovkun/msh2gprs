@@ -63,7 +63,6 @@ struct SimData
   // std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   std::map<size_t,DiscreteFractureFace> dfm_faces;
   // grid comprised of dfm faces
-  // mesh::SurfaceMesh<double> dfm_flow_grid, dfm_mech_grid;
   mesh::SurfaceMesh<double> fracture_grid;
   std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> flow dof
   std::vector<angem::Point<3,double>> grid_vertices_after_face_split;
@@ -89,6 +88,7 @@ struct SimData
   std::shared_ptr<discretization::DoFNumbering> mech_numbering;  // mech cell and face numbering
   std::shared_ptr<discretization::DoFNumbering> flow_numbering;  // flow dof numbering
   std::vector<bool> coupling;                                    // if grid cells are coupled
+  std::vector<int> fe_cell_type;                              // cell types for geomech discretization
   // ----------------------- FEM data  ---------------------- //
   using FEMData = discretization::FiniteElementData;
   std::vector<FEMData> fe_cell_data;  // fe values and gradients for grid cells

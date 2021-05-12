@@ -100,9 +100,14 @@ void OutputDataVTK::save_reservoir_flow_data_(const std::string & fname) const
 void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) const
 {
   logging::log() << "writing " << fname << std::endl;
+
   std::ofstream out;
   out.open(fname.c_str());
-  // IO::VTKWriter::write_geometry(m_mech_grid, out);
+
+  // NOTE: I have to replace library output since
+  // split vertices are stored speparately (not in m_mech_grid)
+  // mesh::IO::VTKWriter::write_geometry(m_mech_grid, out);
+
   out << "# vtk DataFile Version 2.0 \n";
   out << "3D Grid\n";
   out << "ASCII \n \n";
@@ -184,6 +189,17 @@ void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) co
   out << "CELL_TYPES" << "\t" << grid.n_active_cells() << "\n";
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     out << cell->vtk_id() << "\n";
+
+  mesh::IO::VTKWriter::enter_section_cell_data(m_flow_grid.n_active_cells(), out);
+
+  if ( !_data.fe_cell_type.empty() ) {
+    out << "SCALARS\t" << "fe_type" << "\t";
+    out << "int" << std::endl;
+    out << "LOOKUP_TABLE HSV" << std::endl;
+    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+      out << _data.fe_cell_type[cell->index()] << "\n";
+    out << std::endl;
+  }
 
   // save keywords
   // for (std::size_t ivar=0; ivar<_data.rockPropNames.size(); ++ivar)
