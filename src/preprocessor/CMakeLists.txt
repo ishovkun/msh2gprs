@@ -26,6 +26,7 @@ ADD_LIBRARY(preprocessor
   OutputDataGPRS.cpp
   OutputDataVTK.cpp
   OutputDataPostprocessor.cpp
+  multiscale/Idea.cpp
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
   GridEntityNumberingManager.cpp

@@ -459,7 +459,6 @@ void PolyhedralElementDirect::save_face_domains_(std::string fname)
         output[v] = face->marker();
     }
   mesh::IO::VTKWriter::add_data(output, "marker", out);
-
 }
 
 

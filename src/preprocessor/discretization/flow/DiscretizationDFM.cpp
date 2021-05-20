@@ -104,7 +104,7 @@ void DiscretizationDFM::build_matrix_fracture(ConnectionData & con,
 {
   assert(cv_frac.type == ControlVolumeType::face);
   assert(cv_cell.type == ControlVolumeType::cell);
-  assert(con.type == ConnectionType::matrix_fracture);
+  assert(con.type     == ConnectionType::matrix_fracture);
 
   // project cell permeability
   const auto f = cv_cell.center - con.center;

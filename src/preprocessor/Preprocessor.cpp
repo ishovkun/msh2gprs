@@ -15,6 +15,7 @@
 #include "discretization/flow/DiscretizationPEDFM.hpp"
 #include "GridEntityNumberingManager.hpp"
 #include "MultiScaleDataMech.hpp"
+#include "multiscale/Idea.hpp"
 #include "DoFManager.hpp"
 #include "WellManager.hpp"
 #include "OutputDataVTK.hpp"
@@ -287,6 +288,13 @@ void Preprocessor::build_flow_discretization_()
     logging::log() << "setup wells" << std::endl;
     WellManager well_mgr(config.wells, data, *data.flow_numbering, config.edfm_settings.method);
     well_mgr.setup();
+  }
+
+  // multiscale idea
+  if ( GlobalOpts::ref().enable_experimental )
+  {
+    multiscale::Idea idea(data.grid, data);
+    exit(0);
   }
 
   // used for coupling later on
