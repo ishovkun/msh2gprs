@@ -1,53 +1,118 @@
 #include "Idea.hpp"
 #include "mesh/io/VTKWriter.hpp"    // debugging, provides io::VTKWriter
-#include <Eigen/SparseLU>
+#include "ShapeFunctionSolver.hpp"
 #include <string>
 #include <fstream>
 #include <algorithm>  // std::swap
 
 namespace multiscale {
 
-using discretization::ConnectionData;
-using discretization::ControlVolumeData;
 
 Idea::Idea(mesh::Mesh const & grid, gprs_data::SimData & data)
-    : _grid(grid), _data(data),
-      _source(find_center_cell_()),
-      _boundary_cells(find_boundary_cells_())
+    : _grid(grid), _data(data)
 {
-  auto [A, rhs] = build_system_();
-  A.makeCompressed();
-  Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(A);
-  solver.analyzePattern(A);
-  solver.factorize(A);
+  // // size_t source = find_center_cell_();
+  // size_t source = 20;
+  // // auto bnd = find_boundary_cells_();
+  // auto bnd = find_boundary_cells_({ 2, 3 });
+  // std::cout << "bnd: ";
+  // for (auto c : bnd)
+  //   std::cout << c << " ";
+  // std::cout << std::endl;
+  // ShapeFunctionSolver solver(source, bnd, _grid, _data);
+  // auto solution = solver.solution();
+  // debug_save_solution_("solution.vtk", solution);
 
-  // if (_grid.n_active_cells() < 100)
-  // {
-  //   std::cout << "matrix: " << std::endl;
-  //   std::cout << A << std::endl;
-  // }
-
-  if (solver.info() ==  Eigen::ComputationInfo::Success)
-  {
-    auto sol = solver.solve(rhs);
-    size_t n = sol.size();
-    std::vector<double> soln(n);
-    for (size_t i = 0; i < n; ++i)
-      soln[i] = sol[i];
-
-    std::string fname = "output/sf.vtk";
-    std::cout << "saving " << fname << std::endl;
-    std::ofstream out;
-    out.open(fname.c_str());
-    mesh::IO::VTKWriter::write_geometry(_grid, out);
-    mesh::IO::VTKWriter::enter_section_cell_data(_grid.n_active_cells(), out);
-    mesh::IO::VTKWriter::add_data(soln, "solution", out);
-    out.close();
-  } else {
-    std::cout << "matrix: " << std::endl;
-    std::cout << A << std::endl;
-    throw std::runtime_error("Could not invert your fucking matrix");
+  std::vector<double> sol1, sol2, sol3, sol4;
+  {  // top left corner source
+    std::cout << "building 1" << std::endl;
+    size_t source = 2550;
+    auto bnd = find_boundary_cells_({3, 2});
+    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    sol1 = solver.solution();
+    // debug_save_solution_("solution0.vtk", solver.solution());
   }
+
+  {  // top right corner source
+    std::cout << "building 2" << std::endl;
+    size_t source = 2600;
+    // size_t source = 24;
+    auto bnd = find_boundary_cells_({3, 1});
+    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    // debug_save_solution_("solution1.vtk", solver.solution());
+    sol2 = solver.solution();
+  }
+
+  {  // bottom left
+    std::cout << "building 3" << std::endl;
+    size_t source = 0;
+    auto bnd = find_boundary_cells_({4, 2});
+    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    // debug_save_solution_("solution2.vtk", solver.solution());
+    sol3 = solver.solution();
+  }
+
+  {  // bottom left
+    std::cout << "building 4" << std::endl;
+    size_t source = 50;
+    // size_t source = 4;
+    auto bnd = find_boundary_cells_({4, 1});
+    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    // debug_save_solution_("solution3.vtk", solver.solution());
+    sol4 = solver.solution();
+  }
+  std::string fname = "solution.vtk";
+  std::cout << "saving " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+  mesh::IO::VTKWriter::write_geometry(_grid, out);
+  mesh::IO::VTKWriter::enter_section_cell_data(_grid.n_active_cells(), out);
+  mesh::IO::VTKWriter::add_data(sol1, "solution1", out);
+  mesh::IO::VTKWriter::add_data(sol2, "solution2", out);
+  mesh::IO::VTKWriter::add_data(sol3, "solution3", out);
+  mesh::IO::VTKWriter::add_data(sol4, "solution4", out);
+  std::vector<double> sum(sol1.size(), 0);
+  for (size_t i = 0; i < sol1.size(); ++i)
+    sum[i] = sol1[i] + sol2[i] + sol3[i] + sol4[i];
+  mesh::IO::VTKWriter::add_data(sum, "sum", out);
+
+  std::vector<double> sol1n(sol1.size(), 0);
+  std::vector<double> sol2n(sol1.size(), 0);
+  std::vector<double> sol3n(sol1.size(), 0);
+  std::vector<double> sol4n(sol1.size(), 0);
+  for (size_t i = 0; i < sol1.size(); ++i)
+  {
+    sol1n[i] = sol1[i] / sum[i];
+    sol2n[i] = sol2[i] / sum[i];
+    sol3n[i] = sol3[i] / sum[i];
+    sol4n[i] = sol4[i] / sum[i];
+  }
+  mesh::IO::VTKWriter::add_data(sol1n, "solution1n", out);
+  mesh::IO::VTKWriter::add_data(sol2n, "solution2n", out);
+  mesh::IO::VTKWriter::add_data(sol3n, "solution3n", out);
+  mesh::IO::VTKWriter::add_data(sol4n, "solution4n", out);
+  out.close();
+
+}
+
+std::vector<size_t> Idea::find_boundary_cells_(std::vector<int> const & markers )
+{
+  std::unordered_set<size_t> bnd;
+  for (auto face = _grid.begin_active_faces(); face != _grid.end_active_faces(); ++face)
+    if ( std::find(markers.begin(), markers.end(), face->marker()) != markers.end() )
+      bnd.insert(face->neighbors()[0]->index());
+  return std::vector<size_t>(bnd.begin(), bnd.end());
+}
+
+void Idea::debug_save_solution_(std::string const & fname, std::vector<double> const& vec) const
+{
+  std::cout << "saving " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
+  mesh::IO::VTKWriter::write_geometry(_grid, out);
+  mesh::IO::VTKWriter::enter_section_cell_data(_grid.n_active_cells(), out);
+  mesh::IO::VTKWriter::add_data(vec, "solution", out);
+  out.close();
 }
 
 size_t Idea::find_center_cell_() const
@@ -80,98 +145,6 @@ std::vector<size_t> Idea::find_boundary_cells_() const
       ans.push_back(cell->index());
   }
   return ans;
-}
-
-
-std::tuple<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::VectorXd> Idea::build_system_() const
-{
-  size_t n = _grid.n_active_cells();
-    auto A = Eigen::SparseMatrix<double,Eigen::RowMajor>(n, n);
-  Eigen::VectorXd R = Eigen::VectorXd::Zero(n);
-
-  build_laplace_terms_(A, R);
-  build_special_terms_(A, R);
-  impose_bc_(A, R);
-
-  return std::tie(A, R);
-}
-
-void Idea::build_laplace_terms_(Eigen::SparseMatrix<double,Eigen::RowMajor>& A, Eigen::VectorXd & res) const
-{
-  auto const & cons =  _data.flow_connection_data;
-
-  for (auto const & con : cons)
-  {
-    size_t const i = con.elements[0];
-    size_t const j = con.elements[1];
-    A.coeffRef(i, i) += con.coefficients[0];
-    A.coeffRef(i, j) -= con.coefficients[0];
-    A.coeffRef(j, i) += con.coefficients[1];
-    A.coeffRef(j, j) -= con.coefficients[1];
-  }
-}
-
-double compute(ConnectionData const & con, std::vector<ControlVolumeData> const & cv, angem::Point<3,double> const &c,
-               size_t i)
-{
-  size_t const dofi = con.elements[i];
-
-  // spherical coordinates radius variable
-  auto r = cv[dofi].center - c;
-  double const r_value = r.norm();
-  if (!std::isnormal(r_value)) return 0.f;
-  r /= r_value;
-
-  // compute coefficient
-  auto const d = con.center - cv[dofi].center;
-  // return -2.f / r_value * std::fabs(con.coefficients[i]) * d.dot(r);
-  double ans = +2.f / r_value * std::fabs(con.coefficients[i]) * d.dot(r);
-
-    // if (std::fabs(entry1) < 1e-5)
-  // std::cout << std::endl;
-  // std::cout << "entry1 = " << ans << " (" << con.elements[0] << ")" << std::endl;
-  // std::cout << "d*r = " << d.dot(r) << std::endl;
-  // std::cout << "d = " << d << std::endl;
-  // std::cout << "r = " << r << std::endl;
-  return ans;
-}
-
-void Idea::build_special_terms_(Eigen::SparseMatrix<double,Eigen::RowMajor>& A, Eigen::VectorXd & res) const
-{
-  auto const & cons =  _data.flow_connection_data;
-  auto const & cv = _data.cv_data;
-  auto const c = _grid.cell(_source).center();
-
-  for (auto const & con : cons)
-  {
-    double entry1 = compute(con, _data.cv_data, c, 0);
-    // if (std::fabs(entry1) < 1e-5)
-    //   std::cout << "entry1 " << entry1 << " (" << con.elements[0] << ")" << std::endl;
-    A.coeffRef(con.elements[0], con.elements[0]) += entry1;
-    A.coeffRef(con.elements[0], con.elements[1]) -= entry1;
-
-    double entry2 = compute(con, _data.cv_data, c, 1);
-    A.coeffRef(con.elements[1], con.elements[1]) += entry2;
-    A.coeffRef(con.elements[1], con.elements[0]) -= entry2;
-  }
-
-}
-
-void Idea::impose_bc_(Eigen::SparseMatrix<double,Eigen::RowMajor>& mat, Eigen::VectorXd & rhs) const
-{
-  // boundary
-  for (auto c : _boundary_cells)
-  {
-    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, c); it; ++it)
-      it.valueRef() = (it.row() == it.col()) ? 1.f : 0.f;
-
-    rhs[c] = 0;
-  }
-
-  // source
-  for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, _source); it; ++it)
-    it.valueRef() = (it.row() == it.col()) ? 1.0 : 0.0;
-  rhs[_source] = 1;
 }
 
 }  // end namespace multiscale

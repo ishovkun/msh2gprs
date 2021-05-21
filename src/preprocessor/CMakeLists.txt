@@ -27,6 +27,13 @@ ADD_LIBRARY(preprocessor
   OutputDataVTK.cpp
   OutputDataPostprocessor.cpp
   multiscale/Idea.cpp
+  multiscale/ShapeFunctionSolver.cpp
+  multiscale/MSFlow.cpp
+  multiscale/IndexMinPQ.cpp
+  # multiscale/DijkstraSP.cpp
+  multiscale/EdgeWeightedGraph.cpp
+  # multiscale/EdgeWeightedDigraph.cpp
+  multiscale/SupportRegionsFVMGraph.cpp
   MultiScaleDataMSRSB.cpp
   MultiScaleDataMech.cpp
   GridEntityNumberingManager.cpp

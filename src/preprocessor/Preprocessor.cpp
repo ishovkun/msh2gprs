@@ -14,6 +14,7 @@
 #include "discretization/flow/DiscretizationEDFM.hpp"
 #include "discretization/flow/DiscretizationPEDFM.hpp"
 #include "GridEntityNumberingManager.hpp"
+#include "multiscale/MSFlow.hpp"
 #include "MultiScaleDataMech.hpp"
 #include "multiscale/Idea.hpp"
 #include "DoFManager.hpp"
@@ -293,7 +294,8 @@ void Preprocessor::build_flow_discretization_()
   // multiscale idea
   if ( GlobalOpts::ref().enable_experimental )
   {
-    multiscale::Idea idea(data.grid, data);
+    // multiscale::Idea idea(data.grid, data);
+    multiscale::MSFlow(data.grid, data);
     exit(0);
   }
 

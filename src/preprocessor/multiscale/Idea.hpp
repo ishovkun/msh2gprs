@@ -15,15 +15,11 @@ class Idea {
  protected:
   size_t find_center_cell_() const;
   std::vector<size_t> find_boundary_cells_() const;
-  std::tuple<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::VectorXd> build_system_() const;
-  void build_laplace_terms_(Eigen::SparseMatrix<double,Eigen::RowMajor>& mat, Eigen::VectorXd & rhs) const;
-  void build_special_terms_(Eigen::SparseMatrix<double,Eigen::RowMajor>& mat, Eigen::VectorXd & rhs) const;
-  void impose_bc_(Eigen::SparseMatrix<double,Eigen::RowMajor>& mat, Eigen::VectorXd & rhs) const;
+  std::vector<size_t> find_boundary_cells_(std::vector<int> const & bnd_markers );
+  void debug_save_solution_(std::string const & fname, std::vector<double>const&) const;
 
   mesh::Mesh const & _grid;
   gprs_data::SimData & _data;
-  size_t _source;
-  std::vector<size_t> _boundary_cells;
 };
 
 }  // end namespace multiscale
