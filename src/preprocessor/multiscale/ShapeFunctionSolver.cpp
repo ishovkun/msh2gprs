@@ -13,11 +13,11 @@ ShapeFunctionSolver::ShapeFunctionSolver(size_t source, std::vector<size_t> cons
 {
   auto [A, rhs] = build_system_();
   A.makeCompressed();
-  // Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(A);
+  Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(A);
 
-  Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Lower|Eigen::Upper> solver;
-  solver.setMaxIterations(200);
-  solver.setTolerance(1e-10);
+  // Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Lower|Eigen::Upper> solver;
+  // solver.setMaxIterations(200);
+  // solver.setTolerance(1e-10);
 
   solver.analyzePattern(A);
   solver.factorize(A);

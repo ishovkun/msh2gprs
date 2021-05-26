@@ -1,24 +1,35 @@
 #include "SupportRegionsFVMGraph.hpp"
-#include "EdgeWeightedDigraph.hpp"
-#include "DijkstraSP.hpp"
+#include "algorithms/EdgeWeightedGraph.hpp"
+#include "algorithms/DijkstraSP.hpp"
+#include "MetisInterface.hpp"
+#include <numeric>  // accumulate
 
 namespace multiscale {
 
 using discretization::ConnectionData;
-using hash_algorithms::ConnectionMap;
 using namespace algorithms;
 
 SupportRegionsFVMGraph::SupportRegionsFVMGraph(std::vector<size_t> const &partition,
                                                algorithms::EdgeWeightedGraph &&connections)
-    : _partition(partition), _cons(connections), SupportRegionsBase(),
-      _blocks(find_cells_in_blocks_())
-    // , _block_connections(build_block_connections_())
+    : _partition(partition)
+    , _cons(connections)
+    , SupportRegionsBase()
+    , _blocks(find_cells_in_blocks_())
 {
+  // find coarse centers
   auto block_bnd = find_block_boundaries_();
   for (size_t coarse = 0; coarse < _blocks.size(); ++coarse) {
     size_t const center = find_center_(_blocks[coarse], block_bnd[coarse]);
-    std::cout << "center = " << center << std::endl;
     _centers.push_back(center);
+  }
+
+  // find support regions
+  _support.resize(_blocks.size());
+  for (size_t coarse = 0; coarse < _blocks.size(); ++coarse) {
+    std::vector<size_t> neighbors = neighbor_blocks_(block_bnd[coarse]);
+    std::cout << "building support region for block " << coarse << std::endl;
+    auto g = build_support_region_graph_(neighbors);
+    _support[coarse] = g;
   }
 }
 
@@ -55,7 +66,6 @@ size_t SupportRegionsFVMGraph::find_center_(std::vector<size_t> const  & region,
   std::random_shuffle( selected.begin(), selected.end() );
   for (size_t i = 0; i < bnd.size(); ++i)
     if ( selected[i] ) {
-      std::cout << "searching from " << bnd[i] << std::endl;
       DijkstraSP path(g, mapping[bnd[i]]);
       for (size_t j = 0; j < n; ++j)
         paths[j] = std::min(path.distanceTo(j), paths[j]);
@@ -93,24 +103,120 @@ std::vector<std::vector<size_t>> SupportRegionsFVMGraph::find_block_boundaries_(
   return block_bds;
 }
 
-ConnectionMap<std::vector<std::array<size_t,2>>> SupportRegionsFVMGraph::build_block_connections_() const
+std::vector<size_t> SupportRegionsFVMGraph::neighbor_blocks_(std::vector<size_t> const & bnd) const
 {
-  ConnectionMap<std::vector<std::array<size_t,2>>> block_connection;
-  for (auto const & edge: _cons.edges())
-  {
-    size_t const v = edge.either();
-    size_t const w = edge.other(v);
-    size_t const c1 = _partition[v];
-    size_t const c2 = _partition[w];
-
-    if (c1 != c2)
-    {
-      if ( !block_connection.contains(c1, c2) )
-        block_connection.insert(c1, c2);
-      block_connection.get_data(c1, c2).push_back({v, w});
+  // TODO: 1- or 2-level bfs to include edge neighbors
+  // std::vector<size_t> ans;
+  std::unordered_set<size_t> ans;
+  for (size_t const v : bnd) {
+    for (auto * e : _cons.adj(v)) {
+      size_t const w = e->other(v);
+      if ( _partition[v] != _partition[w] ) ans.insert(_partition[w]);
     }
   }
-  return block_connection;
+  return std::vector(ans.begin(), ans.end());
 }
+
+// algorithms::EdgeWeightedGraph SupportRegionsFVMGraph::build_support_region_graph_(std::vector<size_t> const & blocks) const
+std::vector<int> SupportRegionsFVMGraph::build_support_region_graph_(std::vector<size_t> const & blocks) const
+{
+  size_t source = 0;
+  // size_t sink = 1;
+  // size_t const offset = 2;  // 2 = source + sink
+  size_t const offset = 1;
+  size_t nv = std::accumulate(blocks.begin(), blocks.end(), offset,
+                              [this](size_t cur, size_t block) {
+                                return _blocks[block].size() + cur;});
+
+  // build mapping
+  std::cout << "build maping (blocks ";
+  for (auto block : blocks)
+    std::cout << block << " ";
+  std::cout << ")" << std::endl;
+
+  std::vector<size_t> mapping(nv);
+  std::unordered_map<size_t, size_t> mapping_inv;
+  mapping[source] = source;
+  // mapping[sink] = sink;
+  size_t cnt = 1;
+  for (size_t const block : blocks) {
+    for (size_t cell : _blocks[block]) {
+      mapping[cnt] = cell;
+      mapping_inv[cell] = cnt;
+      cnt++;
+    }
+  }
+  assert( cnt == nv );
+
+  double sum_weights = std::accumulate( _cons.edges().begin(), _cons.edges().end(),
+                                        0.f, [](double cur , auto const & edge) {
+                                          return cur + edge.weight();
+                                        });
+  double const large_weight = 1e6 * sum_weights;
+  double const tiny_weight = 0.f;
+
+  // build graph
+  std::cout << "build local graph from full graph" << std::endl;
+  algorithms::EdgeWeightedGraph g(nv);
+  for (size_t const block : blocks) {
+    for (size_t cell : _blocks[block]) {
+      for (auto const * e : _cons.adj(cell)) {
+        size_t const v = e->either();
+        size_t const w = e->other(v);
+        if ( mapping_inv.count(v) && mapping_inv.count(w) )
+        {
+          double weight = e->weight();
+          if (_partition[mapping_inv[v]] != _partition[mapping_inv[w]])
+            weight = large_weight;
+          g.add(UndirectedEdge(mapping_inv[v], mapping_inv[w], weight));
+        }
+
+      }
+    }
+  }
+
+
+  std::cout << "modify local graph" << std::endl;
+  // add additional graph edges for the proper partitioning
+  // for (size_t coarse : blocks) {
+  for (size_t c1 = 0; c1 < blocks.size(); ++c1) {
+    size_t const coarse = blocks[c1];
+    size_t const v = _centers[coarse];
+    size_t const v_mapped = mapping_inv[v];
+    g.add(UndirectedEdge(source, v_mapped, large_weight));
+    // for (size_t c2 = c1+1; c2 < blocks.size(); ++c2) {
+    //   size_t coarse2 = blocks[c2];
+    //   size_t const w = _centers[coarse];
+    //   size_t const w_mapped = mapping_inv[w];
+    //   g.add(UndirectedEdge(v_mapped, w_mapped, large_weight));
+    // }
+
+
+    // auto cutting_edge = g.adj( v_mapped ).front();
+    // cutting_edge->set_weight(large_weight);
+
+    // size_t const w = cutting_edge->other(v_mapped);
+    // g.add(UndirectedEdge(w, sink, tiny_weight));
+  }
+
+  std::cout << "invoke metis" << std::endl;
+  // partition into 2 regions: support and no-support
+  auto part = multiscale::MetisInterface::partition(g, 2);
+  std::vector<int> values(_partition.size(), 0);
+  std::cout << "partition: ";
+  for (size_t i = offset; i < part.size(); ++i)
+  {
+    values[mapping[i]] = part[i] + 1;
+    // std::cout << mapping[i] << " " << part[i] + 1 << "\n";
+  }
+  std::cout << std::endl;
+
+  std::cout << "done" << std::endl;
+  // exit(0);
+
+  return values;
+  // return g;
+}
+
 
 }  // end namespace multiscale

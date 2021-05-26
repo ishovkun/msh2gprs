@@ -33,6 +33,8 @@ public:
   inline bool operator>(const UndirectedEdge & other) const noexcept {return weight() >  other.weight(); }
   // get the weight
   double weight() const {return _weight;}
+  // set a new weight value
+  void set_weight(double new_weight) noexcept { _weight = new_weight; }
   // destructor
   ~UndirectedEdge() = default;
  private:

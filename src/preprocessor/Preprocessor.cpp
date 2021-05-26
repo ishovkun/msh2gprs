@@ -15,7 +15,7 @@
 #include "discretization/flow/DiscretizationPEDFM.hpp"
 #include "GridEntityNumberingManager.hpp"
 #include "multiscale/MSFlow.hpp"
-#include "MultiScaleDataMech.hpp"
+#include "multiscale/MultiScaleDataMech.hpp"
 #include "multiscale/Idea.hpp"
 #include "DoFManager.hpp"
 #include "WellManager.hpp"

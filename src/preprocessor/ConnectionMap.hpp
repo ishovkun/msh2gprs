@@ -4,6 +4,8 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm> // std::sort
+#include <stdexcept>
+#include <cassert>
 
 
 namespace hash_algorithms

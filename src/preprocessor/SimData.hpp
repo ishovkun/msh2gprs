@@ -7,7 +7,7 @@
 #include "intersections/GridIntersectionSearcher.hpp"     // provides GridIntersectionSearcher
 #include "mesh/Mesh.hpp"                                  // provides mesh::Mesh
 #include "Well.hpp"                                       // provides Well
-#include "MultiScaleOutputData.hpp"                       // provides multiscale::MultiScaleOutputData
+#include "multiscale/MultiScaleOutputData.hpp"            // provides multiscale::MultiScaleOutputData
 #include "angem/Tensor2.hpp"                              // provides angem::Tensor2
 #include <unordered_map>
 

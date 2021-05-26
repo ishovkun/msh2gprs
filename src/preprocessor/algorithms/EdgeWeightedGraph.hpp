@@ -14,7 +14,9 @@ class EdgeWeightedGraph
   // add weighted edge e to this graph
   void add(const UndirectedEdge & e);
   // edges incident to i
-  std::vector<UndirectedEdge const*> adj(const size_t i) const;
+  std::vector<UndirectedEdge const*> adj(size_t i) const;
+  // non-const edges incident to i
+  std::vector<UndirectedEdge*> adj(size_t i);
   // all edges in this graph
   const std::vector<UndirectedEdge> & edges() const {return _edges;}
   // number of vertices

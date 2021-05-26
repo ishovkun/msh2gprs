@@ -29,13 +29,12 @@ ADD_LIBRARY(preprocessor
   multiscale/Idea.cpp
   multiscale/ShapeFunctionSolver.cpp
   multiscale/MSFlow.cpp
-  multiscale/IndexMinPQ.cpp
-  # multiscale/DijkstraSP.cpp
-  multiscale/EdgeWeightedGraph.cpp
-  # multiscale/EdgeWeightedDigraph.cpp
   multiscale/SupportRegionsFVMGraph.cpp
-  MultiScaleDataMSRSB.cpp
-  MultiScaleDataMech.cpp
+  multiscale/MultiScaleDataMSRSB.cpp
+  multiscale/MultiScaleDataMech.cpp
+  multiscale/MetisInterface.cpp
+  algorithms/IndexMinPQ.cpp
+  algorithms/EdgeWeightedGraph.cpp
   GridEntityNumberingManager.cpp
   UnionFind.cpp
   intersections/GridIntersectionSearcher.cpp

@@ -32,7 +32,18 @@ std::vector<UndirectedEdge const *> EdgeWeightedGraph::adj(const size_t v) const
   std::vector<UndirectedEdge const*> result;
   for (const size_t ie : _adj[v])
   {
-    const UndirectedEdge & e = _edges[ie];
+    UndirectedEdge const & e = _edges[ie];
+    result.push_back(&e);
+  }
+  return result;
+}
+
+std::vector<UndirectedEdge*> EdgeWeightedGraph::adj(const size_t v)
+{
+  std::vector<UndirectedEdge*> result;
+  for (const size_t ie : _adj[v])
+  {
+    UndirectedEdge & e = _edges[ie];
     result.push_back(&e);
   }
   return result;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ConnectionMap.hpp"
+#include "algorithms/EdgeWeightedGraph.hpp"
 
 #ifdef WITH_METIS
 #include "metis.h"
@@ -21,7 +22,6 @@ using ConnectionMap = hash_algorithms::ConnectionMap<T>;
 
 
 /* Wrapper class for METIS library */
-template <typename ConnType>
 class MetisInterface
 {
  public:
@@ -29,6 +29,7 @@ class MetisInterface
    * n_blocks is how many partitions (coarse blocks) you wanna get
    * n_cells is how many unique untries are in the connection map;
    * if set to 0, then it's computed automatically */
+  template <typename ConnType>
   static vector<size_t> build_partitioning(const ConnectionMap<ConnType> & connections,
                                            const size_t n_blocks,
                                            size_t n_cells = 0)
@@ -102,10 +103,13 @@ class MetisInterface
 #endif // WITH_METIS
   }  // end interface
 
+  static std::vector<size_t> partition(algorithms::EdgeWeightedGraph const & g, size_t n_blocks);
+
  private:
-  MetisInterface();
+  MetisInterface() = delete;
 
   // computes number of unique elements in connection map
+  template <typename ConnType>
   static size_t count_elements(const ConnectionMap<ConnType> & connections)
   {
     std::unordered_set<size_t> uniques;

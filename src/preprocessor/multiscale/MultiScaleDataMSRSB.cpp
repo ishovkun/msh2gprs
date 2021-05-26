@@ -51,8 +51,8 @@ void MultiScaleDataMSRSB::build_partitioning()
         cell_connections.insert( neighbors[0]->index(), neighbors[1]->index() );
     }
 
-    layer.partitioning = multiscale::MetisInterface<hash_algorithms::empty>
-        ::build_partitioning(cell_connections, layer.n_blocks, layer.n_cells);
+    layer.partitioning = multiscale::MetisInterface
+        ::build_partitioning<hash_algorithms::empty>(cell_connections, layer.n_blocks, layer.n_cells);
 }
 
 
