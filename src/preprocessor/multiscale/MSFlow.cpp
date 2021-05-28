@@ -3,6 +3,8 @@
 #include "mesh/io/VTKWriter.hpp"    // debugging, provides io::VTKWriter
 #include "algorithms/EdgeWeightedGraph.hpp"
 #include "SupportRegionsFVMGraph.hpp"
+#include "SupportRegionsLaplaceMod.hpp"
+#include "ShapeFunctionSolver.hpp"
 
 namespace multiscale {
 
@@ -11,7 +13,6 @@ using namespace algorithms;
 MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data)
     : _grid(grid), _data(data)
 {
-  // size_t const n_coarse = 4;
   size_t const n_coarse = 16;
 
   EdgeWeightedGraph g(data.cv_data.size());
@@ -28,6 +29,7 @@ MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data)
   mesh::IO::VTKWriter::add_data(partition, "partition", out);
 
   SupportRegionsFVMGraph regions(partition, std::move(g));
+  // SupportRegionsLaplaceMod regions(partition, data);
   std::vector<int> centers(partition.size(), 0);
   for ( auto c : regions.centers() )
     centers[c] = 1;
@@ -35,6 +37,14 @@ MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data)
   mesh::IO::VTKWriter::add_data(centers, "centers", out);
   for (size_t coarse = 0; coarse < regions.size(); ++coarse)
     mesh::IO::VTKWriter::add_data(regions.get(coarse), "support-" + std::to_string(coarse), out);
+
+  // auto c = regions.centers();
+  // for (size_t coarse = 0; coarse < regions.size(); ++coarse) {
+  //   std::vector<size_t> bnd = c;
+  //   bnd.erase(bnd.begin() + coarse);
+  //   ShapeFunctionSolver solver(c[coarse], bnd, _data);
+  //   mesh::IO::VTKWriter::add_data(solver.solution(), "support-" + std::to_string(coarse), out);
+  // }
 
   out.close();
 }

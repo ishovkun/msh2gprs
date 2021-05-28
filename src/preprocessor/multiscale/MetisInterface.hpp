@@ -103,7 +103,19 @@ class MetisInterface
 #endif // WITH_METIS
   }  // end interface
 
-  static std::vector<size_t> partition(algorithms::EdgeWeightedGraph const & g, size_t n_blocks);
+  /*
+  ** Partition graph g into n_blocks partitions.
+  **
+  ** The parameter imbalancing specifies the maximum allowed load imbalance among the partitions.
+  ** A value of x indicates that the allowed load imbalance is (1 + x)/1000.
+  ** The load imbalance for the jth constraint is defined to be
+  ** maxi(w[j, i]) / t[j, i]), where w[j, i] is the fraction of the overall weight of the jth constraint that is as-
+  ** signed to the ith partition and t[j, i] is the desired target weight of the jth constraint for the ith partition
+  ** (i.e., that specified via -tpwgts)
+  ** The value < 0 uses the default METIS imbalancing x = 30
+   */
+  static std::vector<size_t> partition(algorithms::EdgeWeightedGraph const & g, size_t n_blocks,
+                                       double imbalancing = -1);
 
  private:
   MetisInterface() = delete;

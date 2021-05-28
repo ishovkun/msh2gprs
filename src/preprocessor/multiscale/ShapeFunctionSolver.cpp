@@ -5,36 +5,39 @@ namespace multiscale {
 using discretization::ConnectionData;
 using discretization::ControlVolumeData;
 
-ShapeFunctionSolver::ShapeFunctionSolver(size_t source, std::vector<size_t> const & bnd_cells,
-                                         mesh::Mesh const & grid, gprs_data::SimData & data)
-    :
-    _source(source), _boundary_cells(bnd_cells),
-    _grid(grid), _data(data)
+ShapeFunctionSolver::ShapeFunctionSolver(size_t source,
+                                         std::vector<size_t> const & sub_region,
+                                         std::vector<size_t> const & bnd,
+                                         std::vector<double> const & bnd_values,
+                                         gprs_data::SimData const & data)
+    : _source(source), _region(sub_region), _bnd(bnd), _bnd_values(bnd_values), _data(data),
+      _mapping(_data.cv_data.size(), _region.size())
 {
-  auto [A, rhs] = build_system_();
-  A.makeCompressed();
-  Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(A);
+  for (size_t i = 0; i < _region.size(); ++i)
+    _mapping[_region[i]] = i;
 
-  // Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Lower|Eigen::Upper> solver;
-  // solver.setMaxIterations(200);
-  // solver.setTolerance(1e-10);
+  solve_();
+}
 
-  solver.analyzePattern(A);
-  solver.factorize(A);
+ShapeFunctionSolver::ShapeFunctionSolver(size_t source, std::vector<size_t> const & bnd_cells,
+                                         gprs_data::SimData const & data)
+    : _source(source), _bnd(bnd_cells), _data(data), _region(_data.cv_data.size()),
+      _mapping(_data.cv_data.size(), _region.size())
+{
+  std::iota( _region.begin(), _region.end(), 0 );
+  std::iota( _mapping.begin(), _mapping.end(), 0 );
 
-  auto sol = solver.solve(rhs);
-  if (solver.info() ==  Eigen::ComputationInfo::Success)
-    _solution.resize(sol.size(), 0.f);
-  else throw std::runtime_error("Could not solve system");
+  _bnd_values.assign(_bnd.size(), 0.f);
+  _bnd.push_back(source);
+  _bnd_values.push_back(1.f);
 
-  for (size_t i = 0; i < sol.size(); ++i)
-    _solution[i] = sol[i];
+  solve_();
 }
 
 std::tuple<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::VectorXd> ShapeFunctionSolver::build_system_() const
 {
-  size_t n = _grid.n_active_cells();
-    auto A = Eigen::SparseMatrix<double,Eigen::RowMajor>(n, n);
+  size_t n = _region.size();
+  auto A = Eigen::SparseMatrix<double,Eigen::RowMajor>(n, n);
   Eigen::VectorXd R = Eigen::VectorXd::Zero(n);
 
   build_laplace_terms_(A, R);
@@ -49,9 +52,10 @@ void ShapeFunctionSolver::build_laplace_terms_(Eigen::SparseMatrix<double,Eigen:
   auto const & cons =  _data.flow_connection_data;
 
   for (auto const & con : cons)
+    if (_mapping[con.elements[0]] < _region.size() && _mapping[con.elements[1]] < _region.size())
   {
-    size_t const i = con.elements[0];
-    size_t const j = con.elements[1];
+    size_t const i = _mapping[ con.elements[0] ];
+    size_t const j = _mapping[ con.elements[1] ];
     A.coeffRef(i, i) += con.coefficients[0];
     A.coeffRef(i, j) -= con.coefficients[0];
     A.coeffRef(j, i) += con.coefficients[1];
@@ -80,17 +84,20 @@ void ShapeFunctionSolver::build_special_terms_(Eigen::SparseMatrix<double,Eigen:
 {
   auto const & cons =  _data.flow_connection_data;
   auto const & cv = _data.cv_data;
-  auto const c = _grid.cell(_source).center();
+  auto const c = cv[_source].center;
 
   for (auto const & con : cons)
+    if (_mapping[con.elements[0]] < _region.size() && _mapping[con.elements[1]] < _region.size())
   {
-    double entry1 = compute(con, _data.cv_data, c, 0);
-    A.coeffRef(con.elements[0], con.elements[0]) += entry1;
-    A.coeffRef(con.elements[0], con.elements[1]) -= entry1;
+    double const entry1 = compute(con, _data.cv_data, c, 0);
+    size_t const i = _mapping[con.elements[0]];
+    size_t const j = _mapping[con.elements[1]];
+    A.coeffRef(i, i) += entry1;
+    A.coeffRef(i, j) -= entry1;
 
-    double entry2 = compute(con, _data.cv_data, c, 1);
-    A.coeffRef(con.elements[1], con.elements[1]) += entry2;
-    A.coeffRef(con.elements[1], con.elements[0]) -= entry2;
+    double const entry2 = compute(con, _data.cv_data, c, 1);
+    A.coeffRef(j, j) += entry2;
+    A.coeffRef(j, i) -= entry2;
   }
 
 }
@@ -98,7 +105,6 @@ void ShapeFunctionSolver::build_special_terms_(Eigen::SparseMatrix<double,Eigen:
 void impose_bc(Eigen::SparseMatrix<double,Eigen::RowMajor>& mat, Eigen::VectorXd & rhs, size_t dof, double value)
 {
   for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(mat, dof); it; ++it) {
-    // it.valueRef() = (it.row() == it.col()) ? 1.f : 0.f;
 
       if (it.row() == it.col()) it.valueRef() = 1.f;
       else {
@@ -114,10 +120,30 @@ void impose_bc(Eigen::SparseMatrix<double,Eigen::RowMajor>& mat, Eigen::VectorXd
 
 void ShapeFunctionSolver::impose_bc_(Eigen::SparseMatrix<double,Eigen::RowMajor>& mat, Eigen::VectorXd & rhs) const
 {
-  for (auto c : _boundary_cells)
-    impose_bc(mat, rhs, c, 0.f);
+  for (size_t i = 0; i < _bnd.size(); ++i)
+    impose_bc(mat, rhs, _mapping[ _bnd[i] ], _bnd_values[i]);
+}
 
-  impose_bc(mat, rhs, _source, 1.f);
+void ShapeFunctionSolver::solve_()
+{
+  auto [A, rhs] = build_system_();
+  A.makeCompressed();
+  Eigen::SparseLU<Eigen::SparseMatrix<double>> solver(A);
+
+  // Eigen::ConjugateGradient<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::Lower|Eigen::Upper> solver;
+  // solver.setMaxIterations(200);
+  // solver.setTolerance(1e-10);
+
+  // solver.analyzePattern(A);
+  // solver.factorize(A);
+
+  auto sol = solver.solve(rhs);
+  if (solver.info() ==  Eigen::ComputationInfo::Success)
+    _solution.resize(sol.size(), 0.f);
+  else throw std::runtime_error("Could not solve system");
+
+  for (size_t i = 0; i < sol.size(); ++i)
+    _solution[i] = sol[i];
 }
 
 

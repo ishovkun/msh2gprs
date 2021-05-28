@@ -22,8 +22,8 @@ class DijkstraSP : public SingleSourceShortestPath {
     while (!_pq.empty())
     {
       const size_t v = _pq.dequeue();
-      for (const auto & edge : _gr.adj(v))
-        relax_(edge);
+      for (const auto * edge : _gr.adj(v))
+        relax_(*edge);
     }
   }
 
@@ -32,14 +32,15 @@ class DijkstraSP : public SingleSourceShortestPath {
  protected:
   virtual void relax_(const DirectedEdge & edge) override
   {
-    const double new_dist = _dist_to[edge.from()] + edge.weight();
-    if ( new_dist < _dist_to[edge.to()] )
+    size_t const u = edge.from(), v = edge.to();
+    const double new_dist = _dist_to[u] + edge.weight();
+    if ( new_dist < _dist_to[v] )
     {
-      _dist_to[edge.to()] = new_dist;
-      _edge_to[edge.to()] = edge;
-      // priority is gonna get higher since new_dist < _dist_to[edge.to()]
-      if (_pq.contains(edge.to())) _pq.setPriority(edge.to(), edge.weight());
-      else                         _pq.enqueue(edge.to(), edge.weight());
+      _dist_to[v] = new_dist;
+      _edge_to[v] = edge;
+      // priority increases since new distance is shorter
+      if (_pq.contains(edge.to())) _pq.setPriority(v, _dist_to[v]);
+      else                         _pq.enqueue(v, _dist_to[v]);
     }
   }
 

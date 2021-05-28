@@ -1,6 +1,8 @@
 #include "SupportRegionsFVMGraph.hpp"
 #include "algorithms/EdgeWeightedGraph.hpp"
 #include "algorithms/DijkstraSP.hpp"
+#include "algorithms/FlowNetwork.hpp"
+#include "algorithms/FordFulkerson.hpp"
 #include "MetisInterface.hpp"
 #include <numeric>  // accumulate
 
@@ -11,10 +13,8 @@ using namespace algorithms;
 
 SupportRegionsFVMGraph::SupportRegionsFVMGraph(std::vector<size_t> const &partition,
                                                algorithms::EdgeWeightedGraph &&connections)
-    : _partition(partition)
-    , _cons(connections)
-    , SupportRegionsBase()
-    , _blocks(find_cells_in_blocks_())
+    : _cons(connections)
+    , SupportRegionsBase(partition)
 {
   // find coarse centers
   auto block_bnd = find_block_boundaries_();
@@ -24,11 +24,14 @@ SupportRegionsFVMGraph::SupportRegionsFVMGraph(std::vector<size_t> const &partit
   }
 
   // find support regions
+  _block_bnd = block_bnd;
   _support.resize(_blocks.size());
   for (size_t coarse = 0; coarse < _blocks.size(); ++coarse) {
     std::vector<size_t> neighbors = neighbor_blocks_(block_bnd[coarse]);
     std::cout << "building support region for block " << coarse << std::endl;
-    auto g = build_support_region_graph_(neighbors);
+    // neighbors.push_back(coarse);
+    // auto g = build_support_region_graph_(neighbors, coarse);
+    auto g = build_support_region_graph2_(neighbors, coarse);
     _support[coarse] = g;
   }
 }
@@ -75,16 +78,6 @@ size_t SupportRegionsFVMGraph::find_center_(std::vector<size_t> const  & region,
   return region[center];
 }
 
-std::vector<std::vector<size_t>> SupportRegionsFVMGraph::find_cells_in_blocks_() const
-{
-  size_t const n_coarse = *std::max_element(_partition.begin(), _partition.end()) + 1;
-
-  std::vector<std::vector<std::size_t>> cells_in_block(n_coarse);
-  for (size_t i = 0; i < _partition.size(); ++i)
-    cells_in_block[_partition[i]].push_back(i);
-  return cells_in_block;
-}
-
 std::vector<std::vector<size_t>> SupportRegionsFVMGraph::find_block_boundaries_() const
 {
   std::vector<std::vector<size_t>> block_bds(_blocks.size());
@@ -117,106 +110,96 @@ std::vector<size_t> SupportRegionsFVMGraph::neighbor_blocks_(std::vector<size_t>
   return std::vector(ans.begin(), ans.end());
 }
 
-// algorithms::EdgeWeightedGraph SupportRegionsFVMGraph::build_support_region_graph_(std::vector<size_t> const & blocks) const
-std::vector<int> SupportRegionsFVMGraph::build_support_region_graph_(std::vector<size_t> const & blocks) const
+std::unordered_map<size_t, size_t> SupportRegionsFVMGraph::generate_mapping_(std::vector<size_t> const &blocks) const
 {
-  size_t source = 0;
-  // size_t sink = 1;
-  // size_t const offset = 2;  // 2 = source + sink
-  size_t const offset = 1;
+  size_t offset = 0;
   size_t nv = std::accumulate(blocks.begin(), blocks.end(), offset,
                               [this](size_t cur, size_t block) {
                                 return _blocks[block].size() + cur;});
-
-  // build mapping
-  std::cout << "build maping (blocks ";
-  for (auto block : blocks)
-    std::cout << block << " ";
-  std::cout << ")" << std::endl;
-
-  std::vector<size_t> mapping(nv);
   std::unordered_map<size_t, size_t> mapping_inv;
-  mapping[source] = source;
-  // mapping[sink] = sink;
-  size_t cnt = 1;
+  size_t cnt = offset;
   for (size_t const block : blocks) {
     for (size_t cell : _blocks[block]) {
-      mapping[cnt] = cell;
       mapping_inv[cell] = cnt;
       cnt++;
     }
   }
   assert( cnt == nv );
+  return mapping_inv;
+}
 
-  double sum_weights = std::accumulate( _cons.edges().begin(), _cons.edges().end(),
-                                        0.f, [](double cur , auto const & edge) {
-                                          return cur + edge.weight();
-                                        });
-  double const large_weight = 1e6 * sum_weights;
-  double const tiny_weight = 0.f;
+std::vector<double> SupportRegionsFVMGraph::build_support_region_graph2_(std::vector<size_t> blocks, size_t region) const
+{
+  blocks.push_back(region);
+  auto mapping = generate_mapping_(blocks);
+  size_t const nv = mapping.size();
 
-  // build graph
-  std::cout << "build local graph from full graph" << std::endl;
-  algorithms::EdgeWeightedGraph g(nv);
+  EdgeWeightedDigraph g( nv );
   for (size_t const block : blocks) {
-    for (size_t cell : _blocks[block]) {
-      for (auto const * e : _cons.adj(cell)) {
-        size_t const v = e->either();
+    for (size_t v : _blocks[block]) {
+      for (auto const * e : _cons.adj(v)) {
         size_t const w = e->other(v);
-        if ( mapping_inv.count(v) && mapping_inv.count(w) )
-        {
-          double weight = e->weight();
-          if (_partition[mapping_inv[v]] != _partition[mapping_inv[w]])
-            weight = large_weight;
-          g.add(UndirectedEdge(mapping_inv[v], mapping_inv[w], weight));
-        }
-
+        if ( mapping.count(v) && mapping.count(w) )
+          g.add(DirectedEdge(mapping[v], mapping[w], e->weight()));
       }
     }
   }
 
-
-  std::cout << "modify local graph" << std::endl;
-  // add additional graph edges for the proper partitioning
-  // for (size_t coarse : blocks) {
-  for (size_t c1 = 0; c1 < blocks.size(); ++c1) {
-    size_t const coarse = blocks[c1];
-    size_t const v = _centers[coarse];
-    size_t const v_mapped = mapping_inv[v];
-    g.add(UndirectedEdge(source, v_mapped, large_weight));
-    // for (size_t c2 = c1+1; c2 < blocks.size(); ++c2) {
-    //   size_t coarse2 = blocks[c2];
-    //   size_t const w = _centers[coarse];
-    //   size_t const w_mapped = mapping_inv[w];
-    //   g.add(UndirectedEdge(v_mapped, w_mapped, large_weight));
-    // }
-
-
-    // auto cutting_edge = g.adj( v_mapped ).front();
-    // cutting_edge->set_weight(large_weight);
-
-    // size_t const w = cutting_edge->other(v_mapped);
-    // g.add(UndirectedEdge(w, sink, tiny_weight));
+  std::vector<DijkstraSP> paths;
+  for (size_t ib = 0; ib < blocks.size(); ++ib)
+  {
+    size_t b = blocks[ib];
+    size_t source = mapping[ _centers[b] ];
+    paths.emplace_back(g, source);
   }
 
-  std::cout << "invoke metis" << std::endl;
-  // partition into 2 regions: support and no-support
-  auto part = multiscale::MetisInterface::partition(g, 2);
-  std::vector<int> values(_partition.size(), 0);
-  std::cout << "partition: ";
-  for (size_t i = offset; i < part.size(); ++i)
+  // find farthest vertex and assign it as sink
+  std::vector<double> dist(blocks.size(), 0);
+  std::cout << "distances: " << std::endl;
+  for (size_t ib = 0; ib < blocks.size(); ++ib)
   {
-    values[mapping[i]] = part[i] + 1;
-    // std::cout << mapping[i] << " " << part[i] + 1 << "\n";
+    size_t b = blocks[ib];
+    size_t u = mapping[ _centers[b] ];
+    dist[ib] = paths.back().distanceTo(u);
+    std::cout << dist[ib] << " ";
   }
   std::cout << std::endl;
 
-  std::cout << "done" << std::endl;
-  // exit(0);
+  // find normalization coefficients
+  std::vector<double> coefs(blocks.size(), 0);
+  for (size_t v = 0; v < g.n_vertices(); ++v)
+    for (size_t ib = 0; ib < blocks.size(); ++ib)
+      coefs[ib] = std::max(coefs[ib], paths[ib].distanceTo(v));
+  std::cout << "coefs" << std::endl;
+  for (auto c : coefs)
+    std::cout << c << " ";
+  std::cout << std::endl;
+
+
+  std::vector<double> values(_partition.size(), 0);
+  for (size_t const block : blocks) {
+    for (size_t cell : _blocks[block]) {
+      size_t const v = mapping[ cell ];
+
+      if (block == region) {
+        values[cell] = 1;
+      }
+      else {
+        double threshold = 0;
+        double norm = 0;
+        for (size_t ib = 0; ib < blocks.size() - 1; ++ib) {
+          threshold += dist[ib] * (1.f - paths[ib].distanceTo(v) / coefs[ib]);
+          norm += (1.f - paths[ib].distanceTo(v) / coefs[ib]);
+        }
+        threshold /= norm;
+
+        // values[cell] = threshold;
+        values[cell] = (paths.back().distanceTo(v) >= threshold) ? 2 : 1;
+      }
+    }
+  }
 
   return values;
-  // return g;
 }
-
 
 }  // end namespace multiscale

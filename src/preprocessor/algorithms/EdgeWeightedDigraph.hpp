@@ -39,15 +39,30 @@ class EdgeWeightedDigraph {
     _adj[edge.from()].push_back(_edges.size() - 1);
   }
 
-  const std::vector<DirectedEdge> adj(const size_t v) const
+  std::vector<DirectedEdge const *> adj(const size_t v) const
   {
     checkVertexValidity_(v);
-    std::vector<DirectedEdge> result;
-    result.reserve((_adj[v].size()));
+    std::vector<DirectedEdge const*> result;
+    result.reserve(degree(v));
     for (size_t e : _adj[v])
-      result.push_back( _edges[e] );
+      result.push_back( &_edges[e] );
     return result;
   }
+
+  std::vector<DirectedEdge*> adj(const size_t v)
+  {
+    checkVertexValidity_(v);
+    std::vector<DirectedEdge*> result;
+    result.reserve(degree(v));
+    for (size_t e : _adj[v])
+      result.push_back( &_edges[e] );
+    return result;
+  }
+
+  // number of outgoing edges
+  inline size_t degree(size_t v) const noexcept {return _adj[v].size();}
+  inline std::vector<DirectedEdge> const & edges() const noexcept {return _edges;}
+  inline std::vector<DirectedEdge> & edges() noexcept {return _edges;}
 
   size_t n_vertices() const noexcept {return _adj.size();}
   size_t n_edges() const noexcept {return _edges.size();}

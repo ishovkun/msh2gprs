@@ -29,6 +29,7 @@ class DirectedEdge {
   inline const size_t from() const noexcept {return _v;}
   inline const size_t to() const noexcept {return _w;}
   inline const double weight() const noexcept {return _weight;}
+  inline void set_weight(double new_weight) noexcept {_weight = new_weight;}
 
   virtual ~DirectedEdge() = default;
 

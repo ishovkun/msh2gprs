@@ -28,7 +28,7 @@ Idea::Idea(mesh::Mesh const & grid, gprs_data::SimData & data)
     std::cout << "building 1" << std::endl;
     size_t source = 2550;
     auto bnd = find_boundary_cells_({3, 2});
-    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    ShapeFunctionSolver solver(source, bnd, _data);
     sol1 = solver.solution();
     // debug_save_solution_("solution0.vtk", solver.solution());
   }
@@ -38,7 +38,7 @@ Idea::Idea(mesh::Mesh const & grid, gprs_data::SimData & data)
     size_t source = 2600;
     // size_t source = 24;
     auto bnd = find_boundary_cells_({3, 1});
-    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    ShapeFunctionSolver solver(source, bnd, _data);
     // debug_save_solution_("solution1.vtk", solver.solution());
     sol2 = solver.solution();
   }
@@ -47,7 +47,7 @@ Idea::Idea(mesh::Mesh const & grid, gprs_data::SimData & data)
     std::cout << "building 3" << std::endl;
     size_t source = 0;
     auto bnd = find_boundary_cells_({4, 2});
-    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    ShapeFunctionSolver solver(source, bnd, _data);
     // debug_save_solution_("solution2.vtk", solver.solution());
     sol3 = solver.solution();
   }
@@ -57,7 +57,7 @@ Idea::Idea(mesh::Mesh const & grid, gprs_data::SimData & data)
     size_t source = 50;
     // size_t source = 4;
     auto bnd = find_boundary_cells_({4, 1});
-    ShapeFunctionSolver solver(source, bnd, _grid, _data);
+    ShapeFunctionSolver solver(source, bnd, _data);
     // debug_save_solution_("solution3.vtk", solver.solution());
     sol4 = solver.solution();
   }

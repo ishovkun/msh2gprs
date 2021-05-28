@@ -30,6 +30,8 @@ ADD_LIBRARY(preprocessor
   multiscale/ShapeFunctionSolver.cpp
   multiscale/MSFlow.cpp
   multiscale/SupportRegionsFVMGraph.cpp
+  multiscale/SupportRegionsBase.cpp
+  multiscale/SupportRegionsLaplaceMod.cpp
   multiscale/MultiScaleDataMSRSB.cpp
   multiscale/MultiScaleDataMech.cpp
   multiscale/MetisInterface.cpp

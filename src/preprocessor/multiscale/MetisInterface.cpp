@@ -3,10 +3,12 @@
 namespace multiscale {
 
 std::vector<size_t>
-MetisInterface::partition(algorithms::EdgeWeightedGraph const &g, size_t n_blocks)
+MetisInterface::partition(algorithms::EdgeWeightedGraph const &g, size_t n_blocks,
+                          double const imbalancing)
 {
   if (n_blocks < 2) throw std::invalid_argument("number of blocks too small");
 
+#ifdef WITH_METIS
   // generate input: xadj (similar to row_ptr in CSR format)
   std::vector<idx_t> xadj(g.n_vertices() + 1, 0);
   for (auto const &edge : g.edges()) {
@@ -39,12 +41,13 @@ MetisInterface::partition(algorithms::EdgeWeightedGraph const &g, size_t n_block
 
   // output: the corresponding thread of each grid block (default: 0th thread)
   vector<idx_t> coarse_cell_id(g.n_vertices(), 0);
-#ifdef WITH_METIS
   // partition the entire domain: see the user manual of METIS for details
   idx_t ncon = 1, objval = 0;
   idx_t options[METIS_NOPTIONS];
   METIS_SetDefaultOptions(options);
   options[METIS_OPTION_NCUTS] = 8;
+  options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
+  if (imbalancing >= 0) options[METIS_OPTION_UFACTOR] = imbalancing;
   std::vector<idx_t> vwgt(g.n_vertices(), 1);
   std::vector<idx_t> size(g.n_vertices(), 1);
   idx_t icount = static_cast<idx_t>(g.n_vertices());
