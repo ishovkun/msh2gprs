@@ -292,10 +292,10 @@ void Preprocessor::build_flow_discretization_()
   }
 
   // multiscale idea
-  if ( GlobalOpts::ref().enable_experimental )
+  if ( config.ms_flow.type != MSPartitioning::no_partitioning )
   {
     // multiscale::Idea idea(data.grid, data);
-    multiscale::MSFlow(data.grid, data);
+    multiscale::MSFlow(data.grid, data, config.ms_flow);
     exit(0);
   }
 
@@ -315,9 +315,9 @@ void Preprocessor::build_geomechanics_discretization_()
     pm_edfm_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
   }
 
-  if (config.multiscale_mechanics == MSPartitioning::method_mechanics)
+  if (config.ms_mech.type == MSPartitioning::method_mechanics)
   {
-    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.n_multiscale_blocks);
+    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.ms_mech.n_blocks);
     ms_handler.build_data();
     ms_handler.fill_output_model(data.ms_mech_data);
   }

@@ -37,7 +37,7 @@ class DijkstraSP : public SingleSourceShortestPath {
     if ( new_dist < _dist_to[v] )
     {
       _dist_to[v] = new_dist;
-      _edge_to[v] = edge;
+      _edge_to[v] = &edge;
       // priority increases since new distance is shorter
       if (_pq.contains(edge.to())) _pq.setPriority(v, _dist_to[v]);
       else                         _pq.enqueue(v, _dist_to[v]);

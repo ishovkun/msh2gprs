@@ -39,7 +39,7 @@ class FeValues
    * Update the needed internal quantities in the cell (or face) assigned as a vector of vertices.
    * Use this method before using the fem quantities in the new cell during the loop.
    */
-  void update(std::vector<Point> & element_vertices);
+  void update(std::vector<Point> const & element_vertices);
   /**
    * Update the needed internal quantities in the cell in the gived integration points.
    * The point coordinate is the real (not reference) coordinates of the integration point.
@@ -195,10 +195,7 @@ template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Cell & cell)
 {
   static_assert(ElementTraits<vtk_id>::dim == 3, "This function only exists for 3D elements");
-  update_vertex_coord_(cell.vertex_coordinates());
-  _qpoints = get_master_integration_points();
-  _weights = get_master_integration_weights();
-  update_();
+  update(cell.vertex_coordinates());
 }
 
 template<VTK_ID vtk_id>
@@ -229,7 +226,7 @@ void FeValues<vtk_id>::update(const mesh::Face & face, const angem::Point<3,doub
 }
 
 template<VTK_ID vtk_id>
-void FeValues<vtk_id>::update(std::vector<Point> & element_vertices)
+void FeValues<vtk_id>::update(std::vector<Point> const & element_vertices)
 {
   update_vertex_coord_(element_vertices);
   _qpoints = get_master_integration_points();
@@ -241,10 +238,7 @@ template<VTK_ID vtk_id>
 void FeValues<vtk_id>::update(const mesh::Face & face)
 {
   static_assert(ElementTraits<vtk_id>::dim == 2, "This function only exists for 2D elements");
-  update_vertex_coord_(face.vertex_coordinates());
-  _qpoints = get_master_integration_points();
-  _weights = get_master_integration_weights();
-  update_();
+  update(face.vertex_coordinates());
 }
 
 template<VTK_ID vtk_id>

@@ -3,18 +3,11 @@
 #include "angem/Polygon.hpp"
 #include "config/FiniteElementConfig.hpp"
 #include "config/MeshConfig.hpp"
+#include "config/MultiscaleConfig.hpp"
 
 #include <map>
 #include <memory> // shared / unique_ptr
 
-
-enum class MSPartitioning : int
-{
-  no_partitioning  = 0,
-  method_msrsb     = 1,  // igor's inspired by olav's paper, doesn't work for mech
-  method_mrst_flow = 2,   // jacques' inspired by mrst and cgal
-  method_mechanics = 3  // igor's mechanics method
-};
 
 enum class OutputFormat
 {
@@ -188,9 +181,8 @@ struct PreprocessorConfig
   double frac_cell_elinination_factor = 0.2;
 
   // multiscale
-  size_t n_multiscale_blocks;
-  MSPartitioning multiscale_flow = MSPartitioning::no_partitioning;      // 0 means don't do anything
-  MSPartitioning multiscale_mechanics = MSPartitioning::no_partitioning; // 0 means don't do anything
+  MultiscaleConfig ms_flow;
+  MultiscaleConfig ms_mech;
 
   // output format
   std::vector<OutputFormat> output_formats = {OutputFormat::gprs,

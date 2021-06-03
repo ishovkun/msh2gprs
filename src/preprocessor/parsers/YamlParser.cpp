@@ -633,41 +633,38 @@ void YamlParser::section_multiscale(const YAML::Node & node)
       config.gprs_output.flow_ms_file = it->second.as<std::string>();
     if (key == "Mech file")
       config.gprs_output.mech_ms_file = it->second.as<std::string>();
-    else if (key == "blocks")
-      config.n_multiscale_blocks = it->second.as<std::size_t>();
-    else if (key == "flow")
-    {
+    else if (key == "blocks") {
+      config.ms_flow.n_blocks = it->second.as<std::size_t>();
+      config.ms_mech.n_blocks = it->second.as<std::size_t>();
+    }
+    else if (key == "flow") {
       const auto value = it->second.as<std::string>();
       if (value == "no")
-        config.multiscale_flow = MSPartitioning::no_partitioning;
+        config.ms_flow.type = MSPartitioning::no_partitioning;
       else if (value == "msrsb")
-        config.multiscale_flow = MSPartitioning::method_msrsb;
+        config.ms_flow.type = MSPartitioning::msrsb;
       else if (value == "mrst")
-        config.multiscale_flow = MSPartitioning::method_mrst_flow;
+        config.ms_flow.type = MSPartitioning::mrst_flow;
+      else if (value == "graph")
+        config.ms_flow.type = MSPartitioning::graph;
       else
       {
         std::cout << "\tunknown keyword aborting" << std::endl;
         abort();
       }
-    }
-    else if (key == "mechanics")
-    {
+    } else if (key == "mechanics") {
       const auto value = it->second.as<std::string>();
       if (value == "no")
-        config.multiscale_mechanics = MSPartitioning::no_partitioning;
-      // else if (value == "msrsb")
-      //   config.multiscale_flow = MSPartitioning::method_msrsb;
+        config.ms_mech.type = MSPartitioning::no_partitioning;
       else if (value == "srfem")
-        config.multiscale_mechanics = MSPartitioning::method_mechanics;
+        config.ms_mech.type = MSPartitioning::method_mechanics;
       else
       {
         std::cout << "\tunknown keyword aborting" << std::endl;
         abort();
       }
 
-    }
-    else
-      std::cout << "\tSkipping unknown keyword" << std::endl;
+    } else std::cout << "\tSkipping unknown keyword" << std::endl;
   }
 }
 
