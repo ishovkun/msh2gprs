@@ -1,6 +1,7 @@
 #include "YamlParser.hpp"
 #include "yaml-cpp/node/parse.h"  // loadfile
 #include "angem/Rectangle.hpp"
+#include "logger/Logger.hpp"
 #include <algorithm>  // std::foreach
 #include <string>
 #include <cctype>  // tolower
@@ -24,7 +25,7 @@ void YamlParser::parse_file(const std::string & fname)
   for(YAML::const_iterator it=main_node.begin();it != main_node.end();++it)
   {
     const std::string key = it->first.as<std::string>();
-    std::cout << "Reading section: " << key  << std::endl;
+    logging::log() << "Reading section: " << key  << std::endl;
 
     if (key == "Mesh file")
     {
@@ -48,7 +49,7 @@ void YamlParser::parse_file(const std::string & fname)
     else if (key == "Multiscale")
       section_multiscale(it->second);
     else
-      std::cout << "Unknown key: " << key << " skipping" << std::endl;
+      logging::warning() << "Unknown key: " << key << " skipping" << std::endl;
   }
 }
 
@@ -57,7 +58,7 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
-    std::cout << "\treading entry " << key << std::endl;
+    logging::log() << "\treading entry " << key << std::endl;
 
     if (key == "file")
       config.gprs_output.efrac_file = it->second.as<std::string>();
@@ -151,7 +152,7 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
-    std::cout << "\treading entry " << key << std::endl;
+    logging::log() << "\treading entry " << key << std::endl;
 
     if (key == "fracture")
     {
@@ -160,10 +161,7 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
       auto & conf = config.discrete_fractures.back();
       extract_subnode_value("label", it, conf.label);
       if (conf.label == 0)
-      {
-        std::cout << "cannot have label 0" << std::endl;
-        exit(-1);
-      }
+        throw std::invalid_argument("Cannot have label 0");
       discrete_fracture(it->second, conf);
     }
     else if (key == "file")
@@ -171,7 +169,7 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
     else if (key == "split_vertices")
       config.dfm_settings.split_mech_vertices = it->second.as<bool>();
     else
-      std::cout << "\t\tattribute " << key << " unknown: skipping" << std::endl;
+      logging::warning() << "\t\tattribute " << key << " unknown: skipping" << std::endl;
   }
 
 }
@@ -198,7 +196,7 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
-    std::cout << "\t\treading entry " << key << std::endl;
+    logging::log() << "\t\treading entry " << key << std::endl;
 
     if (key == "type")
     {
@@ -232,24 +230,20 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
           it->second.as<std::vector<std::size_t>>();
 
       if (remesh_pars.size() != 2)
-        std::cout << "wrong entry in remesh. Aborting" << std::endl << std::flush;
+        logging::warning() << "wrong entry in remesh. Aborting" << std::endl << std::flush;
 
       n1 = remesh_pars[0];
       n2 = remesh_pars[1];
 
       if ((n1 > 0 and n2 == 0)  or (n2 > 0 and n1 == 0))
-        std::cout << "wrong entry in remesh. Aborting" << std::endl << std::flush;
+        throw std::invalid_argument("wrong entry in remesh");
     }
     else if (key == "center")
       center = it->second.as<std::vector<double>>();
-    else
-    {
-      std::cout << "\t\tattribute " << key << " unknown:" << std::endl;
-      throw std::invalid_argument("attribute unknown");
-    }
+    else throw std::invalid_argument("attribute unknown");
   }
 
-  std::cout << "Making embedded fracture" << std::endl;
+  logging::log() << "Making embedded fracture" << std::endl;
   conf.body = std::make_shared<angem::Rectangle<double>>
       (center, length, height, dip, strike);
 
@@ -268,7 +262,7 @@ void YamlParser::discrete_fracture(const YAML::Node       & node,
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
-    std::cout << "\t\treading entry " << key << std::endl;
+    logging::log() << "\t\treading entry " << key << std::endl;
 
     if (key == "aperture")
       conf.aperture = it->second.as<double>();
@@ -305,26 +299,18 @@ void YamlParser::section_domain_props(const YAML::Node &         node,
         //   exit(-1);
         // }
       }
-      catch (YAML::TypedBadConversion<int> & error)
-      {
-        std::cout << "domain label must be an integer" << std::endl;
-        std::cout << "aborting" << std::endl;
-        exit(-1);
+      catch (YAML::TypedBadConversion<int> & error) {
+        throw std::invalid_argument("domain label must be an integer");
       }
-      catch (YAML::InvalidNode & error)
-      {
-        std::cout << "domain label must be specified" << std::endl;
-        exit(-1);
+      catch (YAML::InvalidNode & error) {
+        throw std::invalid_argument("domain label must be specified");
       }
 
       DomainConfig & conf = get_domain_config(label);
-      std::cout << "\tReading domain " << conf.label << std::endl;
+      logging::log() << "\tReading domain " << conf.label << std::endl;
       domain(it->second, var_type, conf);
     }
-    else
-    {
-      throw std::invalid_argument("attribute " + key + " is unknown");
-    }
+    else throw std::invalid_argument("attribute " + key + " is unknown");
   }
 }
 
@@ -366,15 +352,24 @@ void YamlParser::domain(const YAML::Node &         node,
     const std::string key = it->first.as<std::string>();
     const std::string value = it->second.as<std::string>();
 
-    std::cout << "\t\treading entry " << key << std::endl;
+    logging::log() << "\t\treading entry " << key << std::endl;
 
     if (key == "Coupled") // coupling with mechanics
     {
       conf.coupled = it->second.as<bool>();
-      if (!conf.coupled)
-        std::cout << "domain " <<conf.label << " is decoupled !!!" << std::endl;
+      if (!conf.coupled) logging::warning() << "domain " << conf.label << " is decoupled !!!" << std::endl;
     }
-    else if (key == "label") // coupling with mechanics
+    else if (key == "files")
+    {
+      // these are to read files that contain properties.
+      // these properties can only be used as variables in expressions.
+      // they will not be output.
+      for (auto it_var = it->second.begin(); it_var != it->second.end(); ++it_var) {
+        config.input_global_varialbes.push_back(it_var->first.as<std::string>());
+        config.input_property_file_names.push_back(it_var->second.as<std::string>());
+      }
+    }
+    else if (key == "label")
       continue;
     else
     {
@@ -386,8 +381,7 @@ void YamlParser::domain(const YAML::Node &         node,
       {
         config.cell_properties.all_vars.push_back(key);
         // special case - service variable (not outputted)
-        if ( find(key, config.cell_properties.special_keywords) <
-             config.cell_properties.special_keywords.size())
+        if ( find(key, config.cell_properties.special_keywords) < config.cell_properties.special_keywords.size())
           config.cell_properties.expression_type.push_back(ExpressionDomainType::service);
         else
           config.cell_properties.expression_type.push_back(var_type);

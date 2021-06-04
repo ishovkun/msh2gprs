@@ -2,6 +2,7 @@
 #include "discretization/flow/DoFNumbering.hpp"
 #include "property_expressions/value_functions.hpp"
 #include "logger/Logger.hpp"
+#include <sstream>
 
 namespace gprs_data {
 
@@ -106,8 +107,7 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
   return count;
 }
 
-void CellPropertyManager::assign_variables_(std::vector<mu::Parser> & parsers,
-                                            std::vector<double> & vars)
+void CellPropertyManager::assign_variables_(std::vector<mu::Parser> & parsers, std::vector<double> & vars)
 {
   const size_t n_variables = config.all_vars.size();
   for (auto & parser : parsers)
@@ -134,10 +134,10 @@ void CellPropertyManager::assign_expressions_(const DomainConfig& domain,
     try {
       parsers[i].SetExpr(domain.expressions[i]);
     } catch (mu::Parser::exception_type &e) {
-        const std::string error_msg =
-            "Expression error: " + std::string(e.GetMsg()) +
-            "\nwhen defining expression '" + domain.expressions[i] + "'";
-        throw std::runtime_error(error_msg);
+      std::ostringstream error_msg;
+      error_msg <<  "Expression error: " << e.GetMsg()
+          << "\nwhen defining expression '" << domain.expressions[i] << "'";
+        throw std::runtime_error(error_msg.str());
     }
   }
 }

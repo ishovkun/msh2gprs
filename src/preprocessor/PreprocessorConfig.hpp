@@ -175,7 +175,14 @@ struct PreprocessorConfig
   // double edfm_min_dist_to_node = 1e-4;               // minimum distance to grid vertices relative to cell size
   // global container for all cell properties
   CellPropertyConfig cell_properties;
-  // vector of cell properties for each subdomain
+
+  /* global properties that can only specified as files
+   * this names can be used as variables in each subdomain.
+   * Don't assign gprs keywords to these props as they won't be outputted.
+   */
+  std::vector<std::string>             input_property_file_names;
+  std::vector<std::string>             input_global_varialbes;
+  // expressions and variables for each subdomain
   std::vector<DomainConfig>            domains;
   double geometry_search_tolerance = 1e-10;
   double frac_cell_elinination_factor = 0.2;

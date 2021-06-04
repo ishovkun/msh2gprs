@@ -274,7 +274,7 @@ std::vector<size_t> find_boundary(algorithms::EdgeWeightedDigraph const & g,
   std::vector<size_t> bnd;
   for (auto const & e : g.edges())
     if ((int)flags[e.to()] + (int)flags[e.from()] == 1) {
-      if (e.to()) bnd.push_back(mapping[ e.to() ]);
+      if (flags[e.to()]) bnd.push_back(mapping[ e.to() ]);
       else bnd.push_back(mapping[ e.from() ]);
     }
 

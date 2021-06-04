@@ -52,6 +52,7 @@ void Logger::set_verbosity(const LogLevel verbosity)
 void Logger::set_message_level(const LogLevel level)
 {
   _msg_level = level;
+  print_prefix_(_msg_level);
 }
 
 void Logger::print_prefix_(const LogLevel level)
@@ -135,7 +136,6 @@ Logger & Logger::operator<<(std::ostream& (*os)(std::ostream&))
 {
   if (_verbosity >= _msg_level)
   {
-    // print_prefix_(_msg_level);
     std::cout << os;
     if (_fout.is_open())
       _fout << os;

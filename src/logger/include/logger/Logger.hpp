@@ -72,7 +72,7 @@ Logger & Logger::operator<<(const T & msg)
 {
   if (_verbosity >= _msg_level)
   {
-    print_prefix_(_msg_level);
+    // print_prefix_(_msg_level);
     select_color_(_msg_level);
     for (auto * p_stream : _streams)
       (*p_stream) << msg;
