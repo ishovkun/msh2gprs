@@ -6,46 +6,40 @@
 
 namespace gprs_data {
 
-CellPropertyManager::
-CellPropertyManager(const CellPropertyConfig & cell_properties,
-                    const std::vector<DomainConfig> & domain_configs,
-                    SimData & data)
-    : config(cell_properties), m_data(data), domains(domain_configs),
-      m_shift(config.n_default_vars()), m_n_unrefined_cells(data.grid.n_cells_total())
-{}
+using namespace std;
 
-void CellPropertyManager::generate_properties()
+CellPropertyManager::
+CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data)
+    : _config(cell_properties)
+    , m_data(data)
+    , m_n_unrefined_cells(data.grid.n_cells_total())
+    , _vars(map_variables_())
+    , _file_data(read_files_())
+{
+}
+
+void CellPropertyManager::
+generate_properties(std::vector<std::vector<double>> &  properties)
 {
   print_setup_message_();
-
-  // current number of variables
-  const std::size_t n_variables = config.all_vars.size();
-  // set up container
-  m_data.cell_properties.resize(n_variables);
-  for (auto & property : m_data.cell_properties)
-    property.assign(m_data.grid.n_cells_total(), 0);
-
-  // save variables name for output
-  m_data.property_names.resize(n_variables - m_shift);
-  for (std::size_t i=m_shift; i<config.all_vars.size(); ++i)
-    m_data.property_names[i - m_shift] = config.all_vars[i];
+  properties.assign(_vars.size(), vector<double>(m_data.grid.n_cells_total(), 0.f));
 
   // container for evaluated expressions: the properties of a current cell
-  std::vector<double> vars(n_variables);
+  std::vector<double> cell_vars(_vars.size());
 
   // loop various domain configs:
   // they may have different number of variables and expressions
   size_t n_matched_cells = 0;
   m_data.coupling.resize( m_data.grid.n_cells_total(), false );
-  for (const auto & domain: domains)
+  for (const auto & domain: _config.domains)
   {
-    const std::size_t n_expressions = domain.expressions.size();
+    const size_t n_expressions = domain.expressions.size();
     // set up muparser
     std::vector<mu::Parser> parsers(n_expressions);
-    assign_variables_(parsers, vars);
+    assign_variables_(parsers, cell_vars);
     assign_expressions_(domain, parsers);
     // run muparser
-    n_matched_cells += evaluate_expressions_(domain, parsers, vars);
+    n_matched_cells += evaluate_expressions_(domain, parsers, cell_vars, properties);
   }
   if (n_matched_cells != m_data.grid.n_active_cells())
   {
@@ -53,21 +47,48 @@ void CellPropertyManager::generate_properties()
                            "Probably missing domain label.";
     throw std::runtime_error(msg);
   }
+}
 
-  std::cout << "Searching for Porosity and Permeability keys" << std::endl;
-  build_permeability_function_();
-  build_porosity_function_();
-  build_volume_mult_function_();
-  build_flow_output_property_keys_();
+std::unordered_map<std::string, size_t> CellPropertyManager::map_variables_()
+{
+  size_t nvar = 0;
+  std::unordered_map<std::string, size_t> ans;
+
+  for (auto const & var : _config.extra_variables)
+    ans[var] = nvar++;
+
+  for (auto const & var : _config.files.variables)
+    ans[var] = nvar++;
+
+  for (auto const & domain : _config.domains)
+    for (auto const & var : domain.variables)
+      ans[var] = nvar++;
+  return ans;
+}
+
+void CellPropertyManager::evaluate_non_expression_properties_(mesh::Cell const & cell,
+                                                              std::vector<double>&cell_vars)
+{
+  const angem::Point center = cell.center();
+  // assign service variables
+  cell_vars[_vars[_config.x_kwd]] = center[0];
+  cell_vars[_vars[_config.y_kwd]] = center[1];
+  cell_vars[_vars[_config.z_kwd]] = center[2];
+  cell_vars[_vars[_config.vmult_kwd]] = 1.f;
+  // assign file variable values
+  for (size_t i = 0; i < _config.files.variables.size(); ++i)
+    cell_vars[_vars[_config.files.variables[i]]] = _file_data[i][cell.index()];
 }
 
 size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
                                                   std::vector<mu::Parser> & parsers,
-                                                  std::vector<double> & vars)
+                                                  std::vector<double> & cell_vars,
+                                                  std::vector<std::vector<double>> &  properties)
 {
   const std::size_t n_expressions = domain.expressions.size();
-  const std::size_t n_variables = config.all_vars.size();
+  const std::size_t n_variables = _vars.size();
   const auto & grid = m_data.grid;
+  // we don't want to save x,y,z, and variables from files
   size_t count = 0;  // count number of matched cells
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
@@ -75,16 +96,12 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
     {
       count++;
       m_data.coupling[cell->index()] = domain.coupled;
-      std::fill(vars.begin(), vars.end(), 0);
-      const angem::Point center = cell->center();
-      vars[0] = center[0]; // x
-      vars[1] = center[1]; // y
-      vars[2] = center[2]; // z
-
+      std::fill(cell_vars.begin(), cell_vars.end(), 0);
+      evaluate_non_expression_properties_(*cell, cell_vars);
       // Evaluate expression -> write into variable
       for (std::size_t i = 0; i < n_expressions; ++i) {
         try {
-          vars[domain.local_to_global_vars.at(i)] = parsers[i].Eval();
+          cell_vars[_vars[domain.variables[i]]] = parsers[i].Eval();
         } catch (mu::Parser::exception_type &e) {
           const std::string error_msg = "Expression error: " + std::string(e.GetMsg()) +
                                         "\nwhen evaluating expression '" + domain.expressions[i] + "'";
@@ -92,12 +109,11 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
         }
       }
 
-      // copy vars to cell properties
+      // copy local cell_vars to global vectors
       // start from shift to skip x,y,z
-      for (std::size_t i = m_shift; i < n_variables; ++i) {
-        const size_t property_index = i - m_shift;
+      for (std::size_t i = 0; i < _vars.size(); ++i) {
         try {
-          m_data.cell_properties[property_index][cell->index()] = vars[i];
+          properties[i][cell->index()] = cell_vars[i];
         } catch (std::out_of_range &e) {  // if subdomain doesn't have property assigned
           throw std::runtime_error( "property not provided for domain");
         }
@@ -107,37 +123,60 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
   return count;
 }
 
+std::vector<std::vector<double>> CellPropertyManager::read_files_()
+{
+  size_t const n_files = _config.files.variables.size();
+  size_t const nc = m_n_unrefined_cells;
+  std::vector<std::vector<double>> ans(n_files);
+  for (size_t i = 0; i < n_files; ++i) {
+    ans[i].assign( nc, 0.f );
+    std::ifstream in( _config.files.expressions[i], std::ifstream::in );
+    size_t cnt = 0;
+    while (cnt < nc) {
+      if ( !in.good() ) {
+        ostringstream msg;
+        msg << "File " << _config.files.expressions[i] << " has only " << cnt << " entries. "
+            << nc << " entries needed\n";
+        throw std::invalid_argument(msg.str());
+      }
+      in >> ans[i][cnt++];
+    }
+  }
+  return ans;
+}
+
 void CellPropertyManager::assign_variables_(std::vector<mu::Parser> & parsers, std::vector<double> & vars)
 {
-  const size_t n_variables = config.all_vars.size();
   for (auto & parser : parsers)
-    for (std::size_t j = 0; j < n_variables; ++j)
-    {
+    for (auto const & it : _vars) {
+      size_t const idx = it.second;
+      string const & name = it.first;
       try {
-        parser.DefineVar(config.all_vars[j], &vars[j]);
+        parser.DefineVar(name, &vars[idx]);
       }
       catch (mu::Parser::exception_type &e) {
-        const std::string error_msg = "Expression error: " + std::string(e.GetMsg()) +
-                                      "\nwhen setting variable '" + config.all_vars[j] + "'";
-        throw std::runtime_error(error_msg);
+        ostringstream msg;
+        msg << "Expression error: " << e.GetMsg()
+            << "\nwhen setting variable '" << name << "'";
+        throw std::runtime_error(msg.str());
       }
     }
 }
 
-void CellPropertyManager::assign_expressions_(const DomainConfig& domain,
-                                              std::vector<mu::Parser> & parsers)
+void CellPropertyManager::assign_expressions_(DomainConfig const& domain, std::vector<mu::Parser> & parsers)
 {
   const std::size_t n_expressions = domain.expressions.size();
   assign_custom_functions_(parsers);
-  for (std::size_t i = 0; i < n_expressions; ++i)
+  for (size_t i = 0; i < n_expressions; ++i)
   {
     try {
       parsers[i].SetExpr(domain.expressions[i]);
-    } catch (mu::Parser::exception_type &e) {
+    }
+    catch (mu::Parser::exception_type &e) {
       std::ostringstream error_msg;
       error_msg <<  "Expression error: " << e.GetMsg()
-          << "\nwhen defining expression '" << domain.expressions[i] << "'";
-        throw std::runtime_error(error_msg.str());
+                << "\nwhen defining expression '" << domain.expressions[i] << "'";
+      throw std::runtime_error(error_msg.str());
     }
   }
 }
@@ -150,99 +189,52 @@ void CellPropertyManager::assign_custom_functions_(std::vector<mu::Parser> & par
   }
 }
 
-void CellPropertyManager::print_setup_message_()
+void CellPropertyManager::print_setup_message_() const
 {
   logging::log() << "Setting up function parsers with the following"
                  << " set of variables: "<< std::endl;
-  for (std::size_t i=0; i<config.all_vars.size(); ++i)
+  size_t cnt = 0;
+  for (auto const & it : _vars)
   {
-    logging::log() << config.all_vars[i] << "\t";
-    if ((i + 1) % 3 == 0)
-      logging::log() << std::endl;
+    logging::log() << it.first << "\t";
+    if ((cnt++ + 1) % 5 == 0)
+      logging::log() << "\n";
   }
   logging::log() << std::endl;
 }
 
-void CellPropertyManager::build_permeability_function_()
+std::vector<int> CellPropertyManager::get_permeability_keys() const
 {
-  bool found_perm_x = false;
-  bool found_perm_y = false;
-  bool found_perm_z = false;
-  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
-  {
-    const auto & key = m_data.property_names[i];
-    if (key == "PERMX")
-    {
-      found_perm_x = true;
-      m_data.permeability_keys[0] = i;
-    }
-    else if (key == "PERMY")
-    {
-      found_perm_y = true;
-      m_data.permeability_keys[1] = i;
-    }
-    else if (key == "PERMZ")
-    {
-      found_perm_z = true;
-      m_data.permeability_keys[2] = i;
-    }
-    else if (key == "PERM")
-    {
-      // voigh notation
-      m_data.permeability_keys[0] = i;
-      m_data.permeability_keys[1] = i;
-      m_data.permeability_keys[2] = i;
-      found_perm_x = true;
-      found_perm_y = true;
-      found_perm_z = true;
-      break;
-    }
+  vector<int> ans{-1, -1, -1};
+  if (_vars.count(_config.perm_kwd))
+    std::fill( ans.begin(), ans.end(), _vars[_config.perm_kwd] );
+  if (_vars.count(_config.permx_kwd))
+    ans[0] = _vars[_config.permx_kwd];
+  if (_vars.count(_config.permy_kwd))
+    ans[1] = _vars[_config.permy_kwd];
+  if (_vars.count(_config.permz_kwd))
+    ans[2] = _vars[_config.permz_kwd];
+
+  if ( any_of(ans.begin(), ans.end(), [](auto idx) {return idx < 0;}) ) {
+    ostringstream msg;
+    msg << "Permeability is undefined. Possible keys: "
+        << _config.perm_kwd << " "
+        << _config.permx_kwd << " "
+        << _config.permy_kwd << " "
+        << _config.permz_kwd << std::endl;
+    throw std::invalid_argument(msg.str());
   }
-  if (found_perm_x && found_perm_y && found_perm_z)
-        return;
-  else
-    throw std::invalid_argument("permebility is undefined");
+  return ans;
 }
 
-void CellPropertyManager::build_porosity_function_()
+size_t CellPropertyManager::get_porosity_key() const
 {
-  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
-  {
-    const auto & key = m_data.property_names[i];
-    if (key == "PORO")
-    {
-      m_data.porosity_key_index = i;
-      return;
-    }
+  if (!_vars.count(_config.poro_kwd)) {
+    ostringstream msg;
+    msg << "Porosity is not defined. The keyword is : " << _config.poro_kwd;
+    throw std::invalid_argument(msg.str());
   }
-  throw std::runtime_error("Porosity not provided (Keyword POP)");
-}
-
-void CellPropertyManager::build_volume_mult_function_()
-{
-  for (std::size_t i = 0; i < m_data.property_names.size(); i++)
-  {
-    const auto & key = m_data.property_names[i];
-    if (key == "VFACTOR")
-    {
-      m_data.vol_mult_index = i;
-      return;
-    }
-  }
-}
-
-void CellPropertyManager::build_flow_output_property_keys_()
-{
-  for (size_t j = 0; j < m_data.property_names.size(); j++)
-  {
-    if (config.expression_type[j] == ExpressionDomainType::flow)
-      m_data.output_flow_properties.push_back(j);
-    else if (config.expression_type[j] == ExpressionDomainType::mechanics)
-    {
-      m_data.output_mech_properties.push_back(j);
-      m_data.has_mechanics = true;
-    }
-  }
+  return _vars[_config.poro_kwd];
 }
 
 void CellPropertyManager::map_mechanics_to_control_volumes(const discretization::DoFNumbering & dofs,
@@ -253,7 +245,7 @@ void CellPropertyManager::map_mechanics_to_control_volumes(const discretization:
   // simdata vector coupled
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
   {
-    for (const auto & conf : domains)
+    for (const auto & conf : _config.domains)
       if (conf.label == cell->marker())
         if (conf.coupled)
         {
@@ -281,10 +273,33 @@ void CellPropertyManager::downscale_properties()
 
 void CellPropertyManager::coarsen_cells()
 {
-  // m_n_unrefined_cells
   for (std::size_t i = 0; i < m_data.property_names.size(); i++)
     m_data.cell_properties[i].erase(m_data.cell_properties[i].begin() + m_n_unrefined_cells,
                                     m_data.cell_properties[i].end());
+}
+
+std::vector<std::string> CellPropertyManager::get_property_names() const
+{
+  size_t const n_output_vars = _vars.size();
+  vector<string> ans(n_output_vars);
+  for (auto const & domain : _config.domains)
+    for (auto const & var : domain.variables)
+      ans[_vars[var]] = var;
+  return ans;
+}
+
+std::vector<VariableType> CellPropertyManager::get_property_types() const
+{
+  size_t const n_output_vars = _vars.size();
+  vector<VariableType> ans(n_output_vars);
+  for (auto const & domain : _config.domains)
+    for (auto const & var : domain.variables)
+      ans[_vars[var]] = domain.type;
+  for (auto const & var : _config.extra_variables)
+      ans[_vars[var]] = VariableType::service;
+  for (auto const & var : _config.files.variables)
+      ans[_vars[var]] = VariableType::service;
+  return ans;
 }
 
 }  // end namespace gprs_data

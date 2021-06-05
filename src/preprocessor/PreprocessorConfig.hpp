@@ -4,6 +4,7 @@
 #include "config/FiniteElementConfig.hpp"
 #include "config/MeshConfig.hpp"
 #include "config/MultiscaleConfig.hpp"
+#include "config/PropertyConfig.hpp"
 
 #include <map>
 #include <memory> // shared / unique_ptr
@@ -13,25 +14,6 @@ enum class OutputFormat
 {
   gprs, vtk, postprocessor
 };
-
-enum ExpressionDomainType
-{
-  flow,
-  mechanics,
-  service
-};
-
-struct DomainConfig
-{
-  int label;
-  std::vector<std::string> expressions;
-  std::vector<std::string> variables;
-  // map expressions to variables
-  std::map<int,int> local_to_global_vars;
-  std::map<int,int> global_to_local_vars;
-  bool coupled = true;
-};
-
 
 enum class BoundaryConditionType : int
 {
@@ -91,32 +73,10 @@ struct WellConfig
   bool force_connect_fractures = false;
 };
 
-struct CellPropertyConfig
-{
-  // all variables used for function parsing
-  std::vector<std::string> all_vars = {"x", "y", "z"};
-  // (0 - flow, 1 - mechanics, -1 -no output)
-  std::vector<int>         expression_type;
-  // are required for flow discretization
-  std::vector<std::string> special_keywords =
-  {"PERM", "PERMX", "PERMY", "PERMZ", "PORO", "VFACTOR"};
-  static constexpr double default_permeability = 1;
-  static constexpr double default_volume_factor = 1;
-
-  static std::size_t n_default_vars()
-  {
-    CellPropertyConfig dummy;
-    return dummy.all_vars.size();
-  }
-};
-
 struct VTKOutputConfig
 {
   std::string flow_reservoir_grid_file      = "flow_reservoir_mesh.vtk";
   std::string mechanics_reservoir_grid_file = "mechanics_reservoir_mesh.vtk";
-  // std::string edfm_grid_file                = "edfm.vtk";
-  // std::string dfm_flow_grid_file            = "dfm-flow.vtk";
-  // std::string dfm_mech_grid_file            = "dfm-mech.vtk";
   std::string fracture_grid_file            = "fractures.vtk";
   std::string wells_file                    = "wells.vtk";
 };
@@ -183,7 +143,6 @@ struct PreprocessorConfig
   std::vector<std::string>             input_property_file_names;
   std::vector<std::string>             input_global_varialbes;
   // expressions and variables for each subdomain
-  std::vector<DomainConfig>            domains;
   double geometry_search_tolerance = 1e-10;
   double frac_cell_elinination_factor = 0.2;
 

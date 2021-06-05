@@ -21,7 +21,7 @@ class DiscretizationTPFA : public DiscretizationBase
 
   virtual ~DiscretizationTPFA() = default;
 
-  virtual void build() override;
+  void build() override;
   static void build_mo(ConnectionData & connection,
                        const ControlVolumeData & cell1,
                        const ControlVolumeData & cell2);

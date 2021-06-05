@@ -19,6 +19,7 @@ class DiscretizationDFM : public DiscretizationBase
   static void build_matrix_fracture(ConnectionData & con,
                                     const ControlVolumeData & cv_frac,
                                     const ControlVolumeData & cv_cell);
+  virtual ~DiscretizationDFM() = default;
 
  protected:
   // build data like volumes, depth, poro, etc.

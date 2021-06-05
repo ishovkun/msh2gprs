@@ -35,9 +35,9 @@ void YamlParser::parse_file(const std::string & fname)
     else if (key == "Mesh")
       section_mesh(it->second);
     else if (key == "Domain Flow Properties")
-      section_domain_props(it->second, ExpressionDomainType::flow);
+      section_domain_props(it->second, VariableType::flow);
     else if (key == "Domain Mechanical Properties")
-      section_domain_props(it->second, ExpressionDomainType::mechanics);
+      section_domain_props(it->second, VariableType::mechanics);
     else if (key == "Embedded Fractures")
       embedded_fracs(it->second);
     else if (key == "Discrete Fractures")
@@ -226,8 +226,7 @@ void YamlParser::embedded_fracture(const YAML::Node       & node,
       region = it->second.as<size_t>();
     else if (key == "remesh")
     {
-      std::vector<std::size_t> remesh_pars =
-          it->second.as<std::vector<std::size_t>>();
+      std::vector<std::size_t> remesh_pars = it->second.as<std::vector<std::size_t>>();
 
       if (remesh_pars.size() != 2)
         logging::warning() << "wrong entry in remesh. Aborting" << std::endl << std::flush;
@@ -275,29 +274,22 @@ void YamlParser::discrete_fracture(const YAML::Node       & node,
   }
 }
 
-void YamlParser::section_domain_props(const YAML::Node &         node,
-                                      const ExpressionDomainType var_type)
+void YamlParser::section_domain_props(const YAML::Node & node, const VariableType var_type)
 {
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
+    logging::log() << "\tReading key " << key << std::endl;
 
-    if (key == "file")  // where to ouput properties
+    if (key == "files")  // these are common for all flow domains
     {
-      if (var_type == ExpressionDomainType::mechanics)
-        config.gprs_output.mechanics_kwd_file = it->second.as<std::string>();
-      continue;
+      domain(it->second, var_type, config.cell_properties.files);
     }
     else if (key == "domain")
     {
       int label;
       try {
         label = it->second["label"].as<int>();
-        // if (label == 0)
-        // {
-        //   std::cout << "domain label cannot be 0" << std::endl;
-        //   exit(-1);
-        // }
       }
       catch (YAML::TypedBadConversion<int> & error) {
         throw std::invalid_argument("domain label must be an integer");
@@ -306,7 +298,11 @@ void YamlParser::section_domain_props(const YAML::Node &         node,
         throw std::invalid_argument("domain label must be specified");
       }
 
-      DomainConfig & conf = get_domain_config(label);
+      // DomainConfig & conf = get_domain_config(label);
+      config.cell_properties.domains.emplace_back();
+      auto & conf = config.cell_properties.domains.back();
+      conf.label = label;
+
       logging::log() << "\tReading domain " << conf.label << std::endl;
       domain(it->second, var_type, conf);
     }
@@ -341,9 +337,7 @@ std::size_t find(const typename iterable::value_type & item,
   return counter;
 }
 
-void YamlParser::domain(const YAML::Node &         node,
-                        const ExpressionDomainType var_type,
-                        DomainConfig     &         conf)
+void YamlParser::domain(const YAML::Node & node, const VariableType var_type, DomainConfig & conf)
 {
   std::size_t exp_counter = conf.expressions.size();
 
@@ -369,28 +363,26 @@ void YamlParser::domain(const YAML::Node &         node,
         config.input_property_file_names.push_back(it_var->second.as<std::string>());
       }
     }
-    else if (key == "label")
-      continue;
     else
     {
       // save property name and expression
       conf.variables.push_back(key);
       conf.expressions.push_back(value);
-      const std::size_t ind = find(key, config.cell_properties.all_vars);
-      if (ind == config.cell_properties.all_vars.size())  // new variable
-      {
-        config.cell_properties.all_vars.push_back(key);
-        // special case - service variable (not outputted)
-        if ( find(key, config.cell_properties.special_keywords) < config.cell_properties.special_keywords.size())
-          config.cell_properties.expression_type.push_back(ExpressionDomainType::service);
-        else
-          config.cell_properties.expression_type.push_back(var_type);
-      }
+      // const std::size_t ind = find(key, config.cell_properties.all_vars);
+      // if (ind == config.cell_properties.all_vars.size())  // new variable
+      // {
+      //   config.cell_properties.all_vars.push_back(key);
+      //   // special case - service variable (not outputted)
+      //   if ( find(key, config.cell_properties.special_keywords) < config.cell_properties.special_keywords.size())
+      //     config.cell_properties.expression_type.push_back(ExpressionDomainType::service);
+      //   else
+      //     config.cell_properties.expression_type.push_back(var_type);
+      // }
 
-      // save positions in the global list
-      conf.local_to_global_vars[exp_counter] = ind;
-      conf.global_to_local_vars[ind]         = exp_counter;
-      exp_counter++;
+      // // save positions in the global list
+      // conf.local_to_global_vars[exp_counter] = ind;
+      // conf.global_to_local_vars[ind]         = exp_counter;
+      // exp_counter++;
     }
   }
 }
@@ -514,28 +506,28 @@ void YamlParser::bc_node(const YAML::Node & node, BCConfig & conf)
   }
 }
 
-DomainConfig & YamlParser::get_domain_config(const int label)
-{
+// DomainConfig & YamlParser::get_domain_config(const int label)
+// {
   // find current domain id in existing config
-  int counter = 0;
-  for (const auto & domain : config.domains)
-  {
-    if (label == domain.label)
-      break;
-    else
-      counter++;
-  }
+  // int counter = 0;
+  // for (const auto & domain : config.domains)
+  // {
+  //   if (label == domain.label)
+  //     break;
+  //   else
+  //     counter++;
+  // }
 
-  DomainConfig * p_conf;
-  if (counter == config.domains.size())
-  {
-    config.domains.emplace_back();
-    config.domains.back().label = label;
-    return config.domains.back();
-  }
-  else
-    return config.domains[counter];
-}
+  // DomainConfig * p_conf;
+  // if (counter == config.domains.size())
+  // {
+  //   config.domains.emplace_back();
+  //   config.domains.back().label = label;
+  //   return config.domains.back();
+  // }
+  // else
+  //   return config.domains[counter];
+// }
 
 void YamlParser::section_wells(const YAML::Node & node)
 {

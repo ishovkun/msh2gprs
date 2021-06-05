@@ -25,6 +25,11 @@ bool DiscreteFractureManager::is_fracture(const int face_marker) const
 void DiscreteFractureManager::distribute_properties()
 {
   m_data.dfm_faces.clear();
+  size_t const n_flow_props = std::count_if(std::begin(m_data.property_types), std::end(m_data.property_types),
+                                            [](auto type) {
+                                              return type == VariableType::flow;
+                                            });
+
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
       if (is_fracture(face->marker()))
       {
@@ -85,14 +90,17 @@ void DiscreteFractureManager::distribute_properties()
             std::cout << f->index() << std::endl;
           throw e;
         }
-        f.custom_flow_data.resize(m_data.output_flow_properties.size());
-        for (size_t j = 0; j < m_data.output_flow_properties.size(); ++j)
-        {
-          const size_t key = m_data.output_flow_properties[j];
-          f.custom_flow_data[j] +=
-              (m_data.cell_properties[key][cell1.index()] * v1 +
-               m_data.cell_properties[key][cell2.index()] * v2 ) / ( v1 + v2 ) ;
-        }
+
+        // compute custom data as arithmetic average from matrix cells
+        f.custom_flow_data.resize(n_flow_props);
+        size_t iprop = 0;
+        for (size_t j = 0; j < m_data.property_types.size(); ++j)
+          if (m_data.property_types[j] == VariableType::flow)
+          {
+            f.custom_flow_data[iprop++] +=
+                (m_data.cell_properties[j][cell1.index()] * v1 +
+                 m_data.cell_properties[j][cell2.index()] * v2 ) / ( v1 + v2 ) ;
+          }
         m_data.dfm_faces.insert({face->index(), std::move(f)});
       }
 }

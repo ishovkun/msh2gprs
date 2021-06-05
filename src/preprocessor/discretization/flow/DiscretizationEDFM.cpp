@@ -38,9 +38,6 @@ void DiscretizationEDFM::build()
   build_control_volume_data_();
   build_connection_data_();
 
-  // if (m_method == EDFMMethod::projection)
-  //   build_pedfm_();
-
   // copy to condata
   m_con_data.reserve(m_con_map.size());
   for (auto it = m_con_map.begin(); it != m_con_map.end(); ++it)

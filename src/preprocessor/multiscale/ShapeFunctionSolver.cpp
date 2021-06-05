@@ -11,7 +11,7 @@ ShapeFunctionSolver::ShapeFunctionSolver(size_t source,
                                          std::vector<double> const & bnd_values,
                                          gprs_data::SimData const & data)
     : _source(source), _region(sub_region), _bnd(bnd), _bnd_values(bnd_values), _data(data),
-      _mapping(_data.cv_data.size(), _region.size())
+      _mapping(_data.flow.cv.size(), _region.size())
 {
   for (size_t i = 0; i < _region.size(); ++i)
     _mapping[_region[i]] = i;
@@ -21,8 +21,8 @@ ShapeFunctionSolver::ShapeFunctionSolver(size_t source,
 
 ShapeFunctionSolver::ShapeFunctionSolver(size_t source, std::vector<size_t> const & bnd_cells,
                                          gprs_data::SimData const & data)
-    : _source(source), _bnd(bnd_cells), _data(data), _region(_data.cv_data.size()),
-      _mapping(_data.cv_data.size(), _region.size())
+    : _source(source), _bnd(bnd_cells), _data(data), _region(_data.flow.cv.size()),
+      _mapping(_data.flow.cv.size(), _region.size())
 {
   std::iota( _region.begin(), _region.end(), 0 );
   std::iota( _mapping.begin(), _mapping.end(), 0 );
@@ -49,7 +49,7 @@ std::tuple<Eigen::SparseMatrix<double,Eigen::RowMajor>, Eigen::VectorXd> ShapeFu
 
 void ShapeFunctionSolver::build_laplace_terms_(Eigen::SparseMatrix<double,Eigen::RowMajor>& A, Eigen::VectorXd & res) const
 {
-  auto const & cons =  _data.flow_connection_data;
+  auto const & cons =  _data.flow.con;
 
   for (auto const & con : cons)
     if (_mapping[con.elements[0]] < _region.size() && _mapping[con.elements[1]] < _region.size())
@@ -82,20 +82,20 @@ double compute(ConnectionData const & con, std::vector<ControlVolumeData> const 
 
 void ShapeFunctionSolver::build_special_terms_(Eigen::SparseMatrix<double,Eigen::RowMajor>& A, Eigen::VectorXd & res) const
 {
-  auto const & cons =  _data.flow_connection_data;
-  auto const & cv = _data.cv_data;
+  auto const & cons =  _data.flow.con;
+  auto const & cv = _data.flow.cv;
   auto const c = cv[_source].center;
 
   for (auto const & con : cons)
     if (_mapping[con.elements[0]] < _region.size() && _mapping[con.elements[1]] < _region.size())
   {
-    double const entry1 = compute(con, _data.cv_data, c, 0);
+    double const entry1 = compute(con, _data.flow.cv, c, 0);
     size_t const i = _mapping[con.elements[0]];
     size_t const j = _mapping[con.elements[1]];
     A.coeffRef(i, i) += entry1;
     A.coeffRef(i, j) -= entry1;
 
-    double const entry2 = compute(con, _data.cv_data, c, 1);
+    double const entry2 = compute(con, _data.flow.cv, c, 1);
     A.coeffRef(j, j) += entry2;
     A.coeffRef(j, i) -= entry2;
   }

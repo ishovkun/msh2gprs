@@ -82,7 +82,7 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
 
 void OutputDataGPRS::save_control_volume_data_(std::ofstream & out) const
 {
-  const auto & cvs = _data.cv_data;
+  const auto & cvs = _data.flow.cv;
   ///// OUTPUT Dimensions /////
   out << "DIMENS" << std::endl;
   out << cvs.size() << "\t" << 1 << "\t" << 1 << "\t" << std::endl;
@@ -107,20 +107,20 @@ void OutputDataGPRS::save_control_volume_data_(std::ofstream & out) const
   out << "/" << std::endl << std::endl;
 
   // additional data (if any)
-  for (std::size_t ivar=0; ivar<_data.output_flow_properties.size(); ++ivar)
-  {
-    const size_t prop_key = _data.output_flow_properties[ivar];
-    const std::string keyword = _data.property_names[prop_key];
-    out << keyword << std::endl;
-    for (const auto & cv : cvs)
-        out << cv.custom[ivar] << std::endl;
-    out << "/" << std::endl << std::endl;
-  }
+  for (size_t ivar = 0, flow_var = 0; ivar < _data.property_types.size(); ++ivar)
+    if (_data.property_types[ivar] == VariableType::flow)
+    {
+      out << _data.property_names[ivar] << std::endl;
+      for (const auto & cv : cvs)
+        out << cv.custom[flow_var] << std::endl;
+      out << "/" << std::endl << std::endl;
+      flow_var++;
+    }
 }
 
 void OutputDataGPRS::save_trans_data_(std::ofstream & out) const
 {
-  const auto & cons = _data.flow_connection_data;
+  const auto & cons = _data.flow.con;
 
   /* OUTPUT Transmissibility */
   out << "TPFACONNS" << std::endl;
@@ -148,7 +148,7 @@ void OutputDataGPRS::save_trans_data_(std::ofstream & out) const
 void OutputDataGPRS::save_trans_update_formulas_(std::ofstream & out) const
 {
   out << "GMUPDATETRANS\n";
-  const auto & cons = _data.flow_connection_data;
+  const auto & cons = _data.flow.con;
 
   for (size_t icon = 0; icon < cons.size(); ++icon)
   {

@@ -34,8 +34,7 @@ void GmshInterface::read_msh(const std::string & filename, mesh::Mesh & mesh)
   else
   {
     mesh_file.close();
-    throw std::out_of_range("cannot read this msh file "
-                            "(version "+ std::to_string(version) +")");
+    throw std::out_of_range("cannot read this msh file " "(version "+ std::to_string(version) +")");
   }
 
   mesh_file.close();

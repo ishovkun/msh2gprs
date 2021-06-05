@@ -190,7 +190,7 @@ void WellManager::compute_well_index_(Well &well)
 {
   for (auto & segment : well.segment_data)
   {
-    const auto & cv = _data.cv_data[segment.dof];
+    const auto & cv = _data.flow.cv[segment.dof];
     if (cv.type == discretization::ControlVolumeType::cell)  // matrix
       compute_WI_matrix_(well, segment);
     else // fracture
@@ -300,7 +300,7 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
           const Point tangent1 = plane.project_vector({0, 0, 1}).normalize();
           const Point tangent2 = tangent1.cross(plane.normal()).normalize();
           // well.connected_volumes.push_back(frac_dof);
-          const auto & frac_cv = _data.cv_data[segment.dof];
+          const auto & frac_cv = _data.flow.cv[segment.dof];
           if (section_data.size() == 1)
           {
             // find angle alpha between well direcion and its projection onto frac plane
@@ -340,7 +340,7 @@ void WellManager::compute_WI_matrix_(Well & well, discretization::WellSegment & 
 {
   // const std::size_t icell = _well_connected_cells.back()[segment];
   // const angem::Tensor2<3,double> perm = _data.get_permeability(icell);
-  const auto & perm = _data.cv_data[segment.dof].permeability;
+  const auto & perm = _data.flow.cv[segment.dof].permeability;
   const auto & dx_dy_dz = segment.bounding_box;
   angem::Point<3,double> productivity;
   // project on plane yz
@@ -372,7 +372,7 @@ void WellManager::compute_WI_frac_(Well & well, discretization::WellSegment & se
   // fracture-well intersection is decomposed into a radial flow part and
   // a reduced linear flow part
 
-  const auto & frac = _data.cv_data[segment.dof];
+  const auto & frac = _data.flow.cv[segment.dof];
   const double perm = frac.permeability(0,0);
   // full linear slot
   const double wi_lin_slot = 8 * frac.aperture * segment.bounding_box[0] * perm;

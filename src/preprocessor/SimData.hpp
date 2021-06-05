@@ -46,6 +46,17 @@ struct BoundaryConstraintData
   double penalty;
 };
 
+struct FlowData
+{
+  // mesh::Mesh grid;  // @TODO move here
+  std::vector<int> permeability_idx = {-1, -1, -1};              // permeability key indices in cell_properties (kxx, kyy kzz)
+  size_t porosity_idx = std::numeric_limits<size_t>::max(); // porosity key index in cell_properties
+  std::vector<size_t> output_idx;                                     // indices of properties to output
+  size_t vmult_idx = std::numeric_limits<size_t>::max();     // volume mult index in cell_properties
+  std::vector<discretization::ControlVolumeData> cv;         // control volumes
+  std::vector<discretization::ConnectionData> con;           // connections
+};
+
 struct SimData
 {
   mesh::Mesh grid;  // active grid that has all the manipulations on
@@ -54,16 +65,12 @@ struct SimData
   // ----------------------- Reservoir cells ------------------------ //
   std::vector<std::string> property_names;
   std::vector<std::vector<double>> cell_properties;
-  std::array<int,6> permeability_keys = {-1, -1, -1, -1, -1, -1}; // permeability key indices in cell_properties
-  size_t porosity_key_index = std::numeric_limits<size_t>::max(); // porosity key index in cell_properties
-  size_t vol_mult_index = std::numeric_limits<size_t>::max();     // volume mult index in cell_properties
-  std::vector<size_t> output_flow_properties;                     // indices of flow property keywords
+  std::vector<VariableType> property_types;
   std::vector<size_t> output_mech_properties;                     // indices of mech property keywords
+  FlowData flow;
   // ----------------------- DFM ------------------------ //
-  // std::unordered_map<size_t,DiscreteFractureFace> dfm_faces;
   std::map<size_t,DiscreteFractureFace> dfm_faces;
-  // grid comprised of dfm faces
-  // mesh::SurfaceMesh<double> dfm_flow_grid, dfm_mech_grid;
+  // grid comprised of dfm faces and edfm fractures
   mesh::SurfaceMesh<double> fracture_grid;
   std::vector<size_t> dfm_cell_mapping;  // for postprocessor output  vtk_cell -> flow dof
   std::vector<angem::Point<3,double>> grid_vertices_after_face_split;
@@ -72,13 +79,8 @@ struct SimData
   std::unordered_map<size_t, std::vector<size_t>> parent_to_child_vertices;
   // ---------------------- EDFM ------------------------ //
   std::vector<EmbeddedFractureMechanicalProperties> sda_data;
-  // std::unordered_map<size_t,size_t> face_to_fracture;
-  // mesh:: SurfaceMesh<double> edfm_grid;     // for vtk output
   std::vector<size_t> edfm_cell_mapping;    // for postprocessor output  vtk_cell -> dof
   // std::unordered_set<int> edfm_grid_labels;
-  // ----------------------- Flow data ---------------------- //
-  std::vector<discretization::ControlVolumeData> cv_data;
-  std::vector<discretization::ConnectionData> flow_connection_data;
   // ----------------------- Well data ---------------------- //
   std::vector<Well> wells;  // vector of well properties
   angem::PointSet<3,double> well_vertices;  // set of well coordinatees: used for vtk output.
@@ -107,32 +109,6 @@ struct SimData
   std::vector<std::vector<size_t>> gmcell_to_SDA_flowcells; // Geomechanics cell in EDFM -> Flow cells in each geomech cell in EDFM.
   // Helps to search iintersections fast
   std::unique_ptr<GridIntersectionSearcher> grid_searcher;
-  // --------------------- Methods --------------------------------- //
-  angem::Tensor2<3,double> get_permeability(const std::size_t cell) const
-  {
-    assert(cell < cell_properties[permeability_keys[0]].size());
-    angem::Tensor2<3,double> K;
-    for (int i = 0; i < 3; i++)
-        K(i, i) = (permeability_keys[i] >= 0) ?
-                  cell_properties[permeability_keys[i]][cell] : 0;
-    return K;
-  }
-
-  double get_porosity(const std::size_t cell) const
-  {
-    assert(porosity_key_index < property_names.size());
-    assert ( cell < cell_properties[porosity_key_index].size() );
-    return cell_properties[porosity_key_index][cell];
-  }
-
-  double get_volume_mult(const size_t cell) const
-  {
-    if (vol_mult_index == std::numeric_limits<size_t>::max())
-      return 1;
-    else return cell_properties[vol_mult_index][cell];
-  }
-
-  size_t n_dfm_faces() const { return dfm_faces.size(); }
 };
 
 

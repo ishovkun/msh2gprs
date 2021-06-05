@@ -13,15 +13,14 @@ DiscretizationTPFA(const DoFNumbering & dof_numbering,
                    gprs_data::SimData & data,
                    std::vector<ControlVolumeData> & cv_data,
                    std::vector<ConnectionData> & connection_data)
-    :
-    DiscretizationBase(dof_numbering, data, cv_data, connection_data),
-    m_method(tpfa_method::mo)
+    : DiscretizationBase(dof_numbering, data, cv_data, connection_data)
+    , m_method(tpfa_method::mo)
 {}
 
 void DiscretizationTPFA::build()
 {
   for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
-    DiscretizationBase::build_cell_data_(*cell);
+    build_cell_data_(*cell);
 
   m_con_data.reserve(m_con_data.size() + m_grid.n_faces());
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)

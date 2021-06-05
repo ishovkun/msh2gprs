@@ -49,8 +49,9 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
   }
   else if (config.mesh_config.type == MeshType::cartesian)
   {
-    logging::log() << "Building Cartesian grid";
+    logging::log() << "Building Cartesian grid...";
     data.grid = mesh::CartesianMeshBuilder(config.mesh_config.cartesian);
+    logging::log() << "OK" << std::endl;
   }
   else throw std::invalid_argument("Invalid mesh format");
 }
@@ -58,9 +59,11 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
 void Preprocessor::run()
 {
   // property manager for grid with split cells (due to edfm splitting)
-  pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, config.domains, data);
+  pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, data);
   logging::log() << "Generating properties" << std::endl;
-  pm_property_mgr->generate_properties();
+  pm_property_mgr->generate_properties(data.cell_properties);
+  data.property_names = pm_property_mgr->get_property_names();
+  data.property_types = pm_property_mgr->get_property_types();
 
   logging::log() << "Initializing grid searcher" << std::endl;
   data.grid_searcher = std::make_unique<GridIntersectionSearcher>(data.grid);
@@ -229,12 +232,15 @@ void Preprocessor::read_mesh_file_(const Path mesh_file_path)
         cell->set_marker(static_cast<int>(data[0][icell++]));
     }
   }
-  else
-    throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
+  else throw std::invalid_argument("Only .msh files produced by Gmsh are supported");
 }
 
 void Preprocessor::build_flow_discretization_()
 {
+  data.flow.permeability_idx = pm_property_mgr->get_permeability_keys();
+  data.flow.porosity_idx = pm_property_mgr->get_porosity_key();
+  data.flow.vmult_idx = pm_property_mgr->get_volume_mult_key();
+
   // add properties for refined cells
   pm_property_mgr->downscale_properties();
   /* Since we split edfm faces, we pretend that they are dfm fractures
@@ -259,18 +265,21 @@ void Preprocessor::build_flow_discretization_()
   switch (config.edfm_settings.method)
   {
     case (EDFMMethod::simple):
+      logging::important() << "Simple EDFM is chosen" << std::endl;
       flow_discr = std::make_unique<DiscretizationEDFM>
-          (*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
-           data.flow_connection_data, edfm_markers);
+          (*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
+           data.flow.con, edfm_markers);
       break;
     case (EDFMMethod::projection):
+      logging::important() << "Projection EDFM is chosen" << std::endl;
       flow_discr = std::make_unique<DiscretizationPEDFM>
-          (*p_split_dofs, *p_unsplit_dofs, data, data.cv_data,
-           data.flow_connection_data, *pm_edfm_mgr);
+          (*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
+           data.flow.con, *pm_edfm_mgr);
     break;
     case (EDFMMethod::compartmental):
+      logging::important() << "Compartmental EDFM is chosen" << std::endl;
       flow_discr = std::make_unique<DiscretizationDFM>
-          (*p_split_dofs, data, data.cv_data, data.flow_connection_data);
+          (*p_split_dofs, data, data.flow.cv, data.flow.con);
     break;
   }
   // if we do cedfm use the split matrix dof numbering
@@ -296,7 +305,6 @@ void Preprocessor::build_flow_discretization_()
   {
     // multiscale::Idea idea(data.grid, data);
     multiscale::MSFlow(data.grid, data, config.ms_flow);
-    exit(0);
   }
 
   // used for coupling later on

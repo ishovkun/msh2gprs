@@ -41,7 +41,7 @@ SupportRegionsLaplaceMod::SupportRegionsLaplaceMod(std::vector<size_t> const &pa
     _centers.push_back(center);
   }
 
-  auto const block_cons = build_block_graph(_blocks.size(), _partition, _data.flow_connection_data);
+  auto const block_cons = build_block_graph(_blocks.size(), _partition, _data.flow.con);
 
   _support.resize(_blocks.size());
   for (size_t u = 0; u < _blocks.size(); ++u)
@@ -78,14 +78,14 @@ size_t SupportRegionsLaplaceMod::find_center_(std::vector<size_t> const  & regio
   angem::Point<3,double> c;
   double volume = 0;
   for (auto v : region) {
-    c += _data.cv_data[v].center * _data.cv_data[v].volume;
-    volume += _data.cv_data[v].volume;
+    c += _data.flow.cv[v].center * _data.flow.cv[v].volume;
+    volume += _data.flow.cv[v].volume;
   }
 
   c /= volume;
   size_t ans = region.front();
   for (auto v : region) {
-    if ( _data.cv_data[v].center.distance(c) < _data.cv_data[ans].center.distance(c) )
+    if ( _data.flow.cv[v].center.distance(c) < _data.flow.cv[ans].center.distance(c) )
       ans = v;
   }
   return ans;

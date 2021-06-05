@@ -16,10 +16,10 @@ MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data, MultiscaleCon
     , _type(config.type)
     ,_ncoarse(config.n_blocks)
 {
-  size_t const n = data.cv_data.size();
+  size_t const n = data.flow.cv.size();
 
   EdgeWeightedGraph g(n);
-  for (auto & con: _data.flow_connection_data)
+  for (auto & con: _data.flow.con)
     g.add(UndirectedEdge(con.elements[0], con.elements[1], std::fabs(con.coefficients[0])));
 
   auto partition = MetisInterface::partition(g, _ncoarse);
