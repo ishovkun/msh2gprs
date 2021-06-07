@@ -53,6 +53,7 @@ struct FlowData
   size_t porosity_idx = std::numeric_limits<size_t>::max(); // porosity key index in cell_properties
   std::vector<size_t> output_idx;                                     // indices of properties to output
   size_t vmult_idx = std::numeric_limits<size_t>::max();     // volume mult index in cell_properties
+  std::vector<size_t> custom_idx;
   std::vector<discretization::ControlVolumeData> cv;         // control volumes
   std::vector<discretization::ConnectionData> con;           // connections
 };

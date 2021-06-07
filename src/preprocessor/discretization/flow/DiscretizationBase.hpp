@@ -39,7 +39,6 @@ class DiscretizationBase
   std::vector<ControlVolumeData> & m_cv_data;  // [out]  reference to CVs to be filled
   std::vector<ConnectionData> & m_con_data;    // [out]  reference to connections to be filled
   std::vector<size_t> m_dof_mapping;           // old to new dofs
-  std::vector<size_t> _flow_prop_idx;
 };
 
 }

@@ -11,6 +11,7 @@ class MSFlow {
 
  protected:
   void find_coarse_center(size_t coarse, std::vector<size_t> & cells);
+  std::function<double(double)> build_weight_function() const;
   mesh::Mesh const & _grid;
   gprs_data::SimData & _data;
   MSPartitioning const _type;

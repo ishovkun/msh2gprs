@@ -17,10 +17,11 @@ MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data, MultiscaleCon
     ,_ncoarse(config.n_blocks)
 {
   size_t const n = data.flow.cv.size();
-
+  auto const weight_func = build_weight_function();
   EdgeWeightedGraph g(n);
+  // find min non_zero perm
   for (auto & con: _data.flow.con)
-    g.add(UndirectedEdge(con.elements[0], con.elements[1], std::fabs(con.coefficients[0])));
+    g.add(UndirectedEdge(con.elements[0], con.elements[1], weight_func(con.coefficients[0])));
 
   auto partition = MetisInterface::partition(g, _ncoarse);
   std::string fname = "solution.vtk";
@@ -64,6 +65,20 @@ MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data, MultiscaleCon
   // }
 
   out.close();
+}
+
+std::function<double(double)> MSFlow::build_weight_function() const
+{
+  double minperm = std::numeric_limits<double>::max();
+  for (auto & con : _data.flow.con)
+    if (con.coefficients[0] != 0.f)
+      minperm = std::min(minperm, std::fabs(con.coefficients[0]));
+  double const minlogperm = std::log(minperm);
+  std::function<double(double)> perm_func = [minlogperm](double k) -> double {
+    if (k == 0.f) return 0.f;
+    return std::log(std::fabs( k )) - minlogperm + 1;
+  };
+  return perm_func;
 }
 
 }  // end namespace multiscale

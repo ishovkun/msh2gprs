@@ -107,15 +107,13 @@ void OutputDataGPRS::save_control_volume_data_(std::ofstream & out) const
   out << "/" << std::endl << std::endl;
 
   // additional data (if any)
-  for (size_t ivar = 0, flow_var = 0; ivar < _data.property_types.size(); ++ivar)
-    if (_data.property_types[ivar] == VariableType::flow)
-    {
-      out << _data.property_names[ivar] << std::endl;
+  for (size_t i = 0; i < _data.flow.custom_idx.size(); ++i) {
+      size_t var = _data.flow.custom_idx[i];
+      out << _data.property_names[var] << std::endl;
       for (const auto & cv : cvs)
-        out << cv.custom[flow_var] << std::endl;
+        out << cv.custom[i] << std::endl;
       out << "/" << std::endl << std::endl;
-      flow_var++;
-    }
+  }
 }
 
 void OutputDataGPRS::save_trans_data_(std::ofstream & out) const

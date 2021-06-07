@@ -203,6 +203,25 @@ void CellPropertyManager::print_setup_message_() const
   logging::log() << std::endl;
 }
 
+std::vector<size_t> CellPropertyManager::get_custom_flow_keys() const
+{
+  auto const types = get_property_types();
+  std::vector<size_t> ans;
+  for (size_t i = 0; i < types.size(); ++i)
+    if ( types[i] == VariableType::flow)
+      ans.push_back(i);
+  return ans;
+}
+std::vector<size_t> CellPropertyManager::get_custom_mech_keys() const
+{
+  auto const types = get_property_types();
+  std::vector<size_t> ans;
+  for (size_t i = 0; i < types.size(); ++i)
+    if ( types[i] == VariableType::mechanics)
+      ans.push_back(i);
+  return ans;
+}
+
 std::vector<int> CellPropertyManager::get_permeability_keys() const
 {
   vector<int> ans{-1, -1, -1};
@@ -301,5 +320,6 @@ std::vector<VariableType> CellPropertyManager::get_property_types() const
       ans[_vars[var]] = VariableType::service;
   return ans;
 }
+
 
 }  // end namespace gprs_data

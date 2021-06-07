@@ -17,10 +17,6 @@ DiscretizationBase(const DoFNumbering & dof_numbering,
   assert ( &m_cv_data );
   if (m_cv_data.size() < m_dofs.n_dofs())
     m_cv_data.resize( m_dofs.n_dofs() );
-
-  for (size_t i = 0; i < m_data.property_types.size(); ++i)
-    if (m_data.property_types[i] == VariableType::flow)
-      _flow_prop_idx.push_back(i);
 }
 
 void DiscretizationBase::build_cell_data_(const mesh::Cell& cell)
@@ -38,9 +34,9 @@ void DiscretizationBase::build_cell_data_(const mesh::Cell& cell)
     cv.center = cell.center();
     cv.volume = cell.volume() * m_data.cell_properties[ m_data.flow.vmult_idx ][cell_index];
 
-    cv.custom.resize(_flow_prop_idx.size());
-    for (size_t i = 0; i < _flow_prop_idx.size(); ++i)
-      cv.custom[i] = m_data.cell_properties[_flow_prop_idx[i]][cell_index];
+    cv.custom.resize(m_data.flow.custom_idx.size());
+    for (size_t i = 0; i < m_data.flow.custom_idx.size(); ++i)
+      cv.custom[i] = m_data.cell_properties[m_data.flow.custom_idx[i]][cell_index];
 }
 
 }

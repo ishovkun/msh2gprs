@@ -39,6 +39,8 @@ class CellPropertyManager
   std::vector<int> get_permeability_keys() const;
   size_t get_porosity_key() const;
   size_t get_volume_mult_key() const {return _vars[_config.vmult_kwd];}
+  std::vector<size_t> get_custom_flow_keys() const;
+  std::vector<size_t> get_custom_mech_keys() const;
 
  private:
   void print_setup_message_() const;

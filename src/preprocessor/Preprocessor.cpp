@@ -240,6 +240,7 @@ void Preprocessor::build_flow_discretization_()
   data.flow.permeability_idx = pm_property_mgr->get_permeability_keys();
   data.flow.porosity_idx = pm_property_mgr->get_porosity_key();
   data.flow.vmult_idx = pm_property_mgr->get_volume_mult_key();
+  data.flow.custom_idx = pm_property_mgr->get_custom_flow_keys();
 
   // add properties for refined cells
   pm_property_mgr->downscale_properties();

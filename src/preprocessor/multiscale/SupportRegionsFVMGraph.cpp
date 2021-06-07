@@ -11,17 +11,26 @@ namespace multiscale {
 using discretization::ConnectionData;
 using namespace algorithms;
 
+void homogenize(algorithms::EdgeWeightedGraph & g) {
+  for (auto & e : g.edges())
+    e.set_weight(1.f);
+}
+
 SupportRegionsFVMGraph::SupportRegionsFVMGraph(std::vector<size_t> const &partition,
                                                algorithms::EdgeWeightedGraph &&connections)
     : _cons(connections)
     , SupportRegionsBase(partition)
     , _block_bds(find_block_boundaries_())
 {
+  modify_edge_weights_();
+
   // find coarse centers
   for (size_t coarse = 0; coarse < _blocks.size(); ++coarse) {
     size_t const center = find_center_(_blocks[coarse], _block_bds[coarse]);
     _centers.push_back(center);
   }
+
+  // homogenize(_cons);
 
   // find support regions
   _support_bnd.resize(_blocks.size());
@@ -245,7 +254,7 @@ std::vector<bool> flag_vertices(std::vector<size_t> const & mapping,
         size_t ib = idx[i];
         double value = paths.back().distanceTo(centers[ib]);
         double d = paths[ib].distanceTo(v);
-        double weight = 1.f / std::pow(d, 1.2);
+        double weight = 1.f / std::pow(d, 2.0);
         threshold += weight * value;
         norm += weight;
 
@@ -256,7 +265,6 @@ std::vector<bool> flag_vertices(std::vector<size_t> const & mapping,
         }
       }
       threshold /= norm;
-
 
       if (paths.back().distanceTo(v) < threshold)
         flags[v] = true;
@@ -325,5 +333,18 @@ void SupportRegionsFVMGraph::build_support_region_(std::vector<size_t> blocks, s
   }
 }
 
+void SupportRegionsFVMGraph::modify_edge_weights_()
+{
+  double min_nonzero_weight = std::numeric_limits<double>::max();
+  for (auto const & e : _cons.edges())
+    if (e.weight() != 0.f)
+      min_nonzero_weight = std::min(min_nonzero_weight, e.weight());
+
+  double max_weight = 1.f / min_nonzero_weight + 1.f;
+  for (auto & e : _cons.edges())
+    if (e.weight() == 0.f)
+      e.set_weight(max_weight);
+    else e.set_weight( 1.f / e.weight() );
+}
 
 }  // end namespace multiscale

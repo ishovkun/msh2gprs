@@ -29,6 +29,7 @@ class SupportRegionsFVMGraph : public SupportRegionsBase  {
   std::vector<size_t> neighbor_blocks_(std::vector<size_t> const &_bnd) const;
   size_t generate_mapping_(std::vector<size_t> const &blocks, std::vector<size_t> &mapping) const;
   void build_support_region_(std::vector<size_t> blocks, size_t region);
+  void modify_edge_weights_();
 
   algorithms::EdgeWeightedGraph _cons;
   std::vector<std::vector<size_t>> _block_bds;
