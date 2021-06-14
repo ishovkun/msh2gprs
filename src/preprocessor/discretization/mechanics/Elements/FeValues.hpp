@@ -424,13 +424,12 @@ compute_detJ_and_invert_face_jacobian_(const std::array<Point,ElementTraits<vtk_
   for (size_t i=0; i < ElementTraits<vtk_id>::n_vertices; ++i)
   {
     loc_coord[i] = plane.local_coordinates(_vertex_coord[i]);
-    // std::cout << "Fe_values: loc_coord = " << loc_coord[i] << std::endl;
-    if ( std::fabs(loc_coord[i][2]) > 1e-8 * _vertex_coord[0].distance(_vertex_coord[1] ) )
-    {
-      std::cout << "Fe_values: loc_coord = " << loc_coord[i] << std::endl;
-      logging::warning() << "non-planar face or basis is "
-                            "set for non-planar surfaces" << std::endl;
-    }
+    // if ( std::fabs(loc_coord[i][2]) > 1e-8 * _vertex_coord[0].distance(_vertex_coord[1] ) )
+    // {
+    //   logging::warning() << "non-planar face or basis is "
+    //                      << "set for non-planar surfaces"
+    //                      << "loc_coord = " << loc_coord[i] << std::endl;
+    // }
   }
 
   // dxⱼ / duᵢ = Σₖ (dΨₖ / duⱼ) * xₖᵢ

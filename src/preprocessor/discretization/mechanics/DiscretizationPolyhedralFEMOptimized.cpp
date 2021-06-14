@@ -28,24 +28,6 @@ DiscretizationPolyhedralFEMOptimized(mesh::Mesh & grid,
 
 void DiscretizationPolyhedralFEMOptimized::enumerate_elements_()
 {
-  // {
-  //   std::cout << "cell 13 vertices" << std::endl;
-  //   for (auto v : _grid.cell(13).vertices())
-  //     std::cout << v << " ";
-  //   std::cout << std::endl;
-
-  //   std::cout << "cell 14 vertices" << std::endl;
-  //   for (auto v : _grid.cell(14).vertices())
-  //     std::cout << v << " ";
-  //   std::cout << std::endl;
-
-  //   auto p1 = _grid.cell(13).polyhedron();
-  //   auto p2 = _grid.cell(14).polyhedron();
-  //   Isomorphism isomorphism(*p1, *p2);
-  //   std::cout << "check : " << isomorphism.check() << std::endl;
-  //   exit(0);
-  // }
-
   std::unique_ptr<logging::ProgressBar> progress = nullptr;
   if (gprs_data::GlobalOpts::ref().print_progressbar)
     progress = std::make_unique<logging::ProgressBar>("Enumerating cell types", _grid.n_active_cells());
@@ -60,11 +42,7 @@ void DiscretizationPolyhedralFEMOptimized::enumerate_elements_()
     auto poly = cell->polyhedron();
     size_t const type = known_element_(*poly, order);
 
-    // if (cell->index() == 14 && type == _shapes.size())
-    //   throw 2;
-
     if ( type < _shapes.size() ) {
-      // std::cout << "cell " << cell->index() << " is known" << std::endl;
       // reorder cell vertices in order of master's vertices
       angem::reorder_to(cell->vertices(), order);
       // reorder cell faces in order of master's vertices
@@ -81,7 +59,9 @@ void DiscretizationPolyhedralFEMOptimized::enumerate_elements_()
   }
 
   if (progress) progress->finalize();
-  else logging::log() << "OK." << " Unique cell types = " << _shapes.size() << std::endl;
+  else logging::log() << "OK." << std::endl;
+
+  logging::log() << " Unique cell types = " << _shapes.size() << std::endl;
 }
 
 void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <cctype>  // tolower
 
 namespace Parsers
 {
@@ -22,7 +23,8 @@ CommandLineParser::CommandLineParser(int argc, char *argv[])
       .add_options()
       ("i,input", "Input config file path", value<string>())
       //
-      ("d,debug", "Log level debug", value<bool>()->default_value("true")) // a bool parameter
+      // ("d,debug", "Log level debug", value<bool>()->default_value("true")) // a bool parameter
+      ("l,log", "Log level", value<string>()->default_value("debug")) // a bool parameter
       //
       ("e,experimental", "Use features that are currently under development",
        value<bool>()->default_value("false"))
@@ -67,11 +69,24 @@ void CommandLineParser::parse_paths_()
   opts.log_file = (opts.config_file_path.parent_path() / "log.txt").filename();
 }
 
+using logging::LogLevel;
+
+logging::LogLevel string_to_LogLevel(std::string const & str)
+{
+  if (str.empty()) return LogLevel::Debug;
+  char const c = std::tolower(str[0]);
+  switch (c) {
+    case 's': return LogLevel::Silent;
+    case 'i': return LogLevel::Important;
+    case 'm': return LogLevel::Message;
+    default:  return LogLevel::Debug;
+  }
+}
+
 void CommandLineParser::parse_logger_()
 {
   auto & opts = gprs_data::GlobalOpts::ref();
-  bool const debug_log = _result["d"].as<bool>();
-  if (debug_log) opts.log_level = logging::LogLevel::Debug;
+  opts.log_level = string_to_LogLevel(_result["l"].as<std::string>());
   opts.print_progressbar = !_result["no_progressbar"].as<bool>();
 }
 

@@ -169,6 +169,7 @@ FiniteElementData PolyhedralElementBase::get_face_data(size_t iface)
 FiniteElementData PolyhedralElementBase::get_fracture_data(const size_t iface,
                                                            const angem::Basis<3,double> basis)
 {
+  // auto const basis1 = get_face_basis_(*_parent_cell.faces()[iface], _parent_cell);
   return integration_rule_frac(iface).integrate(_parent_cell.vertex_coordinates(), basis);
 }
 
