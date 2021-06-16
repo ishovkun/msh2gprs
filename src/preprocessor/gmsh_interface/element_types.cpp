@@ -74,7 +74,7 @@ std::vector<GmshElementType> gmsh_element_types =
  GmshElementType::invalid_element  // [31] 56-node fifth order tetrahedron
 };
 
-std::vector<size_t> gmsh_element_nvertices =
+std::vector<std::size_t> gmsh_element_nvertices =
 {
  0,  // [0]  does not exist
  2,  // [1]  2-node edge

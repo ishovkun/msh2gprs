@@ -1,9 +1,11 @@
 #pragma once
 #include <vector>
+#include <cstddef>  // size_t
 
 namespace multiscale {
 
 class SupportRegionsBase {
+
  public:
   SupportRegionsBase(std::vector<size_t> const &partition);
   virtual ~SupportRegionsBase() = default;
