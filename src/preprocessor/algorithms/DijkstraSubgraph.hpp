@@ -12,6 +12,7 @@ namespace algorithms {
 */
 class DijkstraSubgraph {
  public:
+  // bitset indicates subgraph vertices
   DijkstraSubgraph(size_t source, EdgeWeightedGraph const & g, std::vector<bool> const &bitset);
   double distanceTo(size_t u) const;
   std::vector<UndirectedEdge const*> pathTo(size_t u) const;
