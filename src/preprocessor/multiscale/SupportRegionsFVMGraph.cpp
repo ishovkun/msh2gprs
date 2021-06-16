@@ -1,8 +1,7 @@
 #include "SupportRegionsFVMGraph.hpp"
 #include "algorithms/EdgeWeightedGraph.hpp"
 #include "algorithms/DijkstraSP.hpp"
-#include "algorithms/FlowNetwork.hpp"
-#include "algorithms/FordFulkerson.hpp"
+#include "algorithms/DijkstraSubgraph.hpp"
 #include "MetisInterface.hpp"
 #include <numeric>  // accumulate
 
@@ -20,6 +19,7 @@ SupportRegionsFVMGraph::SupportRegionsFVMGraph(std::vector<size_t> const &partit
                                                algorithms::EdgeWeightedGraph &&connections)
     : _cons(connections)
     , SupportRegionsBase(partition)
+    , _subgraph_mask(_cons.n_vertices(), false)
     , _block_bds(find_block_boundaries_())
 {
   modify_edge_weights_();
@@ -81,43 +81,50 @@ SupportRegionsFVMGraph::build_subgraph_(std::vector<size_t> const & blocks) cons
 
 size_t SupportRegionsFVMGraph::find_center_(std::vector<size_t> const  & region, std::vector<size_t> const & bnd) const
 {
-  size_t const n = region.size();
+  // size_t const n = region.size();
+  std::fill(_subgraph_mask.begin(), _subgraph_mask.end(), false);
+  for (size_t const v : region)
+    _subgraph_mask[v] = true;
 
-  // map between cell indices and local indices within block
-  std::unordered_map<size_t,size_t> mapping;
-  for (size_t iv = 0; iv < n; ++iv) {
-    mapping[region[iv]] = iv;
-  }
+  // // map between cell indices and local indices within block
+  // std::unordered_map<size_t,size_t> mapping;
+  // for (size_t iv = 0; iv < n; ++iv) {
+  //   mapping[region[iv]] = iv;
+  // }
 
   // graph that consists of only cells in the current block
-  EdgeWeightedDigraph g( n );
-  for (size_t iv = 0; iv < n; ++iv) {
-    size_t const v = region[iv];
-    assert( iv == mapping[v] );
-    for (auto const * const e: _cons.adj(v)) {
-      size_t const w = e->other(v);
-      if ( _partition[v] == _partition[w] ) {  // from the same coarse block
-        g.add(DirectedEdge(iv, mapping[w], e->weight()));
-        g.add(DirectedEdge(mapping[w], iv, e->weight()));
-      }
-    }
-  }
+  // EdgeWeightedDigraph g( n );
+  // for (size_t iv = 0; iv < n; ++iv) {
+  //   size_t const v = region[iv];
+  //   assert( iv == mapping[v] );
+  //   for (auto const * const e: _cons.adj(v)) {
+  //     size_t const w = e->other(v);
+  //     if ( _partition[v] == _partition[w] ) {  // from the same coarse block
+  //       g.add(DirectedEdge(iv, mapping[w], e->weight()));
+  //       g.add(DirectedEdge(mapping[w], iv, e->weight()));
+  //     }
+  //   }
+  // }
 
   // find block center as the vertex with the longest path from the boundary
-  std::vector<double> paths(n, std::numeric_limits<double>::max());
-  double fraction = 0.5;
-  size_t n_selected = std::max((size_t)2, (size_t)(bnd.size() * fraction)); // actual number of items extracted
+  std::vector<double> farthest(region.size(), std::numeric_limits<double>::max());
+  static constexpr double fraction = 0.5;
+  static constexpr size_t min_selected = 2;
+  size_t n_selected = std::max(min_selected, (size_t)(bnd.size() * fraction)); // actual number of items extracted
   std::vector<bool> selected(bnd.size(), false);
   std::fill(selected.begin(), selected.begin() + n_selected, true);
   std::random_shuffle( selected.begin(), selected.end() );
   for (size_t i = 0; i < bnd.size(); ++i)
     if ( selected[i] ) {
-      DijkstraSP path(g, mapping[bnd[i]]);
-      for (size_t j = 0; j < n; ++j)
-        paths[j] = std::min(path.distanceTo(j), paths[j]);
+      DijkstraSubgraph path(bnd[i], _cons, _subgraph_mask);
+      for (size_t j = 0; j <  region.size(); ++j)
+        farthest[j] = std::min(path.distanceTo(region[j]), farthest[j]);
+      // DijkstraSP path(g, mapping[bnd[i]]);
+      // for (size_t j = 0; j < n; ++j)
+      //   farthest[j] = std::min(path.distanceTo(mapping[ region[j] ]), farthest[j]);
     }
 
-  size_t const center = std::distance(paths.begin(), std::max_element(paths.begin(), paths.end()));
+  size_t const center = std::distance(farthest.begin(), std::max_element(farthest.begin(), farthest.end()));
   return region[center];
 }
 

@@ -37,6 +37,7 @@ ADD_LIBRARY(preprocessor
   multiscale/MetisInterface.cpp
   algorithms/IndexMinPQ.cpp
   algorithms/EdgeWeightedGraph.cpp
+  algorithms/DijkstraSubgraph.cpp
   GridEntityNumberingManager.cpp
   UnionFind.cpp
   intersections/GridIntersectionSearcher.cpp

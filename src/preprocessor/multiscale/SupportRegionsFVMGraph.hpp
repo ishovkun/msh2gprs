@@ -32,6 +32,7 @@ class SupportRegionsFVMGraph : public SupportRegionsBase  {
   void modify_edge_weights_();
 
   algorithms::EdgeWeightedGraph _cons;
+  mutable std::vector<bool> _subgraph_mask;
   std::vector<std::vector<size_t>> _block_bds;
   std::vector<std::vector<size_t>> _support;
   std::vector<std::vector<size_t>> _support_bnd;
