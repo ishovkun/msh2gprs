@@ -45,9 +45,9 @@ void OutputDataGPRS::write_output(const std::string & output_path) const
   if (!_data.wells.empty())
     saveWells(output_path + "/" + _config.wells_file);
 
-  // // multiscale
-  // if (data.ms_flow_data.partitioning.size() > 0)
-  //   saveFlowMultiScaleData(output_path + data.config.flow_ms_file);
+  // multiscale
+  if (_data.ms_flow_data.partitioning.size() > 0)
+    save_flow_multiscale_data_(output_path + "/" + _config.flow_ms_file);
   // if (data.ms_mech_data.partitioning.size() > 0)
   //   saveMechMultiScaleData(output_path + data.config.mech_ms_file);
 }
@@ -545,9 +545,48 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
 }
 
 
-void OutputDataGPRS::saveFlowMultiScaleData(const std::string file_name)
+void OutputDataGPRS::save_flow_multiscale_data_(const std::string file_name) const
 {
+  logging::log() << "Save multiscale flow: " << file_name << std::endl;
+  std::ofstream out;
+  out.open(file_name.c_str());
+  const auto & ms = _data.ms_flow_data;
 
+  // save partitioning
+  out << "MSPART" << "\n";
+
+  std::vector<std::vector<size_t>> part( ms.n_coarse );
+  for (size_t i = 0; i < ms.partitioning.size(); ++i)
+    part[ms.partitioning[i]].push_back(i);
+
+  for (size_t c = 0; c < ms.n_coarse; ++c) {
+    for (size_t i = 0; i < part[c].size(); ++i) {
+      out << part[c][i] << " ";
+      if (i % n_entries_per_line == 0  && i > 0 && i < part[c].size() - 1) out << "\n";
+    }
+    out << "/\n";
+  }
+
+  out << "/" << "\n" << "\n";
+
+  // support
+  out << "MSSUPPORT" << "\n";
+  for (size_t c = 0; c < ms.n_coarse; ++c) {
+    out << ms.support_boundary[c].size() << " ";
+    out << ms.support_internal[c].size() << " ";
+    for (size_t i = 0; i < ms.support_internal[c].size(); ++i) {
+      out << ms.support_internal[c][i] << " ";
+      if (i % n_entries_per_line == 0 && i > 0 && i != ms.support_internal[c].size() - 1) out << "\n";
+    }
+    // out << "bnd: " << std::endl;
+    for (size_t i = 0; i < ms.support_boundary[c].size(); ++i) {
+      out << ms.support_boundary[c][i] << " ";
+      if (i % n_entries_per_line == 0 && i > 0 && i != ms.support_boundary[c].size() - 1) out << "\n";
+    }
+    out << "/\n";
+  }
+  out << "/" << "\n" << "\n";
+  out.close();
 }
 
 

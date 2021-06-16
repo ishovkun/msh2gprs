@@ -353,6 +353,8 @@ void YamlParser::domain(const YAML::Node & node, const VariableType var_type, Do
       conf.coupled = it->second.as<bool>();
       if (!conf.coupled) logging::warning() << "domain " << conf.label << " is decoupled !!!" << std::endl;
     }
+    else if (key == "label")  // already parsed at the top level
+      continue;
     else if (key == "files")
     {
       // these are to read files that contain properties.

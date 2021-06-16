@@ -33,6 +33,7 @@ struct CellPropertyConfig
   std::string permz_kwd = "PERMZ";
   std::string poro_kwd = "PORO";
   std::string vmult_kwd = "VFACTOR";
-  std::vector<std::string> extra_variables{x_kwd, y_kwd, z_kwd, vmult_kwd};
+  std::vector<std::string> service_variables{x_kwd, y_kwd, z_kwd, vmult_kwd};
+  std::vector<std::string> extra_variables{perm_kwd, permx_kwd, permy_kwd, permz_kwd};
   static constexpr double default_volume_factor = 1.f;
 };

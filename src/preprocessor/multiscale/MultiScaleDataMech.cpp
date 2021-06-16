@@ -230,10 +230,17 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
   model.centroids = layer.coarse_to_fine;
 
   // cupport boundary
-  model.support_boundary = layer.support_boundary;
+  model.support_boundary.resize( layer.support_boundary.size() );
+  for (size_t coarse = 0; coarse < model.n_coarse; ++coarse) {
+    auto const & bnd = layer.support_boundary[coarse];
+    model.support_boundary[coarse].resize( bnd.size() );
+    std::copy( bnd.cbegin(), bnd.cend(), model.support_boundary[coarse].begin() );
+  }
+
 
   // support internal nodes are all the block nodes except for boundary nodes
-  model.support_internal.resize(layer.coarse_to_fine.size());
+  model.support_internal.resize( layer.coarse_to_fine.size() );
+  std::vector<std::unordered_set<size_t>> internal( layer.coarse_to_fine.size() );
   for (size_t coarse_vertex = 0; coarse_vertex < layer.coarse_to_fine.size(); coarse_vertex++)
   {
     const size_t fine_vertex = layer.coarse_to_fine[coarse_vertex];
@@ -247,11 +254,17 @@ void MultiScaleDataMech::fill_output_model(MultiScaleOutputData & model, const i
         n_approx_internal_cells += layer.cells_in_block[block].size();
 
     // fill internal cells
-    model.support_internal[coarse_vertex].reserve(n_approx_internal_cells);
+    internal[coarse_vertex].reserve(n_approx_internal_cells);
     for (const size_t block : neighboring_blocks)
       if (!is_ghost_block(block))
         for(const size_t cell: layer.cells_in_block[block])
-          model.support_internal[coarse_vertex].insert(cell);
+          internal[coarse_vertex].insert(cell);
+  }
+
+  for (size_t coarse = 0; coarse < model.n_coarse; ++coarse) {
+    auto const & in = internal[coarse];
+    model.support_internal[coarse].resize( in.size() );
+    std::copy( in.cbegin(), in.cend(), model.support_internal[coarse].begin() );
   }
 
   std::cout << std::endl;

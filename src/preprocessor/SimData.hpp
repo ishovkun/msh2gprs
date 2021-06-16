@@ -105,6 +105,7 @@ struct SimData
   std::vector<BoundaryConstraintData> boundary_constraints;   // penalized constrained vertex groups
   // ----------------------- Multiscale ------------ //
   multiscale::MultiScaleOutputData ms_mech_data;
+  multiscale::MultiScaleOutputData ms_flow_data;
   // ----------------------- Other ---------------------- //
   std::vector<std::vector<size_t>> gmcell_to_flowcells; // Geomechanics cell -> Flow cells in each geomech cell.
   std::vector<std::vector<size_t>> gmcell_to_SDA_flowcells; // Geomechanics cell in EDFM -> Flow cells in each geomech cell in EDFM.

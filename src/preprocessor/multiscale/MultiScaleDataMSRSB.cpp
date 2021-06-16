@@ -691,26 +691,19 @@ void MultiScaleDataMSRSB::fill_output_model(MultiScaleOutputData & model,
   model.centroids = layer.coarse_to_fine;
 
   // support boundary
-  model.support_boundary = layer.support_boundary;
+  // model.support_boundary = layer.support_boundary;
+  size_t const nc = model.n_coarse;
+  model.support_boundary.resize(nc);
+  model.support_internal.resize(nc);
+  for (size_t c = 0; c < nc; ++c) {
+    auto const & bnd = layer.support_boundary[c];
+    model.support_boundary[c].resize( bnd.size() );
+    std::copy( bnd.cbegin(), bnd.cend(), model.support_boundary[c].begin() );
 
-  //  support internal
-  model.support_internal = layer.support_internal;
-  // std::cout << "model.support_internal.size() = " << model.support_internal.size() << std::endl;
-  // std::cout << "layer.support_internal.size() = " << layer.support_internal.size() << std::endl;
-  // for (size_t block = 0; block < layer.n_blocks; block++)
-  // {
-  //   std::cout << "model.support_boundary[block].size() = " << model.support_boundary[block].size() << std::endl;
-  //   std::cout << "model.support_internal[block].size() = " << model.support_internal[block].size() << std::endl;
-  //   // int count = 0;
-  //   // for (size_t cell : model.support_internal[block])
-  //   // {
-  //   //   std::cout << cell << " ";
-  //   //   if (count++ % 20 == 0)
-  //   //     if (count != 1)
-  //   //       std::cout << std::endl;
-  //   // }
-  //   // std::cout << std::endl;
-  // }
+    auto const & in = layer.support_internal[c];
+    model.support_internal.resize( in.size() );
+    std::copy( in.cbegin(), in.cend(), model.support_internal[c].begin() );
+  }
 }
 
 

@@ -15,10 +15,10 @@ struct MultiScaleOutputData
   std::vector<std::size_t> partitioning;  // it's always cell data cause I said so
   std::vector<std::size_t> centroids;
   // cells that constitute boundaries of each support region
-  std::vector<std::unordered_set<std::size_t>> support_boundary;
+  std::vector<std::vector<std::size_t>> support_boundary;
   // cells that dconstitute the internals of each support region
   // this includes the cells inside the coarse block
-  std::vector<std::unordered_set<std::size_t>> support_internal;
+  std::vector<std::vector<std::size_t>> support_internal;
 };
 
 }

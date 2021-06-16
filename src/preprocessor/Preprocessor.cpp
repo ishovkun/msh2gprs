@@ -305,7 +305,8 @@ void Preprocessor::build_flow_discretization_()
   if ( config.ms_flow.type != MSPartitioning::no_partitioning )
   {
     // multiscale::Idea idea(data.grid, data);
-    multiscale::MSFlow(data.grid, data, config.ms_flow);
+    multiscale::MSFlow ms(data.grid, data, config.ms_flow);
+    ms.fill_output_model(data.ms_flow_data);
   }
 
   // used for coupling later on

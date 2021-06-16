@@ -279,18 +279,19 @@ std::vector<size_t> find_boundary(algorithms::EdgeWeightedDigraph const & g,
                                   std::vector<size_t> const & mapping,
                                   EdgeWeightedGraph const & global)
 {
-  std::vector<size_t> bnd;
+  // std::vector<size_t> bnd;
+  std::unordered_set<size_t> bnd;
   for (auto const & e : g.edges())
     if ((int)flags[e.to()] + (int)flags[e.from()] == 1) {
-      if (flags[e.to()]) bnd.push_back(mapping[ e.to() ]);
-      else bnd.push_back(mapping[ e.from() ]);
+      if (flags[e.to()]) bnd.insert(mapping[ e.to() ]);
+      // else bnd.push_back(mapping[ e.from() ]);
     }
 
   for (size_t v = 0; v < g.n_vertices(); ++v)
     if (flags[v] && g.adj(v).size() < global.adj(mapping[v]).size())
-      bnd.push_back(mapping[v]);
+      bnd.insert(mapping[v]);
 
-  return bnd;
+  return std::vector<size_t>(bnd.cbegin(), bnd.cend());
 }
 
 void SupportRegionsFVMGraph::build_support_region_(std::vector<size_t> blocks, size_t region)

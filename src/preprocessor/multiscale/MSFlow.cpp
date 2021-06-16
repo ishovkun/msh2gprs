@@ -23,36 +23,41 @@ MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data, MultiscaleCon
   for (auto & con: _data.flow.con)
     g.add(UndirectedEdge(con.elements[0], con.elements[1], weight_func(con.coefficients[0])));
 
-  auto partition = MetisInterface::partition(g, _ncoarse);
+  _part = MetisInterface::partition(g, _ncoarse);
   std::string fname = "solution.vtk";
   std::cout << "saving " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
   mesh::IO::VTKWriter::write_geometry(_grid, out);
-  mesh::IO::VTKWriter::enter_section_cell_data(partition.size(), out);
-  mesh::IO::VTKWriter::add_data(partition, "partition", out);
+  mesh::IO::VTKWriter::enter_section_cell_data(_part.size(), out);
+  mesh::IO::VTKWriter::add_data(_part, "partition", out);
 
-  SupportRegionsFVMGraph regions(partition, std::move(g));
+  SupportRegionsFVMGraph regions(_part, std::move(g));
   // SupportRegionsLaplaceMod regions(partition, data);
 
-  std::vector<int> centers(partition.size(), 0);
-  for ( auto c : regions.centers() )
-    centers[c] = 1;
-  mesh::IO::VTKWriter::add_data(centers, "centers", out);
+  _centers = regions.centers();
+  // std::vector<int> centers(_part.size(), 0);
+  // for ( auto c : regions.centers() )
+  //   centers[c] = 1;
+  // mesh::IO::VTKWriter::add_data(centers, "centers", out);
 
+  _support.resize( _ncoarse );
+  _bnds.resize( _ncoarse );
   for (size_t coarse = 0; coarse < regions.size(); ++coarse)
   {
+    _support[coarse] = regions.get(coarse);
+    _bnds[coarse] = regions.get_boundary(coarse);
+
+    // visualization output
     std::vector<size_t> support(n, 0);
     for (size_t cell : regions.get(coarse))
       support[cell] = 1;
     for (size_t cell : regions.get_boundary(coarse))
       support[cell] = 2;
-
     for (size_t coarse1 = 0; coarse1 < regions.size(); ++coarse1)
       support[regions.centers()[coarse1]] = 4;
 
     support[regions.centers()[coarse]] = 3;
-
     mesh::IO::VTKWriter::add_data(support, "support-" + std::to_string(coarse), out);
   }
 
@@ -80,5 +85,20 @@ std::function<double(double)> MSFlow::build_weight_function() const
   };
   return perm_func;
 }
+
+void MSFlow::fill_output_model(MultiScaleOutputData & model) const
+{
+  model.cell_data = true;
+  model.n_coarse = _ncoarse;
+  // partition
+  model.partitioning.resize(_part.size());
+  copy(_part.cbegin(), _part.cend(), model.partitioning.begin());
+  // centroids
+  model.centroids = _centers;
+  // internal
+  model.support_internal = _support;
+  model.support_boundary = _bnds;
+}
+
 
 }  // end namespace multiscale

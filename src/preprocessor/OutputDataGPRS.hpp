@@ -56,7 +56,7 @@ public:
                                          std::ofstream & out) const;
   void save_discrete_fracture_properties_(const std::string file_name) const;
   void saveWells(const std::string file_name) const;
-  void saveFlowMultiScaleData(const std::string file_name);
+  void save_flow_multiscale_data_(const std::string file_name) const;
   void saveMechMultiScaleData(const std::string file_name);
 
 protected:

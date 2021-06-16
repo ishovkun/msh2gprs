@@ -54,15 +54,20 @@ std::unordered_map<std::string, size_t> CellPropertyManager::map_variables_()
   size_t nvar = 0;
   std::unordered_map<std::string, size_t> ans;
 
-  for (auto const & var : _config.extra_variables)
+  for (auto const & var : _config.service_variables)
     ans[var] = nvar++;
 
   for (auto const & var : _config.files.variables)
     ans[var] = nvar++;
 
   for (auto const & domain : _config.domains)
-    for (auto const & var : domain.variables)
+    for (auto const & var : domain.variables) {
+      if (var.empty()) {
+        throw std::invalid_argument("Variable " + var + " is empty");
+      }
       ans[var] = nvar++;
+    }
+
   return ans;
 }
 
@@ -301,9 +306,8 @@ std::vector<std::string> CellPropertyManager::get_property_names() const
 {
   size_t const n_output_vars = _vars.size();
   vector<string> ans(n_output_vars);
-  for (auto const & domain : _config.domains)
-    for (auto const & var : domain.variables)
-      ans[_vars[var]] = var;
+  for (auto const & it : _vars)
+      ans[it.second] = it.first;
   return ans;
 }
 
@@ -314,10 +318,26 @@ std::vector<VariableType> CellPropertyManager::get_property_types() const
   for (auto const & domain : _config.domains)
     for (auto const & var : domain.variables)
       ans[_vars[var]] = domain.type;
-  for (auto const & var : _config.extra_variables)
+  for (auto const & var : _config.service_variables)
       ans[_vars[var]] = VariableType::service;
   for (auto const & var : _config.files.variables)
       ans[_vars[var]] = VariableType::service;
+  for (auto const & var : _config.extra_variables)
+    if (_vars.count(var))
+      ans[_vars[var]] = VariableType::service;
+
+  // auto names = get_property_names();
+  // for (size_t i = 0; i < names.size(); ++i) {
+  //   std::cout <<  names[i] << " : ";
+  //   if (ans[i] == VariableType::flow)
+  //     std::cout << "flow" << std::endl;
+  //   if (ans[i] == VariableType::mechanics)
+  //     std::cout << "mech" << std::endl;
+  //   if (ans[i] == VariableType::service)
+  //     std::cout << "service" << std::endl;
+  // }
+
+  // exit(0);
   return ans;
 }
 
