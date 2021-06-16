@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <cstddef>  // size_t without std::
 
 namespace algorithms {
 
