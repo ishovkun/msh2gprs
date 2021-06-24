@@ -154,7 +154,9 @@ bool in_support(size_t u,
     size_t const source = idx[i];
     double const value = paths.back().distanceTo(centers[blocks[source]]); // distance from region to neighbor center
     double const d = paths[source].distanceTo(u);
-    assert( d < 1e6 );
+    // if (d >= 1e6)
+    //   std::cout << "source " << source << " u = " << u << " d = " << d << std::endl;
+    // assert( d < 1e6 );
     double weight = 1.f / std::pow(d, 2.0);
     threshold += weight * value;
     norm += weight;
