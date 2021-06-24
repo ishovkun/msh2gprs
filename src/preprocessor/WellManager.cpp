@@ -170,7 +170,11 @@ double compute_productivity(const double k1, const double k2,
   const double r = 0.28*std::sqrt(std::sqrt(k2/k1)*dx1*dx1 +
                                   std::sqrt(k1/k2)*dx2*dx2) /
                    (std::pow(k2/k1, 0.25) + std::pow(k1/k2, 0.25));
-  double j_ind = 2*M_PI*std::sqrt(k1*k2)*length/(std::log(r/radius) + skin);
+
+  if ( std::log(r/radius) < 0 )
+    throw std::invalid_argument("Wellbore radius is too large for Peaceman");
+
+  double j_ind = 2 * M_PI * std::sqrt(k1*k2) * length / (std::log(r/radius) + skin);
   // treatment for almost zero jind
   if (j_ind > - k1 * 1e-8 && j_ind < 0) j_ind = 0;
   // else error is thrown in the parent method
