@@ -1,9 +1,10 @@
 #pragma once
 
 #include <cassert>       // provides assert
-#include <cstddef>       //std::size_t
+#include <cstddef>       //size_t
 #include <vector>        //std::vector
 #include <unordered_map> //unordered_map
+#include <limits>        // numeric_limits
 
 namespace gprs_data {
 class DoFManager;

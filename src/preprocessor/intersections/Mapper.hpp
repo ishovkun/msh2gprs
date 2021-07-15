@@ -1,4 +1,4 @@
-#pragma nce
+#pragma once
 #include "mesh/Mesh.hpp"
 #include "UniformCartesianGrid.hpp"
 
