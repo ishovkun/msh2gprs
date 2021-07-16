@@ -97,6 +97,7 @@ struct SimData
   std::vector<FEMData> fe_cell_data;  // fe values and gradients for grid cells
   std::vector<FEMData> fe_face_data;  // fe values and gradients for grid faces
   std::vector<std::vector<FEMData>> fe_frac_data;  // fe values and gradients of cells in face qpoints
+  std::vector<int>  isomorphic_groups;             // analogue of cell vtk id but with different numbering
   // ----------------------- Boundary conditions ------------ //
   std::vector<size_t> neumann_face_indices;  // indices of neumann faces
   std::vector<angem::Point<3,double>> neumann_face_traction;  // values of neuman bc's

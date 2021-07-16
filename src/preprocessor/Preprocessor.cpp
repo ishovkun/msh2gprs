@@ -369,23 +369,21 @@ void Preprocessor::build_geomechanics_discretization_()
   logging::log() << "Building FEM discretization" << std::endl;
   dfm_markers = p_frac_mgr->get_face_markers();
 
+  // invoke fem discretization class
   using namespace discretization;
   std::unique_ptr<DiscretizationFEMBase> p_discr;
   // WARNING: this part of code can reorder grid vertices
   if (config.fem.method == FEMMethod::strong_discontinuity)
     p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, config.fem,
-                                                          dfm_markers,
-                                                          data.neumann_face_indices);
+                                                          dfm_markers, data.neumann_face_indices);
   else if (config.fem.method == FEMMethod::polyhedral_finite_element) {
     auto const & opts = GlobalOpts::ref();
     if (opts.enable_experimental)
-      p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(
-          data.geomechanics_grid, config.fem, dfm_markers,
-          data.neumann_face_indices);
+      p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(data.geomechanics_grid, config.fem,
+                                                                       dfm_markers, data.neumann_face_indices);
     else
-      p_discr =
-          std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid,
-          config.fem, dfm_markers, data.neumann_face_indices);
+      p_discr = std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid, config.fem,
+                                                              dfm_markers, data.neumann_face_indices);
   }
   else throw std::invalid_argument("mechanics discretization is unknown");
 
@@ -409,6 +407,7 @@ void Preprocessor::build_geomechanics_discretization_()
   data.fe_cell_data = p_discr->get_cell_data();
   data.fe_face_data = p_discr->get_face_data();
   data.fe_frac_data = p_discr->get_fracture_data();
+  data.isomorphic_groups = p_discr->get_cell_isomorphic_groups();
 }
 
 

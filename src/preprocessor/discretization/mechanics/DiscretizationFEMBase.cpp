@@ -83,5 +83,14 @@ DiscretizationFEMBase::get_basis_(const mesh::Face & face,
   return orientation.basis;
 }
 
+std::vector<int> DiscretizationFEMBase::get_cell_isomorphic_groups() const
+{
+  std::vector<int> ans(_grid.n_active_cells());
+  for (auto [cell, counter] = std::tuple( _grid.begin_active_cells(), 0 ); cell != _grid.end_active_cells(); ++cell, ++counter) {
+    ans[counter] = (int)cell->vtk_id();
+  }
+  return ans;
+}
+
 
 }  // end namespace discretization

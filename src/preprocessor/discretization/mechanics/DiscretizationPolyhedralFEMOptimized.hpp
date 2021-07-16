@@ -16,6 +16,8 @@ class DiscretizationPolyhedralFEMOptimized : public DiscretizationPolyhedralFEM 
   // destructor
   virtual ~DiscretizationPolyhedralFEMOptimized() = default;
 
+  std::vector<int> get_cell_isomorphic_groups() const override;
+
  protected:
   void build_(mesh::Cell & cell) override;
   void reorder_faces_(mesh::Cell & dst, mesh::Cell const & src) const;
@@ -33,6 +35,8 @@ class DiscretizationPolyhedralFEMOptimized : public DiscretizationPolyhedralFEM 
   // a container for reference elements FEM data
   std::unordered_map<size_t, std::vector<std::shared_ptr<PolyhedralElementBase>>> _masters;
   std::unordered_map<size_t, std::vector<std::shared_ptr<angem::Polyhedron<double>>>> _shapes;
+  std::vector<int> _groups;
+  size_t _ngroups{0};
 };
 
 }  // end namespace discretization

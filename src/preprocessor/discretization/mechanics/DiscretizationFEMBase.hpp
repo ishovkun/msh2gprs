@@ -26,6 +26,8 @@ class DiscretizationFEMBase {
   const std::vector<FiniteElementData> & get_face_data() const { return _face_data; }
   // get vector fe-fracture data (vector[face][cell])
   const std::vector<std::vector<FiniteElementData>> & get_fracture_data() const { return _frac_data; }
+  // get vector of cell isomorphic groups. the default implementation just copies cell VTK types
+  virtual std::vector<int> get_cell_isomorphic_groups() const;
   // destructor
   virtual ~DiscretizationFEMBase() = default;
 

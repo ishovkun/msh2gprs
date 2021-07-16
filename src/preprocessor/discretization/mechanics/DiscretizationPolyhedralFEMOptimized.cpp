@@ -19,7 +19,7 @@ DiscretizationPolyhedralFEMOptimized(mesh::Mesh & grid,
                                                                neumann_face_indices)
 
 {
-
+  _groups.resize( _grid.n_cells_total(), -1 );
 }
 
 void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
@@ -35,14 +35,15 @@ void DiscretizationPolyhedralFEMOptimized::build_(mesh::Cell & cell)
 
     reorder_faces_(cell, master->host_cell());
     _element = std::make_shared<PolyhedralElementScaled>( cell, _grid, *master, _config );
+    _groups[ cell.index() ] = _groups[ master->host_cell().index() ];
   }
   else {
     logging::debug() << "new element topology, cell " <<  cell.index() << std::endl;
     DiscretizationPolyhedralFEM::build_(cell);
 
     // remember topology for future re-use
-    _masters[cell.n_vertices()].push_back(
-        std::dynamic_pointer_cast<PolyhedralElementBase>(_element ));
+    _masters[cell.n_vertices()].push_back( std::dynamic_pointer_cast<PolyhedralElementBase>(_element ) );
+    _groups[ cell.index() ] = _ngroups++;
  }
 }
 
@@ -127,6 +128,24 @@ compress_faces_(mesh::Cell const & cell) const
       c[f] |= (1 << global_to_local[vertex]);
 
   return c;
+}
+
+std::vector<int> DiscretizationPolyhedralFEMOptimized::get_cell_isomorphic_groups() const
+{
+  // std::vector<int> groups( _grid.n_cells_total() );
+  // int group = 0;
+  // std::vector<size_t> order;  // vertex ordering in case we need to reorder
+  // for (auto [cell, counter] = std::tuple( _grid.begin_active_cells(), 0 ); cell != _grid.end_active_cells(); ++cell, ++counter) {
+  //   if ( auto master = known_element_(*cell, order) ) {
+  //     groups[ cell->index() ] = groups[ master->host_cell().index() ];
+  //   }
+  //   else groups[ cell->index() ] = group++;
+  // }
+
+    std::vector<int> ans( _grid.n_active_cells() );
+    for (auto [cell, counter] = std::tuple( _grid.begin_active_cells(), 0 ); cell != _grid.end_active_cells(); ++cell, ++counter)
+      ans[counter] = _groups[ cell->index() ];
+    return ans;
 }
 
 }  // end namespace discretization

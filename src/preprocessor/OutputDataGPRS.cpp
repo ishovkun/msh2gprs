@@ -554,7 +554,6 @@ void OutputDataGPRS::save_flow_multiscale_data_(const std::string file_name) con
 
   // save partitioning
   out << "MSPART" << "\n";
-
   std::vector<std::vector<size_t>> part( ms.n_coarse );
   for (size_t i = 0; i < ms.partitioning.size(); ++i)
     part[ms.partitioning[i]].push_back(i);

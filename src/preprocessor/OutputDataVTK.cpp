@@ -100,88 +100,21 @@ void OutputDataVTK::save_reservoir_mechanics_data_(const std::string & fname) co
   logging::log() << "writing " << fname << std::endl;
   std::ofstream out;
   out.open(fname.c_str());
+
+  // we cannot use VTK writer here since DFM faces are not really split in the grid.
+  // We store split DFM vertices separately (in grid_cells_after_face_split)
   // IO::VTKWriter::write_geometry(m_mech_grid, out);
-  out << "# vtk DataFile Version 2.0 \n";
-  out << "3D Grid\n";
-  out << "ASCII \n \n";
-  out << "DATASET UNSTRUCTURED_GRID \n";
+  save_geomech_geometry(out);
 
-  auto & grid = _data.geomechanics_grid;
-  const size_t n_points = (_data.grid_vertices_after_face_split.empty()) ?
-      grid.n_vertices() :
-      _data.grid_vertices_after_face_split.size();
+  out << "CELL_DATA" << "\t" << _data.geomechanics_grid.n_active_cells() << std::endl;
 
-  out << "POINTS" << "\t" << n_points << " float" << std::endl;
-  if (_data.grid_vertices_after_face_split.empty())
-    for (const auto & vertex : grid.vertices())
-      out << vertex << "\n";
-  else
-    for (const auto &vertex : _data.grid_vertices_after_face_split)
-      out << vertex << "\n";
-
-  const size_t n_entries_total = mesh::IO::VTKWriter::count_number_of_cell_entries_(grid);
-
-  out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << "\n";
-  if (_data.grid_vertices_after_face_split.empty())
-    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    {
-      if ( cell->vtk_id() != angem::VTK_ID::GeneralPolyhedronID )
-      {
-        out << cell->n_vertices() << "\t";
-        for (std::size_t i : cell->vertices())
-          out << i << "\t";
-        out << std::endl;
-      }
-      else
-      {
-        out << mesh::IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
-        const auto & faces = cell->faces();
-        out << faces.size() << "\n";
-        for (const auto & face : faces)
-        {
-          const auto & vertices = face->vertices();
-          out << vertices.size() << " ";
-          for (const size_t v : vertices)
-            out << v << " ";
-          out << "\n";
-        }
-      }
-    }
-  else
-    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    {
-      auto cell_vertices = cell->vertices();
-      auto true_vertices = _data.grid_cells_after_face_split[cell->index()];
-      if ( cell->vtk_id() != angem::VTK_ID::GeneralPolyhedronID )
-      {
-        out << cell->n_vertices() << "\t";
-        for (size_t i = 0; i < cell_vertices.size(); ++i)
-          out << true_vertices[i] << "\t";
-        out << "\n";
-      }
-      else
-      {
-        out << mesh::IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
-        const auto & faces = cell->faces();
-        out << faces.size() << "\n";
-        for (const auto & face : faces)
-        {
-          const auto & vertices = face->vertices();
-          out << vertices.size() << " ";
-          for (const size_t v : vertices)
-          {
-            const size_t idx =  std::distance( cell_vertices.begin(),
-                                  std::find( cell_vertices.begin(), cell_vertices.end(),
-                                             v));
-            out << true_vertices[idx] << " ";
-          }
-          out << "\n";
-        }
-      }
-    }
-  out << "CELL_TYPES" << "\t" << grid.n_active_cells() << "\n";
-  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    out << cell->vtk_id() << "\n";
+  // save isomorphic groups
+  out << "SCALARS\t" << "isomorphic_group" << "\t";
+  out << "int" << std::endl;
+  out << "LOOKUP_TABLE HSV" << std::endl;
+  for (const double item : _data.isomorphic_groups)
+    out << item << "\n";
+  out << std::endl;
 
   // save keywords
   // for (std::size_t ivar=0; ivar<_data.rockPropNames.size(); ++ivar)
@@ -341,5 +274,91 @@ void OutputDataVTK::save_wells_(const std::string & fname) const
   logging::log() << "writing " << fname << std::endl;
   mesh::IO::VTKWriter::write_well_trajectory(_data.well_vertices.points, _data.well_vertex_indices, fname);
 }
+
+void OutputDataVTK::save_geomech_geometry(std::ofstream & out) const
+{
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Grid\n";
+  out << "ASCII \n \n";
+  out << "DATASET UNSTRUCTURED_GRID \n";
+
+  auto & grid = _data.geomechanics_grid;
+  const size_t n_points = (_data.grid_vertices_after_face_split.empty()) ?
+      grid.n_vertices() :
+      _data.grid_vertices_after_face_split.size();
+
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+  if (_data.grid_vertices_after_face_split.empty())
+    for (const auto & vertex : grid.vertices())
+      out << vertex << "\n";
+  else
+    for (const auto &vertex : _data.grid_vertices_after_face_split)
+      out << vertex << "\n";
+
+  const size_t n_entries_total = mesh::IO::VTKWriter::count_number_of_cell_entries_(grid);
+
+  out << "CELLS " << grid.n_active_cells() << " " << n_entries_total << "\n";
+  if (_data.grid_vertices_after_face_split.empty())  // no split dfm vertices
+    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+    {
+      if ( cell->vtk_id() != angem::VTK_ID::GeneralPolyhedronID )
+      {
+        out << cell->n_vertices() << "\t";
+        for (std::size_t i : cell->vertices())
+          out << i << "\t";
+        out << std::endl;
+      }
+      else
+      {
+        out << mesh::IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
+        const auto & faces = cell->faces();
+        out << faces.size() << "\n";
+        for (const auto & face : faces)
+        {
+          const auto & vertices = face->vertices();
+          out << vertices.size() << " ";
+          for (const size_t v : vertices)
+            out << v << " ";
+          out << "\n";
+        }
+      }
+    }
+  else
+    for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+    {
+      auto cell_vertices = cell->vertices();
+      auto true_vertices = _data.grid_cells_after_face_split[cell->index()];
+      if ( cell->vtk_id() != angem::VTK_ID::GeneralPolyhedronID )
+      {
+        out << cell->n_vertices() << "\t";
+        for (size_t i = 0; i < cell_vertices.size(); ++i)
+          out << true_vertices[i] << "\t";
+        out << "\n";
+      }
+      else
+      {
+        out << mesh::IO::VTKWriter::count_number_of_cell_entries_(*cell) << "\n";
+        const auto & faces = cell->faces();
+        out << faces.size() << "\n";
+        for (const auto & face : faces)
+        {
+          const auto & vertices = face->vertices();
+          out << vertices.size() << " ";
+          for (const size_t v : vertices)
+          {
+            const size_t idx =  std::distance( cell_vertices.begin(),
+                                  std::find( cell_vertices.begin(), cell_vertices.end(),
+                                             v));
+            out << true_vertices[idx] << " ";
+          }
+          out << "\n";
+        }
+      }
+    }
+  out << "CELL_TYPES" << "\t" << grid.n_active_cells() << "\n";
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+    out << cell->vtk_id() << "\n";
+}
+
 
 }
