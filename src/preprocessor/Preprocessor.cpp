@@ -106,8 +106,13 @@ void Preprocessor::run()
   // build dfm flow and mechanics grids (for vtk output)
   data.fracture_grid = pm_cedfm_mgr->build_dfm_grid(data.grid);
 
-  if (data.has_mechanics)
+  data.has_mechanics = pm_property_mgr->has_mechanics();
+  if (data.has_mechanics) {
+    logging::important() << "Building geomechanics discretization" << "\n";
     build_geomechanics_discretization_();
+    logging::important() << "finished geomechanics discretization" << "\n";
+  }
+  else exit(0);
 
   // Coupling
   // map mechanics cells to control volumes

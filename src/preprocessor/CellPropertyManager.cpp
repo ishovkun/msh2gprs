@@ -41,10 +41,12 @@ generate_properties(std::vector<std::vector<double>> &  properties)
     // run muparser
     n_matched_cells += evaluate_expressions_(domain, parsers, cell_vars, properties);
   }
-  if (n_matched_cells != m_data.grid.n_active_cells())
+  if (n_matched_cells < m_data.grid.n_active_cells()) // TODO: geomech cells get matched twice
   {
     const std::string msg = "Could not assign properties to all cells. "
                            "Probably missing domain label.";
+    std::cout << "n_matched_cells = " << n_matched_cells << std::endl;
+    std::cout << "n active cells " << m_data.grid.n_active_cells() << std::endl;
     throw std::runtime_error(msg);
   }
 }
@@ -124,6 +126,9 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
         }
       }
     } // end match label
+    // else {
+    //   std::cout << "unmatched label " << cell->marker() << std::endl;
+    // }
   }   // end cell loop
   return count;
 }
@@ -323,22 +328,18 @@ std::vector<VariableType> CellPropertyManager::get_property_types() const
   for (auto const & var : _config.files.variables)
       ans[_vars[var]] = VariableType::service;
   for (auto const & var : _config.extra_variables)
-    if (_vars.count(var))
+    if ( _vars.count(var) )
       ans[_vars[var]] = VariableType::service;
 
-  // auto names = get_property_names();
-  // for (size_t i = 0; i < names.size(); ++i) {
-  //   std::cout <<  names[i] << " : ";
-  //   if (ans[i] == VariableType::flow)
-  //     std::cout << "flow" << std::endl;
-  //   if (ans[i] == VariableType::mechanics)
-  //     std::cout << "mech" << std::endl;
-  //   if (ans[i] == VariableType::service)
-  //     std::cout << "service" << std::endl;
-  // }
-
-  // exit(0);
   return ans;
+}
+
+bool CellPropertyManager::has_mechanics() const noexcept
+{
+  auto const types = get_property_types();
+  return std::any_of(types.begin(), types.end(), [] (VariableType const type) {
+    return type == VariableType::mechanics;
+  });
 }
 
 

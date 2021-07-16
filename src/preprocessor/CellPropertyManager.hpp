@@ -37,10 +37,16 @@ class CellPropertyManager
   void coarsen_cells();
   // get indices of permeabilities in properties vector
   std::vector<int> get_permeability_keys() const;
+  // get the index of porosity entry
   size_t get_porosity_key() const;
+  // get the index of the volume multiplier
   size_t get_volume_mult_key() const {return _vars[_config.vmult_kwd];}
+  // get indices of custom flow data entries
   std::vector<size_t> get_custom_flow_keys() const;
+  // get indices of custom mechanical data entries
   std::vector<size_t> get_custom_mech_keys() const;
+  // whether input data contained geomechanics properties
+  bool has_mechanics() const noexcept;
 
  private:
   void print_setup_message_() const;

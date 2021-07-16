@@ -339,6 +339,7 @@ std::size_t find(const typename iterable::value_type & item,
 
 void YamlParser::domain(const YAML::Node & node, const VariableType var_type, DomainConfig & conf)
 {
+  conf.type = var_type;
   std::size_t exp_counter = conf.expressions.size();
 
   for (auto it = node.begin(); it!=node.end(); ++it)

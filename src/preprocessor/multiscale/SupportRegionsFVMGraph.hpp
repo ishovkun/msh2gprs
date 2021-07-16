@@ -2,9 +2,6 @@
 #include "SupportRegionsBase.hpp"
 #include "discretization/flow/ConnectionData.hpp"
 #include "algorithms/EdgeWeightedGraph.hpp"
-#include "algorithms/EdgeWeightedDigraph.hpp"
-#include <array>
-#include <unordered_map>
 
 namespace multiscale {
 
