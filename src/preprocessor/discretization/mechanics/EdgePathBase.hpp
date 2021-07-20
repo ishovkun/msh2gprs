@@ -3,6 +3,7 @@
 #include "angem/Polyhedron.hpp"
 #include "angem/Point.hpp"
 #include "angem/Plane.hpp"
+#include <memory>
 
 namespace algorithms {
 
