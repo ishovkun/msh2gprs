@@ -15,7 +15,7 @@ class MSFlow {
   std::function<double(double)> build_weight_function() const;
   mesh::Mesh const & _grid;
   gprs_data::SimData & _data;
-  MSPartitioning const _type;
+  // MSPartitioning const _type;
   size_t const _ncoarse;
   std::vector<size_t> _part;
   std::vector<size_t> _centers;

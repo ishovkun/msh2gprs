@@ -64,7 +64,7 @@ size_t SupportRegionsFVMGraph::find_center_(std::vector<size_t> const  & region,
 
   // find block center as the vertex with the longest path from the boundary
   std::vector<double> farthest(region.size(), std::numeric_limits<double>::max());
-  static constexpr double fraction = 0.5;
+  static constexpr double fraction = 0.9;
   static constexpr size_t min_selected = 2;
   size_t n_selected = std::max(min_selected, (size_t)(bnd.size() * fraction)); // actual number of items extracted
   std::vector<bool> selected(bnd.size(), false);

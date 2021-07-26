@@ -25,6 +25,7 @@ class YamlParser
   void boundary_conditions(const YAML::Node & node);
   void section_wells(const YAML::Node & node);
   void section_multiscale(const YAML::Node & node);
+  void subsection_multiscale(const YAML::Node & node, MultiscaleConfig & conf);
   // subsections
   void boundary_conditions_faces(const YAML::Node & node);
   void boundary_conditions_nodes(const YAML::Node & node);

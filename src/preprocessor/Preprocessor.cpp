@@ -112,7 +112,6 @@ void Preprocessor::run()
     build_geomechanics_discretization_();
     logging::important() << "finished geomechanics discretization" << "\n";
   }
-  else exit(0);
 
   // Coupling
   // map mechanics cells to control volumes
@@ -307,7 +306,7 @@ void Preprocessor::build_flow_discretization_()
   }
 
   // multiscale idea
-  if ( config.ms_flow.type != MSPartitioning::no_partitioning )
+  if ( config.ms_flow.part_type != MSPartitioning::no_partitioning )
   {
     // multiscale::Idea idea(data.grid, data);
     multiscale::MSFlow ms(data.grid, data, config.ms_flow);
@@ -330,9 +329,9 @@ void Preprocessor::build_geomechanics_discretization_()
     pm_edfm_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
   }
 
-  if (config.ms_mech.type == MSPartitioning::method_mechanics)
+  if (config.ms_mech.support_type == MSSupportType::mechanics)
   {
-    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.ms_mech.n_blocks);
+    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.ms_mech.n_blocks[0]);
     ms_handler.build_data();
     ms_handler.fill_output_model(data.ms_mech_data);
   }

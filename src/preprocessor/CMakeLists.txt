@@ -29,6 +29,7 @@ ADD_LIBRARY(preprocessor
   multiscale/Idea.cpp
   multiscale/ShapeFunctionSolver.cpp
   multiscale/MSFlow.cpp
+  multiscale/GeometricPartition.cpp
   multiscale/SupportRegionsFVMGraph.cpp
   multiscale/SupportRegionsBase.cpp
   multiscale/SupportRegionsLaplaceMod.cpp

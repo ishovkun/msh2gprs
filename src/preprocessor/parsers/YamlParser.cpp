@@ -618,42 +618,20 @@ void YamlParser::section_multiscale(const YAML::Node & node)
     const std::string key = it->first.as<std::string>();
     std::cout << "\treading key " << key << std::endl;
 
-    if (key == "Flow file")
-      config.gprs_output.flow_ms_file = it->second.as<std::string>();
-    if (key == "Mech file")
-      config.gprs_output.mech_ms_file = it->second.as<std::string>();
-    else if (key == "blocks") {
-      config.ms_flow.n_blocks = it->second.as<std::size_t>();
-      config.ms_mech.n_blocks = it->second.as<std::size_t>();
+    if (key == "flow") {
+      subsection_multiscale(it->second, config.ms_flow);
     }
-    else if (key == "flow") {
-      const auto value = it->second.as<std::string>();
-      if (value == "no")
-        config.ms_flow.type = MSPartitioning::no_partitioning;
-      else if (value == "msrsb")
-        config.ms_flow.type = MSPartitioning::msrsb;
-      else if (value == "mrst")
-        config.ms_flow.type = MSPartitioning::mrst_flow;
-      else if (value == "graph")
-        config.ms_flow.type = MSPartitioning::graph;
-      else
-      {
-        std::cout << "\tunknown keyword aborting" << std::endl;
-        abort();
-      }
-    } else if (key == "mechanics") {
-      const auto value = it->second.as<std::string>();
-      if (value == "no")
-        config.ms_mech.type = MSPartitioning::no_partitioning;
-      else if (value == "srfem")
-        config.ms_mech.type = MSPartitioning::method_mechanics;
-      else
-      {
-        std::cout << "\tunknown keyword aborting" << std::endl;
-        abort();
-      }
+    else if ( key == "mechanics" ) {
+      subsection_multiscale(it->second, config.ms_mech);
+      assert( config.ms_mech.support_type == MSSupportType::mechanics );
+    }
+    else
+    {
+      std::cout << "\tunknown keyword aborting" << std::endl;
+      abort();
+    }
 
-    } else std::cout << "\tSkipping unknown keyword" << std::endl;
+    // } else std::cout << "\tSkipping unknown keyword" << std::endl;
   }
 }
 
@@ -730,5 +708,40 @@ void YamlParser::subsection_refinement(const YAML::Node & node)
   }
 
 }
+
+void YamlParser::subsection_multiscale(const YAML::Node & node, MultiscaleConfig & conf) {
+  conf.part_type = MSPartitioning::no_partitioning;  // default
+
+  for (auto it = node.begin(); it!=node.end(); ++it) {
+
+    const std::string key = it->first.as<std::string>();
+    std::cout << "\treading key " << key << std::endl;
+    if ( key == "support" )
+    {
+      const auto value = it->second.as<std::string>();
+      if (value == "msrsb") conf.support_type = MSSupportType::msrsb;
+      else if (value == "graph") conf.support_type = MSSupportType::graph;
+      else if (value == "mechanics") conf.support_type = MSSupportType::mechanics;
+    }
+    else if ( key == "blocks" )
+    {
+      try {
+        conf.n_blocks = it->second.as<std::array<size_t,3>>();
+        conf.part_type = MSPartitioning::geometric;
+      }
+      catch (YAML::BadConversion const & e)
+      {
+        conf.n_blocks = {it->second.as<size_t>(), 1, 1};
+        conf.part_type = MSPartitioning::metis;
+      }
+    }
+    else
+    {
+      std::cout << "\tunknown keyword aborting" << std::endl;
+      abort();
+    }
+  }
+}
+
 
 }  // end namespace

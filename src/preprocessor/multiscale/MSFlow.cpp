@@ -5,6 +5,7 @@
 #include "SupportRegionsFVMGraph.hpp"
 #include "SupportRegionsLaplaceMod.hpp"
 #include "ShapeFunctionSolver.hpp"
+#include "GeometricPartition.hpp"
 
 namespace multiscale {
 
@@ -13,8 +14,8 @@ using namespace algorithms;
 MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data, MultiscaleConfig const &config)
     : _grid(grid)
     , _data(data)
-    , _type(config.type)
-    ,_ncoarse(config.n_blocks)
+    // , _type(config.support_type)
+    , _ncoarse( std::accumulate(config.n_blocks.begin(), config.n_blocks.end(), 1, std::multiplies<size_t>()) )
 {
   size_t const n = data.flow.cv.size();
   auto const weight_func = build_weight_function();
@@ -23,7 +24,12 @@ MSFlow::MSFlow(mesh::Mesh const & grid, gprs_data::SimData & data, MultiscaleCon
   for (auto & con: _data.flow.con)
     g.add(UndirectedEdge(con.elements[0], con.elements[1], weight_func(con.coefficients[0])));
 
-  _part = MetisInterface::partition(g, _ncoarse);
+  // partition
+  if ( config.part_type == MSPartitioning::metis )
+    _part = MetisInterface::partition(g, _ncoarse);
+  else if (config.part_type == MSPartitioning::geometric)
+    _part = GeometricPartition(config.n_blocks, data).get();
+
   std::string fname = "solution.vtk";
   std::cout << "saving " << fname << std::endl;
   std::ofstream out;
