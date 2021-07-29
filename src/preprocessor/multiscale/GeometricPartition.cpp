@@ -26,7 +26,6 @@ UniformCartesianGrid GeometricPartition::build_uniform_grid_(std::array<size_t,3
   glob_min[0] = glob_min[1] = glob_min[2] = max_double;
   glob_max[0] = glob_max[1] = glob_max[2] = min_double;
 
-  // for (auto cell = _grid.begin_active_cells(); cell != _grid.end_active_cells(); ++cell)
   for (auto const & cv : _data.flow.cv)
   {
     for (size_t i = 0; i < 3; ++i)

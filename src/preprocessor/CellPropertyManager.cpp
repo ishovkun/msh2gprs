@@ -9,14 +9,15 @@ namespace gprs_data {
 using namespace std;
 
 CellPropertyManager::
-CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data)
+CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data,
+                    std::experimental::filesystem::path extra_files_path)
     : _config(cell_properties)
     , m_data(data)
+    , _input_path(extra_files_path)
     , m_n_unrefined_cells(data.grid.n_cells_total())
     , _vars(map_variables_())
     , _file_data(read_files_())
-{
-}
+{}
 
 void CellPropertyManager::
 generate_properties(std::vector<std::vector<double>> &  properties)
@@ -140,7 +141,9 @@ std::vector<std::vector<double>> CellPropertyManager::read_files_()
   std::vector<std::vector<double>> ans(n_files);
   for (size_t i = 0; i < n_files; ++i) {
     ans[i].assign( nc, 0.f );
-    std::ifstream in( _config.files.expressions[i], std::ifstream::in );
+    std::string const file_path = std::experimental::filesystem::absolute(_input_path / _config.files.expressions[i]);
+    logging::log() << "reading file " << file_path << std::endl;
+    std::ifstream in( file_path, std::ifstream::in );
     size_t cnt = 0;
     while (cnt < nc) {
       if ( !in.good() ) {

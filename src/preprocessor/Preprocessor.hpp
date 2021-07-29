@@ -54,6 +54,7 @@ private:
   PreprocessorConfig config; // config of the preprocessor written in yaml file
   SimData data; // data container. stores data for output.
   Path m_output_dir; // path to output directory
+  Path _input_dir;   // path to input directory
   std::shared_ptr<CellPropertyManager> pm_property_mgr;  // pointer to cell property manager
   std::shared_ptr<DiscreteFractureManager> pm_dfm_mgr;   // pointer to discrete fracture manager
   std::shared_ptr<DiscreteFractureManager> pm_cedfm_mgr;   // pointer to discrete fracture manager

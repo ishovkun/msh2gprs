@@ -35,9 +35,9 @@ Preprocessor::Preprocessor(const Path config_file_path)
   read_config_file_(config_file_path);
   logging::log() << "finished reading config" << std::endl;
   // infer grid file path
-  const Path config_dir_path = config_file_path.parent_path();
-  setup_grid_(config_dir_path);
-  m_output_dir = config_dir_path / config.output_dir;
+  _input_dir = config_file_path.parent_path();
+  setup_grid_(_input_dir);
+  m_output_dir = _input_dir / config.output_dir;
 }
 
 void Preprocessor::setup_grid_(const Path config_dir_path)
@@ -59,7 +59,7 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
 void Preprocessor::run()
 {
   // property manager for grid with split cells (due to edfm splitting)
-  pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, data);
+  pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, data, _input_dir);
   logging::log() << "Generating properties" << std::endl;
   pm_property_mgr->generate_properties(data.cell_properties);
   data.property_names = pm_property_mgr->get_property_names();

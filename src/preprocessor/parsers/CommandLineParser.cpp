@@ -17,9 +17,9 @@ CommandLineParser::CommandLineParser(int argc, char *argv[])
 {
   _options
       .set_tab_expansion()
-      // .allow_unrecognised_options()
       .positional_help("/path/to/input/file.yaml")
       .add_options()
+      // available input arguments
       ("i,input", "Input config file path", value<string>())
       //
       ("d,debug", "Log level debug", value<bool>()->default_value("true")) // a bool parameter

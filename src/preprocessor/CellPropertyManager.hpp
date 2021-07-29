@@ -4,6 +4,8 @@
 #include "SimData.hpp"
 #include "discretization/flow/DoFNumbering.hpp"
 #include "muparser/muParser.h" // parser for user-defined expressions for reservoir data
+#include <experimental/filesystem>  // filesystem
+
 
 namespace gprs_data {
 
@@ -18,10 +20,12 @@ class CellPropertyManager
    * Constructor. 
    * Requires a generic config and config for each subdomain.
    * 
-   * @param  {CellPropertyConfig} cell_properties       : generic config
-   * @param  {SimData} data                             : container for output data
+   * @param  {CellPropertyConfig} cell_properties                    : generic config
+   * @param  {SimData} data                                          : container for output data
+   * @param  {std::experimental::filesystem::path} extra_files_path  : where input property files are stored
    */
-  CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data);
+  CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data,
+                      std::experimental::filesystem::path extra_files_path);
   // take config and fill out the grid with properties
   void generate_properties(std::vector<std::vector<double>> & cell_properties);
   // get names of properties
@@ -68,6 +72,7 @@ class CellPropertyManager
 
   CellPropertyConfig const & _config;
   SimData & m_data;
+  std::experimental::filesystem::path _input_path;
   const size_t m_n_unrefined_cells;
   mutable std::unordered_map<std::string, size_t> _vars;
   std::vector<std::vector<double>> _file_data;
