@@ -321,6 +321,8 @@ void Preprocessor::build_flow_discretization_()
 
 void Preprocessor::build_geomechanics_discretization_()
 {
+  data.output_mech_properties = pm_property_mgr->get_custom_mech_keys();
+
   if (config.fem.method == FEMMethod::strong_discontinuity)
   {
     // generate geomechanics sda properties
