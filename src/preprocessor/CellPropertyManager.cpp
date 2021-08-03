@@ -7,6 +7,7 @@
 namespace gprs_data {
 
 using namespace std;
+static constexpr double UNSASSIGNED = std::numeric_limits<double>::lowest();
 
 CellPropertyManager::
 CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data,
@@ -23,7 +24,7 @@ void CellPropertyManager::
 generate_properties(std::vector<std::vector<double>> &  properties)
 {
   print_setup_message_();
-  properties.assign(_vars.size(), vector<double>(m_data.grid.n_cells_total(), 0.f));
+  properties.assign(_vars.size(), vector<double>(m_data.grid.n_cells_total(), UNSASSIGNED));
 
   // container for evaluated expressions: the properties of a current cell
   std::vector<double> cell_vars(_vars.size());
@@ -98,8 +99,7 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
   const auto & grid = m_data.grid;
   // we don't want to save x,y,z, and variables from files
   size_t count = 0;  // count number of matched cells
-  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-  {
+  for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell) {
     if (cell->marker() == domain.label) // cells
     {
       count++;
@@ -118,18 +118,21 @@ size_t CellPropertyManager::evaluate_expressions_(const DomainConfig& domain,
       }
 
       // copy local cell_vars to global vectors
-      // start from shift to skip x,y,z
-      for (std::size_t i = 0; i < _vars.size(); ++i) {
+      for (std::size_t i = 0; i < n_expressions; ++i) {
         try {
-          properties[i][cell->index()] = cell_vars[i];
+          size_t const idx = _vars[domain.variables[i]];
+          properties[idx][cell->index()] = cell_vars[idx];
         } catch (std::out_of_range &e) {  // if subdomain doesn't have property assigned
           throw std::runtime_error( "property not provided for domain");
         }
       }
+      // copy service variables if unassigned
+      for (auto const & var : _config.service_variables) {
+        size_t const idx = _vars[var];
+        if ( properties[idx][cell->index()] == UNSASSIGNED )
+          properties[idx][cell->index()] = cell_vars[idx];
+      }
     } // end match label
-    // else {
-    //   std::cout << "unmatched label " << cell->marker() << std::endl;
-    // }
   }   // end cell loop
   return count;
 }
