@@ -15,8 +15,7 @@ class IntegrationRule3d {
 protected:
   void build_region_(PolyhedralElementBase const & element,
                      std::vector<size_t> const & cells,
-                     size_t offset,
-                     size_t region);
+                     size_t offset, size_t region);
   void build_fe_point_data_(std::vector<angem::Point<3,double>> const & vertex_coord,
                             FEPointData const & master,
                             FEPointData & target,

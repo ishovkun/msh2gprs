@@ -8,6 +8,7 @@
 #include "PFEM_integration/TributaryRegion3dVertices.hpp"
 #include "PFEM_integration/TributaryRegion3dFull.hpp"
 #include "PFEM_integration/IntegrationRule3d.hpp"
+#include "PFEM_integration/IntegrationRule3dEvaluation.hpp"
 #include "PFEM_integration/IntegrationRule2d.hpp"
 #include "PFEM_integration/IntegrationRuleFracture.hpp"
 // #include "PFEM_integration/IntegrationRuleFractureAverage.hpp"  // provides IntegrationFractureAverage
@@ -155,6 +156,8 @@ void PolyhedralElementBase::build_fe_cell_data_()
   }
 
   _integration_rule3d = std::make_shared<IntegrationRule3d>(*this, *regions);
+  // this is for quadrature rule analysis done in the paper
+  // _integration_rule3d = std::make_shared<IntegrationRule3dEvaluation>(*this, *regions);
   _cell_data = _integration_rule3d->integrate(_parent_cell.vertex_coordinates());
 }
 
