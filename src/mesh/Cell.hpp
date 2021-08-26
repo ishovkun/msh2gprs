@@ -5,6 +5,7 @@
 #include "Face.hpp"
 #include "constants.hpp"
 #include <vector>
+#include <set>
 #include <functional>  // std::reference_wrapper
 #include <memory>      // provides unique_ptr
 

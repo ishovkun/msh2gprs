@@ -274,7 +274,7 @@ for i in range(len(times)):
         f.write("TIME 1 1 double\n%f\n"%times[i])
         f.write("CYCLE 1 1 int\n%d\n"%1)
         f.write(res_msh_txt[match.end():])
-        f.write("CELL_DATA " + str(n_cells) + "\n")
+        # f.write("CELL_DATA " + str(n_cells) + "\n") #already in the grid -- do not duplicate
         # f.write("Time 1 double\n%f\n"%times[i])
         for j in range(len(headers[i])):
             header = headers[i][j].replace("=", "_")

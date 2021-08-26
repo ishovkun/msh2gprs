@@ -7,6 +7,7 @@
 #include "EmbeddedFractureManager.hpp"
 #include "discretization/flow/DoFNumbering.hpp"
 
+#include <list>
 #include <experimental/filesystem>  // filesystem
 
 namespace gprs_data {

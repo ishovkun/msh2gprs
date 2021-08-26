@@ -4,6 +4,7 @@
 #include <mesh/Mesh.hpp>
 #include <fstream>  // fstream
 
+#include <boost/functional/hash.hpp> //had to add it eventhgough it is bond to gmsh interfaces
 #ifdef WITH_GMSH
 #include <gmsh.h>
 #endif
