@@ -6,6 +6,8 @@
 #ifdef WITH_EIGEN
 #include <Eigen/Dense>                      // provides MatrixXd, VectorXd
 
+#include <list>
+
 namespace discretization {
 
 class IntegrationRule3d;

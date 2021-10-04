@@ -110,7 +110,7 @@ std::vector<size_t> SupportRegionsFVMGraph::neighbor_blocks_(std::vector<size_t>
       if ( _partition[v] != _partition[w] ) ans.insert(_partition[w]);
     }
   }
-  return std::vector(ans.begin(), ans.end());
+  return std::vector<size_t>(ans.begin(), ans.end());
 }
 
 std::vector<size_t> find_boundary(algorithms::EdgeWeightedDigraph const & g,
