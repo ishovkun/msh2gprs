@@ -11,7 +11,7 @@ static constexpr double UNSASSIGNED = std::numeric_limits<double>::lowest();
 
 CellPropertyManager::
 CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data,
-                    std::experimental::filesystem::path extra_files_path)
+                    std::filesystem::path extra_files_path)
     : _config(cell_properties)
     , m_data(data)
     , _input_path(extra_files_path)
@@ -144,7 +144,7 @@ std::vector<std::vector<double>> CellPropertyManager::read_files_()
   std::vector<std::vector<double>> ans(n_files);
   for (size_t i = 0; i < n_files; ++i) {
     ans[i].assign( nc, 0.f );
-    std::string const file_path = std::experimental::filesystem::absolute(_input_path / _config.files.expressions[i]);
+    std::string const file_path = std::filesystem::absolute(_input_path / _config.files.expressions[i]);
     logging::log() << "reading file " << file_path << std::endl;
     std::ifstream in( file_path, std::ifstream::in );
     size_t cnt = 0;

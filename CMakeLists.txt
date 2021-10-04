@@ -123,7 +123,7 @@ else()
 endif()
 
 # libraries for linking
-set(msh2gprs_libs ${msh2gprs_libs} preprocessor yaml-cpp mesh -lstdc++fs)
+set(msh2gprs_libs ${msh2gprs_libs} preprocessor yaml-cpp mesh)
 
 TARGET_LINK_LIBRARIES(msh2gprs ${msh2gprs_libs})
 
