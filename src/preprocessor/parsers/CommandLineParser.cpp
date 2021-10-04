@@ -8,7 +8,7 @@ namespace Parsers
 {
 
 using namespace cxxopts;
-using Path = std::experimental::filesystem::path;
+using Path = std::filesystem::path;
 using std::string;
 using std::vector;
 
@@ -63,7 +63,7 @@ void CommandLineParser::parse_paths_()
     throw std::runtime_error("User must provide input file");
 
   const std::string fname_config = _result["i"].as<string>();
-  opts.config_file_path = std::experimental::filesystem::path(fname_config);
+  opts.config_file_path = std::filesystem::path(fname_config);
   opts.log_file = (opts.config_file_path.parent_path() / "log.txt").filename();
 }
 

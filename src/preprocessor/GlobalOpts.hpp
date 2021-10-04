@@ -7,7 +7,7 @@ namespace gprs_data {
 
 struct GlobalOpts
 {
-  using Path = std::experimental::filesystem::path;
+  using Path = std::filesystem::path;
   Path config_file_path;
   std::string log_file;
   logging::LogLevel log_level = logging::LogLevel::Debug;

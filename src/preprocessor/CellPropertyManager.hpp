@@ -25,7 +25,7 @@ class CellPropertyManager
    * @param  {std::experimental::filesystem::path} extra_files_path  : where input property files are stored
    */
   CellPropertyManager(const CellPropertyConfig & cell_properties, SimData & data,
-                      std::experimental::filesystem::path extra_files_path);
+                      std::filesystem::path extra_files_path);
   // take config and fill out the grid with properties
   void generate_properties(std::vector<std::vector<double>> & cell_properties);
   // get names of properties
@@ -72,7 +72,7 @@ class CellPropertyManager
 
   CellPropertyConfig const & _config;
   SimData & m_data;
-  std::experimental::filesystem::path _input_path;
+  std::filesystem::path _input_path;
   const size_t m_n_unrefined_cells;
   mutable std::unordered_map<std::string, size_t> _vars;
   std::vector<std::vector<double>> _file_data;
