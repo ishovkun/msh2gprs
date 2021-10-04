@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm> // std::sort
+#include <string>
 #include <stdexcept>
 #include <cassert>
 

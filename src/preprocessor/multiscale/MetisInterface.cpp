@@ -57,16 +57,17 @@ MetisInterface::partition(algorithms::EdgeWeightedGraph const &g, size_t n_block
   METIS_PartGraphKway(&icount, &ncon, &xadj[0], &adj[0], &vwgt[0], &size[0],
                       NULL /*&adjwgt[0]*/, &n_domains, NULL, NULL, options,
                       &objval, &coarse_cell_id[0]);
-#else
-  throw std::invalid_argument(
-      "METIS is not available, cannot perform partitioning");
-#endif // WITH_METIS
 
   vector<size_t> part(g.n_vertices());
   for (size_t i = 0; i < g.n_vertices(); ++i)
     part[i] = static_cast<std::size_t>(coarse_cell_id[i]);
 
   return part;
+
+#else
+  throw std::invalid_argument(
+      "METIS is not available, cannot perform partitioning");
+#endif // WITH_METIS
 }
 
 }  // end namespace multiscale

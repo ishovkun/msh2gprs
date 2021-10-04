@@ -5,6 +5,7 @@
 #include "logger/Logger.hpp"
 #include <unordered_map>
 
+#ifdef WITH_EIGEN
 
 namespace discretization {
 using Point = angem::Point<3,double>;
@@ -149,3 +150,5 @@ std::vector<int> DiscretizationPolyhedralFEMOptimized::get_cell_isomorphic_group
 }
 
 }  // end namespace discretization
+
+#endif

@@ -1,6 +1,8 @@
 #include "IntegrationRule3dEvaluation.hpp"
 #include "../FeValues.hpp"
 
+#ifdef WITH_EIGEN
+
 auto myfunc = [](angem::Point<3,double> x) -> double {
 //   // return x[0] + x[1] + x[2];
 //   // return x[0]*x[0] + x[1]*x[1] + x[2]*x[2];
@@ -105,3 +107,5 @@ IntegrationRule3dEvaluation(PolyhedralElementBase const & element, TributaryRegi
 }
 
 }  // end namespace discretization
+
+#endif

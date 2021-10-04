@@ -1,6 +1,8 @@
 #pragma once
 #include "IntegrationRule2d.hpp"
 
+#ifdef WITH_EIGEN
+
 namespace discretization {
 
 class IntegrationRuleFracture
@@ -45,3 +47,5 @@ class IntegrationRuleFracture
 };
 
 }  // end namespace discretization
+
+#endif

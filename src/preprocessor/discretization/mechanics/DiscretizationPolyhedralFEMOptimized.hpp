@@ -1,4 +1,6 @@
 #pragma once
+
+#ifdef WITH_EIGEN
 #include "DiscretizationPolyhedralFEM.hpp"
 #include "Elements/PolyhedralElementBase.hpp"
 #include "angem/Tensor2.hpp"
@@ -40,3 +42,5 @@ class DiscretizationPolyhedralFEMOptimized : public DiscretizationPolyhedralFEM 
 };
 
 }  // end namespace discretization
+
+#endif

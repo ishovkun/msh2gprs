@@ -4,6 +4,8 @@
 #include "algorithms/DijkstraSubgraph.hpp"
 #include "MetisInterface.hpp"
 #include <numeric>  // accumulate
+#include <algorithm> // shuffle
+#include <random>    // random_device, mt19937
 
 namespace multiscale {
 
@@ -69,7 +71,13 @@ size_t SupportRegionsFVMGraph::find_center_(std::vector<size_t> const  & region,
   size_t n_selected = std::max(min_selected, (size_t)(bnd.size() * fraction)); // actual number of items extracted
   std::vector<bool> selected(bnd.size(), false);
   std::fill(selected.begin(), selected.begin() + n_selected, true);
-  std::random_shuffle( selected.begin(), selected.end() );
+
+  // random shuffle is deprecated
+  // std::random_shuffle( selected.begin(), selected.end() );
+  std::random_device random_device;
+  std::mt19937 generator(random_device());
+  std::shuffle(selected.begin(), selected.end(), generator);
+
   for (size_t i = 0; i < bnd.size(); ++i)
     if ( selected[i] ) {
       DijkstraSubgraph path(bnd[i], _cons, _subgraph_mask);

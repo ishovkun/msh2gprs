@@ -1,6 +1,8 @@
 #include "IntegrationRule2d.hpp"
 #include "../FeValues.hpp"
 
+#ifdef WITH_EIGEN
+
 namespace discretization {
 
 IntegrationRule2d::IntegrationRule2d(const PolyhedralElementBase & element,
@@ -155,3 +157,5 @@ void IntegrationRule2d::scale_data_(FEPointData & data) const
 }
 
 }  // end namespace discretization
+
+#endif

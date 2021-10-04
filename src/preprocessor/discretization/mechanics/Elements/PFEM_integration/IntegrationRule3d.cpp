@@ -1,6 +1,8 @@
 #include "IntegrationRule3d.hpp"
 #include "../FeValues.hpp"
 
+#ifdef WITH_EIGEN
+
 namespace discretization {
 
 IntegrationRule3d::IntegrationRule3d(PolyhedralElementBase const & element,
@@ -145,3 +147,5 @@ compute_inverse_jacobian_(const std::vector<Point> & ref_grad,
 
 
 }  // end namespace discretization
+
+#endif

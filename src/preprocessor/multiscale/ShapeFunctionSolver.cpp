@@ -1,5 +1,6 @@
 #include "ShapeFunctionSolver.hpp"
 
+#ifdef WITH_EIGEN
 namespace multiscale {
 
 using discretization::ConnectionData;
@@ -148,3 +149,5 @@ void ShapeFunctionSolver::solve_()
 
 
 }  // end namespace multiscale
+
+#endif

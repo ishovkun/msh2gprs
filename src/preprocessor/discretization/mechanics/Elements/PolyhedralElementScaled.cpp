@@ -8,6 +8,7 @@ namespace discretization {
 
 using Point = angem::Point<3,double>;
 
+#ifdef WITH_EIGEN
 PolyhedralElementScaled::PolyhedralElementScaled(const mesh::Cell & cell,
                                                  const mesh::Mesh & parent_grid,
                                                  PolyhedralElementBase & master,
@@ -122,4 +123,5 @@ reorder_face_vertices_(mesh::Face const & target,
     coords[v] = copy[order[v]];
 }
 
+#endif
 }  // end namespace discretization

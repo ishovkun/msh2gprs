@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef WITH_EIGEN
 #include "PolyhedralElementBase.hpp"
 #include "angem/Tensor2.hpp"
 
@@ -73,3 +74,5 @@ class PolyhedralElementScaled : public PolyhedralElementBase {
 
 };
 }  // end namespace discretization
+
+#endif

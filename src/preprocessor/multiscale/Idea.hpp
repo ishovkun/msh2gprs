@@ -1,8 +1,10 @@
 #pragma once
 #include "mesh/Mesh.hpp"
 #include "SimData.hpp"
+#ifdef WITH_EIGEN
 #include <Eigen/Sparse>                     // provides SparseMatrix
 #include <Eigen/Dense>                      // provides MatrixXd, VectorXd
+#endif
 #include <vector>
 
 namespace multiscale {

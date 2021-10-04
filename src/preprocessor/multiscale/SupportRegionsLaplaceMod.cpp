@@ -64,12 +64,14 @@ SupportRegionsLaplaceMod::SupportRegionsLaplaceMod(std::vector<size_t> const &pa
       for (auto v : _blocks[e->other(u)])
         region.push_back(v);
 
+#ifdef WITH_EIGEN
     ShapeFunctionSolver solver( source, region, bnd, bnd_values, _data );
 
     _support[u].resize( _partition.size(), 0.f);
     auto soln = solver.solution();
     for (size_t i = 0; i < region.size(); ++i)
       _support[u][region[i]] = soln[i];
+#endif
   }
 }
 

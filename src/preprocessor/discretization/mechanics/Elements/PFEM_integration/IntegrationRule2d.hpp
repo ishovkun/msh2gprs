@@ -3,6 +3,8 @@
 #include "TributaryRegion2dBase.hpp"
 #include "angem/Tensor2.hpp"
 
+#ifdef WITH_EIGEN
+
 namespace discretization {
 
 class IntegrationRule2d {
@@ -43,6 +45,6 @@ class IntegrationRule2d {
   std::vector<FEPointData> _data;
 };
 
-
-
 }  // end namespace discretization
+
+#endif

@@ -1,4 +1,6 @@
 #pragma once
+#ifdef WITH_EIGEN
+
 #include "IntegrationRule3d.hpp"
 
 namespace discretization {
@@ -10,3 +12,5 @@ class IntegrationRule3dEvaluation : public IntegrationRule3d {
 };
 
 }  // end namespace discretization
+
+#endif

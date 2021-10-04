@@ -379,12 +379,16 @@ void Preprocessor::build_geomechanics_discretization_()
                                                           dfm_markers, data.neumann_face_indices);
   else if (config.fem.method == FEMMethod::polyhedral_finite_element) {
     auto const & opts = GlobalOpts::ref();
+#ifdef WITH_EIGEN
     if (opts.enable_experimental)
       p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(data.geomechanics_grid, config.fem,
                                                                        dfm_markers, data.neumann_face_indices);
     else
       p_discr = std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid, config.fem,
                                                               dfm_markers, data.neumann_face_indices);
+#elseif
+    throw std::invalid_argument("PFEM is not available without Eigen");
+#endif
   }
   else throw std::invalid_argument("mechanics discretization is unknown");
 

@@ -1,6 +1,8 @@
 #include "IntegrationRuleFracture.hpp"
 #include "../FeValues.hpp"
 
+#ifdef WITH_EIGEN
+
 namespace discretization {
 
 IntegrationRuleFracture::
@@ -208,3 +210,5 @@ void IntegrationRuleFracture::scale_data_(FEPointData & data) const
 
 
 }  // end namespace discretization
+
+#endif

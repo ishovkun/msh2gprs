@@ -1,5 +1,7 @@
 #include "TributaryRegion3dFull.hpp"
 
+#ifdef WITH_EIGEN
+
 namespace discretization {
 
 TributaryRegion3dFull::TributaryRegion3dFull(PolyhedralElementBase & element)
@@ -21,3 +23,5 @@ TributaryRegion3dFull::TributaryRegion3dFull(PolyhedralElementBase & element)
 }
 
 }  // end namespace discretization
+
+#endif

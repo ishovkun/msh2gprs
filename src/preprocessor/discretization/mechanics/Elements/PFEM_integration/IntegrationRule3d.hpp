@@ -3,6 +3,8 @@
 #include "TributaryRegion3dBase.hpp"
 #include "angem/Tensor2.hpp"
 
+#ifdef WITH_EIGEN
+
 namespace discretization {
 
 class IntegrationRule3d {
@@ -32,3 +34,5 @@ protected:
 };
 
 }  // end namespace discretization
+
+#endif

@@ -1,5 +1,6 @@
 #pragma once
 #include "SimData.hpp"
+#ifdef WITH_EIGEN
 #include <Eigen/Sparse>                     // provides SparseMatrix
 #include <Eigen/Dense>                      // provides MatrixXd, VectorXd
 #include <vector>
@@ -35,3 +36,5 @@ class ShapeFunctionSolver {
 };
 
 }  // end namespace multiscale
+
+#endif
