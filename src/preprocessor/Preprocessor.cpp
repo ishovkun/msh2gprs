@@ -59,7 +59,7 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
   }
   else if ( _config.mesh_config.type == MeshType::insim ) {
     std::cout << "Building INSIM grid..." << std::endl;
-    data.grid = GridGeneratorINSIM();
+    data.grid = GridGeneratorINSIM(_config.wells);
     logging::log() << "OK" << std::endl;
     exit(0);
   }

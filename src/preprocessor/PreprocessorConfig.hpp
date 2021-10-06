@@ -5,6 +5,7 @@
 #include "config/MeshConfig.hpp"
 #include "config/MultiscaleConfig.hpp"
 #include "config/PropertyConfig.hpp"
+#include "config/WellConfig.hpp"
 
 #include <map>
 #include <memory> // shared / unique_ptr
@@ -62,16 +63,6 @@ struct DiscreteFractureConfig
   size_t region = 0;    // property table index
 };
 
-
-struct WellConfig
-{
-  std::string name;
-  double radius;
-  std::vector<angem::Point<3,double>> coordinates;
-  std::vector<bool> perforated;
-  // use this flag only to force connecting the well to fractures in 2D
-  bool force_connect_fractures = false;
-};
 
 struct VTKOutputConfig
 {

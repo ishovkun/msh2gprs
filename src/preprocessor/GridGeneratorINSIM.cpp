@@ -2,7 +2,8 @@
 
 namespace gprs_data {
 
-GridGeneratorINSIM::GridGeneratorINSIM()
+GridGeneratorINSIM::GridGeneratorINSIM(std::vector<WellConfig> const & wells)
+    : _wells(wells)
 {}
 
 GridGeneratorINSIM::operator mesh::Mesh() const
