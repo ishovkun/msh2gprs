@@ -17,6 +17,7 @@ ADD_LIBRARY(preprocessor
   property_expressions/value_functions.cpp
   WellManager.cpp
   Well.cpp
+  GridGeneratorINSIM.cpp
   discretization/flow/DiscretizationBase.cpp
   discretization/flow/DiscretizationTPFA.cpp
   discretization/flow/DiscretizationDFM.cpp
