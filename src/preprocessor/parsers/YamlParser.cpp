@@ -656,6 +656,9 @@ void YamlParser::section_mesh(const YAML::Node & node)
     {
       subsection_refinement(it->second);
     }
+    else if (key == "insim") {
+      conf.type = MeshType::insim;
+    }
     else throw std::invalid_argument("Unknown key " + key);
   }
 }

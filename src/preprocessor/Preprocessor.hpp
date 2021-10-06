@@ -52,7 +52,7 @@ private:
   void write_output_();
 
   // ------------------ Variables ----------------------- //
-  PreprocessorConfig config; // config of the preprocessor written in yaml file
+  PreprocessorConfig _config; // config of the preprocessor written in yaml file
   SimData data; // data container. stores data for output.
   Path m_output_dir; // path to output directory
   Path _input_dir;   // path to input directory

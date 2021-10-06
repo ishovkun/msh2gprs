@@ -23,6 +23,7 @@
 #include "OutputDataGPRS.hpp"
 #include "OutputDataPostprocessor.hpp"
 #include "logger/Logger.hpp"
+#include "GridGeneratorINSIM.hpp"
 #include <string>
 #include <chrono>  // timing
 
@@ -37,21 +38,30 @@ Preprocessor::Preprocessor(const Path config_file_path)
   // infer grid file path
   _input_dir = config_file_path.parent_path();
   setup_grid_(_input_dir);
-  m_output_dir = _input_dir / config.output_dir;
+  m_output_dir = _input_dir / _config.output_dir;
 }
 
 void Preprocessor::setup_grid_(const Path config_dir_path)
 {
-  if (config.mesh_config.type == MeshType::file)
+  if ( _config.mesh_config.type == MeshType::file )
   {
-    const Path grid_file_path = config_dir_path / config.mesh_config.file;
+    const Path grid_file_path = config_dir_path / _config.mesh_config.file;
     read_mesh_file_(grid_file_path);
   }
-  else if (config.mesh_config.type == MeshType::cartesian)
+  else if (_config.mesh_config.type == MeshType::cartesian)
   {
     logging::log() << "Building Cartesian grid...";
-    data.grid = mesh::CartesianMeshBuilder(config.mesh_config.cartesian);
+    data.grid = mesh::CartesianMeshBuilder(_config.mesh_config.cartesian);
     logging::log() << "OK" << std::endl;
+  }
+  else if (_config.mesh_config.type == MeshType::radial ) {
+    throw std::invalid_argument("Radial grids not implemented yet. Contact me if you need those");
+  }
+  else if ( _config.mesh_config.type == MeshType::insim ) {
+    std::cout << "Building INSIM grid..." << std::endl;
+    data.grid = GridGeneratorINSIM();
+    logging::log() << "OK" << std::endl;
+    exit(0);
   }
   else throw std::invalid_argument("Invalid mesh format");
 }
@@ -59,7 +69,7 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
 void Preprocessor::run()
 {
   // property manager for grid with split cells (due to edfm splitting)
-  pm_property_mgr = std::make_shared<CellPropertyManager>(config.cell_properties, data, _input_dir);
+  pm_property_mgr = std::make_shared<CellPropertyManager>(_config.cell_properties, data, _input_dir);
   logging::log() << "Generating properties" << std::endl;
   pm_property_mgr->generate_properties(data.cell_properties);
   data.property_names = pm_property_mgr->get_property_names();
@@ -70,9 +80,9 @@ void Preprocessor::run()
 
   // create discrete fracture manager
   logging::log() << "Initializing Fracture managers" << std::endl;
-  pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(config.discrete_fractures, data);
-  pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(config.embedded_fractures,
-                                                          config.edfm_settings, data);
+  pm_dfm_mgr = std::make_shared<DiscreteFractureManager>(_config.discrete_fractures, data);
+  pm_edfm_mgr = std::make_shared<EmbeddedFractureManager>(_config.embedded_fractures,
+                                                          _config.edfm_settings, data);
 
   // copy geomechanics grid since base grid will be split
   data.geomechanics_grid = data.grid;
@@ -82,12 +92,12 @@ void Preprocessor::run()
   pm_edfm_mgr->split_cells();
   logging::important() << "Finished splitting cells" << std::endl << std::flush;
 
-  if (config.mesh_config.refinement.type != RefinementType::none)
+  if (_config.mesh_config.refinement.type != RefinementType::none)
   {
     logging::important() << "Peforming Grid Refinement" << std::endl;
-    if (config.mesh_config.refinement.type == RefinementType::aspect_ratio)
-      mesh::RefinementAspectRatio refinement(data.grid, config.mesh_config.refinement.aspect_ratio,
-                                             config.mesh_config.refinement.max_level);
+    if (_config.mesh_config.refinement.type == RefinementType::aspect_ratio)
+      mesh::RefinementAspectRatio refinement(data.grid, _config.mesh_config.refinement.aspect_ratio,
+                                             _config.mesh_config.refinement.max_level);
     logging::important() << "Finished Grid Refinement" << std::endl;
   }
 
@@ -122,7 +132,7 @@ void Preprocessor::run()
   data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
   // remove fine cells
-  if (config.edfm_settings.method != EDFMMethod::compartmental)
+  if (_config.edfm_settings.method != EDFMMethod::compartmental)
   {
     data.grid.coarsen_cells();
     // pm_property_mgr->coarsen_cells();
@@ -146,30 +156,30 @@ void Preprocessor::write_output_()
 {
   logging::log() << "Write Output data\n";
   create_output_dir_();
-  for (auto format : config.output_formats)
+  for (auto format : _config.output_formats)
   {
     switch (format) {
       case OutputFormat::gprs :
         {
           logging::log() << "Output gprs format" << std::endl;
-          gprs_data::OutputDataGPRS output_data(data, config.gprs_output);
+          gprs_data::OutputDataGPRS output_data(data, _config.gprs_output);
           output_data.write_output(m_output_dir);
           break;
         }
         case OutputFormat::vtk :
           {
             logging::log() << "Output vtk format" << std::endl;
-            gprs_data::OutputDataVTK output_data(data, config.vtk_config);
+            gprs_data::OutputDataVTK output_data(data, _config.vtk_config);
             output_data.write_output(m_output_dir);
             break;
           }
         case OutputFormat::postprocessor :
           {
             logging::log() << "Output postprocessor format" << std::endl;
-            gprs_data::OutputDataPostprocessor output_data(data, config,
+            gprs_data::OutputDataPostprocessor output_data(data, _config,
                                                            *data.flow_numbering,
                                                            m_output_dir);
-            output_data.write_output(config.postprocessor_file);
+            output_data.write_output(_config.postprocessor_file);
           }
     }
   }
@@ -193,7 +203,7 @@ void Preprocessor::read_config_file_(const Path config_file_path)
   {
     Parsers::YamlParser parser;
     parser.parse_file(filesystem::absolute(config_file_path));
-    config = parser.get_config();
+    _config = parser.get_config();
   }
   else
   {
@@ -253,7 +263,7 @@ void Preprocessor::build_flow_discretization_()
   const std::vector<DiscreteFractureConfig> edfm_faces_conf = pm_edfm_mgr->generate_dfm_config();
   // combine dfm and edfm configs
   const std::vector<DiscreteFractureConfig> combined_fracture_config =
-      DiscreteFractureManager::combine_configs(config.discrete_fractures, edfm_faces_conf);
+      DiscreteFractureManager::combine_configs(_config.discrete_fractures, edfm_faces_conf);
   // manages properties of dfm and edfm after splitting
   pm_cedfm_mgr = std::make_shared<DiscreteFractureManager>(combined_fracture_config, data);
   pm_cedfm_mgr->distribute_properties();
@@ -267,7 +277,7 @@ void Preprocessor::build_flow_discretization_()
 
   using namespace discretization;
   std::unique_ptr<DiscretizationBase> flow_discr;
-  switch (config.edfm_settings.method)
+  switch (_config.edfm_settings.method)
   {
     case (EDFMMethod::simple):
       logging::important() << "Simple EDFM is chosen" << std::endl;
@@ -289,7 +299,7 @@ void Preprocessor::build_flow_discretization_()
   }
   // if we do cedfm use the split matrix dof numbering
   // else use unsplit matrix dofs
-  if ( config.edfm_settings.method == EDFMMethod::compartmental )
+  if ( _config.edfm_settings.method == EDFMMethod::compartmental )
     data.flow_numbering = p_split_dofs;
   else
     data.flow_numbering = p_unsplit_dofs;
@@ -298,24 +308,24 @@ void Preprocessor::build_flow_discretization_()
   flow_discr->build();
 
   // setup wells
-  if (!config.wells.empty())
+  if (!_config.wells.empty())
   {
     logging::log() << "setup wells" << std::endl;
-    WellManager well_mgr(config.wells, data, *data.flow_numbering, config.edfm_settings.method);
+    WellManager well_mgr(_config.wells, data, *data.flow_numbering, _config.edfm_settings.method);
     well_mgr.setup();
   }
 
   // multiscale idea
-  if ( config.ms_flow.part_type != MSPartitioning::no_partitioning )
+  if ( _config.ms_flow.part_type != MSPartitioning::no_partitioning )
   {
     // multiscale::Idea idea(data.grid, data);
-    multiscale::MSFlow ms(data.grid, data, config.ms_flow);
+    multiscale::MSFlow ms(data.grid, data, _config.ms_flow);
     ms.fill_output_model(data.ms_flow_data);
   }
 
   // used for coupling later on
   // replace cedfm properties by pure DFM properties
-  if ( config.edfm_settings.method != EDFMMethod::compartmental )
+  if ( _config.edfm_settings.method != EDFMMethod::compartmental )
     pm_dfm_mgr->distribute_properties();
 }
 
@@ -323,7 +333,7 @@ void Preprocessor::build_geomechanics_discretization_()
 {
   data.output_mech_properties = pm_property_mgr->get_custom_mech_keys();
 
-  if (config.fem.method == FEMMethod::strong_discontinuity)
+  if (_config.fem.method == FEMMethod::strong_discontinuity)
   {
     // generate geomechanics sda properties
     pm_edfm_mgr->distribute_mechanical_properties();
@@ -331,9 +341,9 @@ void Preprocessor::build_geomechanics_discretization_()
     pm_edfm_mgr->map_mechanics_to_control_volumes(*data.flow_numbering);
   }
 
-  if (config.ms_mech.support_type == MSSupportType::mechanics)
+  if (_config.ms_mech.support_type == MSSupportType::mechanics)
   {
-    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, config.ms_mech.n_blocks[0]);
+    multiscale::MultiScaleDataMech ms_handler(data.geomechanics_grid, _config.ms_mech.n_blocks[0]);
     ms_handler.build_data();
     ms_handler.fill_output_model(data.ms_mech_data);
   }
@@ -341,8 +351,8 @@ void Preprocessor::build_geomechanics_discretization_()
   auto p_frac_mgr = pm_dfm_mgr;
 
   std::vector<int> dfm_markers;
-  if (config.fem.method == FEMMethod::polyhedral_finite_element ||
-      config.fem.method == FEMMethod::mixed)
+  if (_config.fem.method == FEMMethod::polyhedral_finite_element ||
+      _config.fem.method == FEMMethod::mixed)
   {
     data.geomechanics_grid = data.grid;
     p_frac_mgr = pm_cedfm_mgr;
@@ -365,7 +375,7 @@ void Preprocessor::build_geomechanics_discretization_()
 
   // build mechanics boundary conditions
   logging::log() << "Building mechanics boundary conditions" << std::endl;
-  BoundaryConditionManager bc_mgr(config.bc_faces, config.bc_nodes, data);
+  BoundaryConditionManager bc_mgr(_config.bc_faces, _config.bc_nodes, data);
 
   logging::log() << "Building FEM discretization" << std::endl;
   dfm_markers = p_frac_mgr->get_face_markers();
@@ -374,10 +384,10 @@ void Preprocessor::build_geomechanics_discretization_()
   using namespace discretization;
   std::unique_ptr<DiscretizationFEMBase> p_discr;
   // WARNING: this part of code can reorder grid vertices
-  if (config.fem.method == FEMMethod::strong_discontinuity)
-    p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, config.fem,
+  if (_config.fem.method == FEMMethod::strong_discontinuity)
+    p_discr = std::make_unique<DiscretizationStandardFEM>(data.geomechanics_grid, _config.fem,
                                                           dfm_markers, data.neumann_face_indices);
-  else if (config.fem.method == FEMMethod::polyhedral_finite_element) {
+  else if (_config.fem.method == FEMMethod::polyhedral_finite_element) {
     auto const & opts = GlobalOpts::ref();
 #ifdef WITH_EIGEN
     if (opts.enable_experimental)
@@ -403,7 +413,7 @@ void Preprocessor::build_geomechanics_discretization_()
   // split geomechanics DFM faces
   // This part must go after building discretization since
   // the discretization might do vertex renumbering
-  if (config.dfm_settings.split_mech_vertices)
+  if (_config.dfm_settings.split_mech_vertices)
   {
     logging::log() << "Splitting faces of DFM fractures" << std::endl;
     p_frac_mgr->split_faces(data.geomechanics_grid);

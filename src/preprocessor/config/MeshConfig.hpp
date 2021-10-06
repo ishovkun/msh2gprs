@@ -3,7 +3,7 @@
 
 enum class MeshType
 {
-  cartesian, radial, file
+  cartesian, radial, file, insim
 };
 
 enum class RefinementType
