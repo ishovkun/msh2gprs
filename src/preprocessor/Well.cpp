@@ -21,10 +21,6 @@ Well::Well(const WellConfig & config)
     std::size_t i = 0;
     while (i < config.coordinates.size())
     {
-      // std::cout << "segments.size() = " << segments.size() << std::endl;
-      // if (i == config.coordinates.size() - 1 and !segment_open)
-      //   break;
-
       auto & segment = segments.back();
       if (!segment_open)
       {

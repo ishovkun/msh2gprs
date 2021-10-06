@@ -40,8 +40,12 @@ void WellManager::setup()
 
 void WellManager::setup_simple_well_fast_(Well & well)
 {
-  if (!_data.grid_searcher)
-    throw std::runtime_error("Method is not supported without a valid grid searcher");
+  if (!_data.grid_searcher) {
+    setup_simple_well_(well);  // fallback
+    logging::warning() << "Method is not supported without a valid grid searcher" << std::endl;
+    return;
+  }
+
   auto & searcher = *_data.grid_searcher;
   auto p1 = well.coordinate, p2 = well.coordinate;
   well.reference_depth = -well.coordinate.z();

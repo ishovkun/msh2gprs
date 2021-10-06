@@ -29,8 +29,8 @@ void YamlParser::parse_file(const std::string & fname)
 
     if (key == "Mesh file")
     {
-      config.mesh_config.type = MeshType::file;
-      config.mesh_config.file = it->second.as<std::string>();
+      config.mesh.type = MeshType::file;
+      config.mesh.file = it->second.as<std::string>();
     }
     else if (key == "Mesh")
       section_mesh(it->second);
@@ -637,7 +637,7 @@ void YamlParser::section_multiscale(const YAML::Node & node)
 
 void YamlParser::section_mesh(const YAML::Node & node)
 {
-  auto & conf = config.mesh_config;
+  auto & conf = config.mesh;
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
@@ -650,22 +650,33 @@ void YamlParser::section_mesh(const YAML::Node & node)
     else if (key == "cartesian")
     {
       conf.type = MeshType::cartesian;
-      subsection_cartesian_grid(it->second);
+      subsection_grid_cartesian(it->second);
     }
     else if (key == "refinement")
     {
-      subsection_refinement(it->second);
+      subsection_grid_refinement(it->second);
     }
     else if (key == "insim") {
       conf.type = MeshType::insim;
+      subsection_grid_insim(it->second);
     }
     else throw std::invalid_argument("Unknown key " + key);
   }
 }
 
-void YamlParser::subsection_cartesian_grid(const YAML::Node & node)
+void YamlParser::subsection_grid_insim(const YAML::Node & node)
 {
-  auto & conf = config.mesh_config.cartesian;
+  auto & conf = config.mesh.insim;
+  for (auto it = node.begin(); it!=node.end(); ++it) {
+    const std::string key = it->first.as<std::string>();
+    if ( key == "minimum_thickness" )
+      conf.minimum_thickness = it->second.as<double>();
+  }
+}
+
+void YamlParser::subsection_grid_cartesian(const YAML::Node & node)
+{
+  auto & conf = config.mesh.cartesian;
   std::array<size_t,3> dimens = {1, 1, 1};
   angem::Point<3,double> origin = {0,0,0};
   angem::Point<3,double> corner = {1,1,1};
@@ -689,9 +700,9 @@ void YamlParser::subsection_cartesian_grid(const YAML::Node & node)
   conf.origin = origin;
 }
 
-void YamlParser::subsection_refinement(const YAML::Node & node)
+void YamlParser::subsection_grid_refinement(const YAML::Node & node)
 {
-  auto & conf  = config.mesh_config.refinement;
+  auto & conf  = config.mesh.refinement;
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();

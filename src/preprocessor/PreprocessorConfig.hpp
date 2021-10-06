@@ -147,7 +147,7 @@ struct PreprocessorConfig
                                               OutputFormat::postprocessor};
 
   // the name of gmsh grid file
-  MeshConfig mesh_config;
+  MeshConfig mesh;
   // std::string mesh_file;
   // output file names
   std::string output_dir            = "output";

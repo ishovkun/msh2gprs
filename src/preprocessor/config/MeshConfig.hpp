@@ -18,10 +18,16 @@ struct RefinementParameters
   RefinementType type = RefinementType::none;
 };
 
+struct INSIMMeshConfig
+{
+  double minimum_thickness = 1.f;  // handy if we want pseudo 2d mesh
+};
+
 struct MeshConfig
 {
   MeshType type;
   std::string file;
   mesh::CartesianMeshParameters cartesian;
   RefinementParameters refinement;
+  INSIMMeshConfig insim;
 };

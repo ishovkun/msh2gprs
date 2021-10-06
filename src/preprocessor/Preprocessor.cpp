@@ -43,23 +43,23 @@ Preprocessor::Preprocessor(const Path config_file_path)
 
 void Preprocessor::setup_grid_(const Path config_dir_path)
 {
-  if ( _config.mesh_config.type == MeshType::file )
+  if ( _config.mesh.type == MeshType::file )
   {
-    const Path grid_file_path = config_dir_path / _config.mesh_config.file;
+    const Path grid_file_path = config_dir_path / _config.mesh.file;
     read_mesh_file_(grid_file_path);
   }
-  else if (_config.mesh_config.type == MeshType::cartesian)
+  else if (_config.mesh.type == MeshType::cartesian)
   {
     logging::log() << "Building Cartesian grid...";
-    data.grid = mesh::CartesianMeshBuilder(_config.mesh_config.cartesian);
+    data.grid = mesh::CartesianMeshBuilder(_config.mesh.cartesian);
     logging::log() << "OK" << std::endl;
   }
-  else if (_config.mesh_config.type == MeshType::radial ) {
+  else if (_config.mesh.type == MeshType::radial ) {
     throw std::invalid_argument("Radial grids not implemented yet. Contact me if you need those");
   }
-  else if ( _config.mesh_config.type == MeshType::insim ) {
+  else if ( _config.mesh.type == MeshType::insim ) {
     std::cout << "Building INSIM grid..." << std::endl;
-    data.grid = GridGeneratorINSIM(_config.wells);
+    data.grid = GridGeneratorINSIM(_config.mesh.insim, _config.wells);
     logging::log() << "OK" << std::endl;
     exit(0);
   }
@@ -92,12 +92,12 @@ void Preprocessor::run()
   pm_edfm_mgr->split_cells();
   logging::important() << "Finished splitting cells" << std::endl << std::flush;
 
-  if (_config.mesh_config.refinement.type != RefinementType::none)
+  if (_config.mesh.refinement.type != RefinementType::none)
   {
     logging::important() << "Peforming Grid Refinement" << std::endl;
-    if (_config.mesh_config.refinement.type == RefinementType::aspect_ratio)
-      mesh::RefinementAspectRatio refinement(data.grid, _config.mesh_config.refinement.aspect_ratio,
-                                             _config.mesh_config.refinement.max_level);
+    if (_config.mesh.refinement.type == RefinementType::aspect_ratio)
+      mesh::RefinementAspectRatio refinement(data.grid, _config.mesh.refinement.aspect_ratio,
+                                             _config.mesh.refinement.max_level);
     logging::important() << "Finished Grid Refinement" << std::endl;
   }
 
