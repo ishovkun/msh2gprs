@@ -439,60 +439,87 @@ std::vector<double>  compute_vertex_element_sizes(const std::vector<std::pair<si
   return result;
 }
 
-void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell,
-                                         const double n_vertices_on_edge)
+void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
+                                                        std::vector<angem::Point<3,double>> const & embedded)
 {
-  // gmsh::option::setNumber("General.Terminal", 1);
-  gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
-  gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
   gmsh::model::add("cell1");
-
-  // Remember that by default, if physical groups are defined, Gmsh will export
-  // in the output mesh file only those elements that belong to at least one
-  // physical group. To force Gmsh to save all elements, you can use
-  //
   gmsh::option::setNumber("Mesh.SaveAll", 1);
 
-  // const double discr_element_size = 0.4 * compute_element_size_(cell);
-  // std::cout << "discr_element_size = " << discr_element_size << std::endl;
-  // build points
-  const std::vector<Point> & vertices = cell.get_points();
-  const auto edges = cell.get_edges();
-  const std::vector<double> element_sizes = compute_vertex_element_sizes(edges,vertices);
+  std::cout << "insert boundary data" << std::endl;
+  insert_boundary_data_(boundary, 1.);
+  gmsh::model::geo::synchronize();
 
-  for (size_t i=0; i < vertices.size(); ++i)
-  {
-    const Point & vertex = vertices[i];
-    gmsh::model::geo::addPoint(vertex.x(), vertex.y(), vertex.z(),
-                               element_sizes[i] / n_vertices_on_edge,
-                               /*tag = */ i+1);
-    gmsh::model::addPhysicalGroup(0, {static_cast<int>(i+1)}, i+1);
-  }
-
-  // build lines (edges)
-  for (size_t i=0; i<edges.size(); ++i)
-  {
-    const std::pair<size_t,size_t> & edge = edges[i];
-    gmsh::model::geo::addLine(edge.first+1, edge.second+1, i+1);
-    gmsh::model::addPhysicalGroup(1, {static_cast<int>(i+1)}, i+1);
+  // insert_vertices_(embedded)
+  std::cout << "insert embedded points" << std::endl;
+  size_t offset = boundary.get_points().size() + 1;
+  std::vector<int> embedded_tags;
+  for (size_t i = 0; i < embedded.size(); ++i) {
+    int tag = offset + i;
+    gmsh::model::geo::addPoint(embedded[i].x(), embedded[i].y(), embedded[i].z(),
+                               /* element_size */ 0, tag);
+    embedded_tags.push_back(tag);
   }
 
   gmsh::model::geo::synchronize();
-  for (size_t i=0; i<edges.size(); ++i)
-    gmsh::model::mesh::setTransfiniteCurve(i+1, 5);
 
-  // build faces
-  const std::vector<std::vector<std::size_t>> & faces = cell.get_faces();
-  std::vector<angem::Polygon<double>> face_polys = cell.get_face_polygons();
-  for (size_t i=0; i<faces.size(); ++i)
+  // for (size_t i = 0; i < embedded.size(); ++i) {
+    int const point_dim = 0;
+    int const volume_dim = 3;
+    int const volume_tag = 1;
+    gmsh::model::mesh::embed(point_dim, embedded_tags, volume_dim, volume_tag);
+  // }
+
+      // gmsh::model::mesh::embed
+      //
+      // Embed the model entities of dimension `dim' and tags `tags' in the
+      // (`inDim', `inTag') model entity. The dimension `dim' can 0, 1 or 2 and
+      // must be strictly smaller than `inDim', which must be either 2 or 3. The
+      // embedded entities should not intersect each other or be part of the
+      // boundary of the entity `inTag', whose mesh will conform to the mesh of the
+      // embedded entities. With the OpenCASCADE kernel, if the `fragment'
+      // operation is applied to entities of different dimensions, the lower
+      // dimensional entities will be automatically embedded in the higher
+      // dimensional entities if they are not on their boundary.
+      // GMSH_API void embed(const int dim,
+      //                     const std::vector<int> & tags,
+      //                     const int inDim,
+      //                     const int inTag);
+
+
+
+  gmsh::model::geo::synchronize();
+  gmsh::model::mesh::generate(3);
+}
+
+void GmshInterface::insert_boundary_data_(angem::Polyhedron<double> const & bnd, double const n_vertices_on_edge)
+{
+  auto const & vertices = bnd.get_points();
+  const auto edges = bnd.get_edges();
+  insert_vertices_(vertices, edges, n_vertices_on_edge, /*first tag = */1);
+  insert_boundary_edges_(edges);
+  insert_boundary_faces_(bnd);
+
+  // create volume from surfaces
+  insert_surface_loop( bnd.get_faces().size() );
+  gmsh::model::geo::addVolume({1}, 1);
+  gmsh::model::geo::synchronize();
+  gmsh::model::addPhysicalGroup(3, {static_cast<int>(1)}, 1);
+}
+
+void GmshInterface::insert_boundary_faces_(angem::Polyhedron<double> const & bnd)
+{
+  const std::vector<std::vector<std::size_t>> & faces = bnd.get_faces();
+  std::vector<angem::Polygon<double>> face_polys = bnd.get_face_polygons();
+  auto const edges = bnd.get_edges();
+
+  for (size_t i = 0; i < faces.size(); ++i)
   {
     const auto & face = faces[i];
     const auto & poly = face_polys[i];
     std::vector<int> edge_markers;
     for (const angem::Edge & face_edge : poly.get_edges())
     {
-      const std::pair<size_t,size_t> cell_edge_ordered = {face[face_edge.first],
-                                                         face[face_edge.second]};
+      const std::pair<size_t,size_t> cell_edge_ordered = { face[face_edge.first], face[face_edge.second] };
       const std::pair<size_t,size_t> cell_edge_unordered = std::minmax(face[face_edge.first],
                                                                        face[face_edge.second]);
       // get edge marker
@@ -513,35 +540,105 @@ void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell,
       else  // inverse orientation
         edge_markers.push_back(-(edge_marker+1));
     }
-    // create line loop and surface
-    // NOTE: curve and surface loop must start from 1, otherwise gmsh
-    // throws an error, ergo i+1
-    // std::cout << "add Line loop " << i+1 << ":";
-    // for (auto edge : edge_markers)
-    //   std::cout << edge <<  " ";
-    // std::cout << std::endl;
+
     gmsh::model::geo::addCurveLoop(edge_markers, static_cast<int>(i+1));
-    // std::cout << "add plane surface " << i+1 << std::endl;
-    gmsh::model::geo::addPlaneSurface({static_cast<int>(i+1)}, static_cast<int>(i+1));
-    gmsh::model::addPhysicalGroup(2, {static_cast<int>(i+1)}, i+1);
   }
 
-  // gmsh::model::geo::synchronize();
-  // gmsh::model::mesh::generate(2);
-  // gmsh::write("cell.msh");
-  // gmsh::finalize();
+  gmsh::model::geo::synchronize();
 
-  // create volume from surfaces
-  std::vector<int> surfaces(faces.size());
-  std::iota(surfaces.begin(), surfaces.end(), 1);
-  gmsh::model::geo::addSurfaceLoop(surfaces, 1);
+  for (size_t i = 0; i < faces.size(); ++i)
+    gmsh::model::geo::addPlaneSurface({static_cast<int>(i+1)}, static_cast<int>(i+1));
+
+  gmsh::model::geo::synchronize();
+
+  for (size_t i = 0; i < faces.size(); ++i)
+    gmsh::model::addPhysicalGroup(2, {static_cast<int>(i+1)}, i+1);
+
+  gmsh::model::geo::synchronize();
+}
+
+void GmshInterface::insert_boundary_edges_(std::vector<mesh::Edge> const & edges)
+{
+  // build lines (edges)
+  for (size_t i=0; i<edges.size(); ++i)
+  {
+    const std::pair<size_t,size_t> & edge = edges[i];
+    gmsh::model::geo::addLine(edge.first+1, edge.second+1, i+1);
+    // gmsh::model::addPhysicalGroup(1, {static_cast<int>(i+1)}, i+1);
+  }
+
+  gmsh::model::geo::synchronize();
+
+  for (size_t i=0; i<edges.size(); ++i)
+    gmsh::model::addPhysicalGroup(1, {static_cast<int>(i+1)}, i+1);
+
+  gmsh::model::geo::synchronize();
+
+  // gmsh::model::geo::synchronize();
+  // for (size_t i=0; i<edges.size(); ++i)
+  //   gmsh::model::mesh::setTransfiniteCurve(i+1, 5);
+}
+
+void GmshInterface::insert_vertices_(std::vector<angem::Point<3,double>> const & vertices,
+                                     std::vector<mesh::Edge> const & edges,
+                                     double n_vertices_on_edge,
+                                     int first_tag)
+{
+  const std::vector<double> element_sizes = compute_vertex_element_sizes(edges, vertices);
+  for (size_t i = 0; i < vertices.size(); ++i)
+    gmsh::model::geo::addPoint(vertices[i].x(), vertices[i].y(), vertices[i].z(),
+                               /* element_size */ element_sizes[i] / n_vertices_on_edge,
+                               /*tag = */ i + first_tag);
+
+  gmsh::model::geo::synchronize();
+
+  for (size_t i = 0; i < vertices.size(); ++i)
+    gmsh::model::addPhysicalGroup(0, {static_cast<int>(i + first_tag)}, i + first_tag);
+
+  gmsh::model::geo::synchronize();
+}
+
+void GmshInterface::build_triangulation_(const angem::Polyhedron<double> & cell,
+                                         const double n_vertices_on_edge)
+{
+  gmsh::model::add("cell1");
+
+  // Remember that by default, if physical groups are defined, Gmsh will export
+  // in the output mesh file only those elements that belong to at least one
+  // physical group. To force Gmsh to save all elements, you can use
+  //
+  gmsh::option::setNumber("Mesh.SaveAll", 1);
+
+  // build points
+  const std::vector<Point> & vertices = cell.get_points();
+  const auto edges = cell.get_edges();
+  insert_vertices_(vertices, edges, n_vertices_on_edge, /*first_tag = */ 1);
+  insert_boundary_edges_(edges);
+
+  gmsh::model::geo::synchronize();
+  for (size_t i = 0; i < edges.size(); ++i)
+    gmsh::model::mesh::setTransfiniteCurve(i + 1, 5);
+
+  const std::vector<std::vector<std::size_t>> & faces = cell.get_faces();
+  insert_boundary_faces_(cell);
+
+  insert_surface_loop(faces.size());
   gmsh::model::geo::addVolume({1}, 1);
   gmsh::model::addPhysicalGroup(3, {static_cast<int>(1)}, 1);
 
   gmsh::model::geo::synchronize();
+
   gmsh::model::mesh::generate(3);
   // gmsh::write("cell.msh");
   // // gmsh::finalize();
+}
+
+void GmshInterface::insert_surface_loop(size_t n_surfaces)
+{
+  std::vector<int> surfaces( n_surfaces );
+  std::iota( surfaces.begin(), surfaces.end(), 1 );
+  gmsh::model::geo::addSurfaceLoop( surfaces, 1 );
+  gmsh::model::geo::synchronize();
 }
 
 double GmshInterface::compute_element_size_(const angem::Polyhedron<double> & cell)
@@ -562,9 +659,11 @@ void GmshInterface::save_gmsh_grid(const std::string fname)
 }
 
 
-void GmshInterface::initialize_gmsh()
+void GmshInterface::initialize_gmsh(bool verbose)
 {
   gmsh::initialize();
+  gmsh::option::setNumber("General.Terminal", (int)verbose);  // 0 shuts up gmsh logging
+  gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
 }
 
 void GmshInterface::finalize_gmsh()

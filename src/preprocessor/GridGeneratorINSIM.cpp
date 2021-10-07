@@ -1,5 +1,6 @@
 #include "GridGeneratorINSIM.hpp"
 #include "Well.hpp"                                       // provides Well
+#include "gmsh_interface/GmshInterface.hpp"
 #ifdef WITH_GMSH
 #include <gmsh.h>
 #endif
@@ -75,13 +76,54 @@ double GridGeneratorINSIM::find_characteristic_length_() const
 GridGeneratorINSIM::operator mesh::Mesh() const
 {
 #ifdef WITH_GMSH
-  gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
-  gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
-  gmsh::model::add("cell1");
-  gmsh::option::setNumber("Mesh.SaveAll", 1);
-  std::cout << "pops hihi" << std::endl;
+  GmshInterface::initialize_gmsh(/*verbose = */ true);
+  GmshInterface::build_triangulation_embedded_points(*_bbox, _vertices);
+  // gmsh::initialize();
+  // gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
+  // gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
+  // gmsh::model::add("cell1");
+  // gmsh::option::setNumber("Mesh.SaveAll", 1);
 
-  // outer points
+  // // outer points
+  // const std::vector<angem::Point<3,double>> & vertices = _bbox->get_points();
+  // double const characteristic_size = vertices.front().distance(vertices.back());
+  // for (size_t i = 0; i < vertices.size(); ++i) {
+  //   gmsh::model::geo::addPoint( vertices[i].x(), vertices[i].y(), vertices[i].z(),
+  //                               characteristic_size, /*tag = */ i+1 );
+  //   gmsh::model::addPhysicalGroup(0, {static_cast<int>(i+1)}, i+1);
+  // }
+
+  // // outer lines (edges)
+  // const auto edges = _bbox.get_edges();
+  // for (size_t i=0; i<edges.size(); ++i)
+  // {
+  //   const std::pair<size_t,size_t> & edge = edges[i];
+  //   gmsh::model::geo::addLine(edge.first+1, edge.second+1, i+1);
+  //   gmsh::model::addPhysicalGroup(1, {static_cast<int>(i+1)}, i+1);
+  // }
+
+  // // add embedded points (well vertices)
+  // // for (auto const & v : _vertices) {
+  //   gmsh::model::mesh::embed(3, {1,2}, 2, 3);
+  // // }
+  //     // Embed the model entities of dimension `dim' and tags `tags' in the
+  //     // (`inDim', `inTag') model entity. The dimension `dim' can 0, 1 or 2 and
+  //     // must be strictly smaller than `inDim', which must be either 2 or 3. The
+  //     // embedded entities should not intersect each other or be part of the
+  //     // boundary of the entity `inTag', whose mesh will conform to the mesh of the
+  //     // embedded entities. With the OpenCASCADE kernel, if the `fragment'
+  //     // operation is applied to entities of different dimensions, the lower
+  //     // dimensional entities will be automatically embedded in the higher
+  //     // dimensional entities if they are not on their boundary.
+  //     // GMSH_API void embed(const int dim,
+  //     //                     const std::vector<int> & tags,
+  //     //                     const int inDim,
+  //     //                     const int inTag);
+
+  // gmsh::model::geo::synchronize();
+  // gmsh::model::mesh::generate(2);
+  // gmsh::write("cell.msh");
+  // gmsh::finalize();
 
 
 #endif

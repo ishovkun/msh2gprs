@@ -18,7 +18,7 @@ class GmshInterface
   // read .msh input file and save the result into grid
   static void read_msh(const std::string & filename, mesh::Mesh & grid);
   // run before building grid
-  static void initialize_gmsh();
+  static void initialize_gmsh(bool verbose = false);
   // run after wrapping up the work with the grid
   static void finalize_gmsh();
   // build gmsh grid bounded by the faces of the cell
@@ -26,6 +26,11 @@ class GmshInterface
   // build triangulation and save it into grid
   static void build_triangulation(const mesh::Cell & cell, mesh::Mesh & grid,
                                   const double n_vertices_on_edge = 2);
+  // build triangulation with embedded points.
+  // the outer boundary is specified with angem::Polyhedron.
+  // The embedded points are given as a vector of angem::Point
+  static void build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
+                                                  std::vector<angem::Point<3,double>> const & embedded);
   // Get the elements classified on the entity of dimension `dim' and tag
   // `tag'. If `tag' < 0, get the elements for all entities of dimension `dim'.
   // If `dim' and `tag' are negative, get all the elements in the mesh.
@@ -71,6 +76,17 @@ class GmshInterface
   static void insert_elements_(const int dim, const int tag,
                                const std::vector<size_t> & vertex_numbering,
                                mesh::Mesh & grid);
+
+  static void insert_boundary_data_(angem::Polyhedron<double> const & bnd,
+                                    double const n_vertices_on_edge);
+  static void insert_vertices_(std::vector<angem::Point<3,double>> const & vertices,
+                               std::vector<mesh::Edge> const & edges,
+                               double n_vertices_on_edge,
+                               int first_tag = 1);
+  static void insert_boundary_edges_(std::vector<mesh::Edge> const & edges);
+  static void insert_boundary_faces_(angem::Polyhedron<double> const & bnd);
+  static void insert_surface_loop(size_t n_surfaces);
+  static void insert_bounding_volume();
 };
 
 }  // end namespace gprs_data
