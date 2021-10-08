@@ -1,7 +1,8 @@
 #pragma once
 
 #include "element_types.hpp"
-#include <mesh/Mesh.hpp>
+#include "mesh/Mesh.hpp"
+#include "angem/LineSegment.hpp"
 #include <fstream>  // fstream
 
 #include <boost/functional/hash.hpp> //had to add it eventhgough it is bond to gmsh interfaces
@@ -29,8 +30,17 @@ class GmshInterface
   // build triangulation with embedded points.
   // the outer boundary is specified with angem::Polyhedron.
   // The embedded points are given as a vector of angem::Point
+  // The output is written into grid
   static void build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
-                                                  std::vector<angem::Point<3,double>> const & embedded);
+                                                  std::vector<angem::Point<3,double>> const & embedded,
+                                                  mesh::Mesh & grid);
+  // build triangulation with embedded line segments.
+  // the outer boundary is specified with angem::Polyhedron.
+  // The embedded lines are given as a vector of angem::LineSegment
+  // The output is written into grid
+  static void build_triangulation_embedded_lines(angem::Polyhedron<double> const & boundary,
+                                                 std::vector<angem::LineSegment<double>> const & embedded,
+                                                 mesh::Mesh & grid);
   // Get the elements classified on the entity of dimension `dim' and tag
   // `tag'. If `tag' < 0, get the elements for all entities of dimension `dim'.
   // If `dim' and `tag' are negative, get all the elements in the mesh.
@@ -67,6 +77,9 @@ class GmshInterface
   static void read_msh_v2_(std::fstream & mesh_file, mesh::Mesh & mesh);
   // read .msh v 4.0 file
   static void read_msh_v4_(std::fstream & mesh_file, mesh::Mesh & mesh);
+  // extract data from gmsh and save into mesh::Mesh
+  // returns vertex numbering
+  static std::vector<size_t> extract_grid_(mesh::Mesh & grid);
   // build grid for a polyhedron-bounded volume
   static void build_triangulation_(const angem::Polyhedron<double> & cell,
                                    const double n_vertice_on_edge);
@@ -83,8 +96,11 @@ class GmshInterface
                                std::vector<mesh::Edge> const & edges,
                                double n_vertices_on_edge,
                                int first_tag = 1);
+  // convenience function to insert edges into model
   static void insert_boundary_edges_(std::vector<mesh::Edge> const & edges);
+  // convenience function to insert faces into model
   static void insert_boundary_faces_(angem::Polyhedron<double> const & bnd);
+  // convenience function to insert surfaces into model
   static void insert_surface_loop(size_t n_surfaces);
   static void insert_bounding_volume();
 };

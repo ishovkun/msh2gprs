@@ -21,7 +21,12 @@ class GridGeneratorINSIM {
 
   INSIMMeshConfig const & _config;
   std::vector<WellConfig> const & _wells;
-  std::vector<angem::Point<3,double>> _vertices;
+  // this vector holds points to compute the bounding box for the grid
+  std::vector<angem::Point<3,double>> _bounds;
+  // this vector holds lines to be embedded into the grid
+  std::vector<angem::Point<3,double>> _embedded_pts;
+  // holds mapping from well idx to its grid nodes
+  // std::vector<std::vector<size_t>> _well_vertices;
   std::unique_ptr<angem::Hexahedron<double>> _bbox{nullptr};
 };
 

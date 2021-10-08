@@ -9,6 +9,10 @@ namespace gprs_data
 {
 
 using Point = angem::Point<3,double>;
+constexpr int POINT_DIM = 0;
+constexpr int LINE_DIM = 1;
+constexpr int SURFACE_DIM = 2;
+constexpr int VOLUME_DIM = 3;
 
 void GmshInterface::read_msh(const std::string & filename, mesh::Mesh & mesh)
 {
@@ -439,8 +443,9 @@ std::vector<double>  compute_vertex_element_sizes(const std::vector<std::pair<si
   return result;
 }
 
-void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
-                                                        std::vector<angem::Point<3,double>> const & embedded)
+void GmshInterface::build_triangulation_embedded_lines(angem::Polyhedron<double> const & boundary,
+                                                       std::vector<angem::LineSegment<double>> const & embedded,
+                                                       mesh::Mesh & grid)
 {
   gmsh::model::add("cell1");
   gmsh::option::setNumber("Mesh.SaveAll", 1);
@@ -449,8 +454,64 @@ void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double
   insert_boundary_data_(boundary, 1.);
   gmsh::model::geo::synchronize();
 
-  // insert_vertices_(embedded)
+  // internal vertices
   std::cout << "insert embedded points" << std::endl;
+  size_t offset = boundary.get_points().size() + 1;
+  std::vector<int> vertex_tags;
+  for (size_t i = 0; i < embedded.size(); ++i) {
+    int tag = offset + 2*i;
+    // double const h = embedded[i].first().distance( embedded[i].second() );
+    gmsh::model::geo::addPoint(embedded[i].first().x(), embedded[i].first().y(), embedded[i].first().z(),
+                               /* element_size */ 0, tag);
+    vertex_tags.push_back(tag);
+    gmsh::model::geo::addPoint(embedded[i].second().x(), embedded[i].second().y(), embedded[i].second().z(),
+                               /* element_size */ 0, tag+1);
+    vertex_tags.push_back(tag+1);
+  }
+
+  gmsh::model::geo::synchronize();
+
+  // internal lines
+  std::cout << "insert embedded lines" << std::endl;
+  offset = boundary.get_edges().size() + 1;
+  std::vector<int> line_tags;
+  for (size_t i = 0; i < embedded.size(); ++i) {
+    int tag = offset + i;
+    gmsh::model::geo::addLine(vertex_tags[2*i], vertex_tags[2*i+1], tag);
+    line_tags.push_back(tag);
+  }
+  gmsh::model::geo::synchronize();
+
+  for (size_t i = 0; i < embedded.size(); ++i) {
+    gmsh::model::addPhysicalGroup(LINE_DIM, { line_tags[i] }, line_tags[i]);
+  }
+
+
+  gmsh::model::geo::synchronize();
+
+  // embed lines
+  int const volume_tag = 1;
+
+  gmsh::model::mesh::embed(LINE_DIM, line_tags, VOLUME_DIM, volume_tag);
+
+  gmsh::model::geo::synchronize();
+  gmsh::model::mesh::generate(3);
+  gmsh::write("test.msh");
+
+  std::vector<size_t> vertex_numbering = extract_grid_(grid);
+}
+
+void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
+                                                        std::vector<angem::Point<3,double>> const & embedded,
+                                                        mesh::Mesh & grid)
+{
+  gmsh::model::add("cell1");
+  gmsh::option::setNumber("Mesh.SaveAll", 1);
+
+  insert_boundary_data_(boundary, 1.);
+  gmsh::model::geo::synchronize();
+
+  // insert_vertices_(embedded)
   size_t offset = boundary.get_points().size() + 1;
   std::vector<int> embedded_tags;
   for (size_t i = 0; i < embedded.size(); ++i) {
@@ -462,33 +523,14 @@ void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double
 
   gmsh::model::geo::synchronize();
 
-  // for (size_t i = 0; i < embedded.size(); ++i) {
-    int const point_dim = 0;
-    int const volume_dim = 3;
-    int const volume_tag = 1;
-    gmsh::model::mesh::embed(point_dim, embedded_tags, volume_dim, volume_tag);
-  // }
-
-      // gmsh::model::mesh::embed
-      //
-      // Embed the model entities of dimension `dim' and tags `tags' in the
-      // (`inDim', `inTag') model entity. The dimension `dim' can 0, 1 or 2 and
-      // must be strictly smaller than `inDim', which must be either 2 or 3. The
-      // embedded entities should not intersect each other or be part of the
-      // boundary of the entity `inTag', whose mesh will conform to the mesh of the
-      // embedded entities. With the OpenCASCADE kernel, if the `fragment'
-      // operation is applied to entities of different dimensions, the lower
-      // dimensional entities will be automatically embedded in the higher
-      // dimensional entities if they are not on their boundary.
-      // GMSH_API void embed(const int dim,
-      //                     const std::vector<int> & tags,
-      //                     const int inDim,
-      //                     const int inTag);
-
-
+  int const volume_tag = 1;
+  gmsh::model::mesh::embed(POINT_DIM, embedded_tags, VOLUME_DIM, volume_tag);
 
   gmsh::model::geo::synchronize();
   gmsh::model::mesh::generate(3);
+
+  // gmsh::write("test.msh");
+  std::vector<size_t> vertex_numbering = extract_grid_(grid);
 }
 
 void GmshInterface::insert_boundary_data_(angem::Polyhedron<double> const & bnd, double const n_vertices_on_edge)
@@ -688,23 +730,63 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & gr
   if (!grid.empty())
     throw std::invalid_argument("refuse to add gmsh elements to a non-empty grid");
 
+  std::vector<size_t> vertex_numbering = extract_grid_(grid);
+  // std::vector<size_t> node_tags;
+  // std::vector<double> node_coord, parametric_coord;
+  // gmsh::model::mesh::getNodes(node_tags, node_coord, parametric_coord, /*dim = */ 3,
+  //                             /* tag */ -1, /* includeBoundary = */ true,
+  //                             /* return_parametric =  */ false);
+
+  // auto it = std::max_element(node_tags.begin(), node_tags.end());
+  // assert( it != node_tags.end() );
+  // const size_t max_node_tag = *it + 1;
+  // // find maximum node tag
+  // std::vector<size_t> vertex_numbering(max_node_tag, std::numeric_limits<size_t>::max());
+  // size_t iv = 0;
+  // for (const size_t node : node_tags)
+  //   vertex_numbering[node]  = iv++;
+
+  // grid.vertices().reserve(node_tags.size());
+  // for (std::size_t i=0; i<node_tags.size(); ++i)
+  // {
+  //   assert( node_coord[3*i+2] < node_coord.size() );
+  //   angem::Point<3,double> vertex = { node_coord[3*i], node_coord[3*i+1], node_coord[3*i+2] };
+  //   grid.vertices().push_back(vertex);
+  // }
+
+  // // insert cells
+  // insert_elements_(3, -1, vertex_numbering, grid);
+
+  // insert face labels
+  for (size_t parent_face=0; parent_face<cell.faces().size(); ++parent_face)
+  {
+    insert_elements_(2, parent_face+1, vertex_numbering, grid);
+  }
+
+}
+
+std::vector<size_t> GmshInterface::extract_grid_(mesh::Mesh & grid)
+{
   std::vector<size_t> node_tags;
   std::vector<double> node_coord, parametric_coord;
-  gmsh::model::mesh::getNodes(node_tags, node_coord, parametric_coord, /*dim = */ 3,
-                              /* tag */ -1, /*includeBoundary =*/ true,
+  gmsh::model::mesh::getNodes(node_tags, node_coord, parametric_coord, -1,
+                              /* tag */ -1, /* includeBoundary = */ true,
                               /* return_parametric =  */ false);
 
   auto it = std::max_element(node_tags.begin(), node_tags.end());
   assert( it != node_tags.end() );
   const size_t max_node_tag = *it + 1;
+
   // find maximum node tag
   std::vector<size_t> vertex_numbering(max_node_tag, std::numeric_limits<size_t>::max());
   size_t iv = 0;
-  for (const size_t node : node_tags)
+  for (const size_t node : node_tags) {
+    std::cout << "adding vertex tag " << node << std::endl;
     vertex_numbering[node]  = iv++;
+  }
 
   grid.vertices().reserve(node_tags.size());
-  for (std::size_t i=0; i<node_tags.size(); ++i)
+  for (size_t i = 0; i < node_tags.size(); ++i)
   {
     assert( node_coord[3*i+2] < node_coord.size() );
     angem::Point<3,double> vertex = { node_coord[3*i], node_coord[3*i+1], node_coord[3*i+2] };
@@ -713,13 +795,9 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & gr
 
   // insert cells
   insert_elements_(3, -1, vertex_numbering, grid);
-  // insert face labels
-  for (size_t parent_face=0; parent_face<cell.faces().size(); ++parent_face)
-  {
-    insert_elements_(2, parent_face+1, vertex_numbering, grid);
-  }
-
+  return vertex_numbering;
 }
+
 
 void GmshInterface::insert_elements_(const int dim, const int tag,
                                      const std::vector<size_t> & vertex_numbering,
@@ -734,11 +812,9 @@ void GmshInterface::insert_elements_(const int dim, const int tag,
     const int element_type = element_types[itype];
     const int vtk_id = get_vtk_id(element_type);
     const size_t nv = get_n_vertices(element_type);
-    // std::cout << "element_tags[itype].size() = " << element_tags[itype].size() << std::endl;
 
-    for (size_t ie=0; ie < element_tags[itype].size(); ++ie)
+    for (size_t ie = 0; ie < element_tags[itype].size(); ++ie)
     {
-      // if (dim == 3) std::cout << "element_tags[itype] = " << element_tags[itype][ie] << std::endl;
       // get vertex indices from gmsh vertex tags
       std::vector<size_t> verts;
       verts.reserve(nv);
@@ -749,11 +825,6 @@ void GmshInterface::insert_elements_(const int dim, const int tag,
         assert (vertex < grid.n_vertices() );
         verts.push_back(vertex);
       }
-
-      // if (gmsh_element_types[element_type] == GmshElementType::face)
-      //   std::cout << "face tag = " << element_tags[itype][ie] << std::endl;
-      // if (gmsh_element_types[element_type] == GmshElementType::cell)
-      //   std::cout << "cell tag = " << element_tags[itype][ie] << std::endl;
 
       // const int marker = (tag == -1) ? -1 : tag;
       switch (gmsh_element_types[element_type])

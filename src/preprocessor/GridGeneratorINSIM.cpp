@@ -4,6 +4,7 @@
 #ifdef WITH_GMSH
 #include <gmsh.h>
 #endif
+#include "mesh/io/VTKWriter.hpp"    // debugging, provides io::VTKWriter
 
 namespace gprs_data {
 
@@ -14,7 +15,6 @@ GridGeneratorINSIM::GridGeneratorINSIM(INSIMMeshConfig const & config, std::vect
     throw std::invalid_argument("Cannot build INSIM grid with less than two wells");
 
   for (auto const & well : _wells) {
-    std::cout << "well.name = " << well.name << std::endl;
     assert( well.coordinates.size() == 1 && "Only simple wells are supported for now" );
     setup_simple_well_(well);
   }
@@ -29,7 +29,7 @@ void GridGeneratorINSIM::generate_bounding_box_()
   double const lower = std::numeric_limits<double>::lowest();
   angem::Point<3,double> bbox_min = {upper, upper, upper};
   angem::Point<3,double> bbox_max = {lower, lower, lower};
-  for (auto const & v : _vertices)
+  for (auto const & v : _bounds)
     for (size_t i = 0; i < 3; ++i) {
       bbox_min[i] = std::min( bbox_min[i], v[i] );
       bbox_max[i] = std::max( bbox_max[i], v[i] );
@@ -38,7 +38,7 @@ void GridGeneratorINSIM::generate_bounding_box_()
   bbox_min -= margin;
   bbox_max += margin;
 
-  auto const delta = bbox_min - bbox_max;
+  auto const delta = bbox_max - bbox_min;
 
   std::vector<angem::Point<3,double>> verts(8);  // hex has 8 vertices
   std::fill( verts.begin(), verts.begin() + 4, bbox_min );
@@ -62,82 +62,41 @@ void GridGeneratorINSIM::generate_bounding_box_()
 double GridGeneratorINSIM::find_characteristic_length_() const
 {
   // compute the center of all well nodes
-  angem::Point<3,double> const c = angem::compute_center_mass( _vertices );
+  angem::Point<3,double> const c = angem::compute_center_mass( _bounds );
 
   // compute average distance between c and vertices
   double dist = 0.f;
-  for (auto const & v : _vertices)
+  for (auto const & v : _bounds)
     dist += v.distance(c);
 
-  return dist / _vertices.size();
+  return dist / _bounds.size();
 }
 
 
 GridGeneratorINSIM::operator mesh::Mesh() const
 {
+  mesh::Mesh grid;
+
 #ifdef WITH_GMSH
   GmshInterface::initialize_gmsh(/*verbose = */ true);
-  GmshInterface::build_triangulation_embedded_points(*_bbox, _vertices);
-  // gmsh::initialize();
-  // gmsh::option::setNumber("General.Terminal", 0);  // 0 shuts up gmsh logging
-  // gmsh::option::setNumber("Mesh.MshFileVersion", 2.2);
-  // gmsh::model::add("cell1");
-  // gmsh::option::setNumber("Mesh.SaveAll", 1);
-
-  // // outer points
-  // const std::vector<angem::Point<3,double>> & vertices = _bbox->get_points();
-  // double const characteristic_size = vertices.front().distance(vertices.back());
-  // for (size_t i = 0; i < vertices.size(); ++i) {
-  //   gmsh::model::geo::addPoint( vertices[i].x(), vertices[i].y(), vertices[i].z(),
-  //                               characteristic_size, /*tag = */ i+1 );
-  //   gmsh::model::addPhysicalGroup(0, {static_cast<int>(i+1)}, i+1);
-  // }
-
-  // // outer lines (edges)
-  // const auto edges = _bbox.get_edges();
-  // for (size_t i=0; i<edges.size(); ++i)
-  // {
-  //   const std::pair<size_t,size_t> & edge = edges[i];
-  //   gmsh::model::geo::addLine(edge.first+1, edge.second+1, i+1);
-  //   gmsh::model::addPhysicalGroup(1, {static_cast<int>(i+1)}, i+1);
-  // }
-
-  // // add embedded points (well vertices)
-  // // for (auto const & v : _vertices) {
-  //   gmsh::model::mesh::embed(3, {1,2}, 2, 3);
-  // // }
-  //     // Embed the model entities of dimension `dim' and tags `tags' in the
-  //     // (`inDim', `inTag') model entity. The dimension `dim' can 0, 1 or 2 and
-  //     // must be strictly smaller than `inDim', which must be either 2 or 3. The
-  //     // embedded entities should not intersect each other or be part of the
-  //     // boundary of the entity `inTag', whose mesh will conform to the mesh of the
-  //     // embedded entities. With the OpenCASCADE kernel, if the `fragment'
-  //     // operation is applied to entities of different dimensions, the lower
-  //     // dimensional entities will be automatically embedded in the higher
-  //     // dimensional entities if they are not on their boundary.
-  //     // GMSH_API void embed(const int dim,
-  //     //                     const std::vector<int> & tags,
-  //     //                     const int inDim,
-  //     //                     const int inTag);
-
-  // gmsh::model::geo::synchronize();
-  // gmsh::model::mesh::generate(2);
-  // gmsh::write("cell.msh");
-  // gmsh::finalize();
-
-
+  GmshInterface::build_triangulation_embedded_points(*_bbox, _embedded_pts, grid);
+GmshInterface::finalize_gmsh();
 #endif
-  return mesh::Mesh();
+  return grid;
 }
 
 void GridGeneratorINSIM::setup_simple_well_(WellConfig const & conf)
 {
   assert( _config.minimum_thickness > 0 );
-  auto const & v1 = conf.coordinates[0];
-  _vertices.push_back( v1 );
+  auto v1 = conf.coordinates[0];
+  v1[2] += 0.5 * _config.minimum_thickness;  // shift up in z direction
+  _bounds.push_back( v1 );
   auto v2 = v1;
-  v2[2] -= _config.minimum_thickness;  // shift down in z direction
-  _vertices.push_back( v2 );
+  v2[2] -= 0.5 * _config.minimum_thickness;  // shift down in z direction
+  _bounds.push_back( v2 );
+  size_t const vertex_idx = _embedded_pts.size();
+  // _well_vertices.push_back({vertex_idx});
+  _embedded_pts.push_back(conf.coordinates[0]);
 }
 
 }  // end namespace gprs_data
