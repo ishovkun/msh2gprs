@@ -602,12 +602,9 @@ void YamlParser::read_well(const YAML::Node & node,
   if (well.coordinates.size() > 1)
   {
     if (well.perforated.empty())
-      well.perforated.resize(well.coordinates.size(), true);
+      well.perforated.resize(well.coordinates.size() - 1, true);
     else if (well.perforated.size() != well.coordinates.size() - 1)
-    {
-      std::cout << "invalid entry" << std::endl;
-      abort();
-    }
+      throw std::invalid_argument("Invalid perforations size for well " + well.name);
   }
 }
 
@@ -630,8 +627,6 @@ void YamlParser::section_multiscale(const YAML::Node & node)
       std::cout << "\tunknown keyword aborting" << std::endl;
       abort();
     }
-
-    // } else std::cout << "\tSkipping unknown keyword" << std::endl;
   }
 }
 

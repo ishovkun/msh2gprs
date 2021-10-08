@@ -4,7 +4,7 @@
 #ifdef WITH_GMSH
 #include <gmsh.h>
 #endif
-#include "mesh/io/VTKWriter.hpp"    // debugging, provides io::VTKWriter
+// #include "mesh/io/VTKWriter.hpp"    // debugging, provides io::VTKWriter
 
 namespace gprs_data {
 
@@ -15,8 +15,10 @@ GridGeneratorINSIM::GridGeneratorINSIM(INSIMMeshConfig const & config, std::vect
     throw std::invalid_argument("Cannot build INSIM grid with less than two wells");
 
   for (auto const & well : _wells) {
-    assert( well.coordinates.size() == 1 && "Only simple wells are supported for now" );
-    setup_simple_well_(well);
+    if ( well.coordinates.size() == 1 )
+      setup_simple_well_(well);
+    else
+      setup_complex_well_(well);
   }
 
   generate_bounding_box_();
@@ -29,7 +31,7 @@ void GridGeneratorINSIM::generate_bounding_box_()
   double const lower = std::numeric_limits<double>::lowest();
   angem::Point<3,double> bbox_min = {upper, upper, upper};
   angem::Point<3,double> bbox_max = {lower, lower, lower};
-  for (auto const & v : _bounds)
+  for (auto const & v : _vertices)
     for (size_t i = 0; i < 3; ++i) {
       bbox_min[i] = std::min( bbox_min[i], v[i] );
       bbox_max[i] = std::max( bbox_max[i], v[i] );
@@ -62,14 +64,14 @@ void GridGeneratorINSIM::generate_bounding_box_()
 double GridGeneratorINSIM::find_characteristic_length_() const
 {
   // compute the center of all well nodes
-  angem::Point<3,double> const c = angem::compute_center_mass( _bounds );
+  angem::Point<3,double> const c = angem::compute_center_mass( _vertices );
 
   // compute average distance between c and vertices
   double dist = 0.f;
-  for (auto const & v : _bounds)
+  for (auto const & v : _vertices)
     dist += v.distance(c);
 
-  return dist / _bounds.size();
+  return dist / _vertices.size();
 }
 
 
@@ -79,24 +81,29 @@ GridGeneratorINSIM::operator mesh::Mesh() const
 
 #ifdef WITH_GMSH
   GmshInterface::initialize_gmsh(/*verbose = */ true);
-  GmshInterface::build_triangulation_embedded_points(*_bbox, _embedded_pts, grid);
+  GmshInterface::build_triangulation_embedded_points(*_bbox, _vertices, grid);
 GmshInterface::finalize_gmsh();
 #endif
+  // mesh::IO::VTKWriter::write_geometry(grid, "test.vtk");
+
   return grid;
 }
 
 void GridGeneratorINSIM::setup_simple_well_(WellConfig const & conf)
 {
   assert( _config.minimum_thickness > 0 );
-  auto v1 = conf.coordinates[0];
-  v1[2] += 0.5 * _config.minimum_thickness;  // shift up in z direction
-  _bounds.push_back( v1 );
-  auto v2 = v1;
-  v2[2] -= 0.5 * _config.minimum_thickness;  // shift down in z direction
-  _bounds.push_back( v2 );
-  size_t const vertex_idx = _embedded_pts.size();
-  // _well_vertices.push_back({vertex_idx});
-  _embedded_pts.push_back(conf.coordinates[0]);
+  _vertices.push_back(conf.coordinates[0]);
+}
+
+void GridGeneratorINSIM::setup_complex_well_(WellConfig const & conf)
+{
+  assert( conf.perforated.size() == conf.coordinates.size() - 1 );
+
+  for (size_t i = 0; i < conf.perforated.size(); ++i)
+    if ( conf.perforated[i] ) {
+      auto const vertex = 0.5 * (conf.coordinates[i] + conf.coordinates[i+1]);
+      _vertices.push_back(vertex);
+    }
 }
 
 }  // end namespace gprs_data
