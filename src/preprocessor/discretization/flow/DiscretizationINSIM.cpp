@@ -15,6 +15,18 @@ void DiscretizationINSIM::build()
     if ( m_dofs.has_vertex( v ) )
       build_vertex_data_( v );
 
+  auto const vertex_adjacency = build_vertex_adjacency_();
+  build_connectivity_( vertex_adjacency );
+}
+
+void DiscretizationINSIM::build_connectivity_(algorithms::EdgeWeightedGraph const & vertex_adjacency)
+{
+  for (size_t v = 0; v < m_grid.n_vertices(); ++v)
+    for (auto const * e : vertex_adjacency.adj( v )) {
+      size_t const w = e->other(v);
+      if (v < w && m_dofs.has_vertex(v))
+        std::cout << m_dofs.vertex_dof(v) << " " << m_dofs.vertex_dof(w) << std::endl;
+    }
 }
 
 void DiscretizationINSIM::build_vertex_data_(size_t vertex)
@@ -44,5 +56,16 @@ void DiscretizationINSIM::build_vertex_data_(size_t vertex)
   }
 }
 
+algorithms::EdgeWeightedGraph DiscretizationINSIM::build_vertex_adjacency_() const
+{
+  algorithms::EdgeWeightedGraph g( m_grid.n_vertices() );
+  for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
+  {
+    for (auto const & edge : cell->edges())
+      if ( !g.has_edge( edge.first, edge.second ) )
+        g.add( algorithms::UndirectedEdge(edge.first, edge.second, 0) );
+  }
+  return g;
+}
 
 }  // end namespace discretization

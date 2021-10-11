@@ -1,5 +1,6 @@
 #pragma once
 #include "DiscretizationBase.hpp"
+#include "algorithms/EdgeWeightedGraph.hpp"
 
 namespace discretization {
 
@@ -19,6 +20,9 @@ class DiscretizationINSIM : public DiscretizationBase {
 
  private:
   void build_vertex_data_(size_t vertex);
+  algorithms::EdgeWeightedGraph build_vertex_adjacency_() const;
+  // build vector of connections
+  void build_connectivity_(algorithms::EdgeWeightedGraph const & vertex_adjacency);
 };
 
 }  // end namespace discretization

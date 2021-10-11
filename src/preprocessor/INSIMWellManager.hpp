@@ -10,8 +10,13 @@ namespace gprs_data {
 */
 class INSIMWellManager {
  public:
+  /*
+  ** Constructor.
+  ** Given configuration of wells, grid, and a grid searcher, build the list of vertices
+  ** that lie closest to the well segment centers
+   */
   INSIMWellManager(std::vector<WellConfig> const & wells, mesh::Mesh const & grid,
-                   GridIntersectionSearcher const & searcher);
+                   GridIntersectionSearcher & searcher);
 
   // returns list of well vertices.
   // first component - well index. second component - grid vertex index.
@@ -25,7 +30,7 @@ class INSIMWellManager {
 
   std::vector<WellConfig> const & _wells;
   mesh::Mesh const & _grid;
-  GridIntersectionSearcher const & _searcher;
+  GridIntersectionSearcher & _searcher;
   std::vector<std::vector<size_t>> _well_vertex_indices;
 };
 

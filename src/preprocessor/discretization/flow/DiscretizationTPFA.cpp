@@ -20,7 +20,7 @@ DiscretizationTPFA(const DoFNumbering & dof_numbering,
 void DiscretizationTPFA::build()
 {
   for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell) {
-    build_cell_data_(*cell, m_cv_data[ m_dofs.cell_dof(cell->index()) ]);
+    build_cell_data_( *cell, m_cv_data[ m_dofs.cell_dof(cell->index()) ] );
     // build_cell_data_(*cell);
   }
 
@@ -40,7 +40,7 @@ void DiscretizationTPFA::build()
         con.normal = face->normal();
         con.area = face->area();
         con.type = ConnectionType::matrix_matrix;
-        build_mo(con, m_cv_data[ con.elements[0] ], m_cv_data[ con.elements[1] ]);
+        build_mo( con, m_cv_data[ con.elements[0] ], m_cv_data[ con.elements[1] ]);
       }
   }
 }

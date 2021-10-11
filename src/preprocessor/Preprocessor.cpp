@@ -306,7 +306,6 @@ void Preprocessor::build_flow_discretization_()
     case ( FlowDiscretizationType::insim ):
       logging::important() << "INSIM discretization is chosen" << std::endl;
       flow_discr = std::make_unique<DiscretizationINSIM>(*p_split_dofs, data, data.flow.cv, data.flow.con);
-      exit(0);
     break;
   }
   // if we do cedfm use the split matrix dof numbering
@@ -318,6 +317,7 @@ void Preprocessor::build_flow_discretization_()
 
   logging::debug() << "invoke discretization class" << std::endl;
   flow_discr->build();
+  exit(0);
 
   // setup wells
   if ( !_config.wells.empty() && _config.flow_discretization !=  FlowDiscretizationType::insim )

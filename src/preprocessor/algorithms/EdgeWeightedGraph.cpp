@@ -49,4 +49,16 @@ std::vector<UndirectedEdge*> EdgeWeightedGraph::adj(const size_t v)
   return result;
 }
 
+bool EdgeWeightedGraph::has_edge(size_t u, size_t v) const
+{
+  for (const size_t ie : _adj[u]) {
+    UndirectedEdge const & e = _edges[ie];
+    if ( e.other(u) == v )
+      return true;
+  }
+
+  return false;
+}
+
+
 }  // end namespace algorithms

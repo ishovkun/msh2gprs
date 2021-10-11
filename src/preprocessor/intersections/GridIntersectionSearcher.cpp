@@ -49,7 +49,6 @@ GridIntersectionSearcher::collision(const angem::LineSegment<double> & segment)
     const angem::Line<3,double> line(segment.line());
 
     auto cur = start_end.first;
-    size_t search_idx = sg.find_cell(cur);
     std::unordered_set<size_t> processed;
     // line x = x0 + a * t;
     double t = get_t_(segment, cur);
@@ -60,7 +59,7 @@ GridIntersectionSearcher::collision(const angem::LineSegment<double> & segment)
     while (t <= t_stop)
     {
       const size_t search_cell = sg.find_cell(cur);
-      process_(search_cell,result);
+      process_(search_cell, result);
       t = step_(search_cell, cur, segment);
       cur =  segment.first() + line.direction() * t;
       nit++;
@@ -193,9 +192,22 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
   return std::vector<size_t>(result.begin(), result.end());
 }
 
-size_t GridIntersectionSearcher::find_cell(angem::Point<3,double> const & p) const
+size_t GridIntersectionSearcher::find_cell(angem::Point<3,double> const & p)
 {
-  return _mapper.get_search_grid().find_cell(p);
+  // index of cartesian cell
+  size_t const search_cell = _mapper.get_search_grid().find_cell(p);
+  // check also neighbors of cartesian cell just to be safe
+  auto duals_to_check = _mapper.get_search_grid().neighbors(search_cell);
+  duals_to_check.push_back(search_cell);
+
+  // process cartesian cells and pick one that actually contains the point
+  for (const size_t dual : duals_to_check)
+    for (const size_t cell_index : _mapper.mapping(dual) )
+      if (_grid.cell(cell_index).polyhedron()->point_inside(p))
+        return cell_index;
+
+  throw std::invalid_argument( "could not find matching grid cell" );
+  return _grid.n_vertices();
 }
 
 

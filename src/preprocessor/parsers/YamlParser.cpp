@@ -512,29 +512,6 @@ void YamlParser::bc_node(const YAML::Node & node, BCConfig & conf)
   }
 }
 
-// DomainConfig & YamlParser::get_domain_config(const int label)
-// {
-  // find current domain id in existing config
-  // int counter = 0;
-  // for (const auto & domain : config.domains)
-  // {
-  //   if (label == domain.label)
-  //     break;
-  //   else
-  //     counter++;
-  // }
-
-  // DomainConfig * p_conf;
-  // if (counter == config.domains.size())
-  // {
-  //   config.domains.emplace_back();
-  //   config.domains.back().label = label;
-  //   return config.domains.back();
-  // }
-  // else
-  //   return config.domains[counter];
-// }
-
 void YamlParser::section_wells(const YAML::Node & node)
 {
   for (auto it = node.begin(); it!=node.end(); ++it)
@@ -602,13 +579,15 @@ void YamlParser::read_well(const YAML::Node & node,
     abort();
   }
 
-  if (well.coordinates.size() > 1)
+  if (well.coordinates.size() >= 1)
   {
+    size_t const size = std::max(well.coordinates.size() - 1, (size_t)1);
     if (well.perforated.empty())
-      well.perforated.resize(well.coordinates.size() - 1, true);
+      well.perforated.resize(size, true);
     else if (well.perforated.size() != well.coordinates.size() - 1)
       throw std::invalid_argument("Invalid perforations size for well " + well.name);
   }
+  else throw std::invalid_argument( "No coordinadidates provided for well " + well.name );
 }
 
 void YamlParser::section_multiscale(const YAML::Node & node)

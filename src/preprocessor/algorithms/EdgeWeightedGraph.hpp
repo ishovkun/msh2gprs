@@ -13,6 +13,8 @@ class EdgeWeightedGraph
   EdgeWeightedGraph(const size_t nv);
   // add weighted edge e to this graph
   void add(const UndirectedEdge & e);
+  // check if edge between vertices u and v exists
+  bool has_edge(size_t u, size_t v) const;
   // edges incident to i
   std::vector<UndirectedEdge const*> adj(size_t i) const;
   // non-const edges incident to i
