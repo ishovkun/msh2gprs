@@ -13,6 +13,7 @@
 #include "discretization/flow/DiscretizationDFM.hpp"
 #include "discretization/flow/DiscretizationEDFM.hpp"
 #include "discretization/flow/DiscretizationPEDFM.hpp"
+#include "discretization/flow/DiscretizationINSIM.hpp"
 #include "GridEntityNumberingManager.hpp"
 #include "multiscale/MSFlow.hpp"
 #include "multiscale/MultiScaleDataMech.hpp"
@@ -280,23 +281,22 @@ void Preprocessor::build_flow_discretization_()
   {
     case ( FlowDiscretizationType::tpfa_edfm ):
       logging::important() << "Simple EDFM is chosen" << std::endl;
-      flow_discr = std::make_unique<DiscretizationEDFM>
-          (*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
-           data.flow.con, edfm_markers);
+      flow_discr = std::make_unique<DiscretizationEDFM>(*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
+                                                        data.flow.con, edfm_markers);
       break;
     case ( FlowDiscretizationType::tpfa_projection ):
       logging::important() << "Projection EDFM is chosen" << std::endl;
-      flow_discr = std::make_unique<DiscretizationPEDFM>
-          (*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
-           data.flow.con, *pm_edfm_mgr);
+      flow_discr = std::make_unique<DiscretizationPEDFM>(*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
+                                                         data.flow.con, *pm_edfm_mgr);
     break;
     case ( FlowDiscretizationType::tpfa_compartmental ):
       logging::important() << "Compartmental EDFM is chosen" << std::endl;
-      flow_discr = std::make_unique<DiscretizationDFM>
-          (*p_split_dofs, data, data.flow.cv, data.flow.con);
+      flow_discr = std::make_unique<DiscretizationDFM>(*p_split_dofs, data, data.flow.cv, data.flow.con);
     break;
     case ( FlowDiscretizationType::insim ):
-        throw std::invalid_argument("Write code for insim!");
+      logging::important() << "INSIM discretization is chosen" << std::endl;
+      flow_discr = std::make_unique<DiscretizationINSIM>(*p_split_dofs, data, data.flow.cv, data.flow.con);
+      exit(0);
     break;
   }
   // if we do cedfm use the split matrix dof numbering
@@ -310,7 +310,7 @@ void Preprocessor::build_flow_discretization_()
   flow_discr->build();
 
   // setup wells
-  if (!_config.wells.empty())
+  if ( !_config.wells.empty() && _config.flow_discretization !=  FlowDiscretizationType::insim )
   {
     logging::log() << "setup wells" << std::endl;
     WellManager well_mgr(_config.wells, data, *data.flow_numbering, _config.flow_discretization);
