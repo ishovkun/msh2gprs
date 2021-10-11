@@ -10,8 +10,8 @@ using Point = angem::Point<3,double>;
 WellManager::WellManager(const std::vector<WellConfig> & config,
                          SimData & data,
                          const discretization::DoFNumbering & dofs,
-                         const EDFMMethod edfm_method)
-    : _config(config), _data(data), _dofs(dofs), _edfm_method(edfm_method)
+                         FlowDiscretizationType discr)
+    : _config(config), _data(data), _dofs(dofs), _discr(discr)
 {}
 
 void WellManager::setup()
@@ -57,7 +57,7 @@ void WellManager::setup_simple_well_fast_(Well & well)
   {
     const auto & cell = _data.grid.cell(cell_index);
     const size_t parent_index = cell.ultimate_parent().index();
-    if (parent_index == cell_index || _edfm_method == EDFMMethod::compartmental )
+    if (parent_index == cell_index || _discr == FlowDiscretizationType::tpfa_compartmental )
     {
       const bool intersection_found = setup_simple_well_matrix_(well, cell_index);
       if (intersection_found)
@@ -87,7 +87,7 @@ void WellManager::setup_simple_well_(Well & well)
   std::unordered_set<size_t> processed_cells;
   // well assigned with a single coordinate
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
-    if (cell->ultimate_parent() == *cell || _edfm_method == EDFMMethod::compartmental )
+    if (cell->ultimate_parent() == *cell || _discr == FlowDiscretizationType::tpfa_compartmental )
     {
       const bool intersection_found = setup_simple_well_matrix_(well, cell->index());
       if (intersection_found)

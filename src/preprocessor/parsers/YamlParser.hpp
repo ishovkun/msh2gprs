@@ -32,6 +32,8 @@ class YamlParser
   void subsection_grid_cartesian(const YAML::Node & node);
   void subsection_grid_refinement(const YAML::Node & node);
   void subsection_grid_insim(const YAML::Node & node);
+  void parse_flow_discretization(std::string const & value);
+  FlowDiscretizationType parse_flow_discretization_(std::string const & value) const;
   // subsections
   void embedded_fracture(const YAML::Node       & node,
                          EmbeddedFractureConfig & conf);

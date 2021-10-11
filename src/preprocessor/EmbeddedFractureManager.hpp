@@ -93,7 +93,6 @@ class EmbeddedFractureManager
   // ------------------ Variables ----------------- //
   // non-const cause we move fractures to avoid collision with vertices
   std::vector<EmbeddedFractureConfig> &config;
-  EDFMMethod m_method;                  // regular edfm, pedfm, or cedfm
   // minimum distance from fracture to vertex relative to the cell size
   const EDFMSettings _settings;
   SimData & m_data;                     // container for output data

@@ -25,7 +25,7 @@ class WellManager
   WellManager(const std::vector<WellConfig> & config,
               SimData & data,
               const discretization::DoFNumbering & dofs,
-              const EDFMMethod edfm_method);
+              FlowDiscretizationType discr);
   /**
    * Build wells discretization
    */
@@ -46,7 +46,7 @@ class WellManager
   const std::vector<WellConfig> _config;
   SimData & _data;
   const discretization::DoFNumbering & _dofs;
-  const EDFMMethod _edfm_method;
+  const FlowDiscretizationType _discr;
   // std::vector<std::vector<size_t>> _well_connected_cells;
 };
 

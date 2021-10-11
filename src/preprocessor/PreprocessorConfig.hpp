@@ -33,12 +33,21 @@ struct BCConfig
 };
 
 
-enum class EDFMMethod
+// enum class EDFMMethod
+// {
+//   simple,      // old and frankly shitty but default by Li and Lee 2008
+//   projection,  // pEDFM by Tene 2017
+//   compartmental, // cEDFM by Chai 2018
+// };
+
+enum class FlowDiscretizationType
 {
-  simple,      // old and frankly shitty but default by Li and Lee 2008
-  projection,  // pEDFM by Tene 2017
-  compartmental, // cEDFM by Chai 2018
+  tpfa_edfm,  // tpfa + standard edfm [Li and Lee 2008]
+  tpfa_projection,  // tpfa + projection EDFM [Tene, 2017]
+  tpfa_compartmental,  // tpfa + compartmental edfm [Chai, 2018]
+  insim,               // wells connected by 1D tubes [Guo & Reynolds, 2017]
 };
+
 
 struct EmbeddedFractureConfig
 {
@@ -103,7 +112,6 @@ struct EDFMSettings
   double min_dist_to_node = 1e-4; // minimum distance to grid vertices relative to cell size
   double vertex_split_tolerance = 2e-4;  // relative tolerance for merging diplicate vertices during split
   FracturePlacement placement = FracturePlacement::move_fracture;
-  EDFMMethod method = EDFMMethod::simple;       // method to simulate flow in embedded fracs
   EDFMSearchAlgorithm algorithm = EDFMSearchAlgorithm::robust;
 };
 
@@ -119,6 +127,8 @@ struct PreprocessorConfig
   std::vector<BCConfig>                bc_faces;
   std::vector<BCConfig>                bc_nodes;
   std::vector<WellConfig>              wells;
+
+  FlowDiscretizationType flow_discretization = FlowDiscretizationType::tpfa_edfm;
 
   FiniteElementConfig fem;
   EDFMSettings edfm_settings;

@@ -62,18 +62,18 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
 
     if (key == "file")
       config.gprs_output.efrac_file = it->second.as<std::string>();
-    else if (key == "method")
-    {
-      const std::string str_method = it->second.as<std::string>();
-      if (str_method == "simple")
-        config.edfm_settings.method = EDFMMethod::simple;
-      else if (str_method == "projection")
-        config.edfm_settings.method = EDFMMethod::projection;
-      else if (str_method == "compartmental")
-        config.edfm_settings.method = EDFMMethod::compartmental;
-      else
-        throw std::invalid_argument(str_method);
-    }
+    // else if (key == "method")
+    // {
+    //   const std::string str_method = it->second.as<std::string>();
+    //   if (str_method == "simple")
+    //     config.edfm_settings.method = EDFMMethod::simple;
+    //   else if (str_method == "projection")
+    //     config.edfm_settings.method = EDFMMethod::projection;
+    //   else if (str_method == "compartmental")
+    //     config.edfm_settings.method = EDFMMethod::compartmental;
+    //   else
+    //     throw std::invalid_argument(str_method);
+    // }
     else if (key == "mech-method")
     {
       const std::string str_method = it->second.as<std::string>();
@@ -284,6 +284,9 @@ void YamlParser::section_domain_props(const YAML::Node & node, const VariableTyp
     if (key == "files")  // these are common for all flow domains
     {
       domain(it->second, var_type, config.cell_properties.files);
+    }
+    else if ( key == "discretization" && var_type == VariableType::flow ) {
+      config.flow_discretization = parse_flow_discretization_( it->second.as<std::string>() );
     }
     else if (key == "domain")
     {
@@ -754,5 +757,18 @@ void YamlParser::subsection_multiscale(const YAML::Node & node, MultiscaleConfig
   }
 }
 
+FlowDiscretizationType YamlParser::parse_flow_discretization_(std::string const & value) const
+{
+  if (value == "tpfa edfm")
+    return FlowDiscretizationType::tpfa_edfm;
+  else if (value == "tpfa projection")
+    return FlowDiscretizationType::tpfa_projection;
+  else if (value == "tpfa compartmental")
+    return FlowDiscretizationType::tpfa_compartmental;
+  else if (value == "insim")
+    return FlowDiscretizationType::insim;
+  else throw std::invalid_argument("Invalid flow discretization type: " + value);
+  return FlowDiscretizationType::tpfa_edfm;  // shut compiler up
+}
 
 }  // end namespace

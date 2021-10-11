@@ -131,7 +131,7 @@ void Preprocessor::run()
   data.dfm_cell_mapping = pm_cedfm_mgr->map_dfm_grid_to_flow_dofs(data.grid, *data.flow_numbering);
 
   // remove fine cells
-  if (_config.edfm_settings.method != EDFMMethod::compartmental)
+  if ( _config.flow_discretization != FlowDiscretizationType::tpfa_compartmental )
   {
     data.grid.coarsen_cells();
     // pm_property_mgr->coarsen_cells();
@@ -276,29 +276,32 @@ void Preprocessor::build_flow_discretization_()
 
   using namespace discretization;
   std::unique_ptr<DiscretizationBase> flow_discr;
-  switch (_config.edfm_settings.method)
+  switch ( _config.flow_discretization )
   {
-    case (EDFMMethod::simple):
+    case ( FlowDiscretizationType::tpfa_edfm ):
       logging::important() << "Simple EDFM is chosen" << std::endl;
       flow_discr = std::make_unique<DiscretizationEDFM>
           (*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
            data.flow.con, edfm_markers);
       break;
-    case (EDFMMethod::projection):
+    case ( FlowDiscretizationType::tpfa_projection ):
       logging::important() << "Projection EDFM is chosen" << std::endl;
       flow_discr = std::make_unique<DiscretizationPEDFM>
           (*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv,
            data.flow.con, *pm_edfm_mgr);
     break;
-    case (EDFMMethod::compartmental):
+    case ( FlowDiscretizationType::tpfa_compartmental ):
       logging::important() << "Compartmental EDFM is chosen" << std::endl;
       flow_discr = std::make_unique<DiscretizationDFM>
           (*p_split_dofs, data, data.flow.cv, data.flow.con);
     break;
+    case ( FlowDiscretizationType::insim ):
+        throw std::invalid_argument("Write code for insim!");
+    break;
   }
   // if we do cedfm use the split matrix dof numbering
   // else use unsplit matrix dofs
-  if ( _config.edfm_settings.method == EDFMMethod::compartmental )
+  if ( _config.flow_discretization == FlowDiscretizationType::tpfa_compartmental )
     data.flow_numbering = p_split_dofs;
   else
     data.flow_numbering = p_unsplit_dofs;
@@ -310,7 +313,7 @@ void Preprocessor::build_flow_discretization_()
   if (!_config.wells.empty())
   {
     logging::log() << "setup wells" << std::endl;
-    WellManager well_mgr(_config.wells, data, *data.flow_numbering, _config.edfm_settings.method);
+    WellManager well_mgr(_config.wells, data, *data.flow_numbering, _config.flow_discretization);
     well_mgr.setup();
   }
 
@@ -324,7 +327,7 @@ void Preprocessor::build_flow_discretization_()
 
   // used for coupling later on
   // replace cedfm properties by pure DFM properties
-  if ( _config.edfm_settings.method != EDFMMethod::compartmental )
+  if ( _config.flow_discretization != FlowDiscretizationType::tpfa_compartmental )
     pm_dfm_mgr->distribute_properties();
 }
 
