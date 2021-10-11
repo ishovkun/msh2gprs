@@ -16,6 +16,9 @@ class DiscretizationINSIM : public DiscretizationBase {
 
   // destructor
   virtual ~DiscretizationINSIM() = default;
+
+ private:
+  void build_vertex_data_(size_t vertex);
 };
 
 }  // end namespace discretization

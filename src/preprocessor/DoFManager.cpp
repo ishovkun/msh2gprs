@@ -116,7 +116,7 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs_insim(std::vector<std:
     for (size_t v : well)
       dofs->m_vertices[v] = dof++;
 
-  p_dofs->m_n_dofs = dof;
+  dofs->m_n_dofs = dof;
 
   return dofs;
 }

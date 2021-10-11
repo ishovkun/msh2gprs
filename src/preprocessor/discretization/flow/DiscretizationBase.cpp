@@ -19,10 +19,10 @@ DiscretizationBase(const DoFNumbering & dof_numbering,
     m_cv_data.resize( m_dofs.n_dofs() );
 }
 
-void DiscretizationBase::build_cell_data_(const mesh::Cell& cell)
+void DiscretizationBase::build_cell_data_(const mesh::Cell & cell, ControlVolumeData & cv) const
 {
     const std::size_t cell_index = cell.index();
-    auto & cv = m_cv_data[ m_dofs.cell_dof(cell_index) ];
+    // auto & cv = m_cv_data[ m_dofs.cell_dof(cell_index) ];
     cv.type = ControlVolumeType::cell;
     cv.master = cell_index;
     cv.porosity = m_data.cell_properties[m_data.flow.porosity_idx][cell_index];

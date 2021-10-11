@@ -27,7 +27,9 @@ class DiscretizationBase
 
  protected:
   // build control volumes data
-  virtual void build_cell_data_(const mesh::Cell & cell);
+  // \param[in] cell : grid cell to build flow properties from
+  // \param[out] cv  : resulting control volume
+  virtual void build_cell_data_(const mesh::Cell & cell, ControlVolumeData & cv) const;
 
  protected:
   //  input

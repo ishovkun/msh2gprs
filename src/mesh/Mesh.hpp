@@ -180,7 +180,9 @@ class Mesh
   // get number of faces
   inline std::size_t n_faces() const {return m_faces.size();}
   // get active faces ajacent to vertex
-  std::vector<const Face*>  vertex_faces(size_t vertex_index) const;
+  std::vector<const Face*> vertex_faces(size_t vertex_index) const;
+  // get active cells ajacent to vertex
+  std::vector<const Cell*> vertex_cells(size_t vertex_index) const;
 
   // SEARCHING //
   // returns face index or invalid index

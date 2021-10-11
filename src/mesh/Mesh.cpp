@@ -344,4 +344,15 @@ std::vector<const Face*>  Mesh::vertex_faces(size_t vertex_index) const
   return result;
 }
 
+std::vector<const Cell*> Mesh::vertex_cells(size_t vertex_index) const
+{
+  validate_vertex_(vertex_index);
+  std::vector<const Cell*> result;
+  for (size_t const cell_index : m_vertex_cells[vertex_index])
+    if ( m_cells[cell_index].is_active() )
+      result.push_back( &m_cells[cell_index] );
+  return result;
+}
+
+
 }  // end namespace mesh

@@ -19,8 +19,10 @@ DiscretizationTPFA(const DoFNumbering & dof_numbering,
 
 void DiscretizationTPFA::build()
 {
-  for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell)
-    build_cell_data_(*cell);
+  for (auto cell = m_grid.begin_active_cells(); cell != m_grid.end_active_cells(); ++cell) {
+    build_cell_data_(*cell, m_cv_data[ m_dofs.cell_dof(cell->index()) ]);
+    // build_cell_data_(*cell);
+  }
 
   m_con_data.reserve(m_con_data.size() + m_grid.n_faces());
   for (auto face = m_grid.begin_active_faces(); face != m_grid.end_active_faces(); ++face)
