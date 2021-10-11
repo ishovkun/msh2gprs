@@ -42,7 +42,7 @@ GridIntersectionSearcher::collision(const angem::LineSegment<double> & segment)
   const auto & sg = _mapper.get_search_grid();
   std::unordered_set<size_t> result;
   angem::CollisionGJK<double> checker;
-  if (checker.check(segment, sg.get_bounding_box()))  // segment intersects the grid
+  if ( checker.check(segment, sg.get_bounding_box()) )  // segment intersects the grid
   {
     // find first search location
     const auto start_end = find_first_and_last_location_(segment);
@@ -192,5 +192,11 @@ std::vector<size_t> GridIntersectionSearcher::collision(const angem::Polygon<dou
 
   return std::vector<size_t>(result.begin(), result.end());
 }
+
+size_t GridIntersectionSearcher::find_cell(angem::Point<3,double> const & p) const
+{
+  return _mapper.get_search_grid().find_cell(p);
+}
+
 
 }  // end namespace gprs_data

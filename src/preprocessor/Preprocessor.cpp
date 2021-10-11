@@ -20,6 +20,7 @@
 #include "multiscale/Idea.hpp"
 #include "DoFManager.hpp"
 #include "WellManager.hpp"
+#include "INSIMWellManager.hpp"
 #include "OutputDataVTK.hpp"
 #include "OutputDataGPRS.hpp"
 #include "OutputDataPostprocessor.hpp"
@@ -271,9 +272,18 @@ void Preprocessor::build_flow_discretization_()
   // flow dof numbering
   const std::vector<int> edfm_markers = pm_edfm_mgr->get_face_markers();
   // generate dofs for split and unsplit flow CVs
+  std::shared_ptr<DoFNumbering> p_split_dofs = nullptr;
+  std::shared_ptr<DoFNumbering> p_unsplit_dofs = nullptr;
   DoFManager dof_manager(data.grid, pm_dfm_mgr->get_face_markers(), edfm_markers);
-  std::shared_ptr<DoFNumbering> p_split_dofs = dof_manager.distribute_dofs();
-  std::shared_ptr<DoFNumbering> p_unsplit_dofs = dof_manager.distribute_unsplit_dofs();
+
+  if ( _config.flow_discretization == FlowDiscretizationType::insim ) {
+    INSIMWellManager insim_mgr(_config.wells, data.grid, *data.grid_searcher);
+    p_split_dofs = dof_manager.distribute_dofs_insim( insim_mgr.get_well_vertices() );
+  }
+  else {
+    p_split_dofs = dof_manager.distribute_dofs();
+    p_unsplit_dofs = dof_manager.distribute_unsplit_dofs();
+  }
 
   using namespace discretization;
   std::unique_ptr<DiscretizationBase> flow_discr;

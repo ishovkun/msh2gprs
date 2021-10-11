@@ -16,6 +16,7 @@ ADD_LIBRARY(preprocessor
   bc_expressions/value_functions.cpp
   property_expressions/value_functions.cpp
   WellManager.cpp
+  INSIMWellManager.cpp
   Well.cpp
   GridGeneratorINSIM.cpp
   discretization/flow/DiscretizationBase.cpp

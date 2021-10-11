@@ -23,6 +23,12 @@ class GridIntersectionSearcher {
   // returns:
   // list of cell indices intersected by the segment
   std::vector<size_t> collision(const angem::Polygon<double> & polygon);
+  // find cell that contains the point
+  // Input:
+  // \param[in] p : defines the point
+  // Returns the index of the cell that contains the point. If the point is
+  // out of the domain, returns _grid.n_vertices()
+  size_t find_cell(angem::Point<3,double> const & p) const;
 
  private:
   double get_lowest_bound_(const size_t direction) const;

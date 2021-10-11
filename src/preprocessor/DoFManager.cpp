@@ -3,8 +3,8 @@
 namespace gprs_data {
 
 DoFManager::DoFManager(mesh::Mesh & grid,
-             const std::vector<int> dfm_markers,
-             const std::vector<int> edfm_markers)
+                       const std::vector<int> dfm_markers,
+                       const std::vector<int> edfm_markers)
     : m_grid(grid),
       m_set_dfm_markers(dfm_markers.begin(), dfm_markers.end()),
       m_set_edfm_markers(edfm_markers.begin(), edfm_markers.end())
@@ -104,5 +104,22 @@ void DoFManager::remap(std::vector<discretization::ControlVolumeData> & cv_data,
     }
   }
 }
+
+std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs_insim(std::vector<std::vector<size_t>> const & well_vertices) const
+{
+  std::shared_ptr<DoFNumbering> dofs = std::make_shared<DoFNumbering>();
+  const auto & grid = m_grid;
+  dofs->m_vertices.resize( grid.n_vertices(), dofs->m_unmarked );
+
+  size_t dof = 0;
+  for (auto const & well : well_vertices)
+    for (size_t v : well)
+      dofs->m_vertices[v] = dof++;
+
+  p_dofs->m_n_dofs = dof;
+
+  return dofs;
+}
+
 
 }  // end namespace gprs_data

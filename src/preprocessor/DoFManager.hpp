@@ -25,6 +25,8 @@ class DoFManager
              const std::vector<int> edfm_markers);
   std::shared_ptr<DoFNumbering> distribute_unsplit_dofs();
   std::shared_ptr<DoFNumbering> distribute_dofs();
+  std::shared_ptr<DoFNumbering> distribute_dofs_insim(std::vector<std::vector<size_t>> const & well_vertices) const;
+
   static void remap(std::vector<discretization::ControlVolumeData> & cv_data,
                     std::vector<discretization::ConnectionData>    & connection_data,
                     const DoFNumbering                             & old_dofs,
