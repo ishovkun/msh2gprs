@@ -61,7 +61,6 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
     std::cout << "Building INSIM grid..." << std::endl;
     data.grid = GridGeneratorINSIM(_config.mesh.insim, _config.wells);
     logging::log() << "OK" << std::endl;
-    exit(0);
   }
   else throw std::invalid_argument("Invalid mesh format");
 }

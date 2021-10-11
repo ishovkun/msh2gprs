@@ -781,7 +781,6 @@ std::vector<size_t> GmshInterface::extract_grid_(mesh::Mesh & grid)
   std::vector<size_t> vertex_numbering(max_node_tag, std::numeric_limits<size_t>::max());
   size_t iv = 0;
   for (const size_t node : node_tags) {
-    std::cout << "adding vertex tag " << node << std::endl;
     vertex_numbering[node]  = iv++;
   }
 

@@ -20,7 +20,10 @@ struct RefinementParameters
 
 struct INSIMMeshConfig
 {
-  double minimum_thickness = 1.f;  // handy if we want pseudo 2d mesh
+  // how much padding to add between well nodes and outer domain boundary
+  // this value should be > 0.
+  double padding_fraction = 1.f;
+  int cell_label = 0;
 };
 
 struct MeshConfig

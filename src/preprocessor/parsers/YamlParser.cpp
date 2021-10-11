@@ -664,8 +664,10 @@ void YamlParser::subsection_grid_insim(const YAML::Node & node)
   auto & conf = config.mesh.insim;
   for (auto it = node.begin(); it!=node.end(); ++it) {
     const std::string key = it->first.as<std::string>();
-    if ( key == "minimum_thickness" )
-      conf.minimum_thickness = it->second.as<double>();
+    if ( key == "padding_fraction" )
+      conf.padding_fraction = it->second.as<double>();
+    else if ( key == "cell_label" )
+      conf.cell_label = it->second.as<int>();
   }
 }
 

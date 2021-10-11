@@ -7,9 +7,21 @@
 
 namespace gprs_data {
 
+/* Implemnets grid generator more or less as discussed by Guo [2019].
+ * Builds a bounding box for the point cloud of well vertices.
+ * Adds padding to this bounding box.
+ * Takes the center of each well segment and inserts it as am embedded vertex in the grid.
+ * Generates a grid (currently by calling GMsh).
+ */
 class GridGeneratorINSIM {
  public:
+  /* Constructor.
+   * Input:
+   * \param[in] config : configuration parameters for the grid generator
+   * \param[in] wells  : geometric data for multiple wells
+   */
   GridGeneratorINSIM(INSIMMeshConfig const & config, std::vector<WellConfig> const & wells);
+  // generates and returns mesh generated from well data
   operator mesh::Mesh() const;
 
   virtual ~GridGeneratorINSIM() = default;
@@ -23,6 +35,8 @@ class GridGeneratorINSIM {
   // generate boundaries of the domain
   void generate_bounding_box_();
   double find_characteristic_length_() const;
+  // assign cell markers to the value specified in the config
+  void assign_cell_labels_(mesh::Mesh & grid) const;
 
   // config parameters for the grid generator
   INSIMMeshConfig const & _config;

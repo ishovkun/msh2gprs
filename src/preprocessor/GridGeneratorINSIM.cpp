@@ -21,8 +21,18 @@ GridGeneratorINSIM::GridGeneratorINSIM(INSIMMeshConfig const & config, std::vect
       setup_complex_well_(well);
   }
 
+  if (_config.padding_fraction <= 0.)
+    throw std::invalid_argument("Invalid padding fraction for INSIM grid generator");
+
   generate_bounding_box_();
 }
+
+void GridGeneratorINSIM::assign_cell_labels_(mesh::Mesh & grid) const
+{
+  for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
+    cell->set_marker(_config.cell_label);
+}
+
 
 void GridGeneratorINSIM::generate_bounding_box_()
 {
@@ -86,12 +96,13 @@ GmshInterface::finalize_gmsh();
 #endif
   // mesh::IO::VTKWriter::write_geometry(grid, "test.vtk");
 
+  assign_cell_labels_(grid);
+
   return grid;
 }
 
 void GridGeneratorINSIM::setup_simple_well_(WellConfig const & conf)
 {
-  assert( _config.minimum_thickness > 0 );
   _vertices.push_back(conf.coordinates[0]);
 }
 
