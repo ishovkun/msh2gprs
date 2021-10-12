@@ -22,7 +22,8 @@ class DiscretizationINSIM : public DiscretizationBase {
   void build_vertex_data_(size_t vertex);
   algorithms::EdgeWeightedGraph build_vertex_adjacency_() const;
   // build vector of connections
-  void build_connectivity_(algorithms::EdgeWeightedGraph const & vertex_adjacency);
+  void build_dof_adjecency_(algorithms::EdgeWeightedGraph const & vertex_adjacency);
+  std::vector<size_t> bfs_(size_t u, algorithms::EdgeWeightedGraph const & vertex_adjacency);
 };
 
 }  // end namespace discretization

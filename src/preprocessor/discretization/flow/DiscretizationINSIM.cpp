@@ -1,4 +1,5 @@
 #include "DiscretizationINSIM.hpp"
+#include <queue>
 
 namespace discretization {
 
@@ -16,16 +17,17 @@ void DiscretizationINSIM::build()
       build_vertex_data_( v );
 
   auto const vertex_adjacency = build_vertex_adjacency_();
-  build_connectivity_( vertex_adjacency );
+  build_dof_adjecency_( vertex_adjacency );
 }
 
-void DiscretizationINSIM::build_connectivity_(algorithms::EdgeWeightedGraph const & vertex_adjacency)
+void DiscretizationINSIM::build_dof_adjecency_(algorithms::EdgeWeightedGraph const & vertex_adjacency)
 {
-  for (size_t v = 0; v < m_grid.n_vertices(); ++v)
-    for (auto const * e : vertex_adjacency.adj( v )) {
-      size_t const w = e->other(v);
-      if (v < w && m_dofs.has_vertex(v))
-        std::cout << m_dofs.vertex_dof(v) << " " << m_dofs.vertex_dof(w) << std::endl;
+  algorithms::EdgeWeightedGraph g( m_dofs.n_dofs() );
+
+
+  for (size_t u = 0; u < m_grid.n_vertices(); ++u)
+    if ( m_dofs.has_vertex( u ) ) {
+      std::vector<size_t> neighbors = bfs_(u, vertex_adjacency);
     }
 }
 
@@ -66,6 +68,47 @@ algorithms::EdgeWeightedGraph DiscretizationINSIM::build_vertex_adjacency_() con
         g.add( algorithms::UndirectedEdge(edge.first, edge.second, 0) );
   }
   return g;
+}
+
+struct QueueItem {
+  size_t vertex;
+  size_t level;
+};
+
+std::vector<size_t> DiscretizationINSIM::bfs_(size_t source, algorithms::EdgeWeightedGraph const & vertex_adjacency)
+{
+  std::queue<QueueItem> q;
+  std::vector<bool> visited( vertex_adjacency.n_vertices(), false );
+  q.push({source, 0});
+  visited[source] = true;
+  std::vector<size_t> neighbors;
+
+  size_t max_level = std::numeric_limits<size_t>::max();
+  bool found = false;
+  size_t cnt = 0;
+  while ( !q.empty() && q.front() < max_level ) {
+    // take item from the queue
+    auto const item = q.front();
+    size_t const u = item.vertex;
+    q.pop();
+
+    // check if we found a correct dof to connect to
+    if ( m_dofs.has_vertex( u ) && u != source ) {
+      found = true;
+      neighbors.push_back( u );
+      max_level = item.level;  // don't search beyond this depth
+    }
+    else
+    {
+      for (auto * edge : vertex_adjacency.adj(u)) {  // search neighbors
+        size_t const v = edge->other(u);
+        if ( !visited[v] ) {
+          visited[v] = true;
+          q.push({ v,  item.level + 1 });
+        }
+      }
+    }
+  }
 }
 
 }  // end namespace discretization
