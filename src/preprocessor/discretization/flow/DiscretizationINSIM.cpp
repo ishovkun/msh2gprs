@@ -3,6 +3,8 @@
 
 namespace discretization {
 
+using namespace algorithms;
+
 DiscretizationINSIM::DiscretizationINSIM(DoFNumbering const & dof_numbering,
                                          gprs_data::SimData & data,
                                          std::vector<ControlVolumeData> & cv_data,
@@ -22,13 +24,22 @@ void DiscretizationINSIM::build()
 
 void DiscretizationINSIM::build_dof_adjecency_(algorithms::EdgeWeightedGraph const & vertex_adjacency)
 {
-  algorithms::EdgeWeightedGraph g( m_dofs.n_dofs() );
+  EdgeWeightedGraph g( m_dofs.n_dofs() );
 
 
   for (size_t u = 0; u < m_grid.n_vertices(); ++u)
     if ( m_dofs.has_vertex( u ) ) {
-      std::vector<size_t> neighbors = bfs_(u, vertex_adjacency);
+      size_t const dof_u = m_dofs.vertex_dof( u );
+      std::vector<size_t> const neighbors = bfs_(u, vertex_adjacency);
+      for (size_t const v : neighbors) {
+        size_t const dof_v = m_dofs.vertex_dof( v );
+        if ( !g.has_edge( dof_u, dof_v ) )
+          g.add( UndirectedEdge(dof_u, dof_v, 0.f) );
+      }
     }
+
+  std::cout << "adjacency:" << std::endl;
+  std::cout << g << std::endl;
 }
 
 void DiscretizationINSIM::build_vertex_data_(size_t vertex)
@@ -79,14 +90,14 @@ std::vector<size_t> DiscretizationINSIM::bfs_(size_t source, algorithms::EdgeWei
 {
   std::queue<QueueItem> q;
   std::vector<bool> visited( vertex_adjacency.n_vertices(), false );
-  q.push({source, 0});
+  q.push({ source, 0 });
   visited[source] = true;
   std::vector<size_t> neighbors;
 
   size_t max_level = std::numeric_limits<size_t>::max();
   bool found = false;
   size_t cnt = 0;
-  while ( !q.empty() && q.front() < max_level ) {
+  while ( !q.empty() && q.front().level < max_level ) {
     // take item from the queue
     auto const item = q.front();
     size_t const u = item.vertex;
@@ -109,6 +120,8 @@ std::vector<size_t> DiscretizationINSIM::bfs_(size_t source, algorithms::EdgeWei
       }
     }
   }
+
+  return neighbors;
 }
 
 }  // end namespace discretization

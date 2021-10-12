@@ -36,7 +36,7 @@ void GridGeneratorINSIM::assign_cell_labels_(mesh::Mesh & grid) const
 
 void GridGeneratorINSIM::generate_bounding_box_()
 {
-  double const margin = find_characteristic_length_();
+  double const margin = _config.padding_fraction * find_characteristic_length_();
   double const upper = std::numeric_limits<double>::max();
   double const lower = std::numeric_limits<double>::lowest();
   angem::Point<3,double> bbox_min = {upper, upper, upper};

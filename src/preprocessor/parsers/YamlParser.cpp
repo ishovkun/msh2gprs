@@ -650,6 +650,7 @@ void YamlParser::subsection_grid_insim(const YAML::Node & node)
       conf.padding_fraction = it->second.as<double>();
     else if ( key == "cell_label" )
       conf.cell_label = it->second.as<int>();
+    else throw std::invalid_argument("Invalid key " + key);
   }
 }
 
