@@ -21,15 +21,16 @@ class Well
   bool simple() const noexcept {return segments.empty();}
   bool force_fracture_connection() const noexcept {return _force_frac_connect;}
 
-  // user-input data
+  std::string name;
+  // user-input data, a well is defined as a piecewise-linear line
   std::vector<std::pair<angem::Point<3,double>, angem::Point<3,double>>> segments;
   // whether a segment is perforated
   std::vector<bool> perforated;
   angem::Point<3,double> coordinate;
   double radius, reference_depth;
-  std::string name;
   bool reference_depth_set = false;
 
   bool _force_frac_connect;
+  // perforations: well-to-control_volume connections
   std::vector<discretization::WellSegment> segment_data;
 };

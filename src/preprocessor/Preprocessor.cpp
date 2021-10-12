@@ -279,6 +279,7 @@ void Preprocessor::build_flow_discretization_()
   if ( _config.flow_discretization == FlowDiscretizationType::insim ) {
     INSIMWellManager insim_mgr(_config.wells, data.grid, *data.grid_searcher);
     p_split_dofs = dof_manager.distribute_dofs_insim( insim_mgr.get_well_vertices() );
+    insim_mgr.assign_dofs( *p_split_dofs );
   }
   else {
     p_split_dofs = dof_manager.distribute_dofs();
@@ -316,7 +317,6 @@ void Preprocessor::build_flow_discretization_()
     data.flow_numbering = p_unsplit_dofs;
 
   flow_discr->build();
-  exit(0);
 
   // setup wells
   if ( !_config.wells.empty() && _config.flow_discretization !=  FlowDiscretizationType::insim )

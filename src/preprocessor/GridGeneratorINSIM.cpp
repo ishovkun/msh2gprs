@@ -90,7 +90,7 @@ GridGeneratorINSIM::operator mesh::Mesh() const
   mesh::Mesh grid;
 
 #ifdef WITH_GMSH
-  GmshInterface::initialize_gmsh(/*verbose = */ true);
+  GmshInterface::initialize_gmsh(/*verbose = */ false);
   GmshInterface::build_triangulation_embedded_points(*_bbox, _vertices, grid);
 GmshInterface::finalize_gmsh();
 #endif

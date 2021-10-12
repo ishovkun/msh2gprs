@@ -19,13 +19,50 @@ void DiscretizationINSIM::build()
       build_vertex_data_( v );
 
   auto const vertex_adjacency = build_vertex_adjacency_();
-  build_dof_adjecency_( vertex_adjacency );
+  auto const dof_adjacency = build_dof_adjecency_( vertex_adjacency );
+  build_connections_(dof_adjacency);
 }
 
-void DiscretizationINSIM::build_dof_adjecency_(algorithms::EdgeWeightedGraph const & vertex_adjacency)
+void DiscretizationINSIM::build_connections_(algorithms::EdgeWeightedGraph const & dof_adjacency)
+{
+  for (auto const & edge : dof_adjacency.edges()) {
+    // columns=['i', 'j', 'length', 'PV', 'perm', 'poro'],
+    m_con_data.emplace_back();
+    auto & con = m_con_data.back();
+    con.type = ConnectionType::matrix_matrix;
+    size_t const dof_u = edge.either();
+    size_t const dof_v = edge.other(dof_u);
+    con.elements = {dof_u, dof_v};
+    auto const & cell1 = m_cv_data[dof_u];
+    auto const & cell2 = m_cv_data[dof_v];
+    con.center = 0.5 * (cell1.center + cell2.center);
+    // project permeability
+    auto const & K1 = cell1.permeability;
+    auto const & K2 = cell2.permeability;
+    // directional permeability
+    auto const & cp = con.center;
+    auto const & c1 = cell1.center;
+    auto const & c2 = cell2.center;
+    const double Kp1 = (K1 * (c1 - cp).normalize()).norm();
+    const double Kp2 = (K2 * (c2 - cp).normalize()).norm();
+
+    double const pore_volume = approximate_connection_pore_volume_(cell1, cell2);
+    double const poro = 0.5 * (cell1.porosity + cell2.porosity);
+    double const connection_volume = pore_volume / poro;
+    con.area = connection_volume / cell1.center.distance(cell2.center);
+
+    const double T1 = con.area * Kp1 / (c1 - cp).norm();
+    const double T2 = con.area * Kp2 / (c2 - cp).norm();
+
+    // face transmissibility
+    const double T = T1*T2 / ( T1 + T2 );
+    con.coefficients = {T, pore_volume};
+  }
+}
+
+algorithms::EdgeWeightedGraph DiscretizationINSIM::build_dof_adjecency_(algorithms::EdgeWeightedGraph const & vertex_adjacency)
 {
   EdgeWeightedGraph g( m_dofs.n_dofs() );
-
 
   for (size_t u = 0; u < m_grid.n_vertices(); ++u)
     if ( m_dofs.has_vertex( u ) ) {
@@ -38,8 +75,7 @@ void DiscretizationINSIM::build_dof_adjecency_(algorithms::EdgeWeightedGraph con
       }
     }
 
-  std::cout << "adjacency:" << std::endl;
-  std::cout << g << std::endl;
+  return g;
 }
 
 void DiscretizationINSIM::build_vertex_data_(size_t vertex)
@@ -123,5 +159,20 @@ std::vector<size_t> DiscretizationINSIM::bfs_(size_t source, algorithms::EdgeWei
 
   return neighbors;
 }
+
+double DiscretizationINSIM::approximate_connection_pore_volume_(ControlVolumeData const & u, ControlVolumeData const & v)
+{
+  angem::LineSegment<double> segment( u.center, v.center );
+  double vol = 0.f;
+  for (const size_t cell_index : m_data.grid_searcher->collision(segment)) {
+    const auto & cell = m_data.grid.cell(cell_index);
+    double poro = m_data.cell_properties[m_data.flow.porosity_idx][cell_index];
+    vol += cell.volume() * poro;
+  }
+
+  assert( vol > 0 && "Bug in volume computation");
+  return vol;
+}
+
 
 }  // end namespace discretization

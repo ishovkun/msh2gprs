@@ -2,6 +2,8 @@
 #include "config/WellConfig.hpp"
 #include "mesh/Mesh.hpp"
 #include "intersections/GridIntersectionSearcher.hpp"
+#include "discretization/flow/DoFNumbering.hpp"
+#include "Well.hpp"
 
 namespace gprs_data {
 
@@ -22,16 +24,25 @@ class INSIMWellManager {
   // first component - well index. second component - grid vertex index.
   // single well can span over several grid vertices.
   std::vector<std::vector<size_t>> const & get_well_vertices() const {return _well_vertex_indices;}
+  // setup wells for ouput
+  void assign_dofs(discretization::DoFNumbering const & dofs);
 
   virtual ~INSIMWellManager() = default;
 
  private:
   void find_well_vertices_();
+  std::vector<size_t> find_well_vertices_(Well const & well);
+  void create_well_perforations_(Well & well, std::vector<size_t> const & well_vertices);
+  void compute_bounding_box_(discretization::WellSegment & segment);
 
-  std::vector<WellConfig> const & _wells;
+
+  void setup_wells_();
+
+  std::vector<WellConfig> const & _config;
   mesh::Mesh const & _grid;
   GridIntersectionSearcher & _searcher;
   std::vector<std::vector<size_t>> _well_vertex_indices;
+  std::vector<Well> _wells;
 };
 
 }  // end namespace gprs_data

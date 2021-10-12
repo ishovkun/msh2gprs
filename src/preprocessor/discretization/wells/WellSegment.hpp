@@ -12,13 +12,13 @@ namespace discretization {
 struct WellSegment
 {
   // static constexpr size_t dof_undefined = std::numeric_limits<size_t>::max();
-  size_t dof;  // flow CV number the segment is connected to
-  size_t element_id;  // id of connected cell or face
-  std::array<double,3> bounding_box;  // temporary structure used to store bounding box dimensions
-  angem::Point<3,double> direction;   // direction of the wekk segment
-  double length = 0;              // length of the perforation
-  bool perforated = true;
-  double wi = 0;  // well index
+  size_t dof;                        // flow CV number the segment is connected to
+  size_t element_id;                 // id of connected cell or face
+  std::array<double,3> bounding_box; // temporary structure used to store bounding box dimensions
+  angem::Point<3,double> direction;  // direction of the wekk segment
+  double length = 0;                 // length of the perforation
+  bool perforated = true;            // whether is perforated
+  double wi = 0;                     // well index
 };
 
 }  // end namespace discretization

@@ -383,9 +383,9 @@ void WellManager::compute_WI_frac_(Well & well, discretization::WellSegment & se
   const auto & frac = _data.flow.cv[segment.dof];
   const double perm = frac.permeability(0,0);
   // full linear slot
-  const double wi_lin_slot = 8 * frac.aperture * segment.bounding_box[0] * perm;
+  const double wi_lin_slot = 8. * frac.aperture * segment.bounding_box[0] * perm;
   // reduced linear slot
-  const double wi_red_slot = 8 * frac.aperture * (segment.length - 2 * well.radius) * perm;
+  const double wi_red_slot = 8. * frac.aperture * (segment.length - 2 * well.radius) * perm;
 
   const double wi_rad_slot = compute_productivity(perm, perm,
                                                   segment.bounding_box[0],

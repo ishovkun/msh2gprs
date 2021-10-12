@@ -11,11 +11,14 @@ Well::Well(const WellConfig & config)
   assert(!config.coordinates.empty());
   assert(config.radius > 0 );
 
-  if (config.coordinates.size() == 1)
+  if ( config.coordinates.size() == 1 ) {
+    // simple well
     coordinate = config.coordinates[0];
+    reference_depth = -config.coordinates[0][2];
+  }
   else
   {
-    segments.reserve(perforated.size());
+    segments.reserve( perforated.size() );
     segments.emplace_back();
     bool segment_open = false;
     std::size_t i = 0;
