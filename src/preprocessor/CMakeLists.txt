@@ -26,9 +26,9 @@ ADD_LIBRARY(preprocessor
   discretization/flow/DiscretizationPEDFM.cpp
   discretization/flow/DiscretizationINSIM.cpp
   DoFManager.cpp
-  OutputDataGPRS.cpp
-  OutputDataVTK.cpp
-  OutputDataPostprocessor.cpp
+  output/OutputDataGPRS.cpp
+  output/OutputDataVTK.cpp
+  output/OutputDataPostprocessor.cpp
   multiscale/Idea.cpp
   multiscale/ShapeFunctionSolver.cpp
   multiscale/MSFlow.cpp

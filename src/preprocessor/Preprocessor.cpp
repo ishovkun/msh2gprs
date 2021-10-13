@@ -21,9 +21,9 @@
 #include "DoFManager.hpp"
 #include "WellManager.hpp"
 #include "INSIMWellManager.hpp"
-#include "OutputDataVTK.hpp"
-#include "OutputDataGPRS.hpp"
-#include "OutputDataPostprocessor.hpp"
+#include "output/OutputDataVTK.hpp"
+#include "output/OutputDataGPRS.hpp"
+#include "output/OutputDataPostprocessor.hpp"
 #include "logger/Logger.hpp"
 #include "GridGeneratorINSIM.hpp"
 #include <string>
@@ -182,6 +182,12 @@ void Preprocessor::write_output_()
             output_data.write_output(m_output_dir);
             break;
           }
+        case OutputFormat::insim :
+          {
+            gprs_data::OutputDataVTK output_data(data, _config.vtk_config);
+            output_data.write_output(m_output_dir);
+            break;
+          }
         case OutputFormat::postprocessor :
           {
             if ( _config.flow_discretization != FlowDiscretizationType::insim ) {
@@ -289,10 +295,7 @@ void Preprocessor::build_flow_discretization_()
   std::unique_ptr<INSIMWellManager> insim_mgr = nullptr;
   if ( _config.flow_discretization == FlowDiscretizationType::insim ) {
     insim_mgr = std::make_unique<INSIMWellManager>( _config.wells, data.grid, *data.grid_searcher );
-    // INSIMWellManager insim_mgr(_config.wells, data.grid, *data.grid_searcher);
     p_split_dofs = dof_manager.distribute_dofs_insim( insim_mgr->get_well_vertices() );
-    // insim_mgr.assign_dofs( *p_split_dofs );
-    // insim_mgr.compute_well_indices(data.flow.cv);
   }
   else {
     p_split_dofs = dof_manager.distribute_dofs();

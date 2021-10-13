@@ -355,6 +355,7 @@ void OutputDataVTK::save_geomech_geometry(std::ofstream & out) const
         }
       }
     }
+
   out << "CELL_TYPES" << "\t" << grid.n_active_cells() << "\n";
   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
     out << cell->vtk_id() << "\n";

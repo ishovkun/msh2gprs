@@ -14,7 +14,7 @@
 
 enum class OutputFormat
 {
-  gprs, vtk, postprocessor
+  gprs, vtk, postprocessor, insim
 };
 
 enum class BoundaryConditionType : int
