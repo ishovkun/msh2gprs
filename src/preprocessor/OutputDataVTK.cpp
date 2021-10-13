@@ -373,8 +373,8 @@ void OutputDataVTK::save_flow_graph_(const std::string & fname) const
   out << "DATASET UNSTRUCTURED_GRID \n";
   const size_t n_points = cv.size();
   out << "POINTS" << "\t" << n_points << " float" << std::endl;
-  for (auto const & volume : cv)
-    out << volume.volume << "\n";
+  for (auto const & control_volume : cv)
+    out << control_volume.center << "\n";
 
   auto const & con = _data.flow.con;
   // 3 because n_cells + 2 points per cell

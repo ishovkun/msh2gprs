@@ -24,12 +24,12 @@ void INSIMWellManager::setup_wells_()
   for (const auto & conf : _config)
   {
     Well well(conf);
-    std::cout << "setting up " << well.name << std::endl;
     auto const well_vertices = find_well_vertices_(well);
     if ( well_vertices.empty() )
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
 
     create_well_perforations_(well, well_vertices);
+    _wells.push_back( std::move(well) );
   }
 }
 
@@ -61,40 +61,6 @@ std::vector<size_t> INSIMWellManager::find_well_vertices_(Well const & well)
     }
 
   return ans;
-}
-
-void INSIMWellManager::find_well_vertices_()
-{
-  _well_vertex_indices.resize( _config.size() );
-
-  for (size_t iwell = 0; iwell < _config.size(); ++iwell)
-  {
-    auto const & well = _config[iwell];
-    for (size_t j = 0; j < well.perforated.size(); ++j)
-    {
-      // find the center of the segment
-      angem::Point<3,double> point;
-      if ( well.coordinates.size() == 1 ) point = well.coordinates[0];
-      else point = 0.5 * (well.coordinates[j] + well.coordinates[j+1]);
-
-      // find cell that contains the point
-      size_t const cell_idx = _searcher.find_cell(point);
-
-      // find closest vertex within the cell
-      double mindist = std::numeric_limits<double>::max();
-      size_t closest = std::numeric_limits<size_t>::max();
-      for (size_t const v : _grid.cell(cell_idx).vertices()) {
-        double const d = _grid.vertex(v).distance(point);
-        if ( d < mindist ) {
-          mindist = d;
-          closest = v;
-        }
-      }
-
-      _well_vertex_indices[iwell].push_back( closest );
-    }
-    assert( !_well_vertex_indices[iwell].empty() && "Could not find well vertices" );
-  }
 }
 
 void INSIMWellManager::assign_dofs(discretization::DoFNumbering const & dofs)

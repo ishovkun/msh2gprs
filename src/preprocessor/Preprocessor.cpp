@@ -286,11 +286,13 @@ void Preprocessor::build_flow_discretization_()
   std::shared_ptr<DoFNumbering> p_unsplit_dofs = nullptr;
   DoFManager dof_manager(data.grid, pm_dfm_mgr->get_face_markers(), edfm_markers);
 
+  std::unique_ptr<INSIMWellManager> insim_mgr = nullptr;
   if ( _config.flow_discretization == FlowDiscretizationType::insim ) {
-    INSIMWellManager insim_mgr(_config.wells, data.grid, *data.grid_searcher);
-    p_split_dofs = dof_manager.distribute_dofs_insim( insim_mgr.get_well_vertices() );
-    insim_mgr.assign_dofs( *p_split_dofs );
-    insim_mgr.compute_well_indices(data.flow.cv);
+    insim_mgr = std::make_unique<INSIMWellManager>( _config.wells, data.grid, *data.grid_searcher );
+    // INSIMWellManager insim_mgr(_config.wells, data.grid, *data.grid_searcher);
+    p_split_dofs = dof_manager.distribute_dofs_insim( insim_mgr->get_well_vertices() );
+    // insim_mgr.assign_dofs( *p_split_dofs );
+    // insim_mgr.compute_well_indices(data.flow.cv);
   }
   else {
     p_split_dofs = dof_manager.distribute_dofs();
@@ -336,6 +338,12 @@ void Preprocessor::build_flow_discretization_()
     WellManager well_mgr(_config.wells, data, *data.flow_numbering, _config.flow_discretization);
     well_mgr.setup();
   }
+  else if ( _config.flow_discretization !=  FlowDiscretizationType::insim ) {
+    logging::log() << "compute well productivity" << std::endl;
+    insim_mgr->assign_dofs( *p_split_dofs );
+    insim_mgr->compute_well_indices(data.flow.cv);
+  }
+  // exit(0);
 
   // multiscale idea
   if ( _config.ms_flow.part_type != MSPartitioning::no_partitioning )

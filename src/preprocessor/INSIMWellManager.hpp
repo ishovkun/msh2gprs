@@ -35,7 +35,6 @@ class INSIMWellManager {
   virtual ~INSIMWellManager() = default;
 
  private:
-  void find_well_vertices_();
   std::vector<size_t> find_well_vertices_(Well const & well);
   void create_well_perforations_(Well & well, std::vector<size_t> const & well_vertices);
   void compute_bounding_box_(discretization::WellSegment & segment);

@@ -14,9 +14,11 @@ DiscretizationINSIM::DiscretizationINSIM(DoFNumbering const & dof_numbering,
 
 void DiscretizationINSIM::build()
 {
-  for (size_t v = 0; v < m_grid.n_vertices(); ++v)
-    if ( m_dofs.has_vertex( v ) )
+  for (size_t v = 0; v < m_grid.n_vertices(); ++v) {
+    if ( m_dofs.has_vertex( v ) ) {
       build_vertex_data_( v );
+    }
+  }
 
   auto const vertex_adjacency = build_vertex_adjacency_();
   auto const dof_adjacency = build_dof_adjecency_( vertex_adjacency );

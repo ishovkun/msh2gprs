@@ -70,6 +70,7 @@ void OutputDataGPRS::save_flow_data_(const std::string cv_file, const std::strin
     // write transmissibility update formulas
     out.close();
   }
+  if (_data.has_mechanics)
   {  // write transmissibility update formulas
     std::ofstream out;
     out.open(trans_update_file.c_str());
