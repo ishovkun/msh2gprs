@@ -99,12 +99,20 @@ void DiscretizationINSIM::build_vertex_data_(size_t vertex)
   // take average of physical properties
   cv.custom.resize( attached_cvs.front().custom.size(), 0.f );
   for (size_t i = 0; i < n; ++i) {
-    cv.volume += attached_cvs[i].volume;
-    cv.porosity += attached_cvs[i].porosity / n;
-    cv.permeability += (attached_cvs[i].permeability / (double)n);
+    double const vi = attached_cvs[i].volume;
+    cv.volume += vi;
+    cv.porosity += attached_cvs[i].porosity * vi;
+    cv.permeability += attached_cvs[i].permeability * vi;
     for (size_t j = 0; j < cv.custom.size(); ++j)
-      cv.custom[j] += attached_cvs[i].custom[j] / n;
+      cv.custom[j] += attached_cvs[i].custom[j] * vi;
   }
+
+  // take average (divide by tot volume)
+  cv.porosity /= cv.volume;
+  cv.permeability /= cv.volume;
+    for (size_t j = 0; j < cv.custom.size(); ++j)
+      cv.custom[j] /= cv.volume;
+
 }
 
 algorithms::EdgeWeightedGraph DiscretizationINSIM::build_vertex_adjacency_() const
