@@ -100,7 +100,9 @@ void INSIMWellManager::find_well_vertices_()
 
 void INSIMWellManager::assign_dofs(discretization::DoFNumbering const & dofs)
 {
-  throw std::runtime_error("Write code to assign dofs");
+  for (auto & well : _wells)
+    for (auto & segment : well.segment_data)
+      segment.dof = dofs.vertex_dof( segment.element_id );
 }
 
 void INSIMWellManager::create_well_perforations_(Well & well, std::vector<size_t> const & well_vertices)
