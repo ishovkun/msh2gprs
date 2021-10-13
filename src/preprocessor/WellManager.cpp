@@ -244,10 +244,14 @@ bool WellManager::setup_simple_well_matrix_(Well & well, size_t cell_index)
     assert( section_data.size() == 2 );
     const double segment_length = section_data[0].distance(section_data[1]);
 
-    // for visulatization
-    _data.well_vertex_indices.emplace_back();
-    _data.well_vertex_indices.back().first = _data.well_vertices.insert(section_data[0]);
-    _data.well_vertex_indices.back().second = _data.well_vertices.insert(section_data[1]);
+
+    { // for visulatization
+      auto & viz = _data.well_vtk;
+      viz.indices.emplace_back();
+      auto & segment = viz.indices.back();
+      segment.first = viz.vertices.insert(section_data[0]);
+      segment.second = viz.vertices.insert(section_data[1]);
+    }
 
     well.segment_data.emplace_back();
     discretization::WellSegment & segment = well.segment_data.back();

@@ -272,7 +272,7 @@ void OutputDataVTK::save_edfm_data(const std::string & fname) const
 void OutputDataVTK::save_wells_(const std::string & fname) const
 {
   logging::log() << "writing " << fname << std::endl;
-  mesh::IO::VTKWriter::write_well_trajectory(_data.well_vertices.points, _data.well_vertex_indices, fname);
+  mesh::IO::VTKWriter::write_well_trajectory(_data.well_vtk.vertices.points, _data.well_vtk.indices, fname);
 }
 
 void OutputDataVTK::save_geomech_geometry(std::ofstream & out) const

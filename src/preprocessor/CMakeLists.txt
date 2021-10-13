@@ -29,6 +29,7 @@ ADD_LIBRARY(preprocessor
   output/OutputDataGPRS.cpp
   output/OutputDataVTK.cpp
   output/OutputDataPostprocessor.cpp
+  output/OutputDataINSIM.cpp
   multiscale/Idea.cpp
   multiscale/ShapeFunctionSolver.cpp
   multiscale/MSFlow.cpp

@@ -58,6 +58,12 @@ struct FlowData
   std::vector<discretization::ConnectionData> con;           // connections
 };
 
+struct WellVTKGrid
+{
+  angem::PointSet<3,double> vertices;  // set of well coordinatees: used for vtk output.
+  std::vector<std::pair<std::size_t,std::size_t>> indices;
+};
+
 struct SimData
 {
   mesh::Mesh grid;  // active grid that has all the manipulations on
@@ -84,9 +90,7 @@ struct SimData
   // std::unordered_set<int> edfm_grid_labels;
   // ----------------------- Well data ---------------------- //
   std::vector<Well> wells;  // vector of well properties
-  angem::PointSet<3,double> well_vertices;  // set of well coordinatees: used for vtk output.
-  // vector of well segments: indices of well coordinate points. used for vtk output.
-  std::vector<std::pair<std::size_t,std::size_t>> well_vertex_indices;
+  WellVTKGrid well_vtk;     // 1D vtk grid purely for visualization purposed
   // =========================== GEOMECHANICS ================= //
   bool has_mechanics = false;
   std::shared_ptr<discretization::DoFNumbering> mech_numbering;  // mech cell and face numbering

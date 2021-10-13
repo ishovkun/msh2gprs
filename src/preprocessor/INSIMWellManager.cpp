@@ -29,6 +29,7 @@ void INSIMWellManager::setup_wells_()
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
 
     create_well_perforations_(well, well_vertices);
+
     _wells.push_back( std::move(well) );
   }
 }
@@ -78,6 +79,7 @@ void INSIMWellManager::create_well_perforations_(Well & well, std::vector<size_t
     auto & s = well.segment_data.front();
     s.element_id = well_vertices[0];
     compute_bounding_box_(s);
+    // well.segments.push_back({ p1, p2 });
     s.length = s.bounding_box[2];
     s.direction = {0,0,1};
   }

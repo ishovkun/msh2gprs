@@ -73,6 +73,12 @@ struct DiscreteFractureConfig
   size_t region = 0;    // property table index
 };
 
+struct INSIMOutputConfig
+{
+  std::string cv_file    = "cell_data.txt";
+  std::string tube_file  = "tube_data.txt";
+  std::string wells_file = "wells.txt";
+};
 
 struct GPRSOutputConfig
 {
@@ -156,6 +162,8 @@ struct PreprocessorConfig
   std::string output_dir            = "output";
   // GPRS format
   GPRSOutputConfig gprs_output;
+  // INSIM format
+  INSIMOutputConfig insim_output;
   // VTK format
   VTKOutputConfig vtk_config;
   // postprocessor output file

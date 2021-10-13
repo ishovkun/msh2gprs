@@ -28,7 +28,7 @@ void DiscretizationINSIM::build()
 void DiscretizationINSIM::build_connections_(algorithms::EdgeWeightedGraph const & dof_adjacency)
 {
   for (auto const & edge : dof_adjacency.edges()) {
-    // columns=['i', 'j', 'length', 'PV', 'perm', 'poro'],
+    // we really need tube volume, transmissibility, and tube length
     m_con_data.emplace_back();
     auto & con = m_con_data.back();
     con.type = ConnectionType::matrix_matrix;
@@ -53,10 +53,10 @@ void DiscretizationINSIM::build_connections_(algorithms::EdgeWeightedGraph const
     double const connection_volume = pore_volume / poro;
     double const d = cell1.center.distance(cell2.center);
     con.area = connection_volume / d;  // approximately :-)
-    con.distances = {d/2, d/2};
+    con.distances = {d/2, d/2};        // storage for tube length
 
-    const double T1 = con.area * Kp1 / (c1 - cp).norm();
-    const double T2 = con.area * Kp2 / (c2 - cp).norm();
+    const double T1 = con.area * Kp1 / con.distances[0];
+    const double T2 = con.area * Kp2 / con.distances[1];
 
     // face transmissibility
     const double T = T1*T2 / ( T1 + T2 );

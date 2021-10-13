@@ -24,6 +24,7 @@
 #include "output/OutputDataVTK.hpp"
 #include "output/OutputDataGPRS.hpp"
 #include "output/OutputDataPostprocessor.hpp"
+#include "output/OutputDataINSIM.hpp"
 #include "logger/Logger.hpp"
 #include "GridGeneratorINSIM.hpp"
 #include <string>
@@ -157,7 +158,15 @@ void Preprocessor::write_output_()
 {
   logging::log() << "Write Output data\n";
   create_output_dir_();
-  for (auto format : _config.output_formats)
+
+  // decide which formats to use for output
+  std::vector<OutputFormat> formats;
+  if ( _config.flow_discretization == FlowDiscretizationType::insim )
+    formats = {OutputFormat::vtk, OutputFormat::insim};
+  else
+    formats = {OutputFormat::vtk, OutputFormat::gprs, OutputFormat::postprocessor};
+
+  for (auto format : formats)
   {
     switch (format) {
       case OutputFormat::gprs :
@@ -184,19 +193,17 @@ void Preprocessor::write_output_()
           }
         case OutputFormat::insim :
           {
-            gprs_data::OutputDataVTK output_data(data, _config.vtk_config);
+            gprs_data::OutputDataINSIM output_data(data, _config.insim_output);
             output_data.write_output(m_output_dir);
             break;
           }
         case OutputFormat::postprocessor :
           {
-            if ( _config.flow_discretization != FlowDiscretizationType::insim ) {
-              logging::log() << "Output postprocessor format" << std::endl;
-              gprs_data::OutputDataPostprocessor output_data(data, _config,
-                                                             *data.flow_numbering,
-                                                             m_output_dir);
-              output_data.write_output(_config.postprocessor_file);
-            }
+            logging::log() << "Output postprocessor format" << std::endl;
+            gprs_data::OutputDataPostprocessor output_data(data, _config,
+                                                           *data.flow_numbering,
+                                                           m_output_dir);
+            output_data.write_output(_config.postprocessor_file);
           }
     }
   }

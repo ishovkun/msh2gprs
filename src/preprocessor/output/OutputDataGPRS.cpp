@@ -919,4 +919,4 @@ void OutputDataGPRS::save_fem_data_() const
   out.close();
 }
 
-}
+}  // end namespace gprs_data
