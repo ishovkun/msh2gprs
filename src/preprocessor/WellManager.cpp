@@ -200,12 +200,11 @@ void WellManager::compute_well_index_(Well &well)
   {
     const auto & cv = _data.flow.cv[segment.dof];
     if (cv.type == discretization::ControlVolumeType::cell)  // matrix
-      compute_WI_matrix_(well, segment);
+      compute_WI_matrix(well, segment, _data.flow.cv[segment.dof].permeability);
     else // fracture
       compute_WI_frac_(well, segment);
   }
 
-  // const double wi_sum = std::accumulate(well.indices.begin(), well.indices.end(), 0.0);
   const double wi_sum = std::accumulate(well.segment_data.begin(), well.segment_data.end(),
                                         0.0, [](const double sofar, const auto & segment)
                                              {return segment.wi + sofar;});
@@ -344,13 +343,12 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
  
 }
 
-void WellManager::compute_WI_matrix_(Well & well, discretization::WellSegment & segment)
+void WellManager::compute_WI_matrix(Well & well, discretization::WellSegment & segment,
+                                    angem::Tensor2<3,double> const & perm)
 {
-  // const std::size_t icell = _well_connected_cells.back()[segment];
-  // const angem::Tensor2<3,double> perm = _data.get_permeability(icell);
-  const auto & perm = _data.flow.cv[segment.dof].permeability;
   const auto & dx_dy_dz = segment.bounding_box;
   angem::Point<3,double> productivity;
+
   // project on plane yz
   productivity[0] = compute_productivity(perm(1,1), perm(2,2), dx_dy_dz[1], dx_dy_dz[2],
                                          segment.length*fabs(segment.direction[0]),

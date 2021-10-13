@@ -176,11 +176,13 @@ void Preprocessor::write_output_()
           }
         case OutputFormat::postprocessor :
           {
-            logging::log() << "Output postprocessor format" << std::endl;
-            gprs_data::OutputDataPostprocessor output_data(data, _config,
-                                                           *data.flow_numbering,
-                                                           m_output_dir);
-            output_data.write_output(_config.postprocessor_file);
+            if ( _config.flow_discretization != FlowDiscretizationType::insim ) {
+              logging::log() << "Output postprocessor format" << std::endl;
+              gprs_data::OutputDataPostprocessor output_data(data, _config,
+                                                             *data.flow_numbering,
+                                                             m_output_dir);
+              output_data.write_output(_config.postprocessor_file);
+            }
           }
     }
   }
@@ -280,6 +282,7 @@ void Preprocessor::build_flow_discretization_()
     INSIMWellManager insim_mgr(_config.wells, data.grid, *data.grid_searcher);
     p_split_dofs = dof_manager.distribute_dofs_insim( insim_mgr.get_well_vertices() );
     insim_mgr.assign_dofs( *p_split_dofs );
+    insim_mgr.compute_well_indices(data.flow.cv);
   }
   else {
     p_split_dofs = dof_manager.distribute_dofs();

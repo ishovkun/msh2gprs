@@ -1,4 +1,5 @@
 #include "INSIMWellManager.hpp"
+#include "WellManager.hpp"  // WellManager::compute_WI_matrix
 
 namespace gprs_data {
 
@@ -8,8 +9,14 @@ INSIMWellManager::INSIMWellManager(std::vector<WellConfig> const & wells, mesh::
     , _grid(grid)
     , _searcher(searcher)
 {
-  // find_well_vertices_();
   setup_wells_();
+}
+
+void INSIMWellManager::compute_well_indices(std::vector<discretization::ControlVolumeData> const & cvs)
+{
+  for (auto & well : _wells)
+    for (auto  & s : well.segment_data)
+      WellManager::compute_WI_matrix(well, s, cvs[s.dof].permeability);
 }
 
 void INSIMWellManager::setup_wells_()
@@ -23,14 +30,6 @@ void INSIMWellManager::setup_wells_()
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
 
     create_well_perforations_(well, well_vertices);
-    // if ( verts.size() == 1 ) {  // one segment
-
-    // }
-    // else {  // > 1 -- split into segments
-
-    // }
-
-    // compute_well_index_(well);
   }
 }
 
@@ -149,6 +148,15 @@ void INSIMWellManager::compute_bounding_box_(discretization::WellSegment & s)
 
   for (size_t i = 0; i < 3; ++i)
     s.bounding_box[i] = bbox_max[i] - bbox_min[i];
+}
+
+std::vector<std::vector<size_t>> INSIMWellManager::get_well_vertices() const
+{
+  std::vector<std::vector<size_t>> ans( _wells.size() );
+  for (size_t i = 0; i < _wells.size(); ++i)
+    for (auto const & s : _wells[i].segment_data)
+      ans[i].push_back( s.element_id );
+  return ans;
 }
 
 }  // end namespace gprs_data

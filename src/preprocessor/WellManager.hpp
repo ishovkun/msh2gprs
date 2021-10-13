@@ -31,6 +31,8 @@ class WellManager
    */
   void setup();
 
+  static void compute_WI_matrix(Well & well, discretization::WellSegment & segment, angem::Tensor2<3,double> const & perm);
+
  protected:
   void setup_simple_well_(Well & well);
   void setup_simple_well_fast_(Well & well);
@@ -40,7 +42,6 @@ class WellManager
   bool setup_simple_well_matrix_(Well & well, size_t cell_index);
   // returns false if no intersection found
   void setup_simple_well_to_fracture_(Well & well, size_t cell_index);
-  void compute_WI_matrix_(Well & well, discretization::WellSegment & segment);
   void compute_WI_frac_(Well & well, discretization::WellSegment & segment);
 
   const std::vector<WellConfig> _config;
