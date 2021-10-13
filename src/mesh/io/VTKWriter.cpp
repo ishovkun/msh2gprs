@@ -262,13 +262,13 @@ void VTKWriter::write_well_trajectory(const std::vector<Point>                  
   const std::size_t n_points = vertices.size();
   out << "POINTS" << "\t" << n_points << " float" << std::endl;
   for (const auto & p : vertices)
-    out << p << std::endl;
+    out << p << "\n";
 
   // 3 because n_cells + 2 points per cell
   out << "CELLS" << "\t" << indices.size() << "\t" << 3*indices.size() << std::endl;
 
   for (const auto & segment : indices)
-    out << 2 << "\t" << segment.first << "\t" << segment.second << std::endl;
+    out << 2 << "\t" << segment.first << "\t" << segment.second << "\n";
 
   out << "CELL_TYPES" << "\t" << indices.size() << std::endl;
   for (std::size_t i=0; i<indices.size(); ++i)

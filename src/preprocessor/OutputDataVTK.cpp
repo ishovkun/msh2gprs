@@ -10,20 +10,21 @@ OutputDataVTK::OutputDataVTK(const SimData & data,
     _data(data),
     m_flow_grid(data.grid),
     m_mech_grid(data.geomechanics_grid),
-    m_config(config)
+    _config(config)
 {}
 
 
 void OutputDataVTK::write_output(const std::string & output_path) const
 {
-  save_reservoir_flow_data_(output_path + "/" + m_config.flow_reservoir_grid_file);
-  save_reservoir_mechanics_data_(output_path + "/" + m_config.mechanics_reservoir_grid_file);
-  if (!_data.fracture_grid.empty())
-    save_dfm_data(output_path + "/"+ m_config.fracture_grid_file);
-  // if (!_data.edfm_grid.empty())
-  //   save_edfm_data(output_path + "/" + m_config.edfm_grid_file);
-  if (!_data.wells.empty())
-    save_wells_(output_path + "/"+ m_config.wells_file);
+  save_reservoir_flow_data_(output_path + "/" + _config.flow_reservoir_grid_file);
+  save_reservoir_mechanics_data_(output_path + "/" + _config.mechanics_reservoir_grid_file);
+
+  if (_config.flags & VTKOutputFlags::save_fractures)
+    save_dfm_data(output_path + "/"+ _config.fracture_grid_file);
+  if (_config.flags & VTKOutputFlags::save_wells)
+    save_wells_(output_path + "/"+ _config.wells_file);
+  if (_config.flags & VTKOutputFlags::save_flow_graph)
+    save_flow_graph_(output_path + "/"+ _config.flow_graph_file);
 }
 
 
@@ -176,7 +177,6 @@ void OutputDataVTK::save_dfm_data(const std::string & fname) const
 
   out.close();
 }
-
 
 void OutputDataVTK::save_edfm_data(const std::string & fname) const
 {
@@ -360,5 +360,33 @@ void OutputDataVTK::save_geomech_geometry(std::ofstream & out) const
     out << cell->vtk_id() << "\n";
 }
 
+void OutputDataVTK::save_flow_graph_(const std::string & fname) const
+{
+  logging::log() << "writing " << fname << std::endl;
+  std::ofstream out;
+  out.open(fname.c_str());
 
+  out << "# vtk DataFile Version 2.0 \n";
+  out << "3D Grid\n";
+  out << "ASCII \n \n";
+  auto const & cv = _data.flow.cv;
+  out << "DATASET UNSTRUCTURED_GRID \n";
+  const size_t n_points = cv.size();
+  out << "POINTS" << "\t" << n_points << " float" << std::endl;
+  for (auto const & volume : cv)
+    out << volume.volume << "\n";
+
+  auto const & con = _data.flow.con;
+  // 3 because n_cells + 2 points per cell
+  out << "CELLS" << "\t" << con.size() << "\t" << 3 * con.size() << std::endl;
+  for (auto const & edge : con)
+    out << 2 << "\t" << edge.elements[0] << "\t" << edge.elements[1] << "\n";
+
+  out << "CELL_TYPES" << "\t" << con.size() << std::endl;
+  for (size_t i = 0; i < con.size(); ++i)
+    out << 3 << "\n";
+
+  out.close();
 }
+
+}  // end namespace gprs_data

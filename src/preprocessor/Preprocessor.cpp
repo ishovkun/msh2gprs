@@ -170,6 +170,14 @@ void Preprocessor::write_output_()
         case OutputFormat::vtk :
           {
             logging::log() << "Output vtk format" << std::endl;
+            auto & flags = _config.vtk_config.flags;
+            if ( !data.fracture_grid.empty() )
+              flags |= VTKOutputFlags::save_fractures;
+            if ( !data.wells.empty() )
+              flags |= VTKOutputFlags::save_wells;
+            if ( _config.flow_discretization == FlowDiscretizationType::insim )
+              flags |= VTKOutputFlags::save_flow_graph;
+
             gprs_data::OutputDataVTK output_data(data, _config.vtk_config);
             output_data.write_output(m_output_dir);
             break;

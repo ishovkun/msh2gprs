@@ -32,6 +32,8 @@ class OutputDataVTK
   void save_edfm_data(const std::string & fname) const;
   void save_wells_(const std::string & fname) const;
   void save_geomech_geometry(std::ofstream & out) const;
+  void save_flow_graph_(const std::string & fname) const;
+
   // size is different for mech and flow
   // void saveMultiScaleSupport(const multiscale::MultiScaleOutputData & ms,
   //                            const std::size_t                        size,
@@ -41,7 +43,7 @@ class OutputDataVTK
   const SimData & _data;
   const mesh::Mesh & m_flow_grid;
   const mesh::Mesh & m_mech_grid;
-  VTKOutputConfig m_config;
+  VTKOutputConfig _config;
 };
 
 }

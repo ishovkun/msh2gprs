@@ -6,6 +6,7 @@
 #include "config/MultiscaleConfig.hpp"
 #include "config/PropertyConfig.hpp"
 #include "config/WellConfig.hpp"
+#include "config/VTKOutputConfig.hpp"
 
 #include <map>
 #include <memory> // shared / unique_ptr
@@ -72,14 +73,6 @@ struct DiscreteFractureConfig
   size_t region = 0;    // property table index
 };
 
-
-struct VTKOutputConfig
-{
-  std::string flow_reservoir_grid_file      = "flow_reservoir_mesh.vtk";
-  std::string mechanics_reservoir_grid_file = "mechanics_reservoir_mesh.vtk";
-  std::string fracture_grid_file            = "fractures.vtk";
-  std::string wells_file                    = "wells.vtk";
-};
 
 struct GPRSOutputConfig
 {
