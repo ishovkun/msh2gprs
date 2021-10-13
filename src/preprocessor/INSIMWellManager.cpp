@@ -108,17 +108,25 @@ void INSIMWellManager::create_well_perforations_(Well & well, std::vector<size_t
   well.segment_data.resize( well_vertices.size() );
 
   if ( well.simple() ) {
-
     auto & s = well.segment_data.front();
     s.element_id = well_vertices[0];
     compute_bounding_box_(s);
-    s.legnth = s.bbox[2];
+    s.length = s.bounding_box[2];
     s.direction = {0,0,1};
-
   }
-  // else {
+  else {
+    for (size_t i = 0; i < well_vertices.size(); ++i) {
+      auto & s = well.segment_data[i];
 
-  // }
+      if ( !well.perforated[i] )
+        throw std::runtime_error("write code to handle segments without perforations");
+
+      s.element_id = well_vertices[i];
+      s.length = well.segments[i].first.distance( well.segments[i].second );
+      compute_bounding_box_(s);
+      s.direction = well.segments[i].first - well.segments[i].second;
+    }
+  }
 }
 
 void INSIMWellManager::compute_bounding_box_(discretization::WellSegment & s)
@@ -137,7 +145,8 @@ void INSIMWellManager::compute_bounding_box_(discretization::WellSegment & s)
       }
     }
 
-  s.bounding_box = bbox_max - bbox_min;
+  for (size_t i = 0; i < 3; ++i)
+    s.bounding_box[i] = bbox_max[i] - bbox_min[i];
 }
 
 }  // end namespace gprs_data
