@@ -7,7 +7,6 @@ namespace gprs_data
 {
 
 const int n_entries_per_line = 10;
-static constexpr double transmissibility_conversion_factor = 0.0085267146719160104986876640419948;
 
 
 OutputDataGPRS::OutputDataGPRS(const SimData & data, const GPRSOutputConfig config)
@@ -127,7 +126,7 @@ void OutputDataGPRS::save_trans_data_(std::ofstream & out) const
   std::size_t n_connections = 0;
   for (const auto & con : cons)
   {
-    const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
+    const double transissibility = std::fabs(con.coefficients[0]) * _config.transmissibility_mult;
     if (transissibility > 1e-10) n_connections++;
   }
   out << n_connections << std::endl;
@@ -136,7 +135,7 @@ void OutputDataGPRS::save_trans_data_(std::ofstream & out) const
     assert( con.elements.size() == 2 );
     assert( con.coefficients.size() == 2 );
 
-    const double transissibility = std::fabs(con.coefficients[0]) * transmissibility_conversion_factor;
+    const double transissibility = std::fabs(con.coefficients[0]) * _config.transmissibility_mult;
     if (transissibility > 1e-10)
       out << con.elements[0] << "\t" << con.elements[1] << "\t"
           << std::scientific << transissibility << std::defaultfloat << std::endl;
@@ -535,7 +534,7 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
       out << segment.dof + 1 << "\t";
       // j, k1:k2 open sat_table_number
       out << "1\t1\t1\tOPEN\t1*\t";
-      out << segment.wi * transmissibility_conversion_factor << "\t";
+      out << segment.wi * _config.transmissibility_mult << "\t";
       out << 2*well.radius << "\t";  // adgprs needs well diameter
       out << "/" << std::endl;
     }

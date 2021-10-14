@@ -11,6 +11,7 @@
 #include <map>
 #include <memory> // shared / unique_ptr
 
+static constexpr double TRANSMISSIBILITY_CONVERSION_FACTOR = 0.0085267146719160104986876640419948;
 
 enum class OutputFormat
 {
@@ -78,6 +79,7 @@ struct INSIMOutputConfig
   std::string cv_file    = "cell_data.txt";
   std::string tube_file  = "tube_data.txt";
   std::string wells_file = "wells.txt";
+  double transmissibility_mult = TRANSMISSIBILITY_CONVERSION_FACTOR;
 };
 
 struct GPRSOutputConfig
@@ -94,6 +96,7 @@ struct GPRSOutputConfig
   std::string flow_connection_file   = "fl_face_data.txt";
   std::string mech_trans_update_file = "gm_update_trans.txt";
   std::string fem_file               = "gm_fem.txt";
+  double transmissibility_mult = TRANSMISSIBILITY_CONVERSION_FACTOR;
 };
 
 enum class FracturePlacement
