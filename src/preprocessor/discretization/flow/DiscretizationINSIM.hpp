@@ -8,9 +8,10 @@ class DiscretizationINSIM : public DiscretizationBase {
  public:
   // constructor
   DiscretizationINSIM(DoFNumbering const & dof_numbering,
-                     gprs_data::SimData & data,
-                     std::vector<ControlVolumeData> & cv_data,
-                     std::vector<ConnectionData> & connection_data);
+                      DoFNumbering const & vertex_to_well,
+                      gprs_data::SimData & data,
+                      std::vector<ControlVolumeData> & cv_data,
+                      std::vector<ConnectionData> & connection_data);
 
   // main method. build the discretization
   void build() override;
@@ -30,6 +31,8 @@ class DiscretizationINSIM : public DiscretizationBase {
   void build_connections_(algorithms::EdgeWeightedGraph const & dof_adjacency);
   // compute which cells does u-v line segment intersect, and add up their pore volume
   double approximate_connection_pore_volume_(ControlVolumeData const & u, ControlVolumeData const & v);
+
+  DoFNumbering const & _vertex_to_well;
 };
 
 }  // end namespace discretization

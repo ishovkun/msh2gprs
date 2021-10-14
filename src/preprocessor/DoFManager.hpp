@@ -23,9 +23,17 @@ class DoFManager
   DoFManager(mesh::Mesh & grid,
              const std::vector<int> dfm_markers,
              const std::vector<int> edfm_markers);
+  // map cell/face index -> (p)edfm control volume
+  // takes into account the fact that even though we split the grid with fractures,
+  // edfm fractures don't really split cells (embedded), and, therefore, two split cells
+  // constitute a single control volume
   std::shared_ptr<DoFNumbering> distribute_unsplit_dofs();
+  // map cell/face index -> cedfm control volume
   std::shared_ptr<DoFNumbering> distribute_dofs();
+  // map vertex index -> reservoir dof
   std::shared_ptr<DoFNumbering> distribute_dofs_insim(std::vector<std::vector<size_t>> const & well_vertices) const;
+  // make map : vertex index to well index
+  std::shared_ptr<DoFNumbering> distribute_vertex_to_well_dofs(std::vector<std::vector<size_t>> const & well_vertices) const;
 
   static void remap(std::vector<discretization::ControlVolumeData> & cv_data,
                     std::vector<discretization::ConnectionData>    & connection_data,

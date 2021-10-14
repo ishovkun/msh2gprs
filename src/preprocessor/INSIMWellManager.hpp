@@ -26,7 +26,7 @@ class INSIMWellManager {
   std::vector<Well> const & get_wells() const;
   // setup wells for ouput
   void assign_dofs(discretization::DoFNumbering const & dofs);
-  //
+  // compute well productivity indices
   void compute_well_indices(std::vector<discretization::ControlVolumeData> const & cvs);
   // returns list of well vertices.
   // first component - well index. second component - grid vertex index.

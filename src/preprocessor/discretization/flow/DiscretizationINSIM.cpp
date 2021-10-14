@@ -6,10 +6,12 @@ namespace discretization {
 using namespace algorithms;
 
 DiscretizationINSIM::DiscretizationINSIM(DoFNumbering const & dof_numbering,
+                                         DoFNumbering const & vertex_to_well,
                                          gprs_data::SimData & data,
                                          std::vector<ControlVolumeData> & cv_data,
                                          std::vector<ConnectionData> & connection_data)
     : DiscretizationBase(dof_numbering, data, cv_data, connection_data)
+    , _vertex_to_well(vertex_to_well)
 {}
 
 void DiscretizationINSIM::build()
@@ -70,8 +72,8 @@ algorithms::EdgeWeightedGraph DiscretizationINSIM::build_dof_adjecency_(algorith
 
   for (size_t u = 0; u < m_grid.n_vertices(); ++u)
     if ( m_dofs.has_vertex( u ) ) {
-      size_t const dof_u = m_dofs.vertex_dof( u );
       std::vector<size_t> const neighbors = bfs_(u, vertex_adjacency);
+      size_t const dof_u = m_dofs.vertex_dof( u );
       for (size_t const v : neighbors) {
         size_t const dof_v = m_dofs.vertex_dof( v );
         if ( !g.has_edge( dof_u, dof_v ) )
@@ -141,6 +143,7 @@ std::vector<size_t> DiscretizationINSIM::bfs_(size_t source, algorithms::EdgeWei
   q.push({ source, 0 });
   visited[source] = true;
   std::vector<size_t> neighbors;
+  size_t const source_well = _vertex_to_well.vertex_dof( source );
 
   size_t max_level = std::numeric_limits<size_t>::max();
   bool found = false;
@@ -152,7 +155,7 @@ std::vector<size_t> DiscretizationINSIM::bfs_(size_t source, algorithms::EdgeWei
     q.pop();
 
     // check if we found a correct dof to connect to
-    if ( m_dofs.has_vertex( u ) && u != source ) {
+    if ( m_dofs.has_vertex( u ) && _vertex_to_well.vertex_dof( u ) != source_well ) {
       found = true;
       neighbors.push_back( u );
       max_level = item.level;  // don't search beyond this depth

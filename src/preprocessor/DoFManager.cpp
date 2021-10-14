@@ -113,7 +113,7 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs_insim(std::vector<std:
 
   size_t dof = 0;
   for (auto const & well : well_vertices)
-    for (size_t v : well)
+    for (size_t const v : well)
       dofs->m_vertices[v] = dof++;
 
   dofs->m_n_dofs = dof;
@@ -121,5 +121,16 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs_insim(std::vector<std:
   return dofs;
 }
 
+std::shared_ptr<DoFNumbering> DoFManager::distribute_vertex_to_well_dofs(std::vector<std::vector<size_t>> const & well_vertices) const
+{
+  std::shared_ptr<DoFNumbering> dofs = std::make_shared<DoFNumbering>();
+  const auto & grid = m_grid;
+  dofs->m_vertices.resize( grid.n_vertices(), dofs->m_unmarked );
+  for (size_t iwell = 0; iwell < well_vertices.size(); ++iwell)
+    for (size_t const v : well_vertices[iwell])
+      dofs->m_vertices[v] = iwell;
+  dofs->m_n_dofs = well_vertices.size();
+  return dofs;
+}
 
 }  // end namespace gprs_data

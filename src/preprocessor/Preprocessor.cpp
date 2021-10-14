@@ -302,7 +302,9 @@ void Preprocessor::build_flow_discretization_()
   std::unique_ptr<INSIMWellManager> insim_mgr = nullptr;
   if ( _config.flow_discretization == FlowDiscretizationType::insim ) {
     insim_mgr = std::make_unique<INSIMWellManager>( _config.wells, data.grid, *data.grid_searcher );
-    p_split_dofs = dof_manager.distribute_dofs_insim( insim_mgr->get_well_vertices() );
+    auto const well_vertices = insim_mgr->get_well_vertices();
+    p_split_dofs = dof_manager.distribute_dofs_insim( well_vertices );
+    p_unsplit_dofs = dof_manager.distribute_vertex_to_well_dofs( well_vertices );
   }
   else {
     p_split_dofs = dof_manager.distribute_dofs();
@@ -329,7 +331,7 @@ void Preprocessor::build_flow_discretization_()
     break;
     case ( FlowDiscretizationType::insim ):
       logging::important() << "INSIM discretization is chosen" << std::endl;
-      flow_discr = std::make_unique<DiscretizationINSIM>(*p_split_dofs, data, data.flow.cv, data.flow.con);
+      flow_discr = std::make_unique<DiscretizationINSIM>(*p_split_dofs, *p_unsplit_dofs, data, data.flow.cv, data.flow.con);
     break;
   }
   // if we do cedfm use the split matrix dof numbering
