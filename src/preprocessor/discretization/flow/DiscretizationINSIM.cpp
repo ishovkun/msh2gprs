@@ -70,6 +70,12 @@ algorithms::EdgeWeightedGraph DiscretizationINSIM::build_dof_adjecency_(algorith
 {
   EdgeWeightedGraph g( m_dofs.n_dofs() );
 
+  /*
+  ** Start a bfs from each dof vertex.
+  ** Search until we found a connection at a particular search depth "level".
+  ** Even if we found a well, keep searching until we look at all wells at this depth, and then stop.
+  ** NOTE: there is room for optimization, we probably should not consider paths with vertices connected previously.
+   */
   for (size_t u = 0; u < m_grid.n_vertices(); ++u)
     if ( m_dofs.has_vertex( u ) ) {
       std::vector<size_t> const neighbors = bfs_(u, vertex_adjacency);
