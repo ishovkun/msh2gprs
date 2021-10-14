@@ -127,4 +127,43 @@ std::vector<std::vector<size_t>> INSIMWellManager::get_well_vertices() const
   return ans;
 }
 
+WellVTKGrid INSIMWellManager::get_well_vtk_data() const
+{
+  WellVTKGrid viz;
+
+  for (auto const & well : _wells) {
+    if ( well.simple() ) {
+      /*
+      ** The idea is to simply take two vertical-ish edges attached to the well vertex and
+      ** form a line segment based on their coordinates.
+      ** This is stupid but should suffice for the visualization purposes.
+       */
+      angem::Point<3,double> well_vertex_1 = well.coordinate;
+      angem::Point<3,double> well_vertex_2 = well.coordinate;
+      auto const attached_cells = _grid.vertex_cells( well.segment_data[0].element_id );
+      for (auto const * const cell : attached_cells)
+        for (size_t const v : cell->vertices()) {
+          auto const &coord = _grid.vertex(v);
+          well_vertex_1[2] = std::max( well_vertex_1.z(), coord.z() );
+          well_vertex_2[2] = std::min( well_vertex_2.z(), coord.z() );
+        }
+      viz.indices.emplace_back();
+      auto & segment = viz.indices.back();
+      segment.first = viz.vertices.insert(well_vertex_1);
+      segment.second = viz.vertices.insert(well_vertex_2);
+    }
+    else {
+      // simply take line segments from user-provided data
+      for (auto const & s : well.segments) {
+        viz.indices.emplace_back();
+        auto & segment = viz.indices.back();
+        segment.first = viz.vertices.insert(s.first);
+        segment.second = viz.vertices.insert(s.second);
+      }
+    }
+  }
+
+  return viz;
+}
+
 }  // end namespace gprs_data

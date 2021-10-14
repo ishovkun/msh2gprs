@@ -7,6 +7,7 @@
 #include "intersections/GridIntersectionSearcher.hpp"     // provides GridIntersectionSearcher
 #include "mesh/Mesh.hpp"                                  // provides mesh::Mesh
 #include "Well.hpp"                                       // provides Well
+#include "WellVTKData.hpp"
 #include "multiscale/MultiScaleOutputData.hpp"            // provides multiscale::MultiScaleOutputData
 #include "angem/Tensor2.hpp"                              // provides angem::Tensor2
 #include <unordered_map>
@@ -56,12 +57,6 @@ struct FlowData
   std::vector<size_t> custom_idx;
   std::vector<discretization::ControlVolumeData> cv;         // control volumes
   std::vector<discretization::ConnectionData> con;           // connections
-};
-
-struct WellVTKGrid
-{
-  angem::PointSet<3,double> vertices;  // set of well coordinatees: used for vtk output.
-  std::vector<std::pair<std::size_t,std::size_t>> indices;
 };
 
 struct SimData

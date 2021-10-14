@@ -5,6 +5,7 @@
 #include "discretization/flow/DoFNumbering.hpp"
 #include "discretization/flow/ControlVolumeData.hpp"
 #include "Well.hpp"
+#include "WellVTKData.hpp"  // for output visualization
 
 namespace gprs_data {
 
@@ -31,6 +32,9 @@ class INSIMWellManager {
   // first component - well index. second component - grid vertex index.
   // single well can span over several grid vertices.
   std::vector<std::vector<size_t>> get_well_vertices() const;
+
+  //
+  WellVTKGrid get_well_vtk_data() const;
 
   virtual ~INSIMWellManager() = default;
 

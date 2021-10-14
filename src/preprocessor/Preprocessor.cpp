@@ -348,12 +348,12 @@ void Preprocessor::build_flow_discretization_()
     WellManager well_mgr(_config.wells, data, *data.flow_numbering, _config.flow_discretization);
     well_mgr.setup();
   }
-  else if ( _config.flow_discretization !=  FlowDiscretizationType::insim ) {
+  else if ( _config.flow_discretization == FlowDiscretizationType::insim ) {
     logging::log() << "compute well productivity" << std::endl;
     insim_mgr->assign_dofs( *p_split_dofs );
     insim_mgr->compute_well_indices(data.flow.cv);
+    data.well_vtk = insim_mgr->get_well_vtk_data();
   }
-  // exit(0);
 
   // multiscale idea
   if ( _config.ms_flow.part_type != MSPartitioning::no_partitioning )
