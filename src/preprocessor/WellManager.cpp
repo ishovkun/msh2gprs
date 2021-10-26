@@ -27,7 +27,7 @@ void WellManager::setup()
     }
     else
     {
-      throw std::invalid_argument("Segmented wells not set up yet");
+      // throw std::invalid_argument("Segmented wells not set up yet");
       setup_segmented_well_(well);
     }
 
@@ -111,12 +111,52 @@ void WellManager::setup_simple_well_(Well & well)
 void WellManager::setup_segmented_well_(Well & well)
 {
   // setup well with segments
-  // std::cout << "complex well " << well.name << std::endl;
-  // const auto & grid = m_data.grid;
+  std::cout << "complex well " << well.name << std::endl;
+  assert ( _data.grid_searcher && "Grid searcher is not defined for segmented wells to be set up");
+
+  const auto & grid = _data.grid;
   // m_well_connected_cells.emplace_back();
-  // for (std::size_t isegment = 0; isegment < well.segments.size(); ++isegment)
-  // {
-  //   auto segment = well.segments[isegment];
+  for (std::size_t isegment = 0; isegment < well.segments.size(); ++isegment)
+  {
+    auto const & seg_input = well.segments[isegment];
+  // std::vector<std::pair<angem::Point<3,double>, angem::Point<3,double>>> segments;
+
+    angem::LineSegment<double> segment(seg_input.first, seg_input.second);
+    std::unordered_set<size_t> processed_cells;
+    for (const size_t cell_index : _data.grid_searcher->collision(segment))
+    {
+      const auto & cell = _data.grid.cell(cell_index);
+      const auto p_poly_cell = cell.polyhedron();
+      std::vector<Point> section_data;
+      if (angem::collision(segment, *p_poly_cell, section_data, 1e-6))
+      {
+        if (section_data.size() != 2)
+        {
+          std::cout << "just touching cell " << cell.index() << " ignoring"<< std::endl;
+          section_data.clear();
+          continue;
+        }
+
+        well.segment_data.emplace_back();
+        discretization::WellSegment &segment = well.segment_data.back();
+        segment.dof = _dofs.cell_dof(cell_index);
+        segment.element_id = cell_index;
+        segment.length = section_data[0].distance(section_data[1]);
+        segment.perforated = true;
+        segment.bounding_box = get_bounding_box_(cell_index);
+        segment.direction = section_data[1] - section_data[0];
+        segment.direction.normalize();
+
+        { // vtk visualization
+          auto &viz = _data.well_vtk;
+          viz.indices.emplace_back();
+          auto &segment = viz.indices.back();
+          segment.first = viz.vertices.insert(section_data[0]);
+          segment.second = viz.vertices.insert(section_data[1]);
+        }
+      }
+    }
+
   //   std::vector<Point> section_data;
   //   for (auto cell = grid.begin_cells(); cell != grid.end_cells(); ++cell)
   //   {
@@ -150,7 +190,7 @@ void WellManager::setup_segmented_well_(Well & well)
   //       section_data.clear();
   //     }
   //   }
-  // }
+  }
 
   // well.reference_depth_set = true;
 

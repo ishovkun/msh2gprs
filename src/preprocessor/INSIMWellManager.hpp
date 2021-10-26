@@ -23,7 +23,7 @@ class INSIMWellManager {
                    GridIntersectionSearcher & searcher);
 
   // returns list of wells.
-  std::vector<Well> const & get_wells() const;
+  std::vector<Well> const & get_wells() const {return _wells;}
   // setup wells for ouput
   void assign_dofs(discretization::DoFNumbering const & dofs);
   // compute well productivity indices
@@ -32,8 +32,7 @@ class INSIMWellManager {
   // first component - well index. second component - grid vertex index.
   // single well can span over several grid vertices.
   std::vector<std::vector<size_t>> get_well_vertices() const;
-
-  //
+  // get lists of nodes and line segments in order to dump it as a vtk file
   WellVTKGrid get_well_vtk_data() const;
 
   virtual ~INSIMWellManager() = default;

@@ -355,6 +355,7 @@ void Preprocessor::build_flow_discretization_()
     insim_mgr->assign_dofs( *p_split_dofs );
     insim_mgr->compute_well_indices(data.flow.cv);
     data.well_vtk = insim_mgr->get_well_vtk_data();
+    data.wells = insim_mgr->get_wells();
   }
 
   // multiscale idea

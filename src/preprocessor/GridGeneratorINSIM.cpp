@@ -92,7 +92,7 @@ GridGeneratorINSIM::operator mesh::Mesh() const
 #ifdef WITH_GMSH
   GmshInterface::initialize_gmsh(/*verbose = */ false);
   GmshInterface::build_triangulation_embedded_points(*_bbox, _vertices, grid);
-GmshInterface::finalize_gmsh();
+  GmshInterface::finalize_gmsh();
 #endif
   // mesh::IO::VTKWriter::write_geometry(grid, "test.vtk");
 

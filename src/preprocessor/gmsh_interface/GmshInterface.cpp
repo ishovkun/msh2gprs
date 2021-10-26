@@ -516,8 +516,9 @@ void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double
   std::vector<int> embedded_tags;
   for (size_t i = 0; i < embedded.size(); ++i) {
     int tag = offset + i;
+    double const element_size = 20.f; // pick default element size
     gmsh::model::geo::addPoint(embedded[i].x(), embedded[i].y(), embedded[i].z(),
-                               /* element_size */ 0, tag);
+                               element_size, tag);
     embedded_tags.push_back(tag);
   }
 
@@ -530,14 +531,14 @@ void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double
   gmsh::model::mesh::generate(3);
 
   // gmsh::write("test.msh");
-  std::vector<size_t> vertex_numbering = extract_grid_(grid);
+  extract_grid_(grid);
 }
 
 void GmshInterface::insert_boundary_data_(angem::Polyhedron<double> const & bnd, double const n_vertices_on_edge)
 {
   auto const & vertices = bnd.get_points();
   const auto edges = bnd.get_edges();
-  insert_vertices_(vertices, edges, n_vertices_on_edge, /*first tag = */1);
+  insert_vertices_(vertices, edges, n_vertices_on_edge, /*first tag = */ 1);
   insert_boundary_edges_(edges);
   insert_boundary_faces_(bnd);
 
