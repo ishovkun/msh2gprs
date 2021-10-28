@@ -519,7 +519,7 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
     assert( !well.segment_data.empty() && "Well does not contain connection data" );
     out << well.segment_data.front().dof << " 1 ";
     // reference depth
-    out << -well.reference_depth << " /" << std::endl;
+    out << well.reference_depth << " /" << std::endl;
   }
   out << "/" << std::endl << std::endl;
 

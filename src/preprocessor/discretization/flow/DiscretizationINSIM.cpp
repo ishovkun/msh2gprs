@@ -51,9 +51,9 @@ void DiscretizationINSIM::build_connections_(algorithms::EdgeWeightedGraph const
     const double Kp2 = (K2 * (c2 - cp).normalize()).norm();
 
     double const pore_volume = approximate_connection_pore_volume_(cell1, cell2);
-    double const poro = 0.5 * (cell1.porosity + cell2.porosity);
+    double const poro = 0.5 * ( cell1.porosity + cell2.porosity );
     double const connection_volume = pore_volume / poro;
-    double const d = cell1.center.distance(cell2.center);
+    double const d = cell1.center.distance( cell2.center );
     con.area = connection_volume / d;  // approximately :-)
     con.distances = {d/2, d/2};        // storage for tube length
 
