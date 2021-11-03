@@ -637,6 +637,10 @@ void YamlParser::section_mesh(const YAML::Node & node)
       conf.type = MeshType::insim;
       subsection_grid_insim(it->second);
     }
+    else if (key == "rotate")
+    {
+      conf.rotations.push_back( subsection_rotation_( it->second ) );
+    }
     else throw std::invalid_argument("Unknown key " + key);
   }
 }
@@ -669,6 +673,7 @@ void YamlParser::subsection_grid_cartesian(const YAML::Node & node)
       origin = it->second.as<std::vector<double>>();
     else if (key == "corner")
       corner = it->second.as<std::vector<double>>();
+    else throw std::invalid_argument("invalid key " + key);
   }
 
   const auto diff = corner - origin;
@@ -750,5 +755,24 @@ FlowDiscretizationType YamlParser::parse_flow_discretization_(std::string const 
   else throw std::invalid_argument("Invalid flow discretization type: " + value);
   return FlowDiscretizationType::tpfa_edfm;  // shut compiler up
 }
+
+angem::Rotation<double> YamlParser::subsection_rotation_(const YAML::Node & node) const
+{
+  angem::Point<3,double> center(0.f, 0.f, 0.f), axis(1.f, 0.f, 0.f);
+  double angle = 0.f;
+  for (auto it = node.begin(); it!=node.end(); ++it) {
+    std::string const key = it->first.as<std::string>();
+    logging::log() << "Reading rotation parameter: " << key  << std::endl;
+    if ( key == "center" )
+      center = it->second.as<std::vector<double>>();
+    else if ( key == "axis" )
+      axis =  it->second.as<std::vector<double>>();
+    else if ( key == "angle" )
+      angle = it->second.as<double>() * M_PI / 180.f;
+    else throw std::invalid_argument("Invalid key " + key);
+  }
+  return angem::Rotation<double>(center, axis, angle);
+}
+
 
 }  // end namespace

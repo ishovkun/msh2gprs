@@ -32,6 +32,7 @@ class YamlParser
   void subsection_grid_cartesian(const YAML::Node & node);
   void subsection_grid_refinement(const YAML::Node & node);
   void subsection_grid_insim(const YAML::Node & node);
+  angem::Rotation<double> subsection_rotation_(const YAML::Node & node) const;
   void parse_flow_discretization(std::string const & value);
   FlowDiscretizationType parse_flow_discretization_(std::string const & value) const;
   // subsections

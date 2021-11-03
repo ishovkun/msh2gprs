@@ -1,5 +1,7 @@
 #pragma once
 #include "mesh/CartesianMeshParameters.hpp"
+#include "angem/Rotation.hpp"
+
 
 enum class MeshType
 {
@@ -33,4 +35,5 @@ struct MeshConfig
   mesh::CartesianMeshParameters cartesian;
   RefinementParameters refinement;
   INSIMMeshConfig insim;
+  std::vector<angem::Rotation<double>> rotations;
 };

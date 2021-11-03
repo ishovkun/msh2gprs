@@ -66,6 +66,9 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
     logging::log() << "OK" << std::endl;
   }
   else throw std::invalid_argument("Invalid mesh format");
+
+  for (auto const & transform : _config.mesh.rotations)
+    transform.apply(data.grid.vertices().begin(), data.grid.vertices().end());
 }
 
 void Preprocessor::run()
