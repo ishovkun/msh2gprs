@@ -41,6 +41,8 @@ class INSIMWellManager {
   std::vector<size_t> find_well_vertices_(Well const & well);
   void create_well_perforations_(Well & well, std::vector<size_t> const & well_vertices);
   void compute_bounding_box_(discretization::WellSegment & segment);
+  // reference depth is deepest vertex in z direction (unless it's prescripbed in config)
+  double compute_reference_depth_(Well const & well) const;
 
 
   void setup_wells_();

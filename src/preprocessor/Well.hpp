@@ -27,7 +27,7 @@ class Well
   // whether a segment is perforated
   std::vector<bool> perforated;
   angem::Point<3,double> coordinate;
-  double radius, reference_depth;
+  double radius, reference_depth{0.f};
   bool reference_depth_set = false;
 
   bool _force_frac_connect;

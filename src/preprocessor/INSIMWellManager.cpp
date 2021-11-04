@@ -24,10 +24,12 @@ void INSIMWellManager::setup_wells_()
   for (const auto & conf : _config)
   {
     Well well(conf);
+
     auto const well_vertices = find_well_vertices_(well);
     if ( well_vertices.empty() )
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
 
+    well.reference_depth = compute_reference_depth_(well);
     create_well_perforations_(well, well_vertices);
 
     _wells.push_back( std::move(well) );
@@ -164,6 +166,23 @@ WellVTKGrid INSIMWellManager::get_well_vtk_data() const
   }
 
   return viz;
+}
+
+double INSIMWellManager::compute_reference_depth_(Well const & well) const
+{
+  if ( std::fabs(well.reference_depth) > 1e-10 )
+    return well.reference_depth;
+
+  if ( well.simple() )
+    return - well.coordinate[2];
+  else {
+    double deepest = std::numeric_limits<double>::max();
+    for (auto const & segment : well.segments) {
+      deepest = std::min( segment.first[2], deepest );
+      deepest = std::min( segment.second[2], deepest );
+    }
+    return -deepest;
+  }
 }
 
 }  // end namespace gprs_data
