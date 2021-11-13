@@ -15,7 +15,7 @@ INSIMWellManager::INSIMWellManager(std::vector<WellConfig> const & wells, mesh::
 void INSIMWellManager::compute_well_indices(std::vector<discretization::ControlVolumeData> const & cvs)
 {
   for (auto & well : _wells)
-    for (auto  & s : well.segment_data)
+    for (auto  & s : well.perforations)
       WellManager::compute_WI_matrix(well, s, cvs[s.dof].permeability);
 }
 
@@ -39,28 +39,32 @@ void INSIMWellManager::setup_wells_()
 std::vector<size_t> INSIMWellManager::find_well_vertices_(Well const & well)
 {
   std::vector<size_t> ans;
-  for (size_t j = 0; j < well.perforated.size(); ++j)
-  {
+  for (size_t j = 0; j < well.segment_perforated.size(); ++j)
+    if ( well.segment_perforated[j] )
+    {
       // find the center of the segment
-      angem::Point<3,double> point;
-      if ( well.simple() == 1 ) point = well.coordinate;
-      else point = 0.5 * (well.segments[j].first + well.segments[j].second);
+      angem::Point<3, double> point;
+      if (well.simple() == 1)
+        point = well.coordinate;
+      else
+        point = 0.5 * (well.segments[j].first + well.segments[j].second);
 
       // find cell that contains the point
       size_t const cell_idx = _searcher.find_cell(point);
+      if ( cell_idx == _grid.n_cells_total() )
+        throw std::invalid_argument("could not find matching grid cell");
 
       // find closest vertex within the cell
       double mindist = std::numeric_limits<double>::max();
       size_t closest = std::numeric_limits<size_t>::max();
-      for (size_t const v : _grid.cell(cell_idx).vertices())
-      {
+      for (size_t const v : _grid.cell(cell_idx).vertices()) {
         double const d = _grid.vertex(v).distance(point);
-        if ( d < mindist ) {
+        if (d < mindist) {
           mindist = d;
           closest = v;
         }
       }
-      ans.push_back( closest );
+      ans.push_back(closest);
     }
 
   return ans;
@@ -69,34 +73,35 @@ std::vector<size_t> INSIMWellManager::find_well_vertices_(Well const & well)
 void INSIMWellManager::assign_dofs(discretization::DoFNumbering const & dofs)
 {
   for (auto & well : _wells)
-    for (auto & segment : well.segment_data)
+    for (auto & segment : well.perforations)
       segment.dof = dofs.vertex_dof( segment.element_id );
 }
 
 void INSIMWellManager::create_well_perforations_(Well & well, std::vector<size_t> const & well_vertices)
 {
-  well.segment_data.resize( well_vertices.size() );
+  well.perforations.resize( well_vertices.size() );
 
   if ( well.simple() ) {
-    auto & s = well.segment_data.front();
+    auto & s = well.perforations.back();
     s.element_id = well_vertices[0];
     compute_bounding_box_(s);
     // well.segments.push_back({ p1, p2 });
     s.length = s.bounding_box[2];
     s.direction = {0,0,1};
+    s.perforated = true;
   }
   else {
-    for (size_t i = 0; i < well_vertices.size(); ++i) {
-      auto & s = well.segment_data[i];
-
-      if ( !well.perforated[i] )
-        throw std::runtime_error("write code to handle segments without perforations");
-
-      s.element_id = well_vertices[i];
-      s.length = well.segments[i].first.distance( well.segments[i].second );
-      compute_bounding_box_(s);
-      s.direction = well.segments[i].first - well.segments[i].second;
-    }
+    for (size_t i = 0, vertex = 0; i < well.segment_perforated.size(); ++i)
+      if (well.segment_perforated[i])
+      {
+        auto & s = well.perforations[vertex];
+        s.element_id = well_vertices[vertex];
+        s.length = well.segments[i].first.distance( well.segments[i].second );
+        compute_bounding_box_(s);
+        s.direction = well.segments[i].first - well.segments[i].second;
+        s.perforated = well.segment_perforated[i];
+        vertex++;
+      }
   }
 }
 
@@ -124,7 +129,7 @@ std::vector<std::vector<size_t>> INSIMWellManager::get_well_vertices() const
 {
   std::vector<std::vector<size_t>> ans( _wells.size() );
   for (size_t i = 0; i < _wells.size(); ++i)
-    for (auto const & s : _wells[i].segment_data)
+    for (auto const & s : _wells[i].perforations)
       ans[i].push_back( s.element_id );
   return ans;
 }
@@ -142,7 +147,7 @@ WellVTKGrid INSIMWellManager::get_well_vtk_data() const
        */
       angem::Point<3,double> well_vertex_1 = well.coordinate;
       angem::Point<3,double> well_vertex_2 = well.coordinate;
-      auto const attached_cells = _grid.vertex_cells( well.segment_data[0].element_id );
+      auto const attached_cells = _grid.vertex_cells( well.perforations[0].element_id );
       for (auto const * const cell : attached_cells)
         for (size_t const v : cell->vertices()) {
           auto const &coord = _grid.vertex(v);

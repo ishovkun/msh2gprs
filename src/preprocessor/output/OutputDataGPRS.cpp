@@ -516,26 +516,30 @@ void OutputDataGPRS::saveWells(const std::string file_name) const
   for (const auto & well : _data.wells)
   {
     out << well.name << "\tGROUP1\t";
-    assert( !well.segment_data.empty() && "Well does not contain connection data" );
-    out << well.segment_data.front().dof << " 1 ";
+    assert( !well.perforations.empty() && "Well does not contain connection data" );
+    out << well.perforations.front().dof << " 1 ";
     // reference depth
     out << well.reference_depth << " /" << std::endl;
   }
   out << "/" << std::endl << std::endl;
 
   out << "COMPDAT" << std::endl;
-  out << "-- name\tcell\tidk\tidk\tidk\topen\tidk\tWI\trad" << std::endl;
+  out << "-- name\tcell\tj\tk_begin\tk_end\topen/shut\tsat_table\tWI\tdiameter\tK\tSkin\tD-factor\tDirection\tsegment" << std::endl;
   for (const auto & well : _data.wells)
   {
-    // for (std::size_t i=0; i<well.connected_volumes.size(); ++i)
-    for (const auto & segment : well.segment_data)
+    for (const auto & segment : well.perforations)
+      if ( segment.perforated )  // don't output shut perforations, adgprs still injects there
     {
       out << well.name << "\t";
-      out << segment.dof + 1 << "\t";
-      // j, k1:k2 open sat_table_number
-      out << "1\t1\t1\tOPEN\t1*\t";
+      out << segment.dof + 1 << "\t";  // cell index i (cartesian), just cell index for unstructured grids
+      out << 1 << "\t";                // cell index j (cartesian), skip for unstructured grids
+      out << 1 << "\t";                // cell index k_begin (cartesian), skip for unstructured grids
+      out << 1 << "\t";                // cell index k_end   (cartesian), skip for unstructured grids
+      if ( segment.perforated ) out << "OPEN" << "\t";
+      else                      out << "SHUT" << "\t";
+      out << "1*" << "\t";                // default saturation table
       out << segment.wi * _config.transmissibility_mult << "\t";
-      out << 2*well.radius << "\t";  // adgprs needs well diameter
+      out << 2*well.radius << "\t";  // diameter
       out << "/" << std::endl;
     }
   }

@@ -5,7 +5,7 @@ Well::Well(const WellConfig & config)
     :
     name(config.name),
     radius(config.radius),
-    perforated(config.perforated),
+    segment_perforated(config.perforated),
     _force_frac_connect(config.force_connect_fractures)
 {
   assert(!config.coordinates.empty());
@@ -18,7 +18,7 @@ Well::Well(const WellConfig & config)
   }
   else
   {
-    segments.reserve( perforated.size() );
+    segments.reserve( segment_perforated.size() );
     segments.emplace_back();
     bool segment_open = false;
     std::size_t i = 0;

@@ -8,7 +8,9 @@ namespace gprs_data {
 using Location = std::array<int, 3>;
 
 Mapper::Mapper(const mesh::Mesh & grid)
-    : _grid(grid), _cartesian(build_grid_()), _num_cells_cached(_grid.n_cells_total())
+    : _grid(grid)
+    , _cartesian( build_grid_() )
+    , _num_cells_cached(_grid.n_cells_total())
 {
   _cartesian.log_stats();
   _mapping.resize(_cartesian.n_cells());
@@ -77,6 +79,7 @@ UniformCartesianGrid Mapper::build_grid_() const
   for (size_t i = 0; i < 3; ++i)
   {
     dims[i] = (size_t)((glob_max[i] - glob_min[i]) /(double) stepping[i]);
+    dims[i] = std::max((size_t)1, dims[i]);
     stepping[i] = (glob_max[i] - glob_min[i]) / dims[i];
   }
   return UniformCartesianGrid(glob_min, stepping, dims);

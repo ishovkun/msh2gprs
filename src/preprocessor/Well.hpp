@@ -25,12 +25,12 @@ class Well
   // user-input data, a well is defined as a piecewise-linear line
   std::vector<std::pair<angem::Point<3,double>, angem::Point<3,double>>> segments;
   // whether a segment is perforated
-  std::vector<bool> perforated;
+  std::vector<bool> segment_perforated;
   angem::Point<3,double> coordinate;
   double radius, reference_depth{0.f};
   bool reference_depth_set = false;
 
   bool _force_frac_connect;
   // perforations: well-to-control_volume connections
-  std::vector<discretization::WellSegment> segment_data;
+  std::vector<discretization::WellSegment> perforations;
 };

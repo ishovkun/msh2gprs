@@ -9,7 +9,7 @@ UniformCartesianGrid::UniformCartesianGrid(const angem::Point<3,double> &origin,
                                            const std::array<size_t,3> &dims)
     : _origin(origin), _stepping(stepping), _dims(dims)
 {
-  if (std::any_of(_dims.begin(), _dims.end(), [](size_t value) { return value == 0; }))
+  if ( std::any_of(_dims.begin(), _dims.end(), [](size_t value) { return value == 0; }) )
     throw std::invalid_argument("Wrong grid dimensions");
 }
 
@@ -52,7 +52,7 @@ bool UniformCartesianGrid::is_valid_cell(int i, int j, int k) const noexcept
 
 size_t UniformCartesianGrid::find_cell(const angem::Point<3,double> & p) const
 {
-  if (!in_bounds(p))
+  if ( !in_bounds(p) )
     throw std::invalid_argument("point " + std::to_string(p[0]) + " " +
                                 std::to_string(p[1]) + " " +
                                 std::to_string(p[2]) + " not in bounds");

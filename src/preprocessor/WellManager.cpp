@@ -32,7 +32,7 @@ void WellManager::setup()
     }
 
     compute_well_index_(well);
-    if (well.segment_data.empty())
+    if (well.perforations.empty())
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
     _data.wells.push_back( std::move(well) );
   }
@@ -75,7 +75,7 @@ void WellManager::setup_simple_well_fast_(Well & well)
       setup_simple_well_to_fracture_(well, cell_index);
     }
   }
-  if ( well.segment_data.empty() )
+  if ( well.perforations.empty() )
     throw std::invalid_argument("Well " + well.name + " has no connected volumes");
 }
 
@@ -104,7 +104,7 @@ void WellManager::setup_simple_well_(Well & well)
       // single edfm segments are not merged, we process all of them
       setup_simple_well_to_fracture_(well, cell->index());
     }
-  if ( well.segment_data.empty() )
+  if ( well.perforations.empty() )
     throw std::invalid_argument("Well " + well.name + " has no connected volumes");
 }
 
@@ -137,12 +137,12 @@ void WellManager::setup_segmented_well_(Well & well)
           continue;
         }
 
-        well.segment_data.emplace_back();
-        discretization::WellSegment &segment = well.segment_data.back();
+        well.perforations.emplace_back();
+        discretization::WellSegment &segment = well.perforations.back();
         segment.dof = _dofs.cell_dof(cell_index);
         segment.element_id = cell_index;
         segment.length = section_data[0].distance(section_data[1]);
-        segment.perforated = true;
+        segment.perforated = well.segment_perforated[isegment];
         segment.bounding_box = get_bounding_box_(cell_index);
         segment.direction = section_data[1] - section_data[0];
         segment.direction.normalize();
@@ -236,7 +236,7 @@ double get_bounding_interval(const angem::Point<3,double>     & direction,
 
 void WellManager::compute_well_index_(Well &well)
 {
-  for (auto & segment : well.segment_data)
+  for (auto & segment : well.perforations)
   {
     const auto & cv = _data.flow.cv[segment.dof];
     if (cv.type == discretization::ControlVolumeType::cell)  // matrix
@@ -245,7 +245,7 @@ void WellManager::compute_well_index_(Well &well)
       compute_WI_frac_(well, segment);
   }
 
-  const double wi_sum = std::accumulate(well.segment_data.begin(), well.segment_data.end(),
+  const double wi_sum = std::accumulate(well.perforations.begin(), well.perforations.end(),
                                         0.0, [](const double sofar, const auto & segment)
                                              {return segment.wi + sofar;});
   if (wi_sum == 0)
@@ -293,8 +293,8 @@ bool WellManager::setup_simple_well_matrix_(Well & well, size_t cell_index)
       segment.second = viz.vertices.insert(section_data[1]);
     }
 
-    well.segment_data.emplace_back();
-    discretization::WellSegment & segment = well.segment_data.back();
+    well.perforations.emplace_back();
+    discretization::WellSegment & segment = well.perforations.back();
     segment.dof = _dofs.cell_dof(cell_index);
     segment.element_id = cell_index;
     segment.length = segment_length;
@@ -344,8 +344,8 @@ void WellManager::setup_simple_well_to_fracture_(Well & well, size_t cell_index)
         if (poly.point_inside(section_data.front(), /*tol=*/ 0.01 * h) ||
             section_data.size() == 2)
         {
-          well.segment_data.emplace_back();
-          auto & segment = well.segment_data.back();
+          well.perforations.emplace_back();
+          auto & segment = well.perforations.back();
           segment.dof = _dofs.face_dof(face->index());
           const auto & plane = poly.plane();
           const Point tangent1 = plane.project_vector({0, 0, 1}).normalize();
