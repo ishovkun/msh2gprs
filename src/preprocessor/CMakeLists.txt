@@ -20,7 +20,7 @@ ADD_LIBRARY(preprocessor
   bc_expressions/value_functions.cpp
   property_expressions/value_functions.cpp
   Well.cpp
-  GridGeneratorINSIM.cpp
+  insim_tools/GridGeneratorINSIM.cpp
   discretization/flow/DiscretizationBase.cpp
   discretization/flow/DiscretizationTPFA.cpp
   discretization/flow/DiscretizationDFM.cpp

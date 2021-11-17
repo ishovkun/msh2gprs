@@ -26,7 +26,7 @@
 #include "output/OutputDataPostprocessor.hpp"
 #include "output/OutputDataINSIM.hpp"
 #include "logger/Logger.hpp"
-#include "GridGeneratorINSIM.hpp"
+#include "insim_tools/GridGeneratorINSIM.hpp"
 #include <string>
 #include <chrono>  // timing
 
