@@ -3,7 +3,7 @@
 #include "mesh/Mesh.hpp"
 #include "LayerDataMSRSB.hpp"
 #include "MultiScaleOutputData.hpp"
-#include "UnionFindWrapper.hpp"
+#include "algorithms/UnionFindWrapper.hpp"
 #include "tuple_hash.hpp"
 #include <algorithm>  // std::max_element
 #include <vector>

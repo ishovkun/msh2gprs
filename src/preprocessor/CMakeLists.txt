@@ -44,7 +44,7 @@ ADD_LIBRARY(preprocessor
   algorithms/IndexMinPQ.cpp
   algorithms/EdgeWeightedGraph.cpp
   algorithms/DijkstraSubgraph.cpp
-  UnionFind.cpp
+  algorithms/UnionFind.cpp
   intersections/GridIntersectionSearcher.cpp
   intersections/UniformCartesianGrid.cpp
   intersections/Mapper.cpp
