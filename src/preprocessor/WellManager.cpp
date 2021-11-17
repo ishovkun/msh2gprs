@@ -128,9 +128,9 @@ void WellManager::setup_segmented_well_(Well & well)
       const auto & cell = _data.grid.cell(cell_index);
       const auto p_poly_cell = cell.polyhedron();
       std::vector<Point> section_data;
-      if (angem::collision(segment, *p_poly_cell, section_data, 1e-6))
+      if ( angem::collision(segment, *p_poly_cell, section_data, 1e-6) )
       {
-        if (section_data.size() != 2)
+        if (section_data.size() < 2)
         {
           std::cout << "just touching cell " << cell.index() << " ignoring"<< std::endl;
           section_data.clear();

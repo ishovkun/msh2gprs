@@ -512,11 +512,12 @@ void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double
   gmsh::model::geo::synchronize();
 
   // insert_vertices_(embedded)
-  size_t offset = boundary.get_points().size() + 1;
+  size_t const offset = boundary.get_points().size() + 1;
+  auto const c = boundary.center();
+  double const element_size = c.distance( boundary.get_points()[0] );
   std::vector<int> embedded_tags;
   for (size_t i = 0; i < embedded.size(); ++i) {
-    int tag = offset + i;
-    double const element_size = 20.f; // pick default element size
+    int const tag = offset + i;
     gmsh::model::geo::addPoint(embedded[i].x(), embedded[i].y(), embedded[i].z(),
                                element_size, tag);
     embedded_tags.push_back(tag);

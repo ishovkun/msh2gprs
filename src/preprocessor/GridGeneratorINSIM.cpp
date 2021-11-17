@@ -25,6 +25,47 @@ GridGeneratorINSIM::GridGeneratorINSIM(INSIMMeshConfig const & config, std::vect
     throw std::invalid_argument("Invalid padding fraction for INSIM grid generator");
 
   generate_bounding_box_();
+  extend_bounding_box_();
+}
+
+void GridGeneratorINSIM::extend_bounding_box_()
+{
+  // double const margin = _config.padding_fraction * find_characteristic_length_();
+  // bbox_min -= margin;
+  // bbox_max += margin;
+  auto const c = _bbox->center();
+  auto & vertices = _bbox->get_points();
+  double const characteristic_length = c.distance( vertices[0] );
+  // double const padding = _config.padding_fraction * characteristic_length;
+  // We need to make the bounding box a perfect cube; otherwise, GMsh may generate really small cells
+  angem::Point<3,double> dims{
+    vertices[0].distance(vertices[1]),
+    vertices[0].distance(vertices[3]),
+    vertices[0].distance(vertices[4]),
+  };
+  // determine thickest dimension
+  double maxdim = -1;
+  for (size_t i = 0; i < 3; ++i)
+    maxdim = std::max(maxdim, dims[i]);
+
+  // maxdim += padding;
+
+  // unify cube dimensions
+  // move in x direction
+  for (size_t v : {0, 3, 7, 4})
+    vertices[v][0] -= 0.5*(maxdim - dims[0]);
+  for (size_t v : {1, 5, 6, 2})
+    vertices[v][0] += 0.5*(maxdim - dims[0]);
+  // move in y direction
+  for (size_t v : {0, 1, 5, 4})
+    vertices[v][1] -= 0.5*(maxdim - dims[1]);
+  for (size_t v : {2, 3, 7, 6})
+    vertices[v][1] += 0.5*(maxdim - dims[1]);
+  // move in z direction
+  for (size_t v : {0, 1, 4, 5})
+    vertices[v][2] -= 0.5*(maxdim - dims[2]);
+  for (size_t v : {2, 3, 6, 7})
+    vertices[v][2] += 0.5*(maxdim - dims[2]);
 }
 
 void GridGeneratorINSIM::assign_cell_labels_(mesh::Mesh & grid) const
@@ -36,7 +77,6 @@ void GridGeneratorINSIM::assign_cell_labels_(mesh::Mesh & grid) const
 
 void GridGeneratorINSIM::generate_bounding_box_()
 {
-  double const margin = _config.padding_fraction * find_characteristic_length_();
   double const upper = std::numeric_limits<double>::max();
   double const lower = std::numeric_limits<double>::lowest();
   angem::Point<3,double> bbox_min = {upper, upper, upper};
@@ -47,8 +87,9 @@ void GridGeneratorINSIM::generate_bounding_box_()
       bbox_max[i] = std::max( bbox_max[i], v[i] );
     }
 
-  bbox_min -= margin;
-  bbox_max += margin;
+  double const padding = _config.padding_fraction * bbox_min.distance( bbox_max );
+  bbox_min -= padding;
+  bbox_max += padding;
 
   auto const delta = bbox_max - bbox_min;
 
@@ -56,6 +97,7 @@ void GridGeneratorINSIM::generate_bounding_box_()
   std::fill( verts.begin(), verts.begin() + 4, bbox_min );
 
   // look at the schematics in angem/Hexahedron.hpp to understand the order
+  // to understand vertex numbering
   verts[1][0] += delta[0];
   verts[2][0] += delta[0];
   verts[2][1] += delta[1];

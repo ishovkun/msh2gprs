@@ -37,6 +37,8 @@ class GridGeneratorINSIM {
   double find_characteristic_length_() const;
   // assign cell markers to the value specified in the config
   void assign_cell_labels_(mesh::Mesh & grid) const;
+  // add padding to the bounding box
+  void extend_bounding_box_();
 
   // config parameters for the grid generator
   INSIMMeshConfig const & _config;
