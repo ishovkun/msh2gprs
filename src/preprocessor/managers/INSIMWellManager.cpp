@@ -1,5 +1,7 @@
 #include "INSIMWellManager.hpp"
 #include "WellManager.hpp"  // WellManager::compute_WI_matrix
+#include "logger/Logger.hpp"
+#include "mesh/io/VTKWriter.hpp"
 
 namespace gprs_data {
 
@@ -24,6 +26,7 @@ void INSIMWellManager::setup_wells_()
   for (const auto & conf : _config)
   {
     Well well(conf);
+    logging::log() << "Setting up well: " << well.name << std::endl;
 
     auto const well_vertices = find_well_vertices_(well);
     if ( well_vertices.empty() )
@@ -51,8 +54,10 @@ std::vector<size_t> INSIMWellManager::find_well_vertices_(Well const & well)
 
       // find cell that contains the point
       size_t const cell_idx = _searcher.find_cell(point);
-      if ( cell_idx == _grid.n_cells_total() )
+      if ( cell_idx == _grid.n_cells_total() ) {
+        mesh::IO::VTKWriter::write_geometry(_grid, "bad_grid.vtk");
         throw std::invalid_argument("could not find matching grid cell");
+      }
 
       // find closest vertex within the cell
       double mindist = std::numeric_limits<double>::max();

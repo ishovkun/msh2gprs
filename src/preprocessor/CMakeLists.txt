@@ -8,15 +8,17 @@ ADD_LIBRARY(preprocessor
   gmsh_interface/GmshInterface.cpp
   gmsh_interface/element_types.cpp
   utils.cpp
-  CellPropertyManager.cpp
-  EmbeddedFractureManager.cpp
-  DiscreteFractureManager.cpp
-  BoundaryConditionManager.cpp
+  managers/DoFManager.cpp
+  managers/GridEntityNumberingManager.cpp
+  managers/CellPropertyManager.cpp
+  managers/EmbeddedFractureManager.cpp
+  managers/DiscreteFractureManager.cpp
+  managers/BoundaryConditionManager.cpp
+  managers/WellManager.cpp
+  managers/INSIMWellManager.cpp
   bc_expressions/location_functions.cpp
   bc_expressions/value_functions.cpp
   property_expressions/value_functions.cpp
-  WellManager.cpp
-  INSIMWellManager.cpp
   Well.cpp
   GridGeneratorINSIM.cpp
   discretization/flow/DiscretizationBase.cpp
@@ -25,7 +27,6 @@ ADD_LIBRARY(preprocessor
   discretization/flow/DiscretizationEDFM.cpp
   discretization/flow/DiscretizationPEDFM.cpp
   discretization/flow/DiscretizationINSIM.cpp
-  DoFManager.cpp
   output/OutputDataGPRS.cpp
   output/OutputDataVTK.cpp
   output/OutputDataPostprocessor.cpp
@@ -43,7 +44,6 @@ ADD_LIBRARY(preprocessor
   algorithms/IndexMinPQ.cpp
   algorithms/EdgeWeightedGraph.cpp
   algorithms/DijkstraSubgraph.cpp
-  GridEntityNumberingManager.cpp
   UnionFind.cpp
   intersections/GridIntersectionSearcher.cpp
   intersections/UniformCartesianGrid.cpp

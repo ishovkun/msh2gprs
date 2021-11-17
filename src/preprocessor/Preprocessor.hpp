@@ -2,9 +2,9 @@
 
 #include "PreprocessorConfig.hpp"
 #include "SimData.hpp"
-#include "CellPropertyManager.hpp"
-#include "DiscreteFractureManager.hpp"
-#include "EmbeddedFractureManager.hpp"
+#include "managers/CellPropertyManager.hpp"
+#include "managers/DiscreteFractureManager.hpp"
+#include "managers/EmbeddedFractureManager.hpp"
 #include "discretization/flow/DoFNumbering.hpp"
 
 #include <list>

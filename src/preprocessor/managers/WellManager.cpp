@@ -19,7 +19,7 @@ void WellManager::setup()
   for (const auto & conf : _config)
   {
     Well well(conf);
-    std::cout << "setting up " << well.name << std::endl;
+    logging::log() << "setting up " << well.name << std::endl;
     if (well.simple())
     {
       // setup_simple_well_(well);

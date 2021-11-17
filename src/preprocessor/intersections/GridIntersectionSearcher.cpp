@@ -199,14 +199,16 @@ size_t GridIntersectionSearcher::find_cell(angem::Point<3,double> const & p)
   // check also neighbors of cartesian cell just to be safe
   auto duals_to_check = _mapper.get_search_grid().neighbors(search_cell);
   duals_to_check.push_back(search_cell);
-
+  // check the search_cell first
+  std::reverse( duals_to_check.begin(), duals_to_check.end() );
   // process cartesian cells and pick one that actually contains the point
-  for (const size_t dual : duals_to_check)
+  for (const size_t dual : duals_to_check) {
     for (const size_t cell_index : _mapper.mapping(dual) ) {
       auto const poly = _grid.cell(cell_index).polyhedron();
       if ( poly->point_inside(p) || poly->point_on_boundary(p, 1e-4) )
         return cell_index;
     }
+  }
 
   return _grid.n_cells_total();
 }

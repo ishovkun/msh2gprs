@@ -1,6 +1,6 @@
 #pragma once
 #include "DiscretizationEDFM.hpp"
-#include "../../EmbeddedFractureManager.hpp"
+#include "../../managers/EmbeddedFractureManager.hpp"
 
 namespace discretization {
 

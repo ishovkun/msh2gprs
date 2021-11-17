@@ -62,9 +62,9 @@ void GridGeneratorINSIM::extend_bounding_box_()
   for (size_t v : {2, 3, 7, 6})
     vertices[v][1] += 0.5*(maxdim - dims[1]);
   // move in z direction
-  for (size_t v : {0, 1, 4, 5})
+  for (size_t v : {0, 1, 2, 3})
     vertices[v][2] -= 0.5*(maxdim - dims[2]);
-  for (size_t v : {2, 3, 6, 7})
+  for (size_t v : {4, 5, 6, 7})
     vertices[v][2] += 0.5*(maxdim - dims[2]);
 }
 
