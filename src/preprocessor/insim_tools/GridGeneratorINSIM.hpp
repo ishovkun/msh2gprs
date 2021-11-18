@@ -33,12 +33,16 @@ class GridGeneratorINSIM {
   // additionally, perforations might be specifically indicated
   void setup_complex_well_(WellConfig const & conf);
   // generate boundaries of the domain
-  void generate_bounding_box_();
-  double find_characteristic_length_() const;
+  angem::Hexahedron<double> generate_bounding_box_() const;
+  // add padding to bounding box so that wells are away from the domain boundries
+  angem::Hexahedron<double> pad_bounding_box_(angem::Hexahedron<double> const &) const;
+  // make the bounding box uniform so that GMsh takes a large grid size
+  angem::Hexahedron<double> extend_bounding_box_(angem::Hexahedron<double> const &) const;
   // assign cell markers to the value specified in the config
   void assign_cell_labels_(mesh::Mesh & grid) const;
-  // add padding to the bounding box
-  void extend_bounding_box_();
+  // invoke Mitchell's algorithm
+  // generate point candidates within the bounding box only
+  void add_imaginary_wells_(angem::Hexahedron<double> const & box);
 
   // config parameters for the grid generator
   INSIMMeshConfig const & _config;
@@ -47,7 +51,7 @@ class GridGeneratorINSIM {
   // this vector holds points to compute the bounding box for the grid
   std::vector<angem::Point<3,double>> _vertices;
   // holds mapping from well idx to its grid nodes
-  std::unique_ptr<angem::Hexahedron<double>> _bbox{nullptr};
+  std::unique_ptr<angem::Hexahedron<double>> _bounding_box{nullptr};
 };
 
 }  // end namespace gprs_data

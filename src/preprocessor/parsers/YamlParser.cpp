@@ -648,12 +648,17 @@ void YamlParser::section_mesh(const YAML::Node & node)
 void YamlParser::subsection_grid_insim(const YAML::Node & node)
 {
   auto & conf = config.mesh.insim;
-  for (auto it = node.begin(); it!=node.end(); ++it) {
+  for (auto it = node.begin(); it != node.end(); ++it) {
     const std::string key = it->first.as<std::string>();
+    logging::log() << "\t\treading entry " << key  << std::endl;
     if ( key == "padding_fraction" )
       conf.padding_fraction = it->second.as<double>();
     else if ( key == "cell_label" )
       conf.cell_label = it->second.as<int>();
+    else if ( key == "num_imaginary_wells" )
+      conf.n_imaginary_wells = it->second.as<size_t>();
+    else if ( key == "num_candidates" )
+      conf.n_candidates = it->second.as<size_t>();
     else throw std::invalid_argument("Invalid key " + key);
   }
 }
@@ -691,7 +696,7 @@ void YamlParser::subsection_grid_refinement(const YAML::Node & node)
   for (auto it = node.begin(); it!=node.end(); ++it)
   {
     const std::string key = it->first.as<std::string>();
-    std::cout << "\t\treading key: " << key << std::endl;
+    logging::log() << "\t\treading key: " << key << std::endl;
     if (key == "type")
     {
       const std::string value = it->second.as<std::string>();

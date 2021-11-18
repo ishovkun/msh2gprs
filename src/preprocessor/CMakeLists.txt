@@ -21,6 +21,7 @@ ADD_LIBRARY(preprocessor
   property_expressions/value_functions.cpp
   Well.cpp
   insim_tools/GridGeneratorINSIM.cpp
+  insim_tools/MitchellBestCandidate.cpp
   discretization/flow/DiscretizationBase.cpp
   discretization/flow/DiscretizationTPFA.cpp
   discretization/flow/DiscretizationDFM.cpp

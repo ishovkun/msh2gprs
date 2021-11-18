@@ -1,10 +1,9 @@
 #include "GridGeneratorINSIM.hpp"
 #include "Well.hpp"                                       // provides Well
 #include "gmsh_interface/GmshInterface.hpp"
-#ifdef WITH_GMSH
-#include <gmsh.h>
-#endif
-// #include "mesh/io/VTKWriter.hpp"    // debugging, provides io::VTKWriter
+#include "MitchellBestCandidate.hpp"
+#include "logger/Logger.hpp"
+#include "mesh/io/VTKWriter.hpp"
 
 namespace gprs_data {
 
@@ -21,20 +20,36 @@ GridGeneratorINSIM::GridGeneratorINSIM(INSIMMeshConfig const & config, std::vect
       setup_complex_well_(well);
   }
 
-  if (_config.padding_fraction <= 0.)
+  if (_config.padding_fraction < 0.)
     throw std::invalid_argument("Invalid padding fraction for INSIM grid generator");
 
-  generate_bounding_box_();
-  extend_bounding_box_();
+  auto box = generate_bounding_box_();
+  add_imaginary_wells_(box);
+  // mesh::IO::VTKWriter::write(box, "box_orig.vtk");
+  box = pad_bounding_box_(box);
+  // mesh::IO::VTKWriter::write(box, "box_padded.vtk");
+  box = extend_bounding_box_(box);
+  // mesh::IO::VTKWriter::write(box, "box_extended.vtk");
+  _bounding_box = std::make_unique<angem::Hexahedron<double>>(box);
 }
 
-void GridGeneratorINSIM::extend_bounding_box_()
+void GridGeneratorINSIM::add_imaginary_wells_(angem::Hexahedron<double> const & box)
+{
+  if ( _config.n_imaginary_wells > 0 ) {
+    logging::log() << "generating " << _config.n_imaginary_wells << " imaginary wells" << std::endl;
+    MitchellBestCandidate mbc(_config);
+    _vertices = mbc.generate_points(_vertices, box);
+  }
+}
+
+angem::Hexahedron<double> GridGeneratorINSIM::extend_bounding_box_(angem::Hexahedron<double> const & original) const
 {
   // double const margin = _config.padding_fraction * find_characteristic_length_();
   // bbox_min -= margin;
   // bbox_max += margin;
-  auto const c = _bbox->center();
-  auto & vertices = _bbox->get_points();
+  auto ans = original;
+  auto const c = ans.center();
+  auto & vertices = ans.get_points();
   double const characteristic_length = c.distance( vertices[0] );
   // double const padding = _config.padding_fraction * characteristic_length;
   // We need to make the bounding box a perfect cube; otherwise, GMsh may generate really small cells
@@ -66,6 +81,8 @@ void GridGeneratorINSIM::extend_bounding_box_()
     vertices[v][2] -= 0.5*(maxdim - dims[2]);
   for (size_t v : {4, 5, 6, 7})
     vertices[v][2] += 0.5*(maxdim - dims[2]);
+
+  return ans;
 }
 
 void GridGeneratorINSIM::assign_cell_labels_(mesh::Mesh & grid) const
@@ -75,7 +92,7 @@ void GridGeneratorINSIM::assign_cell_labels_(mesh::Mesh & grid) const
 }
 
 
-void GridGeneratorINSIM::generate_bounding_box_()
+angem::Hexahedron<double> GridGeneratorINSIM::generate_bounding_box_() const
 {
   double const upper = std::numeric_limits<double>::max();
   double const lower = std::numeric_limits<double>::lowest();
@@ -86,10 +103,6 @@ void GridGeneratorINSIM::generate_bounding_box_()
       bbox_min[i] = std::min( bbox_min[i], v[i] );
       bbox_max[i] = std::max( bbox_max[i], v[i] );
     }
-
-  double const padding = _config.padding_fraction * bbox_min.distance( bbox_max );
-  bbox_min -= padding;
-  bbox_max += padding;
 
   auto const delta = bbox_max - bbox_min;
 
@@ -110,22 +123,9 @@ void GridGeneratorINSIM::generate_bounding_box_()
   std::vector<std::size_t> indices(verts.size());
   std::iota( indices.begin(), indices.end(), 0 );
   // make hexahedron
-  _bbox = std::make_unique<angem::Hexahedron<double>>(verts, indices);
+  // _bbox = std::make_unique<angem::Hexahedron<double>>(verts, indices);
+  return angem::Hexahedron<double>(verts, indices);
 }
-
-double GridGeneratorINSIM::find_characteristic_length_() const
-{
-  // compute the center of all well nodes
-  angem::Point<3,double> const c = angem::compute_center_mass( _vertices );
-
-  // compute average distance between c and vertices
-  double dist = 0.f;
-  for (auto const & v : _vertices)
-    dist += v.distance(c);
-
-  return dist / _vertices.size();
-}
-
 
 GridGeneratorINSIM::operator mesh::Mesh() const
 {
@@ -133,7 +133,7 @@ GridGeneratorINSIM::operator mesh::Mesh() const
 
 #ifdef WITH_GMSH
   GmshInterface::initialize_gmsh(/*verbose = */ false);
-  GmshInterface::build_triangulation_embedded_points(*_bbox, _vertices, grid);
+  GmshInterface::build_triangulation_embedded_points( *_bounding_box, _vertices, grid );
   GmshInterface::finalize_gmsh();
 #endif
   // mesh::IO::VTKWriter::write_geometry(grid, "test.vtk");
@@ -157,6 +157,31 @@ void GridGeneratorINSIM::setup_complex_well_(WellConfig const & conf)
       auto const vertex = 0.5 * (conf.coordinates[i] + conf.coordinates[i+1]);
       _vertices.push_back(vertex);
     }
+}
+
+angem::Hexahedron<double> GridGeneratorINSIM::pad_bounding_box_(angem::Hexahedron<double> const & original) const
+{
+  double const shift = original.radius() * _config.padding_fraction;
+
+  auto ans = original;
+  auto & vertices = ans.get_points();
+  // move in x direction
+  for (size_t v : {0, 3, 7, 4})
+    vertices[v][0] -= shift;
+  for (size_t v : {1, 5, 6, 2})
+    vertices[v][0] += shift;
+  // move in y direction
+  for (size_t v : {0, 1, 5, 4})
+    vertices[v][1] -= shift;
+  for (size_t v : {2, 3, 7, 6})
+    vertices[v][1] += shift;
+  // move in z direction
+  for (size_t v : {0, 1, 2, 3})
+    vertices[v][2] -= shift;
+  for (size_t v : {4, 5, 6, 7})
+    vertices[v][2] += shift;
+
+  return ans;
 }
 
 }  // end namespace gprs_data

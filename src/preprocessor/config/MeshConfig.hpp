@@ -26,6 +26,8 @@ struct INSIMMeshConfig
   // this value should be > 0.
   double padding_fraction = 1.f;
   int cell_label = 0;
+  size_t n_imaginary_wells = 0;  // see MitchellBestCandidate.hpp
+  size_t n_candidates = 5;       // see MitchellBestCandidate.hpp
 };
 
 struct MeshConfig
