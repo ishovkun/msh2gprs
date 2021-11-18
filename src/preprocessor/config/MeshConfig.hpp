@@ -32,7 +32,7 @@ struct INSIMMeshConfig
 
 struct MeshConfig
 {
-  MeshType type;
+  MeshType type = MeshType::cartesian;
   std::string file;
   mesh::CartesianMeshParameters cartesian;
   RefinementParameters refinement;

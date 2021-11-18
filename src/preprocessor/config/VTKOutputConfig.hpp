@@ -14,7 +14,7 @@ struct VTKOutputConfig
   std::string fracture_grid_file            = "fractures.vtk";
   std::string wells_file                    = "wells.vtk";
   std::string flow_graph_file               = "flow_graph.vtk";
-  VTKOutputFlags flags;
+  VTKOutputFlags flags                      = VTKOutputFlags::save_wells;
 };
 
 

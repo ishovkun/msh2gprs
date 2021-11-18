@@ -44,9 +44,6 @@ void GridGeneratorINSIM::add_imaginary_wells_(angem::Hexahedron<double> const & 
 
 angem::Hexahedron<double> GridGeneratorINSIM::extend_bounding_box_(angem::Hexahedron<double> const & original) const
 {
-  // double const margin = _config.padding_fraction * find_characteristic_length_();
-  // bbox_min -= margin;
-  // bbox_max += margin;
   auto ans = original;
   auto const c = ans.center();
   auto & vertices = ans.get_points();
@@ -134,9 +131,26 @@ GridGeneratorINSIM::operator mesh::Mesh() const
 #ifdef WITH_GMSH
   GmshInterface::initialize_gmsh(/*verbose = */ false);
   GmshInterface::build_triangulation_embedded_points( *_bounding_box, _vertices, grid );
+
+  std::vector<size_t> node_tags;
+  std::vector<double> node_coord, parametric_coord;
+  // gmsh::model::mesh::getNodes(node_tags, node_coord, parametric_coord, -1,
+  //                             /* tag */ -1, /* includeBoundary = */ true,
+  //                             /* return_parametric =  */ false);
+  // std::cout << "beer" << std::endl;
+  // for (size_t i = 0; i < node_tags.size(); ++i)
+  //   std::cout << node_tags[i]
+  //             << " " << node_coord[3*i+0]
+  //             << " " << node_coord[3*i+1]
+  //             << " " << node_coord[3*i+2]
+  //             << std::endl;
+
   GmshInterface::finalize_gmsh();
 #endif
   // mesh::IO::VTKWriter::write_geometry(grid, "test.vtk");
+
+
+  // exit(0);
 
   assign_cell_labels_(grid);
 

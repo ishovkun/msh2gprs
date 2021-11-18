@@ -2,10 +2,12 @@
 
 namespace logging {
 
-Logger * Logger::_p_logger = NULL;
+Logger * Logger::_p_logger = nullptr;
 
 Logger::Logger()
-    : _verbosity(LogLevel::Debug), _file_stream_index(-1)
+    : _verbosity(LogLevel::Debug),
+      _msg_level(LogLevel::Debug),
+      _file_stream_index(-1)
 {
   add_stream(std::cout);
 }

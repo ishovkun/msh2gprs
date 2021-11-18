@@ -14,8 +14,7 @@ std::vector<angem::Point<3,double>>
 MitchellBestCandidate::generate_points(std::vector<angem::Point<3,double>> const & actual,
                                        angem::Hexahedron<double> const & box)
 {
-  std::vector<angem::Point<3,double>> ans;
-  ans.resize( actual.size() + _config.n_imaginary_wells );
+  std::vector<Point> ans( actual.size() + _config.n_imaginary_wells );
   std::copy( actual.begin(), actual.end(), ans.begin() );
   std::vector<Point> candidates( _config.n_candidates );
   std::vector<double> distances( _config.n_candidates );
@@ -24,6 +23,8 @@ MitchellBestCandidate::generate_points(std::vector<angem::Point<3,double>> const
     compute_min_distances_( candidates, ans, distances, actual.size() + i );
     auto const best = std::max_element( distances.begin(), distances.end() );
     size_t const best_idx = std::distance( distances.begin(), best );
+    assert( best_idx < distances.size() );
+    assert( actual.size() + i < ans.size() );
     ans[actual.size() + i] = candidates[best_idx];
   }
   return ans;
@@ -54,7 +55,7 @@ void MitchellBestCandidate::compute_min_distances_(std::vector<angem::Point<3,do
                                                    std::vector<double> &distances,
                                                    size_t n_placed) const
 {
-  std::fill( distances.begin(), distances.begin() + n_placed, std::numeric_limits<double>::max() );
+  std::fill( distances.begin(), distances.end(), std::numeric_limits<double>::max() );
 
   for (size_t i = 0; i < candidates.size(); ++i)
     for (size_t j = 0; j < n_placed; ++j)

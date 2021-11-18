@@ -733,38 +733,12 @@ void GmshInterface::build_triangulation(const mesh::Cell & cell, mesh::Mesh & gr
     throw std::invalid_argument("refuse to add gmsh elements to a non-empty grid");
 
   std::vector<size_t> vertex_numbering = extract_grid_(grid);
-  // std::vector<size_t> node_tags;
-  // std::vector<double> node_coord, parametric_coord;
-  // gmsh::model::mesh::getNodes(node_tags, node_coord, parametric_coord, /*dim = */ 3,
-  //                             /* tag */ -1, /* includeBoundary = */ true,
-  //                             /* return_parametric =  */ false);
-
-  // auto it = std::max_element(node_tags.begin(), node_tags.end());
-  // assert( it != node_tags.end() );
-  // const size_t max_node_tag = *it + 1;
-  // // find maximum node tag
-  // std::vector<size_t> vertex_numbering(max_node_tag, std::numeric_limits<size_t>::max());
-  // size_t iv = 0;
-  // for (const size_t node : node_tags)
-  //   vertex_numbering[node]  = iv++;
-
-  // grid.vertices().reserve(node_tags.size());
-  // for (std::size_t i=0; i<node_tags.size(); ++i)
-  // {
-  //   assert( node_coord[3*i+2] < node_coord.size() );
-  //   angem::Point<3,double> vertex = { node_coord[3*i], node_coord[3*i+1], node_coord[3*i+2] };
-  //   grid.vertices().push_back(vertex);
-  // }
-
-  // // insert cells
-  // insert_elements_(3, -1, vertex_numbering, grid);
 
   // insert face labels
   for (size_t parent_face=0; parent_face<cell.faces().size(); ++parent_face)
   {
     insert_elements_(2, parent_face+1, vertex_numbering, grid);
   }
-
 }
 
 std::vector<size_t> GmshInterface::extract_grid_(mesh::Mesh & grid)

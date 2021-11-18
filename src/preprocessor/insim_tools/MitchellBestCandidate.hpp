@@ -16,9 +16,8 @@ class MitchellBestCandidate {
   // constructor
   MitchellBestCandidate(INSIMMeshConfig const & config);
   // main method
-  [[nodiscard]] std::vector<angem::Point<3,double>>
-  generate_points(std::vector<angem::Point<3,double>> const & actual,
-                  angem::Hexahedron<double> const & bounding_box);
+  [[nodiscard]] std::vector<angem::Point<3,double>> generate_points(std::vector<angem::Point<3,double>> const & actual,
+                                                                    angem::Hexahedron<double> const & bounding_box);
   // destructor
   ~MitchellBestCandidate() = default;
 
