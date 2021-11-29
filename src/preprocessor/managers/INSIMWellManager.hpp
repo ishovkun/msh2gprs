@@ -18,9 +18,17 @@ class INSIMWellManager {
   ** Constructor.
   ** Given configuration of wells, grid, and a grid searcher, build the list of vertices
   ** that lie closest to the well segment centers
+  ** Input:
+  ** \param[in] wells             : well configuration
+  ** \param[in] grid              : grid
+  ** \param[in,out] well_vertices : vector of grid vertex indices where wells are
+  **                                if empty, vertices are searched for
+  ** \param[in] searcher          : helper class that speeds up grid searching
    */
-  INSIMWellManager(std::vector<WellConfig> const & wells, mesh::Mesh const & grid,
-                   GridIntersectionSearcher & searcher);
+  INSIMWellManager(std::vector<WellConfig> const    & wells,
+                   mesh::Mesh const                 & grid,
+                   std::vector<std::vector<size_t>> & well_vertices,
+                   GridIntersectionSearcher         & searcher);
 
   // returns list of wells.
   std::vector<Well> const & get_wells() const {return _wells;}
@@ -43,14 +51,12 @@ class INSIMWellManager {
   void compute_bounding_box_(discretization::WellSegment & segment);
   // reference depth is deepest vertex in z direction (unless it's prescripbed in config)
   double compute_reference_depth_(Well const & well) const;
-
-
   void setup_wells_();
 
   std::vector<WellConfig> const & _config;
   mesh::Mesh const & _grid;
   GridIntersectionSearcher & _searcher;
-  std::vector<std::vector<size_t>> _well_vertex_indices;
+  std::vector<std::vector<size_t>> & _well_vertex_indices;
   std::vector<Well> _wells;
 };
 

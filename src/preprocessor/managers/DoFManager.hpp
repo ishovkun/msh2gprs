@@ -31,7 +31,8 @@ class DoFManager
   // map cell/face index -> cedfm control volume
   std::shared_ptr<DoFNumbering> distribute_dofs();
   // map vertex index -> reservoir dof
-  std::shared_ptr<DoFNumbering> distribute_dofs_insim(std::vector<std::vector<size_t>> const & well_vertices) const;
+  std::shared_ptr<DoFNumbering> distribute_dofs_insim(std::vector<std::vector<size_t>> const & well_vertices,
+                                                      std::vector<size_t> const & imaginary_well_vertices) const;
   // make map : vertex index to well index
   std::shared_ptr<DoFNumbering> distribute_vertex_to_well_dofs(std::vector<std::vector<size_t>> const & well_vertices) const;
 

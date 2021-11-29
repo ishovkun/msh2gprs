@@ -3,7 +3,7 @@
 #include "gmsh_interface/GmshInterface.hpp"
 #include "MitchellBestCandidate.hpp"
 #include "logger/Logger.hpp"
-#include "mesh/io/VTKWriter.hpp"
+// #include "mesh/io/VTKWriter.hpp"
 
 namespace gprs_data {
 
@@ -59,8 +59,6 @@ angem::Hexahedron<double> GridGeneratorINSIM::extend_bounding_box_(angem::Hexahe
   double maxdim = -1;
   for (size_t i = 0; i < 3; ++i)
     maxdim = std::max(maxdim, dims[i]);
-
-  // maxdim += padding;
 
   // unify cube dimensions
   // move in x direction
@@ -124,36 +122,38 @@ angem::Hexahedron<double> GridGeneratorINSIM::generate_bounding_box_() const
   return angem::Hexahedron<double>(verts, indices);
 }
 
-GridGeneratorINSIM::operator mesh::Mesh() const
+GridGeneratorINSIM::operator mesh::Mesh()
 {
   mesh::Mesh grid;
 
 #ifdef WITH_GMSH
   GmshInterface::initialize_gmsh(/*verbose = */ false);
-  GmshInterface::build_triangulation_embedded_points( *_bounding_box, _vertices, grid );
-
-  std::vector<size_t> node_tags;
-  std::vector<double> node_coord, parametric_coord;
-  // gmsh::model::mesh::getNodes(node_tags, node_coord, parametric_coord, -1,
-  //                             /* tag */ -1, /* includeBoundary = */ true,
-  //                             /* return_parametric =  */ false);
-  // std::cout << "beer" << std::endl;
-  // for (size_t i = 0; i < node_tags.size(); ++i)
-  //   std::cout << node_tags[i]
-  //             << " " << node_coord[3*i+0]
-  //             << " " << node_coord[3*i+1]
-  //             << " " << node_coord[3*i+2]
-  //             << std::endl;
-
+  auto const embedded_indices = GmshInterface::build_triangulation_embedded_points( *_bounding_box, _vertices, grid );
   GmshInterface::finalize_gmsh();
+#else
+  throw std::runtime_error("cannot build insim grid without gmsh");
 #endif
   // mesh::IO::VTKWriter::write_geometry(grid, "test.vtk");
 
+  assign_cell_labels_(grid);
+  distribute_well_vertices_(embedded_indices);
+
+  // for (size_t v = 0; v < grid.n_vertices(); ++v)
+  // {
+  //   std::cout << v << ": ";
+  //   for (auto * c : grid.vertex_cells(v))
+  //     std::cout << c->index() << " ";
+  //   std::cout << std::endl;
+  // }
+  //   for (auto cell = grid.begin_active_cells(); cell != grid.end_active_cells(); ++cell)
+  //   {
+  //     std::cout << cell->index() << " ";
+  //     for (auto v : cell->vertices())
+  //       std::cout << v << " ";
+  //     std::cout << std::endl;
+  //   }
 
   // exit(0);
-
-  assign_cell_labels_(grid);
-
   return grid;
 }
 
@@ -196,6 +196,20 @@ angem::Hexahedron<double> GridGeneratorINSIM::pad_bounding_box_(angem::Hexahedro
     vertices[v][2] += shift;
 
   return ans;
+}
+
+void GridGeneratorINSIM::distribute_well_vertices_(std::vector<size_t> const & indices)
+{
+  size_t ivertex = 0;
+  _well_vertex_indices.resize( _wells.size() );
+  for (size_t iwell = 0; iwell < _wells.size(); ++iwell) {
+    auto const & well = _wells[iwell];
+    for (size_t j = 0; j < well.perforated.size(); ++j)
+      if ( well.perforated[j] )
+        _well_vertex_indices[iwell].push_back( indices[ivertex++] );
+  }
+
+  std::copy( indices.begin() + ivertex, indices.end(), std::back_inserter(_imaginary_vertex_indices) );
 }
 
 }  // end namespace gprs_data

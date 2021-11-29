@@ -8,7 +8,10 @@ using Point = angem::Point<3,double>;
 MitchellBestCandidate::MitchellBestCandidate(INSIMMeshConfig const & config)
     : _config(config),
       _rnd( std::random_device{}() )
-{}
+{
+  // enforce a consistent seed: good for debugging + we don't really need true randomness
+  _rnd.seed(1);
+}
 
 std::vector<angem::Point<3,double>>
 MitchellBestCandidate::generate_points(std::vector<angem::Point<3,double>> const & actual,

@@ -82,10 +82,11 @@ struct SimData
   // ---------------------- EDFM ------------------------ //
   std::vector<EmbeddedFractureMechanicalProperties> sda_data;
   std::vector<size_t> edfm_cell_mapping;    // for postprocessor output  vtk_cell -> dof
-  // std::unordered_set<int> edfm_grid_labels;
   // ----------------------- Well data ---------------------- //
   std::vector<Well> wells;  // vector of well properties
   WellVTKGrid well_vtk;     // 1D vtk grid purely for visualization purposed
+  std::vector<std::vector<size_t>> insim_well_vertices;
+  std::vector<size_t> insim_imaginary_well_vertices;
   // =========================== GEOMECHANICS ================= //
   bool has_mechanics = false;
   std::shared_ptr<discretization::DoFNumbering> mech_numbering;  // mech cell and face numbering

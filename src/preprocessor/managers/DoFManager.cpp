@@ -105,7 +105,8 @@ void DoFManager::remap(std::vector<discretization::ControlVolumeData> & cv_data,
   }
 }
 
-std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs_insim(std::vector<std::vector<size_t>> const & well_vertices) const
+std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs_insim(std::vector<std::vector<size_t>> const & well_vertices,
+                                                                std::vector<size_t> const & imaginary_well_vertices) const
 {
   std::shared_ptr<DoFNumbering> dofs = std::make_shared<DoFNumbering>();
   const auto & grid = m_grid;
@@ -116,7 +117,19 @@ std::shared_ptr<DoFNumbering> DoFManager::distribute_dofs_insim(std::vector<std:
     for (size_t const v : well)
       dofs->m_vertices[v] = dof++;
 
+  for (size_t const v : imaginary_well_vertices)
+    dofs->m_vertices[v] = dof++;
+
   dofs->m_n_dofs = dof;
+
+  // for (size_t w = 0; w < well_vertices.size(); ++w)
+  // {
+  //   std::cout << "w = " << w << ": ";
+  //   for (auto v : well_vertices[w])
+  //     std::cout << v << " ";
+  //   std::cout << std::endl;
+  // }
+  // // exit(0);
 
   return dofs;
 }

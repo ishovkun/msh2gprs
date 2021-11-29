@@ -5,10 +5,13 @@
 
 namespace gprs_data {
 
-INSIMWellManager::INSIMWellManager(std::vector<WellConfig> const & wells, mesh::Mesh const & grid,
-                                   GridIntersectionSearcher & searcher)
+INSIMWellManager::INSIMWellManager(std::vector<WellConfig> const    & wells,
+                                   mesh::Mesh const                 & grid,
+                                   std::vector<std::vector<size_t>> & well_vertices,
+                                   GridIntersectionSearcher         & searcher)
     : _config(wells)
     , _grid(grid)
+    , _well_vertex_indices(well_vertices)
     , _searcher(searcher)
 {
   setup_wells_();
@@ -23,17 +26,25 @@ void INSIMWellManager::compute_well_indices(std::vector<discretization::ControlV
 
 void INSIMWellManager::setup_wells_()
 {
-  for (const auto & conf : _config)
+  bool const vertex_indices_specified = !_well_vertex_indices.empty();
+  if ( !vertex_indices_specified )
+    _well_vertex_indices.resize( _config.size() );
+
+  for (size_t iwell = 0; iwell < _config.size(); ++iwell)
   {
+    auto const & conf = _config[iwell];
     Well well(conf);
     logging::log() << "Setting up well: " << well.name << std::endl;
 
-    auto const well_vertices = find_well_vertices_(well);
-    if ( well_vertices.empty() )
+    // std::vector<size_t> vertices;
+    if ( !vertex_indices_specified )
+      _well_vertex_indices[iwell] = find_well_vertices_(well);
+
+    if ( _well_vertex_indices[iwell].empty() )
       throw std::runtime_error("Well " + well.name + " has no conncted volumes");
 
     well.reference_depth = compute_reference_depth_(well);
-    create_well_perforations_(well, well_vertices);
+    create_well_perforations_( well, _well_vertex_indices[iwell] );
 
     _wells.push_back( std::move(well) );
   }

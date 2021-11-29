@@ -22,7 +22,11 @@ class GridGeneratorINSIM {
    */
   GridGeneratorINSIM(INSIMMeshConfig const & config, std::vector<WellConfig> const & wells);
   // generates and returns mesh generated from well data
-  operator mesh::Mesh() const;
+  operator mesh::Mesh();
+  // return vertex indices of real well vertices
+  std::vector<std::vector<size_t>> const & get_well_vertices() const { return _well_vertex_indices; }
+  // return vertex indices of imaginary well vertices
+  std::vector<size_t> const & get_imaginary_vertices() const { return _imaginary_vertex_indices; }
 
   virtual ~GridGeneratorINSIM() = default;
 
@@ -43,7 +47,8 @@ class GridGeneratorINSIM {
   // invoke Mitchell's algorithm
   // generate point candidates within the bounding box only
   void add_imaginary_wells_(angem::Hexahedron<double> const & box);
-
+  // distribute vector of embedded point indices into well coordinates and embedded points
+  void distribute_well_vertices_(std::vector<size_t> const & indices);
   // config parameters for the grid generator
   INSIMMeshConfig const & _config;
   // well config
@@ -52,6 +57,8 @@ class GridGeneratorINSIM {
   std::vector<angem::Point<3,double>> _vertices;
   // holds mapping from well idx to its grid nodes
   std::unique_ptr<angem::Hexahedron<double>> _bounding_box{nullptr};
+  std::vector<std::vector<size_t>> _well_vertex_indices;
+  std::vector<size_t> _imaginary_vertex_indices;
 };
 
 }  // end namespace gprs_data

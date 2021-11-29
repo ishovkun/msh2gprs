@@ -62,7 +62,10 @@ void Preprocessor::setup_grid_(const Path config_dir_path)
   }
   else if ( _config.mesh.type == MeshType::insim ) {
     std::cout << "Building INSIM grid..." << std::endl;
-    data.grid = GridGeneratorINSIM(_config.mesh.insim, _config.wells);
+    GridGeneratorINSIM generator(_config.mesh.insim, _config.wells);
+    data.grid = generator;
+    data.insim_well_vertices = generator.get_well_vertices();
+    data.insim_imaginary_well_vertices = generator.get_imaginary_vertices();
     logging::log() << "OK" << std::endl;
   }
   else throw std::invalid_argument("Invalid mesh format");
@@ -304,10 +307,12 @@ void Preprocessor::build_flow_discretization_()
 
   std::unique_ptr<INSIMWellManager> insim_mgr = nullptr;
   if ( _config.flow_discretization == FlowDiscretizationType::insim ) {
-    insim_mgr = std::make_unique<INSIMWellManager>( _config.wells, data.grid, *data.grid_searcher );
-    auto const well_vertices = insim_mgr->get_well_vertices();
-    p_split_dofs = dof_manager.distribute_dofs_insim( well_vertices );
-    p_unsplit_dofs = dof_manager.distribute_vertex_to_well_dofs( well_vertices );
+    insim_mgr = std::make_unique<INSIMWellManager>( _config.wells, data.grid,
+                                                    data.insim_well_vertices,
+                                                    *data.grid_searcher );
+    p_split_dofs = dof_manager.distribute_dofs_insim( data.insim_well_vertices,
+                                                      data.insim_imaginary_well_vertices );
+    p_unsplit_dofs = dof_manager.distribute_vertex_to_well_dofs( data.insim_well_vertices );
   }
   else {
     p_split_dofs = dof_manager.distribute_dofs();

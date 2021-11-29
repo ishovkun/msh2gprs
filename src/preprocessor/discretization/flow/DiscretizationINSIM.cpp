@@ -1,6 +1,8 @@
 #include "DiscretizationINSIM.hpp"
 #include <queue>
 
+#include "mesh/io/VTKWriter.hpp"
+
 namespace discretization {
 
 using namespace algorithms;
@@ -39,6 +41,7 @@ void DiscretizationINSIM::build_connections_(algorithms::EdgeWeightedGraph const
     con.elements = {dof_u, dof_v};
     auto const & cell1 = m_cv_data[dof_u];
     auto const & cell2 = m_cv_data[dof_v];
+    // std::cout << "building con " << cell1.master << "-" << cell2.master << std::endl;
     con.center = 0.5 * (cell1.center + cell2.center);
     // project permeability
     auto const & K1 = cell1.permeability;
@@ -106,7 +109,7 @@ void DiscretizationINSIM::build_vertex_data_(size_t vertex)
   cv.master = vertex;
   cv.center = m_grid.vertex( vertex );
 
-  // take average of physical properties
+  assert( !attached_cvs.empty() );
   cv.custom.resize( attached_cvs.front().custom.size(), 0.f );
   for (size_t i = 0; i < n; ++i) {
     double const vi = attached_cvs[i].volume;
@@ -146,29 +149,33 @@ std::vector<size_t> DiscretizationINSIM::bfs_(size_t source, algorithms::EdgeWei
 {
   std::queue<QueueItem> q;
   std::vector<bool> visited( vertex_adjacency.n_vertices(), false );
-  q.push({ source, 0 });
   visited[source] = true;
+  q.push({ source, 0 });
   std::vector<size_t> neighbors;
   size_t const source_well = _vertex_to_well.vertex_dof( source );
 
   size_t max_level = std::numeric_limits<size_t>::max();
   bool found = false;
   size_t cnt = 0;
-  while ( !q.empty() && q.front().level < max_level ) {
+
+  while ( !q.empty() && q.front().level <= max_level ) {
     // take item from the queue
     auto const item = q.front();
     size_t const u = item.vertex;
     q.pop();
 
-    // check if we found a correct dof to connect to
-    if ( m_dofs.has_vertex( u ) && _vertex_to_well.vertex_dof( u ) != source_well ) {
+    // check if vertex is a flow dof,
+    // additionally check that we don't connect vertices that belong to the same well
+    bool const same_well = _vertex_to_well.has_vertex(u) && _vertex_to_well.vertex_dof(u) == source_well;
+    bool const same_dof = source == u;
+    if ( m_dofs.has_vertex( u ) && !same_well && !same_dof ) {
       found = true;
       neighbors.push_back( u );
       max_level = item.level;  // don't search beyond this depth
     }
     else
     {
-      for (auto * edge : vertex_adjacency.adj(u)) {  // search neighbors
+      for (auto const * const edge : vertex_adjacency.adj(u)) {  // search neighbors
         size_t const v = edge->other(u);
         if ( !visited[v] ) {
           visited[v] = true;

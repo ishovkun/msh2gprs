@@ -31,9 +31,9 @@ class GmshInterface
   // the outer boundary is specified with angem::Polyhedron.
   // The embedded points are given as a vector of angem::Point
   // The output is written into grid
-  static void build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
-                                                  std::vector<angem::Point<3,double>> const & embedded,
-                                                  mesh::Mesh & grid);
+  static std::vector<size_t> build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
+                                                                 std::vector<angem::Point<3,double>> const & embedded,
+                                                                 mesh::Mesh & grid);
   // build triangulation with embedded line segments.
   // the outer boundary is specified with angem::Polyhedron.
   // The embedded lines are given as a vector of angem::LineSegment

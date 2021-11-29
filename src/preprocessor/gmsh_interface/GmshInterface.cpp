@@ -501,9 +501,9 @@ void GmshInterface::build_triangulation_embedded_lines(angem::Polyhedron<double>
   std::vector<size_t> vertex_numbering = extract_grid_(grid);
 }
 
-void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
-                                                        std::vector<angem::Point<3,double>> const & embedded,
-                                                        mesh::Mesh & grid)
+std::vector<size_t> GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double> const & boundary,
+                                                                       std::vector<angem::Point<3,double>> const & embedded,
+                                                                       mesh::Mesh & grid)
 {
   gmsh::model::add("cell1");
   gmsh::option::setNumber("Mesh.SaveAll", 1);
@@ -532,7 +532,14 @@ void GmshInterface::build_triangulation_embedded_points(angem::Polyhedron<double
   gmsh::model::mesh::generate(3);
 
   // gmsh::write("test.msh");
-  extract_grid_(grid);
+  std::vector<size_t> const vertex_numbering = extract_grid_(grid);
+  std::vector<size_t> embedded_indices( embedded.size() );
+  for (size_t i = 0; i < embedded.size(); ++i) {
+    size_t const tag = offset + i;
+    embedded_indices[i] = vertex_numbering[tag];
+  }
+
+  return embedded_indices;
 }
 
 void GmshInterface::insert_boundary_data_(angem::Polyhedron<double> const & bnd, double const n_vertices_on_edge)
@@ -760,7 +767,7 @@ std::vector<size_t> GmshInterface::extract_grid_(mesh::Mesh & grid)
     vertex_numbering[node]  = iv++;
   }
 
-  grid.vertices().reserve(node_tags.size());
+  grid.vertices().reserve( node_tags.size() );
   for (size_t i = 0; i < node_tags.size(); ++i)
   {
     assert( node_coord[3*i+2] < node_coord.size() );
