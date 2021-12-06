@@ -5,7 +5,7 @@ namespace gprs_data
 {
 
 OutputDataVTK::OutputDataVTK(const SimData & data,
-                             const VTKOutputConfig config)
+                             const OutputConfigVTK config)
     :
     _data(data),
     m_flow_grid(data.grid),

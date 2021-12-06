@@ -19,7 +19,7 @@ public:
    * @param[in]  data   : container for data to be saved
    * @param[in]  config : file names for GPRS output
    */
-  OutputDataGPRS(const SimData & data, const GPRSOutputConfig config);
+  OutputDataGPRS(const SimData & data, const OutputConfigGPRS config);
   /**
    * Save data into output_path director.
    * @param  {std::string} output_path : string that describes the output path
@@ -61,7 +61,7 @@ public:
 
 protected:
   const SimData & _data;
-  const GPRSOutputConfig _config;
+  const OutputConfigGPRS _config;
   mutable std::string _output_path;
 };
 

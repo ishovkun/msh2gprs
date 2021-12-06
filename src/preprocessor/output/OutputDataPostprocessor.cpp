@@ -11,11 +11,11 @@ OutputDataPostprocessor::OutputDataPostprocessor(const SimData & data, const Pre
 
 void OutputDataPostprocessor::write_output(const std::string file_name)
 {
-  m_root["output_directory"] = m_config.postprocessor_output_dir;
-  m_root["mech_reservoir_grid_file"] = m_output_dir + "/" + m_config.vtk_config.mechanics_reservoir_grid_file;
-  m_root["flow_reservoir_grid_file"] = m_output_dir + "/" + m_config.vtk_config.flow_reservoir_grid_file;
+  m_root["output_directory"] = m_config.output.postprocessor.dir;
+  m_root["mech_reservoir_grid_file"] = m_output_dir + "/" + m_config.output.vtk.mechanics_reservoir_grid_file;
+  m_root["flow_reservoir_grid_file"] = m_output_dir + "/" + m_config.output.vtk.flow_reservoir_grid_file;
   // m_root["edfm_grid_file"] = m_output_dir + "/" + m_config.vtk_config.edfm_grid_file;
-  m_root["fracture_grid_file"]  = m_output_dir + "/" + m_config.vtk_config.fracture_grid_file;
+  m_root["fracture_grid_file"]  = m_output_dir + "/" + m_config.output.vtk.fracture_grid_file;
   //  map flow vtk cells to flow CVs
   m_root["matrix_cell_to_flow_dof"] = map_matrix_cells_to_control_volumes_();
   m_root["edfm_cell_to_flow_dof"] = m_data.edfm_cell_mapping;
@@ -23,7 +23,7 @@ void OutputDataPostprocessor::write_output(const std::string file_name)
 
   // save file
   std::ofstream out;
-  out.open(m_config.postprocessor_file.c_str());
+  out.open(m_config.output.postprocessor.file.c_str());
   out << m_root;
   out.close();
 }

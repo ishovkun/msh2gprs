@@ -1,22 +1,15 @@
 #pragma once
 
-#include "angem/Polygon.hpp"
 #include "config/FiniteElementConfig.hpp"
 #include "config/MeshConfig.hpp"
 #include "config/MultiscaleConfig.hpp"
 #include "config/PropertyConfig.hpp"
 #include "config/WellConfig.hpp"
-#include "config/VTKOutputConfig.hpp"
+#include "config/OutputConfig.hpp"
+#include "angem/Polygon.hpp"
 
 #include <map>
 #include <memory> // shared / unique_ptr
-
-static constexpr double TRANSMISSIBILITY_CONVERSION_FACTOR = 0.0085267146719160104986876640419948;
-
-enum class OutputFormat
-{
-  gprs, vtk, postprocessor, insim
-};
 
 enum class BoundaryConditionType : int
 {
@@ -74,31 +67,6 @@ struct DiscreteFractureConfig
   size_t region = 0;    // property table index
 };
 
-struct INSIMOutputConfig
-{
-  std::string cv_file    = "cell_data.txt";
-  std::string tube_file  = "tube_data.txt";
-  std::string wells_file = "wells.txt";
-  double transmissibility_mult = 1.f;  // insim model takes transmissibility in md
-};
-
-struct GPRSOutputConfig
-{
-  std::string geometry_file          = "gm_geometry.txt";
-  std::string mechanics_kwd_file     = "gm_keywords.txt";
-  std::string efrac_file             = "gm_SDA.txt";
-  std::string discrete_frac_file     = "gm_DFM.txt";
-  std::string bcond_file             = "gm_bcond.txt";
-  std::string wells_file             = "wells.txt";
-  std::string mech_ms_file           = "ms_mech.txt";
-  std::string flow_ms_file           = "ms_flow.txt";
-  std::string flow_cv_file           = "fl_cell_data.txt";
-  std::string flow_connection_file   = "fl_face_data.txt";
-  std::string mech_trans_update_file = "gm_update_trans.txt";
-  std::string fem_file               = "gm_fem.txt";
-  double transmissibility_mult = TRANSMISSIBILITY_CONVERSION_FACTOR;
-};
-
 enum class FracturePlacement
 {
   move_fracture, move_grid
@@ -154,23 +122,7 @@ struct PreprocessorConfig
   MultiscaleConfig ms_mech;
 
   // output format
-  std::vector<OutputFormat> output_formats = {OutputFormat::gprs,
-                                              OutputFormat::vtk,
-                                              OutputFormat::postprocessor};
-
+  OutputConfig output;
   // the name of gmsh grid file
   MeshConfig mesh;
-  // std::string mesh_file;
-  // output file names
-  std::string output_dir            = "output";
-  // GPRS format
-  GPRSOutputConfig gprs_output;
-  // INSIM format
-  INSIMOutputConfig insim_output;
-  // VTK format
-  VTKOutputConfig vtk_config;
-  // postprocessor output file
-  std::string postprocessor_file = "postprocessor_config.yaml";
-  // postprocessor output directory
-  std::string postprocessor_output_dir = "postprocessing";
 };

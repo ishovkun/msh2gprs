@@ -19,7 +19,7 @@ void DiscretizationPolyhedralFEM::build_(mesh::Cell & cell)
     _element = std::make_shared<PolyhedralElementDirect>(cell, _grid, _config);
   else if (_config.solver == SolverType::msrsb)
     _element = std::make_shared<PolyhedralElementMSRSB>(cell, _grid, _config);
-#elseif
+#else
   throw std::runtime_error("Eigen is not available");
 #endif
 }

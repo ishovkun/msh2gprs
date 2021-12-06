@@ -22,7 +22,7 @@ class OutputDataVTK
    * @param  {SimData} sim_data       : data container
    * @param  {VTKOutputConfig} config : container for relevant file names
    */
-  OutputDataVTK(const SimData & sim_data, const VTKOutputConfig config);
+  OutputDataVTK(const SimData & sim_data, const OutputConfigVTK config);
   void write_output(const std::string & output_path) const;
 
  private:
@@ -43,7 +43,7 @@ class OutputDataVTK
   const SimData & _data;
   const mesh::Mesh & m_flow_grid;
   const mesh::Mesh & m_mech_grid;
-  VTKOutputConfig _config;
+  OutputConfigVTK _config;
 };
 
 }

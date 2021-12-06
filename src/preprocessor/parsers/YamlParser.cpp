@@ -61,7 +61,7 @@ void YamlParser::embedded_fracs(const YAML::Node & node)
     logging::log() << "\treading entry " << key << std::endl;
 
     if (key == "file")
-      config.gprs_output.efrac_file = it->second.as<std::string>();
+      config.output.gprs.efrac_file = it->second.as<std::string>();
     // else if (key == "method")
     // {
     //   const std::string str_method = it->second.as<std::string>();
@@ -165,7 +165,7 @@ void YamlParser::discrete_fracs(const YAML::Node & node)
       discrete_fracture(it->second, conf);
     }
     else if (key == "file")
-      config.gprs_output.discrete_frac_file = it->second.as<std::string>();
+      config.output.gprs.discrete_frac_file = it->second.as<std::string>();
     else if (key == "split_vertices")
       config.dfm_settings.split_mech_vertices = it->second.as<bool>();
     else
@@ -401,7 +401,7 @@ void YamlParser::boundary_conditions(const YAML::Node & node)
     std::cout << "\treading entry " << key << std::endl;
 
     if (key == "file")
-      config.gprs_output.bcond_file = it->second.as<std::string>();
+      config.output.gprs.bcond_file = it->second.as<std::string>();
     else if (key == "Faces")
       boundary_conditions_faces(it->second);
     else if (key == "Dirichlet nodes")
@@ -520,7 +520,7 @@ void YamlParser::section_wells(const YAML::Node & node)
     std::cout << "\treading key " << key << std::endl;
 
     if (key == "file")
-      config.gprs_output.wells_file = it->second.as<std::string>();
+      config.output.gprs.wells_file = it->second.as<std::string>();
     else if (key == "well")
     {
       config.wells.emplace_back();

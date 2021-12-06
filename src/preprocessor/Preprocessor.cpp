@@ -41,7 +41,7 @@ Preprocessor::Preprocessor(const Path config_file_path)
   // infer grid file path
   _input_dir = config_file_path.parent_path();
   setup_grid_(_input_dir);
-  m_output_dir = _input_dir / _config.output_dir;
+  m_output_dir = _input_dir / _config.output.dir;
 }
 
 void Preprocessor::setup_grid_(const Path config_dir_path)
@@ -178,14 +178,14 @@ void Preprocessor::write_output_()
       case OutputFormat::gprs :
         {
           logging::log() << "Output gprs format" << std::endl;
-          gprs_data::OutputDataGPRS output_data(data, _config.gprs_output);
+          gprs_data::OutputDataGPRS output_data(data, _config.output.gprs);
           output_data.write_output(m_output_dir);
           break;
         }
         case OutputFormat::vtk :
           {
             logging::log() << "Output vtk format" << std::endl;
-            auto & flags = _config.vtk_config.flags;
+            auto & flags = _config.output.vtk.flags;
             if ( !data.fracture_grid.empty() )
               flags |= VTKOutputFlags::save_fractures;
             if ( !data.wells.empty() )
@@ -193,13 +193,13 @@ void Preprocessor::write_output_()
             if ( _config.flow_discretization == FlowDiscretizationType::insim )
               flags |= VTKOutputFlags::save_flow_graph;
 
-            gprs_data::OutputDataVTK output_data(data, _config.vtk_config);
+            gprs_data::OutputDataVTK output_data(data, _config.output.vtk);
             output_data.write_output(m_output_dir);
             break;
           }
         case OutputFormat::insim :
           {
-            gprs_data::OutputDataINSIM output_data(data, _config.insim_output);
+            gprs_data::OutputDataINSIM output_data(data, _config.output.insim);
             output_data.write_output(m_output_dir);
             break;
           }
@@ -209,7 +209,7 @@ void Preprocessor::write_output_()
             gprs_data::OutputDataPostprocessor output_data(data, _config,
                                                            *data.flow_numbering,
                                                            m_output_dir);
-            output_data.write_output(_config.postprocessor_file);
+            output_data.write_output(_config.output.postprocessor.file);
           }
     }
   }
@@ -442,12 +442,12 @@ void Preprocessor::build_geomechanics_discretization_()
     auto const & opts = GlobalOpts::ref();
 #ifdef WITH_EIGEN
     if (opts.enable_experimental)
-      p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(data.geomechanics_grid, config.fem,
+      p_discr = std::make_unique<DiscretizationPolyhedralFEMOptimized>(data.geomechanics_grid, _config.fem,
                                                                        dfm_markers, data.neumann_face_indices);
     else
-      p_discr = std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid, config.fem,
+      p_discr = std::make_unique<DiscretizationPolyhedralFEM>(data.geomechanics_grid, _config.fem,
                                                               dfm_markers, data.neumann_face_indices);
-#elseif
+#else
     throw std::invalid_argument("PFEM is not available without Eigen");
 #endif
   }

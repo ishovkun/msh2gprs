@@ -9,7 +9,7 @@ namespace gprs_data
 const int n_entries_per_line = 10;
 
 
-OutputDataGPRS::OutputDataGPRS(const SimData & data, const GPRSOutputConfig config)
+OutputDataGPRS::OutputDataGPRS(const SimData & data, const OutputConfigGPRS config)
     :
     _data(data),
     _config(config)

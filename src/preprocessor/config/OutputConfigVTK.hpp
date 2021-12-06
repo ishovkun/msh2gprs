@@ -7,7 +7,7 @@ enum VTKOutputFlags {
   save_flow_graph = 0x0003,
 };
 
-struct VTKOutputConfig
+struct OutputConfigVTK
 {
   std::string flow_reservoir_grid_file      = "flow_reservoir_mesh.vtk";
   std::string mechanics_reservoir_grid_file = "mechanics_reservoir_mesh.vtk";
@@ -16,7 +16,6 @@ struct VTKOutputConfig
   std::string flow_graph_file               = "flow_graph.vtk";
   VTKOutputFlags flags                      = VTKOutputFlags::save_wells;
 };
-
 
 inline VTKOutputFlags operator|(VTKOutputFlags f1, VTKOutputFlags f2)
 {
